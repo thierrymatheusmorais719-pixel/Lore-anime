@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lore — O Rei Mago</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Three.js r160 incluído localmente em vendor/ (funciona offline, sem CDN). -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three/build/three.module.js",
+      "three/addons/": "./vendor/three/examples/jsm/"
+    }
+  }
+  </script>
+  <script>
+    // Diagnóstico: se o módulo principal não iniciar, mostra o motivo provável.
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        if (window.__LORE_READY__) return;
+        var el = document.getElementById('error');
+        var msg = location.protocol === 'file:'
+          ? 'Os módulos JavaScript não carregam via file://.\nRode um servidor local na pasta do projeto:\n  python3 -m http.server 8000\ne abra http://localhost:8000'
+          : 'Não foi possível iniciar a cutscene. Abra o console (F12) para detalhes.';
+        el.textContent = msg; el.hidden = false;
+        var l = document.getElementById('loading'); if (l) l.textContent = 'Falha ao carregar.';
+      }, 4000);
+    });
+  </script>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="scene"></canvas>
+
+    <!-- Barras de cinema (letterbox) -->
+    <div class="letterbox top"></div>
+    <div class="letterbox bottom"></div>
+
+    <!-- Clarão de tela cheia -->
+    <div id="flash"></div>
+
+    <!-- Fade para preto entre loops -->
+    <div id="fade"></div>
+
+    <!-- Títulos e legendas -->
+    <div id="title-card">
+      <div class="title-sub">O Rei Mago</div>
+      <div class="title-main">LORE</div>
+    </div>
+    <div id="subtitle"></div>
+
+    <!-- HUD discreto -->
+    <div id="hud">
+      <span id="hud-time">00.0s</span>
+      <span class="hud-keys">Espaço pausar · R reiniciar · C câmera livre · M som · H ocultar</span>
+    </div>
+
+    <!-- Tela inicial (necessária para liberar o áudio do navegador) -->
+    <div id="start">
+      <div class="start-inner">
+        <div class="start-sub">uma cutscene</div>
+        <h1>LORE</h1>
+        <div class="start-sub2">O Rei Mago</div>
+        <button id="start-btn">▶ Iniciar</button>
+        <label class="start-opt"><input type="checkbox" id="opt-sound" checked /> Som procedural</label>
+        <div id="loading">Carregando Three.js…</div>
+      </div>
+    </div>
+
+    <div id="error" hidden></div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
