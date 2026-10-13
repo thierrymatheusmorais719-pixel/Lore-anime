@@ -3,6 +3,8 @@
 Cutscene cinematográfica de anime (≈34 s, em loop) protagonizada por **Lore, o Rei Mago**,
 renderizada em tempo real no navegador com **Three.js (WebGL)**.
 
+> **Novo:** [`black-demon/`](black-demon/) — *Black Demon, Episódio 1: O Despertar Carmesim*, animação feita a partir das páginas do mangá (abra `http://localhost:8000/black-demon/`).
+
 Lore em corpo inteiro, com rig articulado, poses mescladas, capa/cabelo/manto com movimento
 secundário, câmera cinematográfica com cortes e tremores sincronizados aos impactos, e efeitos
 mágicos dourados: explosões, raios, partículas, ondas de choque, fumaça, destroços, clarões,

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Black Demon · Episódio 1</title>
+  <meta name="description" content="Black Demon — Episódio 1: O Despertar Carmesim. Animação das páginas do mangá, com trilha sintetizada.">
+  <link rel="stylesheet" href="css/player.css">
+</head>
+<body>
+  <main class="sheet">
+    <section class="stage panel" id="stage">
+      <canvas id="film" width="1920" height="1080" aria-label="Animação Black Demon"></canvas>
+      <button class="play-overlay" id="overlay" type="button">
+        <span class="tri" aria-hidden="true"></span>
+        <span>ASSISTIR</span>
+      </button>
+      <div class="progress" id="progress" role="slider" aria-label="Posição" aria-valuemin="0" aria-valuemax="54" aria-valuenow="0" tabindex="0">
+        <div class="fill" id="fill"></div>
+      </div>
+    </section>
+
+    <section class="controls panel" aria-label="Controles">
+      <header class="head">
+        <div>
+          <h1>Black Demon</h1>
+          <p class="ep">EPISÓDIO 1 - O DESPERTAR CARMESIM</p>
+        </div>
+        <dl class="stats">
+          <div><dt>DURAÇÃO</dt><dd id="dur">54 s</dd></div>
+          <div><dt>TEMPO</dt><dd id="time">0,0 s</dd></div>
+        </dl>
+      </header>
+
+      <button class="preview" id="preview" type="button" aria-label="Pausar ou continuar">
+        <svg viewBox="-170 -80 340 190" aria-hidden="true">
+          <path d="M-14,-6 Q-60,-40 -150,-62 L-128,-52 Q-150,-24 -118,6 Q-70,10 -14,-6Z"/>
+          <path d="M14,-6 Q60,-40 150,-62 L128,-52 Q150,-24 118,6 Q70,10 14,-6Z"/>
+          <path d="M-70,58 Q0,96 70,58 Q0,82 -70,58Z"/>
+        </svg>
+        <span class="shot" id="shot">—</span>
+      </button>
+
+      <div class="row">
+        <label class="toggle">
+          <input type="checkbox" id="sfx" checked>
+          <span class="knob" aria-hidden="true"></span>
+          <span>SOM</span>
+        </label>
+        <button class="btn" id="music" type="button" aria-pressed="true">MÚSICA</button>
+        <label class="start">INÍCIO
+          <input type="number" id="startAt" min="0" max="53" step="1" value="0" inputmode="numeric">
+          <span>s</span>
+        </label>
+      </div>
+
+      <button class="btn wide" id="replay" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a7 7 0 1 1-6.6 4.7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M3 4.5 5.6 10l5.2-2.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        REPRODUZIR DE NOVO
+      </button>
+      <p class="keys">Espaço: pausar · F: tela cheia · ← →: 2 s</p>
+    </section>
+  </main>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

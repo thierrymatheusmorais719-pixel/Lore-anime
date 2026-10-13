@@ -1,0 +1,124 @@
+@font-face { font-family: "Oswald"; src: url("../assets/fonts/Oswald.ttf") format("truetype"); font-weight: 200 700; font-display: swap; }
+@font-face { font-family: "Pirata One"; src: url("../assets/fonts/PirataOne.ttf") format("truetype"); font-display: swap; }
+
+:root {
+  --paper: #f7f5f2;
+  --ink: #0b0b0b;
+  --red: #c4102c;
+  --muted: #5d5a57;
+  --line: 4px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #141213; --ink: #f1ecea; --muted: #a49c9a; --red: #ff3b52; }
+}
+:root[data-theme="dark"] { --paper: #141213; --ink: #f1ecea; --muted: #a49c9a; --red: #ff3b52; }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Oswald", "Arial Narrow", system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+.sheet {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+@media (min-width: 1100px) {
+  .sheet { grid-template-columns: 1fr 360px; align-items: start; padding: 24px; }
+}
+
+.panel {
+  border: var(--line) solid var(--ink);
+  background: var(--paper);
+}
+
+/* ---- tela ---- */
+.stage { position: relative; background: #000; overflow: hidden; }
+.stage canvas { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: #000; }
+.stage:fullscreen { border: 0; display: grid; place-items: center; }
+.stage:fullscreen canvas { max-height: 100vh; width: auto; max-width: 100vw; }
+
+.play-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center; gap: 18px;
+  background: radial-gradient(circle, rgba(120, 0, 20, .55), rgba(0, 0, 0, .85));
+  color: #fff; border: 0; cursor: pointer;
+  font: 600 clamp(22px, 4vw, 44px) "Oswald", sans-serif; letter-spacing: .12em;
+}
+.play-overlay .tri {
+  width: 0; height: 0;
+  border-left: clamp(24px, 4vw, 44px) solid #ff2a44;
+  border-top: clamp(15px, 2.5vw, 27px) solid transparent;
+  border-bottom: clamp(15px, 2.5vw, 27px) solid transparent;
+  filter: drop-shadow(0 0 14px #ff0022);
+}
+.play-overlay[hidden] { display: none; }
+
+.progress { position: absolute; left: 0; right: 0; bottom: 0; height: 14px; cursor: pointer; }
+.progress::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255, 255, 255, .18); }
+.progress .fill { position: absolute; left: 0; bottom: 0; height: 4px; width: 0; background: #ff2a44; box-shadow: 0 0 8px #ff0022; }
+.progress:hover::before, .progress:hover .fill { height: 7px; }
+
+/* ---- controles (o quadro 9 do mangá) ---- */
+.controls { padding: 16px 18px 14px; display: grid; gap: 14px; }
+.head { display: flex; justify-content: space-between; gap: 12px 18px; align-items: start; flex-wrap: wrap; }
+.head > div:first-child { flex: 1 1 200px; }
+h1 { font: 400 clamp(34px, 5vw, 46px)/1 "Pirata One", "UnifrakturMaguntia", serif; margin: 0; white-space: nowrap; }
+.ep { margin: 6px 0 0; font-weight: 500; font-size: 14px; letter-spacing: .02em; }
+.stats { display: flex; gap: 18px; margin: 0; text-align: center; }
+.stats dt { font-size: 13px; font-weight: 500; }
+.stats dd { margin: 4px 0 0; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 3.6em; }
+
+.preview {
+  border: 3px solid var(--ink); background: var(--paper); color: var(--ink);
+  outline: 2px solid var(--ink); outline-offset: -9px;
+  aspect-ratio: 16 / 6; display: grid; place-items: center; position: relative; cursor: pointer; padding: 0; font: inherit;
+}
+.preview svg { width: 44%; margin-bottom: 22px; fill: var(--ink); transition: fill .3s, filter .3s; }
+.preview.live svg { fill: var(--red); filter: drop-shadow(0 0 6px var(--red)); }
+.preview .shot { position: absolute; bottom: 10px; font-size: 13px; font-weight: 500; letter-spacing: .08em; color: var(--muted); }
+
+.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.toggle { display: inline-flex; align-items: center; gap: 10px; font-weight: 500; cursor: pointer; }
+.toggle input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.toggle .knob {
+  width: 46px; height: 26px; border: 3px solid var(--ink); border-radius: 20px; position: relative; background: var(--paper);
+}
+.toggle .knob::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--ink); transition: transform .15s;
+}
+.toggle input:checked + .knob { background: var(--ink); }
+.toggle input:checked + .knob::after { background: var(--paper); transform: translateX(20px); }
+.toggle input:focus-visible + .knob { outline: 3px solid var(--red); outline-offset: 2px; }
+
+.btn {
+  border: 3px solid var(--ink); background: var(--paper); color: var(--ink);
+  font: 600 16px "Oswald", sans-serif; letter-spacing: .04em; padding: 8px 16px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+}
+.btn:hover { background: var(--ink); color: var(--paper); }
+.btn[aria-pressed="false"] { text-decoration: line-through; color: var(--muted); }
+.btn:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+.btn.wide { width: 100%; justify-content: flex-start; padding: 12px 16px; font-size: 17px; }
+.btn svg { width: 20px; height: 20px; }
+
+.start { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; }
+.start input {
+  width: 3.4em; border: 3px solid var(--ink); background: var(--paper); color: var(--ink);
+  font: 600 16px "Oswald", sans-serif; padding: 4px 6px;
+}
+.keys { margin: 0; font-size: 12px; color: var(--muted); letter-spacing: .03em; }
+
+/* modo exportação: só o quadro, 1920x1080 */
+body.export { background: #000; }
+body.export .sheet { display: block; padding: 0; max-width: none; }
+body.export .controls, body.export .play-overlay, body.export .progress { display: none; }
+body.export .stage { border: 0; }
+body.export canvas { width: 1920px; height: 1080px; }
