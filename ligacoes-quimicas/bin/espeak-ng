@@ -1,0 +1,16 @@
+#!/bin/sh
+# narrador: espeak-ng -> fonemas -> mbrola com volume 0.6 (no volume padrão a voz MBROLA satura e estala)
+V=""; S=""; W=""; T=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -v) V="$2"; shift 2;;
+    -s) S="$2"; shift 2;;
+    -w) W="$2"; shift 2;;
+    --version) exec /usr/bin/espeak-ng --version;;
+    *) T="$1"; shift;;
+  esac
+done
+case "$V" in
+  mb-*) DB="${V#mb-}"; /usr/bin/espeak-ng -v "$V" ${S:+-s $S} -q --pho "$T" | mbrola -e -v 0.6 "/usr/share/mbrola/$DB/$DB" - "$W";;
+  *) exec /usr/bin/espeak-ng -v "$V" ${S:+-s $S} -w "$W" "$T";;
+esac

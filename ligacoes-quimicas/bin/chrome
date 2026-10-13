@@ -1,0 +1,3 @@
+#!/bin/sh
+# Chromium do container (root precisa de --no-sandbox)
+exec /opt/pw-browsers/chromium --no-sandbox "$@"
