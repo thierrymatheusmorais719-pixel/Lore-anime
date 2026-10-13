@@ -34,14 +34,14 @@ Depois abra **http://localhost:8000/black-demon/** e clique em **ASSISTIR**.
 | Tempo | Plano | O que acontece |
 |---|---|---|
 | 0–4 s | Abertura | Batidas de coração, título com glitch |
-| 4–12 s | 1. Transformação | Câmera se aproxima, aura carmesim surge, os olhos ficam vermelhos, quadro de impacto |
+| 4–12 s | 1. Transformação | Ela olha para um lado e para o outro, pisca e abre os olhos já vermelhos; aura carmesim, quadro de impacto |
 | 12–16 s | 2. Ataque | Fundo escuro, traço vermelho brilhante, olhos acendem, raios |
 | 16–20 s | 3. Olhos | Câmera desce até o sorriso, rachaduras pulsando no ritmo |
 | 20–26 s | 4. Explosão | A íris gira, círculo rúnico, mergulho na pupila e o reflexo da explosão |
 | 26–32 s | 8. Ataque (detalhe) | Energia sendo sugada pelo orbe, disparo e um silêncio superexposto |
 | 32–40 s | 5. Fim do vilão | Quadros de impacto, onda de choque, destroços, câmera tremendo |
 | 40–46 s | 6. Visão de satélite | Espaço, estrelas, anéis vermelhos se espalhando pelo planeta |
-| 46–52 s | 7. Quadro final | Vento, brilho nos olhos, cartão "AKARI KURENAI" |
+| 46–52 s | 7. Quadro final | Olha de lado, vira para a câmera, pisca e desvia o olhar; vento, cartão "AKARI KURENAI" |
 | 52–54 s | Encerramento | Logotipo |
 
 O quadro 8 entra antes do 5 porque é o golpe que causa a explosão. Para mudar a ordem
@@ -55,6 +55,7 @@ black-demon/
   css/player.css        Visual de mangá (bordas pretas, papel)
   js/main.js            Relógio sincronizado com o áudio, controles, modo exportação
   js/film.js            ★ Roteiro: um desenho por plano, câmera e efeitos
+  js/eyes.js            Olhos animados: íris que desliza e pálpebra que desce (piscar)
   js/fx.js              Efeitos: brilho, raios, partículas, linhas de velocidade, ondas de choque
   js/audio.js           ★ Trilha e efeitos sonoros sintetizados (partitura)
   js/util.js            Easing e aleatório determinístico

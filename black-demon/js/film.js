@@ -7,6 +7,7 @@ import {
   glowDot, glint, speedLines, windLines, embers, converge, debris, bolt, ring,
   runeCircle, finish, flash,
 } from './fx.js';
+import { prepEyes, drawEyes, blink, gaze } from './eyes.js';
 
 export const DURATION = 54;
 
@@ -167,15 +168,20 @@ function p1(ctx, t, T) {
   inPanel(ctx, P, cam, () => {
     // aura carmesim: halo vermelho em volta do traço
     drawFull(ctx, glow(P.img, '#d0102a'), P, 0.95 * awaken);
-    drawFull(ctx, P.img, P);
-    // olhos ficando vermelhos
-    const red = ease.out(seg(t, 4.6, 5.6));
+    // olhos: olha para um lado, para o outro, pisca... e abre já vermelho
+    const E = prepEyes('p1', P);
+    drawFull(ctx, E.base, P);
+    const lid = blink(t, [1.05, 4.3, 6.6]);
+    const [lx, ly] = gaze(t, [[0, 0, 0], [1.5, -17, 0], [2.6, 15, -1], [3.5, 0, 0]]);
+    const look = [lx + 1.5 * awaken * noise1(T * 18, 4), ly + 1.2 * awaken * noise1(T * 18, 8)];
+    drawEyes(ctx, E, look, lid);
+    const red = ease.out(seg(t, 4.42, 5.2)) * (1 - 0.85 * lid);
     for (const [u, v] of PTS.p1.eyes) {
-      glowDot(ctx, u * P.w, v * P.h, 70, '#ff1030', red * 0.95, 'multiply');
-      glowDot(ctx, u * P.w, v * P.h, 120, '#ff6070', red * 0.5, 'multiply');
+      glowDot(ctx, u * P.w + look[0], v * P.h + look[1], 70, '#ff1030', red * 0.95, 'multiply');
+      glowDot(ctx, u * P.w + look[0], v * P.h + look[1], 120, '#ff6070', red * 0.5, 'multiply');
     }
-    const g = pulse(t, [5.3], 3.2);
-    for (const [u, v] of PTS.p1.eyes) glint(ctx, u * P.w + 8, v * P.h - 10, 70 + 50 * g, 0.3, g);
+    const g = pulse(t, [5.3], 3.2) * (1 - lid);
+    for (const [u, v] of PTS.p1.eyes) glint(ctx, u * P.w + 8 + look[0], v * P.h - 10, 70 + 50 * g, 0.3, g);
   });
   // brasas escuras subindo + vento
   embers(ctx, T, { n: 90, alpha: 0.15 + 0.85 * awaken, color: '#8a0016', core: '#ff3a50', size: 5, vy: -220, seed: 12 });
@@ -439,13 +445,18 @@ function p7(ctx, t, T) {
   };
   inPanel(ctx, P, cam, () => {
     drawFull(ctx, glow(P.img, '#c0102a'), P, 0.5, 'multiply');
-    drawFull(ctx, P.img, P);
+    // olhos: começa olhando de lado, vira para a câmera, pisca, desvia o olhar
+    const E = prepEyes('p7', P);
+    drawFull(ctx, E.base, P);
+    const lid = blink(t, [3.3]);
+    const look = gaze(t, [[0, 15, 0], [1.05, 0, 0], [4.5, -9, 0]], 0.16);
+    drawEyes(ctx, E, look, lid);
     for (const [u, v] of PTS.p7.eyes) {
-      glowDot(ctx, u * P.w, v * P.h, 60, '#ff1030', 0.9, 'multiply');
-      glowDot(ctx, u * P.w, v * P.h, 110, '#ff6070', 0.4, 'multiply');
+      glowDot(ctx, u * P.w + look[0], v * P.h + look[1], 60, '#ff1030', 0.9 * (1 - 0.85 * lid), 'multiply');
+      glowDot(ctx, u * P.w + look[0], v * P.h + look[1], 110, '#ff6070', 0.4 * (1 - 0.85 * lid), 'multiply');
     }
-    const g = pulse(t, [1.8], 2.5);
-    for (const [u, v] of PTS.p7.eyes) glint(ctx, u * P.w + 6, v * P.h - 8, 70 * (0.4 + g), 0.4, g);
+    const g = pulse(t, [1.8], 2.5) * (1 - lid);
+    for (const [u, v] of PTS.p7.eyes) glint(ctx, u * P.w + 6 + look[0], v * P.h - 8, 70 * (0.4 + g), 0.4, g);
   });
   embers(ctx, T, { n: 70, color: '#6a0012', core: '#ff3a50', vy: -60, vx: -160, size: 5, seed: 82, alpha: 0.8 });
   windLines(ctx, T, { n: 22, color: '#ffffff', alpha: 0.35, speed: 1400, dir: -1, seed: 9 });
