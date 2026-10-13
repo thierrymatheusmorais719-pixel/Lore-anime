@@ -32,7 +32,7 @@
     ['formula', [
       ['f1', 'Dica para montar a fórmula: a carga de um vira o índice do outro.'],
       ['f2', 'Alumínio três mais, com oxigênio dois menos. O três vai para o oxigênio, e o dois vai para o alumínio.'],
-      ['f3', 'Resultado: Al dois, O três.'],
+      ['f3', 'Resultado: alumínio dois, oxigênio três.'],
     ]],
     ['covalente', [
       ['c1', 'Ligação covalente! Ela acontece entre ametais, ou entre ametal e hidrogênio.'],

@@ -1,14 +1,23 @@
 #!/bin/sh
-# narrador neural: imita a interface do piper (--model VOZ --output_file ARQ, texto no stdin) e usa o Kokoro (pt-BR).
-# Modelo: https://github.com/thewh1teagle/kokoro-onnx (kokoro-v1.0.onnx + voices-v1.0.bin em $KOKORO_DIR)
+# narrador: imita a interface do piper (--model VOZ --output_file ARQ, texto no stdin).
+#   --model eleven : usa a fala gravada no ElevenLabs (eleven/map.json, gerado por split-eleven.js)
+#   outra voz      : Kokoro neural pt-BR (tts/kokoro_tts.py; ex.: pf_dora, pm_alex)
 V=""; O=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --model) V="$2"; shift 2;;
     --output_file) O="$2"; shift 2;;
-    --help) echo "kokoro wrapper"; exit 0;;
+    --help) echo "narrador"; exit 0;;
     *) shift;;
   esac
 done
 T=$(cat)
-exec python3 "$(dirname "$0")/../tts/kokoro_tts.py" "$T" "$V" "${KOKORO_SPEED:-1.0}" "$O"
+D="$(dirname "$0")/.."
+if [ "$V" = "eleven" ]; then
+  exec node -e '
+    const fs = require("fs"); const [map, text, out] = process.argv.slice(1);
+    const m = JSON.parse(fs.readFileSync(map, "utf8")); const k = text.replace(/\s+/g, " ").trim();
+    if (!m[k]) { console.error("sem gravação para: " + k); process.exit(1); }
+    fs.copyFileSync(m[k], out);' "$D/eleven/map.json" "$T" "$O"
+fi
+exec python3 "$D/tts/kokoro_tts.py" "$T" "$V" "${KOKORO_SPEED:-1.0}" "$O"
