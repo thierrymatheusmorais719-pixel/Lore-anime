@@ -1,0 +1,14 @@
+#!/bin/sh
+# narrador neural: imita a interface do piper (--model VOZ --output_file ARQ, texto no stdin) e usa o Kokoro (pt-BR).
+# Modelo: https://github.com/thewh1teagle/kokoro-onnx (kokoro-v1.0.onnx + voices-v1.0.bin em $KOKORO_DIR)
+V=""; O=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --model) V="$2"; shift 2;;
+    --output_file) O="$2"; shift 2;;
+    --help) echo "kokoro wrapper"; exit 0;;
+    *) shift;;
+  esac
+done
+T=$(cat)
+exec python3 "$(dirname "$0")/../tts/kokoro_tts.py" "$T" "$V" "${KOKORO_SPEED:-1.0}" "$O"
