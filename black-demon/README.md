@@ -34,7 +34,7 @@ Depois abra **http://localhost:8000/black-demon/** e clique em **ASSISTIR**.
 | Tempo | Plano | O que acontece |
 |---|---|---|
 | 0–4 s | Abertura | Batidas de coração, título com glitch |
-| 4–12 s | 1. Transformação | Ela olha para um lado e para o outro, pisca e abre os olhos já vermelhos; aura carmesim, quadro de impacto |
+| 4–12 s | 1. Transformação | Ela vira a cabeça e olha para um lado e para o outro, abaixa o rosto, pisca e ergue a cabeça com os olhos já vermelhos e estreitos; cabelo balança na aura carmesim, quadro de impacto |
 | 12–16 s | 2. Ataque | Fundo escuro, traço vermelho brilhante, olhos acendem, raios |
 | 16–20 s | 3. Olhos | Câmera desce até o sorriso, rachaduras pulsando no ritmo |
 | 20–26 s | 4. Explosão | A íris gira, círculo rúnico, mergulho na pupila e o reflexo da explosão |
@@ -56,6 +56,7 @@ black-demon/
   js/main.js            Relógio sincronizado com o áudio, controles, modo exportação
   js/film.js            ★ Roteiro: um desenho por plano, câmera e efeitos
   js/eyes.js            Olhos animados: íris que desliza e pálpebra que desce (piscar)
+  js/warp.js            Deformação por malha (estilo Live2D): cabeça vira/inclina, cabelo balança
   js/fx.js              Efeitos: brilho, raios, partículas, linhas de velocidade, ondas de choque
   js/audio.js           ★ Trilha e efeitos sonoros sintetizados (partitura)
   js/util.js            Easing e aleatório determinístico

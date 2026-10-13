@@ -1,13 +1,14 @@
 // Roteiro visual de "Black Demon — Episódio 1: O Despertar Carmesim".
 // render(ctx, t) desenha o quadro do instante t (segundos), sem estado:
 // o mesmo t sempre gera a mesma imagem.
-import { clamp, lerp, seg, ease, rand, rrange, pulse, noise1 } from './util.js';
+import { clamp, lerp, seg, ease, rand, rrange, pulse, noise1, smooth } from './util.js';
 import {
   W, H, tint, glow, drawFull, camMatrix, applyCam, shake, linearBg, radialBg,
   glowDot, glint, speedLines, windLines, embers, converge, debris, bolt, ring,
   runeCircle, finish, flash,
 } from './fx.js';
 import { prepEyes, drawEyes, blink, gaze } from './eyes.js';
+import { drawWarped } from './warp.js';
 
 export const DURATION = 54;
 
@@ -154,6 +155,39 @@ function abertura(ctx, t) {
   finish(ctx, t, { vignette: 0.6, grainAmt: 0.08 });
 }
 
+// Camada do painel (desenhada a cada quadro e depois deformada pela malha)
+const layers = new Map();
+function panelLayer(P) {
+  if (!layers.has(P)) {
+    const c = document.createElement('canvas');
+    c.width = P.w; c.height = P.h;
+    layers.set(P, c);
+  }
+  return layers.get(P);
+}
+
+// Campo de deformação do rosto do quadro 1: virar, inclinar, abaixar, respirar e
+// cabelo balançando. Pesos suaves: o rosto se move mais, as bordas quase nada.
+function faceField(P, h, T) {
+  const fu = 0.49, fv = 0.55;                 // centro do rosto
+  const px = 0.49 * P.w, py = 1.15 * P.h;     // pescoço (pivô da inclinação)
+  const c = Math.cos(h.rot), s = Math.sin(h.rot);
+  return (x, y) => {
+    const u = x / P.w, v = y / P.h;
+    const face = Math.exp(-(((u - fu) / 0.17) ** 2 + ((v - fv) / 0.32) ** 2));
+    const head = Math.exp(-(((u - fu) / 0.3) ** 2 + ((v - fv) / 0.55) ** 2));
+    const rx = x - px, ry = y - py;
+    let dx = h.tx * face + (rx * c - ry * s - rx) * head;
+    let dy = h.ty * (0.7 * face + 0.3 * head) + (rx * s + ry * c - ry) * head - h.breathe * head;
+    // mechas laterais: balançam mais embaixo, com uma onda que desce pelo cabelo
+    const side = smooth(clamp((0.3 - u) / 0.22)) + smooth(clamp((u - 0.68) / 0.22));
+    const wave = Math.sin(T * 2.4 - v * 4 + (u < 0.5 ? 0 : 1.7)) + 0.4 * Math.sin(T * 5.3 - v * 7);
+    dx += h.sway * side * v * wave;
+    dy += h.sway * 0.25 * side * v * Math.cos(T * 2.4 - v * 4);
+    return [dx, dy];
+  };
+}
+
 function p1(ctx, t, T) {
   const P = panels.p1;
   const awaken = ease.inOut(seg(t, 4.2, 6.5));
@@ -165,23 +199,49 @@ function p1(ctx, t, T) {
     zoom: 1.02 + 0.38 * ease.inOut(seg(t, 0, 7)) + 1.1 * ease.inExpo(rush) + 0.01 * Math.sin(T * 1.7),
     ...shake(T, 2 * awaken + 16 * rush, 24, 11),
   };
+  // ---- atuação do rosto ----
+  // olhar: olha para um lado, para o outro, pisca... e abre já vermelho
+  const [lx, ly] = gaze(t, [[0, 0, 0], [1.5, -17, 0], [2.6, 15, -1], [3.5, 0, 0]]);
+  const look = [lx + 1.5 * awaken * noise1(T * 18, 4), ly + 1.2 * awaken * noise1(T * 18, 8)];
+  // depois de abrir os olhos vermelhos, ela os estreita (olhar ameaçador)
+  const narrow = 0.2 * ease.inOut(seg(t, 5.0, 5.6));
+  const lid = Math.max(blink(t, [1.05, 4.3, 6.6]), narrow);
+  // cabeça: acompanha o olhar com atraso, abaixa antes de despertar e ergue encarando
+  const [hx] = gaze(t, [[0, 0, 0], [1.55, -1, 0], [2.65, 1, 0], [3.55, 0, 0]], 0.55);
+  const dip = ease.inOut(seg(t, 3.9, 4.35)) * (1 - ease.out(seg(t, 4.45, 5.1)));
+  const rise = ease.out(seg(t, 4.45, 5.1));
+  const head = {
+    tx: hx * 19,                                   // virar (px)
+    ty: 22 * dip - 10 * rise,                       // abaixar / erguer o queixo
+    rot: (-hx * 1.4 + 0.9 * dip - 0.6 * rise) * Math.PI / 180,   // inclinar
+    breathe: Math.sin(T * 2.1) * (2 + 2 * awaken), // respiração
+    sway: 3 + 15 * awaken,                         // cabelo ao vento da aura
+  };
+  const disp = faceField(P, head, T);
+
+  // tudo que pertence ao desenho vai para uma camada, que depois é deformada
+  const layer = panelLayer(P), L = layer.getContext('2d');
+  L.setTransform(1, 0, 0, 1, 0, 0);
+  L.clearRect(0, 0, P.w, P.h);
+  drawFull(L, glow(P.img, '#d0102a'), P, 0.95 * awaken);        // aura carmesim
+  const E = prepEyes('p1', P);
+  drawFull(L, E.base, P);
+  drawEyes(L, E, look, lid);
+
   inPanel(ctx, P, cam, () => {
-    // aura carmesim: halo vermelho em volta do traço
-    drawFull(ctx, glow(P.img, '#d0102a'), P, 0.95 * awaken);
-    // olhos: olha para um lado, para o outro, pisca... e abre já vermelho
-    const E = prepEyes('p1', P);
-    drawFull(ctx, E.base, P);
-    const lid = blink(t, [1.05, 4.3, 6.6]);
-    const [lx, ly] = gaze(t, [[0, 0, 0], [1.5, -17, 0], [2.6, 15, -1], [3.5, 0, 0]]);
-    const look = [lx + 1.5 * awaken * noise1(T * 18, 4), ly + 1.2 * awaken * noise1(T * 18, 8)];
-    drawEyes(ctx, E, look, lid);
-    const red = ease.out(seg(t, 4.42, 5.2)) * (1 - 0.85 * lid);
+    drawWarped(ctx, layer, disp);
+    const red = ease.out(seg(t, 4.42, 5.2)) * (1 - 0.85 * Math.max(0, lid - narrow));
     for (const [u, v] of PTS.p1.eyes) {
-      glowDot(ctx, u * P.w + look[0], v * P.h + look[1], 70, '#ff1030', red * 0.95, 'multiply');
-      glowDot(ctx, u * P.w + look[0], v * P.h + look[1], 120, '#ff6070', red * 0.5, 'multiply');
+      const [dx, dy] = disp(u * P.w, v * P.h);
+      const x = u * P.w + look[0] + dx, y = v * P.h + look[1] + dy;
+      glowDot(ctx, x, y, 70, '#ff1030', red * 0.95, 'multiply');
+      glowDot(ctx, x, y, 120, '#ff6070', red * 0.5, 'multiply');
     }
     const g = pulse(t, [5.3], 3.2) * (1 - lid);
-    for (const [u, v] of PTS.p1.eyes) glint(ctx, u * P.w + 8 + look[0], v * P.h - 10, 70 + 50 * g, 0.3, g);
+    for (const [u, v] of PTS.p1.eyes) {
+      const [dx, dy] = disp(u * P.w, v * P.h);
+      glint(ctx, u * P.w + 8 + look[0] + dx, v * P.h - 10 + dy, 70 + 50 * g, 0.3, g);
+    }
   });
   // brasas escuras subindo + vento
   embers(ctx, T, { n: 90, alpha: 0.15 + 0.85 * awaken, color: '#8a0016', core: '#ff3a50', size: 5, vy: -220, seed: 12 });
