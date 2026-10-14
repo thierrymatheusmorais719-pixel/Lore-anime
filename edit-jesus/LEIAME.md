@@ -14,7 +14,7 @@ Render: `python3 render.py` · prévia: `python3 render.py --preview`
 
 | tempo | imagem | entrada |
 |---|---|---|
-| 0.00–1.30 | 4 Ascensão + texto GOD dourado entre nuvens | quadro inclinado abre + zoom radial |
+| 0.00–1.30 | 4 Ascensão + texto GOD dourado entre nuvens | tela cheia: flash de luz, giro leve e zoom que assenta + zoom radial |
 | 1.30–2.20 | 1 Cristo no deserto | zoom blur |
 | 2.20–3.73 | 2 Caminhando sobre as águas | whip |
 | 3.73–4.97 | 3 No barco | zoom |

@@ -386,6 +386,21 @@ def render_frame(f):
         if 0 <= d < 0.25:
             extra *= 1 + 0.025 * (1 - d / 0.25) ** 2
 
+    # ---- intro em tela cheia: entra com flash de luz, leve giro e zoom que assenta
+    if cut == "intro":
+        if lf < 23:
+            e = ease_out(lf / 23, 3)
+            ang, zin = lerp(-5.0, -1.5, e), lerp(1.30, 1.0, e)
+        else:
+            e = ease_out((lf - 23) / (n - 23), 2)
+            ang, zin = lerp(-1.5, 0.0, e), 1.0
+        rot += ang
+        a_ = math.radians(abs(ang))
+        extra *= zin * (math.cos(a_) + W / H * math.sin(a_))  # cobre a tela sem bordas
+        if lf < 7:
+            k_ = 1 - ease_out(lf / 7, 2)
+            flash = max(flash, 0.9 * k_)
+            rblur = max(rblur, 0.14 * k_)
     M = camera_matrix(src, cx, cy, wf, rot, extra, off)
 
     # ---- parallax 2.5D: figura aproxima mais que o fundo
@@ -433,21 +448,7 @@ def render_frame(f):
         p = particles(shot, t, shot["particles"], shot.get("pcol", (1.0, 0.85, 0.55)))
         frame = 1 - (1 - frame) * (1 - p * 0.75)
 
-    # ---- intro: retângulo inclinado que abre sobre o preto
     if cut == "intro":
-        if lf < 9:
-            e = ease_out(lf / 9, 3)
-            sy, ang, sc = lerp(0.015, 1.0, e), lerp(-15, -7, e), 0.92
-        elif lf < 23:
-            e = ease_io((lf - 9) / 14)
-            sy, ang, sc = 1.0, lerp(-7, -3.5, e), lerp(0.92, 1.0, e)
-        else:
-            e = ease_out((lf - 23) / (n - 23), 2)
-            sy, ang, sc = 1.0, lerp(-3.5, 0, e), lerp(1.0, 1.12, e)
-        a = math.radians(ang)
-        R = np.float32([[math.cos(a), -math.sin(a)], [math.sin(a), math.cos(a)]]) @ np.float32([[sc, 0], [0, sc * sy]])
-        Ms = np.hstack([R, (np.float32([W / 2, H / 2]) - R @ np.float32([W / 2, H / 2]))[:, None]])
-        frame = cv2.warpAffine(frame, Ms, (W, H), flags=cv2.INTER_LINEAR, borderValue=(0, 0, 0))
         if lf >= 27:
             rblur = max(rblur, 0.30 * ease_out((lf - 27) / (n - 27), 1.5))
     if cut == "zoom" and shot["f0"] == SHOTS[1]["f0"] and lf < 9:  # saída da intro
