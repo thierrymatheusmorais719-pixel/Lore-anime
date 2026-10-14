@@ -16,13 +16,15 @@ Requisitos: `pip install opencv-contrib-python-headless numpy pillow onnx onnxru
 
 ## Sequência
 
-A música tem pulso de 0,321 s (compasso de 3 tempos = 0,963 s). **Todo corte cai exatamente num pulso**
-(`G(k)` no `render.py`); nos versos, no pulso mais próximo do início da frase cantada. Nos pulsos com
-acento forte do baixo há um pulso de zoom e um leve pulso de luz.
+Os cortes caem **exatamente nas batidas detectadas no áudio** (baixo + percussão): as batidas mais
+fortes viram cortes, e as outras viram pulsos de zoom e de luz com intensidade proporcional à força
+da batida (`PULSES` no `render.py`). Nos versos, o corte fica na batida mais próxima do início da frase.
+O feixe de luz da imagem 13 é animado (`light_beam`): raios que ondulam, faixas de brilho descendo,
+partículas caindo e intensidade que respira e pulsa nas batidas.
 
 | tempo | imagem | letra |
 |---|---|---|
-| 0.00–4.00 | 4 Ascensão + GOD dourado | golden brown texture like sun |
+| 0.00–3.85 | 4 Ascensão + GOD dourado | golden brown texture like sun |
 | 4.00–6.57 | 11 Jesus olhando Jerusalém | lays me down with my mind |
 | 6.57–9.46 | 2 Sobre as águas (noite) | she runs throughout the night |
 | 9.46–11.38 | 12 Tentação no deserto | no need to fight |
