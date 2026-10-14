@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""Edit cristã (~20 s) recriando o estilo do vídeo de referência com as imagens do usuário.
+"""Edit cristã "Golden Brown" (~40 s) com as imagens de Jesus do usuário.
 
-Pipeline: cada imagem é separada em figura (máscara) + fundo (inpaint) para parallax 2.5D,
-animada por uma câmera virtual com cortes sincronizados aos beats da música de referência.
-Efeitos: texto "GOD" dourado 3D entre nuvens (intro), nuvens procedurais em movimento,
-raios de luz, partículas douradas, zoom/whip blur nas transições, flashes, bloom e grão.
+Pipeline: cada imagem (upscale 4x Real-ESRGAN em imagens_hd/) é separada em figura (máscara) +
+fundo (inpaint) para parallax 2.5D e animada por uma câmera virtual. Os cortes seguem o início
+de cada frase da letra e, no trecho instrumental, as batidas do baixo.
+Efeitos: texto "GOD" dourado 3D entre nuvens (intro), nuvens em movimento, raios de luz,
+partículas, light leaks, dissolves com brilho, zoom/whip blur, flashes, bloom e grão.
+Legendas palavra por palavra em ouro marrom (fonte Cinzel), no tempo do vídeo de referência.
 
 Uso:  python3 render.py            -> saida/edit_jesus.mp4
-      python3 render.py --preview  -> folha de contato com 1 frame a cada 0,5 s
+      python3 render.py --preview  -> saida/preview.jpg (1 frame a cada 0,5 s)
+      python3 render.py --frames 10,200
 """
 import math
 import os
@@ -21,15 +24,15 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 W, H, FPS = 1440, 1080, 30
-DUR = 40.5
-NFRAMES = int(round(DUR * FPS))  # 594
-AUDIO = os.path.join(ROOT, "audio", "musica.m4a")
+DUR = 40.4
+NFRAMES = int(round(DUR * FPS))
+AUDIO = os.path.join(ROOT, "audio", "golden_brown.m4a")
 OUT = os.path.join(ROOT, "saida", "edit_jesus.mp4")
+FONT = os.path.join(ROOT, "fontes", "cinzel-latin-700-normal.woff")
 
 cv2.setNumThreads(1)
 
 
-# ---------------------------------------------------------------- utilidades
 def ease_out(x, p=3):
     x = min(max(x, 0.0), 1.0)
     return 1 - (1 - x) ** p
@@ -61,30 +64,6 @@ def fbm(h, w, seed, base=6, octaves=6, persistence=0.55):
         amp *= persistence
     acc /= tot
     return (acc - acc.min()) / (acc.max() - acc.min())
-
-
-# ---------------------------------------------------------------- assets
-def load_image(i):
-    img = cv2.imread(os.path.join(ROOT, "imagens", f"{i}.jpg"))
-    img = cv2.fastNlMeansDenoisingColored(img, None, 3, 3, 5, 15)[:, :, ::-1]  # remove blocos JPEG
-    m = cv2.imread(os.path.join(ROOT, "mascaras", f"{i}.png"), cv2.IMREAD_GRAYSCALE)
-    h, w = img.shape[:2]
-    # upscale 2x Lanczos + nitidez leve (fiel ao original, sem IA generativa)
-    up = cv2.resize(img, (w * 2, h * 2), interpolation=cv2.INTER_LANCZOS4).astype(np.float32) / 255
-    blur = cv2.GaussianBlur(up, (0, 0), 1.6)
-    up = np.clip(up + 0.45 * (up - blur), 0, 1)
-    mk = cv2.resize(m, (w * 2, h * 2), interpolation=cv2.INTER_LINEAR).astype(np.float32) / 255
-    mk = np.clip((mk - 0.08) / 0.8, 0, 1)
-    # fundo sem a figura (inpaint em meia resolução, revelado só nas bordas do parallax)
-    dil = cv2.dilate((m > 20).astype(np.uint8) * 255, np.ones((15, 15), np.uint8))
-    inp = cv2.inpaint(img, dil, 12, cv2.INPAINT_TELEA)
-    inp = cv2.GaussianBlur(inp, (0, 0), 3)
-    inp = cv2.resize(inp, (w * 2, h * 2), interpolation=cv2.INTER_CUBIC).astype(np.float32) / 255
-    dm = cv2.GaussianBlur(cv2.resize(dil, (w * 2, h * 2)).astype(np.float32) / 255, (0, 0), 6)[..., None]
-    bg = up * (1 - dm) + inp * dm
-    ys, xs = np.nonzero(mk > 0.5)
-    bbox = (xs.min(), ys.min(), xs.max(), ys.max())
-    return dict(img=up, mask=mk, bg=bg, w=w * 2, h=h * 2, bbox=bbox)
 
 
 def make_god_text(width_px):
@@ -168,6 +147,41 @@ def make_cloud_texture(w, h, seed, top, soft, tint):
     return np.dstack([np.clip(rgb, 0, 1), d]).astype(np.float32)
 
 
+
+
+# ---------------------------------------------------------------- assets
+def load_image(i):
+    """Carrega a imagem HD (Real-ESRGAN) + máscara + fundo inpaint, em dois níveis de resolução."""
+    hd_path = os.path.join(ROOT, "imagens_hd", f"{i}.png")
+    orig = cv2.imread(os.path.join(ROOT, "imagens", f"{i}.jpg"))
+    if os.path.exists(hd_path):
+        img = cv2.imread(hd_path)
+    else:  # fallback sem a IA: Lanczos 4x
+        img = cv2.resize(orig, None, fx=4, fy=4, interpolation=cv2.INTER_LANCZOS4)
+    img = img[:, :, ::-1].copy()
+    h, w = img.shape[:2]
+    m = cv2.imread(os.path.join(ROOT, "mascaras", f"{i}.png"), cv2.IMREAD_GRAYSCALE)
+    mk = cv2.resize(m, (w, h), interpolation=cv2.INTER_CUBIC).astype(np.float32) / 255
+    mk = np.clip((mk - 0.08) / 0.8, 0, 1)
+    # fundo sem a figura: inpaint na resolução original, revelado só nas bordas do parallax
+    dil = cv2.dilate((m > 20).astype(np.uint8) * 255, np.ones((15, 15), np.uint8))
+    inp = cv2.inpaint(orig, dil, 12, cv2.INPAINT_TELEA)[:, :, ::-1]
+    inp = cv2.GaussianBlur(inp, (0, 0), 3)
+    inp = cv2.resize(inp, (w, h), interpolation=cv2.INTER_CUBIC).astype(np.float32)
+    dm = cv2.GaussianBlur(cv2.resize(dil, (w, h)).astype(np.float32) / 255, (0, 0), 20)[..., None]
+    bg = img.astype(np.float32) * (1 - dm) + inp * dm
+    ys, xs = np.nonzero(mk > 0.5)
+    d = dict(w=w, h=h, bbox=(xs.min(), ys.min(), xs.max(), ys.max()))
+    # nível 0 (HD) e nível 1 (metade) para reduzir sem serrilhado nos planos abertos
+    d["lv"] = []
+    for lvl in range(2):
+        f = 0.5 ** lvl
+        rs = (lambda a: a) if lvl == 0 else (lambda a: cv2.resize(a, (w // 2, h // 2), interpolation=cv2.INTER_AREA))
+        d["lv"].append(dict(img=rs(img), bg=rs(np.clip(bg, 0, 255).astype(np.uint8)),
+                            mask=rs((mk * 255).astype(np.uint8)), f=f))
+    return d
+
+
 print("carregando imagens…", flush=True)
 IMGS = {i: load_image(i) for i in range(1, 10)}
 
@@ -176,13 +190,16 @@ _i4 = IMGS[4]
 GOD = make_god_text(int(_i4["w"] * 0.84))
 _gh, _gw = GOD.shape[:2]
 _gx, _gy = int(_i4["w"] * 0.5 - _gw / 2), int(_i4["h"] * 0.215 - _gh / 2)
-INTRO_BG = _i4["bg"].copy()
+_bg4 = _i4["lv"][0]["bg"].astype(np.float32) / 255
 _sx0, _sy0 = max(0, -_gx), max(0, -_gy)
 _dx0, _dy0 = max(0, _gx), max(0, _gy)
 _dx1, _dy1 = min(_i4["w"], _gx + _gw), min(_i4["h"], _gy + _gh)
 _g = GOD[_sy0:_sy0 + _dy1 - _dy0, _sx0:_sx0 + _dx1 - _dx0]
-_reg = INTRO_BG[_dy0:_dy1, _dx0:_dx1]
-INTRO_BG[_dy0:_dy1, _dx0:_dx1] = _reg * (1 - _g[..., 3:4]) + _g[..., :3] * _g[..., 3:4]
+_reg = _bg4[_dy0:_dy1, _dx0:_dx1]
+_bg4[_dy0:_dy1, _dx0:_dx1] = _reg * (1 - _g[..., 3:4]) + _g[..., :3] * _g[..., 3:4]
+_ib = (np.clip(_bg4, 0, 1) * 255 + 0.5).astype(np.uint8)
+INTRO_BG = [_ib, cv2.resize(_ib, (_i4["w"] // 2, _i4["h"] // 2), interpolation=cv2.INTER_AREA)]
+del _bg4, _reg, _g
 
 CLOUDS = {
     "intro": [make_cloud_texture(W * 2, H, 11, 0.70, 0.22, (1.0, 0.96, 0.9)),
@@ -196,69 +213,221 @@ _rng = np.random.default_rng(5)
 RAY_NOISE = cv2.GaussianBlur(_rng.random((1, 720)).astype(np.float32), (0, 0), 2.2)[0]
 RAY_NOISE = (RAY_NOISE - RAY_NOISE.min()) / (RAY_NOISE.max() - RAY_NOISE.min())
 _YY, _XX = np.mgrid[0:H // 2, 0:W // 2].astype(np.float32)
-VIGNETTE = None
+_yy, _xx = np.mgrid[0:H, 0:W].astype(np.float32)
+_r = np.sqrt(((_xx - W / 2) / (W / 2)) ** 2 + ((_yy - H / 2) / (H / 2)) ** 2) / math.sqrt(2)
+VIGNETTE = (1 - 0.30 * smoothstep(0.45, 1.0, _r))[..., None]
+BOTTOM_SHADE = smoothstep(0.55, 1.0, _yy / H)[..., None]  # escurece a base para as legendas
+del _yy, _xx, _r
 
 
 # ---------------------------------------------------------------- roteiro
 # crop: (cx, cy, w) normalizados na imagem; w = fração da largura enquadrada (4:3)
-# cut:  transição de ENTRADA: zoom | whip | flash | punch | intro
+# cut:  transição de ENTRADA: intro | zoom | dissolve | flash | punch | whip
+# lat:  deslocamento lateral da figura em relação ao fundo (parallax de travelling)
 S = lambda **k: k  # noqa: E731
 SHOTS = [
-    S(img=4, t0=0.00, t1=3.88, a=(0.50, 0.40, 1.00), b=(0.52, 0.32, 0.62), cut="intro",
+    # --- versos (corte no início de cada frase)
+    S(img=4, t0=0.00, t1=3.85, a=(0.50, 0.40, 1.00), b=(0.52, 0.32, 0.62), cut="intro",
       clouds="intro", rays=(0.53, 0.20, 0.30), particles=45, par=0.06),
-    S(img=1, t0=3.88, t1=6.18, a=(0.54, 0.37, 1.00), b=(0.55, 0.33, 0.84), cut="zoom",
-      particles=45, par=0.05),
-    S(img=2, t0=6.18, t1=8.48, a=(0.50, 0.43, 1.00), b=(0.44, 0.38, 0.82), cut="whip", wdir=1,
-      particles=35, par=0.05, pcol=(0.85, 0.95, 1.0)),
-    S(img=3, t0=8.48, t1=10.75, a=(0.50, 0.42, 1.00), b=(0.50, 0.36, 0.82), cut="zoom",
-      rays=(0.52, 0.12, 0.22), particles=40, par=0.05),
-    S(img=5, t0=10.75, t1=13.05, a=(0.52, 0.37, 1.00), b=(0.56, 0.34, 0.82), cut="flash",
-      rays=(0.75, 0.0, 0.22), particles=40, par=0.05),
-    S(img=6, t0=13.05, t1=14.21, a=(0.50, 0.42, 1.00), b=(0.52, 0.39, 0.90), cut="whip", wdir=-1,
-      particles=30, par=0.05),
-    S(img=6, t0=14.21, t1=15.35, a=(0.45, 0.40, 0.64), b=(0.45, 0.39, 0.58), cut="punch", par=0.03),
-    S(img=7, t0=15.35, t1=16.51, a=(0.50, 0.40, 0.86), b=(0.50, 0.42, 1.00), cut="zoom",
-      rays=(0.50, 0.24, 0.30), particles=50, par=0.04),
-    S(img=7, t0=16.51, t1=17.65, a=(0.50, 0.30, 0.60), b=(0.50, 0.29, 0.53), cut="flash",
-      rays=(0.50, 0.24, 0.30), particles=40, par=0.03),
-    S(img=8, t0=17.65, t1=19.95, a=(0.50, 0.34, 1.00), b=(0.50, 0.29, 0.82), cut="whip", wdir=1,
-      rays=(0.48, 0.10, 0.20), particles=40, par=0.05),
-    S(img=9, t0=19.95, t1=22.22, a=(0.50, 0.41, 1.00), b=(0.50, 0.39, 0.88), cut="zoom",
-      clouds="cool", rays=(0.50, 0.36, 0.38), particles=60, par=0.03),
-    S(img=1, t0=22.22, t1=23.38, a=(0.56, 0.32, 0.62), b=(0.56, 0.31, 0.56), cut="whip", wdir=-1,
-      particles=40, par=0.03),
-    S(img=2, t0=23.38, t1=24.52, a=(0.44, 0.33, 0.66), b=(0.42, 0.31, 0.58), cut="zoom",
-      particles=35, par=0.03, pcol=(0.85, 0.95, 1.0)),
-    S(img=5, t0=24.52, t1=25.66, a=(0.52, 0.42, 0.64), b=(0.52, 0.40, 0.56), cut="whip", wdir=1,
-      rays=(0.80, 0.0, 0.24), particles=40, par=0.03),
-    S(img=4, t0=25.66, t1=27.96, a=(0.50, 0.46, 1.00), b=(0.51, 0.39, 0.82), cut="flash",
-      clouds="warm", rays=(0.53, 0.25, 0.34), particles=60, par=0.06),
-    S(img=3, t0=27.96, t1=29.07, a=(0.48, 0.40, 0.58), b=(0.48, 0.38, 0.52), cut="punch",
-      rays=(0.52, 0.10, 0.22), particles=35, par=0.03),
-    S(img=7, t0=29.07, t1=30.23, a=(0.50, 0.29, 0.62), b=(0.50, 0.29, 0.55), cut="flash",
-      rays=(0.50, 0.24, 0.30), particles=30, par=0.03),
-    S(img=8, t0=30.23, t1=32.53, a=(0.50, 0.25, 0.66), b=(0.50, 0.23, 0.56), cut="zoom",
-      rays=(0.48, 0.10, 0.20), particles=40, par=0.04),
-    S(img=5, t0=32.53, t1=34.83, a=(0.53, 0.40, 0.90), b=(0.53, 0.40, 0.72), cut="flash",
-      rays=(0.78, 0.0, 0.26), particles=45, par=0.04),
-    S(img=9, t0=34.83, t1=40.50, a=(0.50, 0.36, 0.74), b=(0.50, 0.41, 1.00), cut="flash",
-      clouds="cool", rays=(0.50, 0.36, 0.45), particles=70, par=0.04, fade=2.5),
+    S(img=1, t0=3.85, t1=6.60, a=(0.53, 0.38, 1.00), b=(0.55, 0.33, 0.80), cut="zoom",
+      particles=45, par=0.07, lat=0.012),
+    S(img=2, t0=6.60, t1=9.43, a=(0.52, 0.44, 1.00), b=(0.44, 0.38, 0.80), cut="dissolve",
+      particles=35, par=0.07, lat=-0.012, pcol=(0.85, 0.95, 1.0)),
+    S(img=5, t0=9.43, t1=11.43, a=(0.50, 0.38, 1.00), b=(0.55, 0.35, 0.82), cut="flash",
+      rays=(0.75, 0.0, 0.24), particles=40, par=0.06, lat=0.010),
+    S(img=8, t0=11.43, t1=13.27, a=(0.50, 0.36, 1.00), b=(0.50, 0.30, 0.84), cut="dissolve",
+      rays=(0.48, 0.10, 0.22), particles=40, par=0.07, lat=-0.010),
+    S(img=7, t0=13.27, t1=15.44, a=(0.50, 0.33, 0.66), b=(0.50, 0.29, 0.54), cut="zoom",
+      rays=(0.50, 0.24, 0.32), particles=50, par=0.04),
+    # --- instrumental (cortes nas batidas do baixo)
+    S(img=3, t0=15.44, t1=17.35, a=(0.50, 0.42, 1.00), b=(0.50, 0.37, 0.84), cut="flash",
+      rays=(0.52, 0.12, 0.24), particles=40, par=0.07, lat=0.010),
+    S(img=6, t0=17.35, t1=19.57, a=(0.50, 0.43, 1.00), b=(0.52, 0.39, 0.86), cut="dissolve",
+      particles=30, par=0.07, lat=-0.012),
+    S(img=6, t0=19.57, t1=21.51, a=(0.45, 0.41, 0.64), b=(0.45, 0.39, 0.56), cut="punch", par=0.04),
+    S(img=9, t0=21.51, t1=23.63, a=(0.50, 0.41, 1.00), b=(0.50, 0.39, 0.88), cut="zoom",
+      clouds="cool", rays=(0.50, 0.36, 0.38), particles=60, par=0.04),
+    S(img=1, t0=23.63, t1=25.72, a=(0.56, 0.33, 0.64), b=(0.56, 0.31, 0.55), cut="dissolve",
+      particles=40, par=0.04, lat=0.008),
+    S(img=2, t0=25.72, t1=27.96, a=(0.44, 0.34, 0.68), b=(0.41, 0.31, 0.57), cut="whip", wdir=1,
+      particles=35, par=0.04, lat=-0.008, pcol=(0.85, 0.95, 1.0)),
+    S(img=5, t0=27.96, t1=29.88, a=(0.52, 0.42, 0.66), b=(0.52, 0.40, 0.56), cut="dissolve",
+      rays=(0.80, 0.0, 0.26), particles=40, par=0.04, lat=0.008),
+    S(img=3, t0=29.88, t1=31.78, a=(0.48, 0.41, 0.60), b=(0.48, 0.38, 0.52), cut="zoom",
+      rays=(0.52, 0.10, 0.24), particles=35, par=0.04),
+    S(img=7, t0=31.78, t1=33.69, a=(0.50, 0.40, 0.86), b=(0.50, 0.42, 1.00), cut="flash",
+      rays=(0.50, 0.24, 0.32), particles=50, par=0.05),
+    S(img=8, t0=33.69, t1=35.92, a=(0.50, 0.25, 0.66), b=(0.50, 0.23, 0.55), cut="dissolve",
+      rays=(0.48, 0.10, 0.22), particles=40, par=0.04, lat=-0.008),
+    # --- volta da letra
+    S(img=4, t0=35.92, t1=37.57, a=(0.50, 0.46, 1.00), b=(0.51, 0.40, 0.84), cut="flash",
+      clouds="warm", rays=(0.53, 0.25, 0.36), particles=60, par=0.07),
+    S(img=7, t0=37.57, t1=38.72, a=(0.50, 0.30, 0.62), b=(0.50, 0.29, 0.54), cut="zoom",
+      rays=(0.50, 0.24, 0.32), particles=40, par=0.03),
+    S(img=9, t0=38.72, t1=40.40, a=(0.50, 0.37, 0.76), b=(0.50, 0.41, 1.00), cut="dissolve",
+      clouds="cool", rays=(0.50, 0.36, 0.45), particles=70, par=0.04, fade=1.4),
 ]
-# batidas fortes dentro dos planos (fora dos cortes) que recebem um pulso de zoom
-BEATS = [4.27, 5.02, 6.94, 7.34, 9.26, 9.61, 11.91, 13.84, 18.04, 18.44, 18.81, 21.08,
-         26.80, 27.59, 30.23, 31.37, 33.67]
+# batidas do baixo (≈ 1 por compasso) dentro dos planos: pulso de zoom suave
+BEATS = [0.79, 1.89, 2.89, 4.83, 5.78, 7.70, 8.65, 10.50, 12.33, 14.44, 16.38, 18.30,
+         20.41, 22.50, 24.74, 26.67, 28.92, 30.82, 32.72, 34.84, 36.90, 37.88]
 for k, s in enumerate(SHOTS):
     s["f0"], s["f1"] = int(round(s["t0"] * FPS)), int(round(s["t1"] * FPS))
     s["next"] = SHOTS[k + 1]["cut"] if k + 1 < len(SHOTS) else None
     s["next_dir"] = SHOTS[k + 1].get("wdir", 1) if k + 1 < len(SHOTS) else 1
     s["seed"] = 100 + k
+    s["idx"] = k
+XF = 8  # meia duração do dissolve, em frames
+
+# letra (tempo de entrada de cada palavra, tirado do vídeo de referência)
+LYRICS = [
+    dict(end=3.70, rows=[[("golden", 0.77), ("brown", 0.93)],
+                         [("texture", 1.60), ("like", 2.43), ("sun", 2.77)]]),
+    dict(end=6.42, rows=[[("lays", 3.93), ("me", 4.60), ("down", 4.77)],
+                         [("with", 5.60), ("my", 6.10), ("mind", 6.27)]]),
+    dict(end=9.25, rows=[[("she", 6.60), ("runs", 6.93), ("throughout", 7.60)],
+                         [("the", 8.35), ("night", 8.43)]]),
+    dict(end=11.25, rows=[[("no", 9.43), ("need", 9.93), ("to", 10.27), ("fight", 10.43)]]),
+    dict(end=15.50, rows=[[("never", 11.43), ("a", 11.93), ("frown", 12.27)],
+                          [("with", 13.27), ("golden", 13.77), ("brown", 14.43)]]),
+    dict(end=40.30, rows=[[("golden", 35.97), ("brown", 36.97)],
+                          [("finer", 37.47), ("temptress", 38.63), ("through", 39.80)]]),
+]
 
 
-# ---------------------------------------------------------------- render de um shot
+# ---------------------------------------------------------------- legendas em ouro marrom
+FS = 66  # tamanho da fonte
+OUT_T = 0.16  # saída da linha (s), antes da frase seguinte
+_WORD_CACHE = {}
+
+
+def word_sprite(word):
+    """RGBA float da palavra: gradiente ouro→marrom, brilho especular, contorno e sombra."""
+    if word in _WORD_CACHE:
+        return _WORD_CACHE[word]
+    ss = 2
+    font = ImageFont.truetype(FONT, FS * ss)
+    bb = font.getbbox(word)
+    pad = 26 * ss
+    cw, ch = bb[2] - bb[0] + 2 * pad, int(FS * ss * 1.25) + 2 * pad
+    pil = Image.new("L", (cw, ch), 0)
+    top = pad + int(FS * ss * 0.1)
+    ImageDraw.Draw(pil).text((pad - bb[0], top - font.getbbox("Hg")[1]), word, font=font, fill=255)
+    m = np.asarray(pil, np.float32) / 255
+    m = cv2.resize(m, (cw // ss, ch // ss), interpolation=cv2.INTER_AREA)
+    ch, cw = m.shape
+    yy = np.linspace(0, 1, ch, dtype=np.float32)[:, None]
+    t0, t1 = (top / ss) / ch, (top / ss + FS * 0.95) / ch
+    t = np.clip((yy - t0) / (t1 - t0), 0, 1)[..., None]
+    # ouro marrom: dourado claro em cima, bronze/marrom embaixo, faixa de reflexo no meio
+    c_top = np.array([1.00, 0.88, 0.58], np.float32)
+    c_mid = np.array([0.86, 0.60, 0.26], np.float32)
+    c_bot = np.array([0.55, 0.33, 0.14], np.float32)
+    grad = np.where(t < 0.5, c_top + (c_mid - c_top) * (t / 0.5), c_mid + (c_bot - c_mid) * ((t - 0.5) / 0.5))
+    band = np.exp(-((t - 0.38) / 0.06) ** 2) * 0.22
+    face = np.clip(grad + band, 0, 1)
+    face = np.broadcast_to(face, (ch, cw, 3))
+    # bisel leve
+    hgt = cv2.GaussianBlur(m, (0, 0), 1.2)
+    gy = cv2.Sobel(hgt, cv2.CV_32F, 0, 1, ksize=3)
+    face = np.clip(face * (1 - 0.25 * np.clip(gy, 0, 1)[..., None]) + 0.18 * np.clip(-gy, 0, 1)[..., None], 0, 1)
+    # contorno marrom escuro
+    outline = cv2.dilate(m, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
+    outline = cv2.GaussianBlur(outline, (0, 0), 0.7)
+    ocol = np.array([0.20, 0.11, 0.04], np.float32)
+    # sombra projetada suave
+    sh = cv2.GaussianBlur(np.roll(np.roll(outline, 4, 0), 2, 1), (0, 0), 6) * 0.75
+    a_out = np.clip(np.maximum(outline, sh), 0, 1)
+    rgb = np.broadcast_to(ocol, (ch, cw, 3)).copy()  # contorno/sombra
+    a = m[..., None]
+    rgb = rgb * (1 - a) + face * a
+    alpha = np.clip(a_out + m * (1 - a_out), 0, 1)
+    glow = cv2.GaussianBlur(m, (0, 0), 9)
+    spr = dict(rgba=np.dstack([rgb, alpha]).astype(np.float32), glow=glow, w=cw, h=ch,
+               adv=(bb[2] - bb[0]) / ss)
+    _WORD_CACHE[word] = spr
+    return spr
+
+
+def layout_line(line):
+    """Posição (x do centro, y do topo) de cada palavra; bloco centralizado no terço inferior."""
+    space = FS * 0.42
+    row_h = FS * 1.18
+    rows = line["rows"]
+    y_bottom = H * 0.905
+    y0 = y_bottom - row_h * len(rows)
+    out = []
+    for r, row in enumerate(rows):
+        sprites = [word_sprite(w) for w, _ in row]
+        total = sum(s["adv"] for s in sprites) + space * (len(row) - 1)
+        x = W / 2 - total / 2
+        for (w, tw), s in zip(row, sprites):
+            out.append(dict(word=w, t=tw, cx=x + s["adv"] / 2, y=y0 + r * row_h, spr=s, row=r,
+                            step=s["adv"] + space))
+            x += s["adv"] + space
+    return out
+
+
+LAYOUT = [(ln, layout_line(ln)) for ln in LYRICS]
+
+
+def paste(frame, rgba, cx, cy, scale, alpha):
+    """Cola um sprite RGBA centralizado em (cx, cy) com escala e opacidade."""
+    h, w = rgba.shape[:2]
+    if scale != 1.0:
+        rgba = cv2.resize(rgba, (max(1, int(w * scale)), max(1, int(h * scale))), interpolation=cv2.INTER_LINEAR)
+        h, w = rgba.shape[:2]
+    x0, y0 = int(round(cx - w / 2)), int(round(cy - h / 2))
+    sx0, sy0 = max(0, -x0), max(0, -y0)
+    dx0, dy0 = max(0, x0), max(0, y0)
+    dx1, dy1 = min(W, x0 + w), min(H, y0 + h)
+    if dx1 <= dx0 or dy1 <= dy0:
+        return
+    s = rgba[sy0:sy0 + dy1 - dy0, sx0:sx0 + dx1 - dx0]
+    a = s[..., 3:4] * alpha
+    reg = frame[dy0:dy1, dx0:dx1]
+    frame[dy0:dy1, dx0:dx1] = reg * (1 - a) + s[..., :3] * a
+
+
+def draw_lyrics(frame, t):
+    for line, words in LAYOUT:
+        start = words[0]["t"]
+        if not (start - 0.05 <= t < line["end"] + OUT_T):
+            continue
+        out = ease_io((t - line["end"]) / OUT_T) if t > line["end"] else 0.0
+        # cada linha fica centralizada nas palavras já visíveis e desliza ao surgir a próxima
+        shift = {}
+        for wd in words:
+            e = ease_io((t - wd["t"]) / 0.32)
+            shift[wd["row"]] = shift.get(wd["row"], 0.0) + wd["step"] / 2 * (1 - e)
+        # base levemente escurecida para leitura
+        vis = min(1.0, (t - start) / 0.3) * (1 - out)
+        frame *= 1 - 0.28 * vis * BOTTOM_SHADE
+        for wd in words:
+            age = t - wd["t"]
+            if age < 0:
+                continue
+            e = ease_out(age / 0.32, 3)
+            alpha = e * (1 - out)
+            scale = lerp(1.18, 1.0, e)
+            dy = lerp(16, 0, e) - 10 * out
+            spr = wd["spr"]
+            cy = wd["y"] + spr["h"] / 2 + dy
+            # brilho dourado na palavra que acabou de ser cantada
+            if age < 0.9:
+                g = spr["glow"] * (0.55 * (1 - age / 0.9)) * alpha
+                hh, ww = g.shape
+                x0, y0 = int(wd["cx"] + shift[wd["row"]] - ww / 2), int(cy - hh / 2)
+                ys, xs = slice(max(0, y0), min(H, y0 + hh)), slice(max(0, x0), min(W, x0 + ww))
+                gs = g[ys.start - y0:ys.stop - y0, xs.start - x0:xs.stop - x0][..., None]
+                frame[ys, xs] = 1 - (1 - frame[ys, xs]) * (1 - gs * np.array([1.0, 0.75, 0.35], np.float32))
+            cxw = wd["cx"] + shift[wd["row"]]
+            paste(frame, spr["rgba"], cxw, cy, scale, alpha)
+
+
+# ---------------------------------------------------------------- câmera e efeitos
 def camera_matrix(src, cx, cy, wf, rot_deg, extra_scale, off):
     cw = min(wf, 1.0, src["h"] / (src["w"] * 0.75)) * src["w"]
     ch = cw * 0.75
-    # mantém o enquadramento dentro da imagem (margem p/ rotação/escala)
     px, py = cx * src["w"], cy * src["h"]
     px = min(max(px, cw / 2), src["w"] - cw / 2)
     py = min(max(py, ch / 2), src["h"] - ch / 2)
@@ -274,6 +443,18 @@ def apply_pt(M, x, y):
     return M[0, 0] * x + M[0, 1] * y + M[0, 2], M[1, 0] * x + M[1, 1] * y + M[1, 2]
 
 
+def warp_level(src, M, key, intro=False):
+    """Escolhe o nível de resolução adequado à escala (evita serrilhado) e aplica o warp."""
+    scale = math.hypot(M[0, 0], M[1, 0])
+    lv = 1 if scale < 0.6 else 0
+    L = src["lv"][lv]
+    Ml = M.copy()
+    Ml[:, :2] /= L["f"]
+    arr = INTRO_BG[lv] if intro else L[key]
+    interp = cv2.INTER_LINEAR if key == "mask" else cv2.INTER_CUBIC
+    return cv2.warpAffine(arr, Ml, (W, H), flags=interp, borderMode=cv2.BORDER_REFLECT)
+
+
 def radial_blur(img, k, cx, cy, n=10):
     if k <= 1e-3:
         return img
@@ -284,7 +465,6 @@ def radial_blur(img, k, cx, cy, n=10):
         M = np.float32([[s, 0, (1 - s) * cx / 2], [0, s, (1 - s) * cy / 2]])
         acc += cv2.warpAffine(sm, M, (W // 2, H // 2), borderMode=cv2.BORDER_REFLECT)
     bl = cv2.resize(acc / n, (W, H), interpolation=cv2.INTER_LINEAR)
-    # centro mais nítido, bordas borradas (como na referência)
     r = np.sqrt(((_XX * 2 - cx) / W) ** 2 + ((_YY * 2 - cy) / H) ** 2)
     wgt = cv2.resize(np.clip(r * 2.2, 0, 1) * min(1.0, k * 12), (W, H))[..., None]
     return img * (1 - wgt) + bl * wgt
@@ -302,7 +482,6 @@ def dir_blur(img, length):
 
 
 def god_rays(ox, oy, t, seed, strength):
-    """Raios de luz volumétricos (meia resolução, espaço de tela)."""
     ang = np.arctan2(_YY - oy / 2, _XX - ox / 2)
     r = np.sqrt((_XX - ox / 2) ** 2 + (_YY - oy / 2) ** 2) / (H / 2)
     u = (ang / (2 * math.pi) + 0.5) * 720 + t * 6 + seed * 37
@@ -311,24 +490,24 @@ def god_rays(ox, oy, t, seed, strength):
     nz = RAY_NOISE[i0 % 720] * (1 - fr) + RAY_NOISE[(i0 + 1) % 720] * fr
     rays = smoothstep(0.35, 1.0, nz) * np.exp(-r * 1.25) * smoothstep(0.0, 0.25, r)
     glow = np.exp(-r * 4.0) * 0.7
-    v = (rays * 0.9 + glow) * strength
+    v = (rays * 0.9 + glow) * strength * (0.9 + 0.1 * math.sin(t * 1.3 + seed))
     v = cv2.resize(v, (W, H), interpolation=cv2.INTER_LINEAR)
     return v[..., None] * np.array([1.0, 0.86, 0.6], np.float32)
 
 
-def particles(shot, t, count, col):
-    rng = np.random.default_rng(shot["seed"])
+def particles(seed, t, count, col):
+    rng = np.random.default_rng(seed)
     x = rng.random(count) * W
     y = rng.random(count) * H
-    z = rng.random(count) ** 1.5  # profundidade
-    sp = 25 + 70 * z
+    z = rng.random(count) ** 1.5
+    sp = 18 + 55 * z
     ph = rng.random(count) * 6.28
     canvas = np.zeros((H // 2, W // 2), np.float32)
     big = np.zeros_like(canvas)
     for j in range(count):
-        px = (x[j] + 18 * math.sin(t * 0.9 + ph[j]) + t * 10 * (z[j] - 0.4)) % W
+        px = (x[j] + 22 * math.sin(t * 0.7 + ph[j]) + t * 8 * (z[j] - 0.4)) % W
         py = (y[j] - sp[j] * t) % H
-        tw = 0.55 + 0.45 * math.sin(t * 3.0 + ph[j] * 3)
+        tw = 0.55 + 0.45 * math.sin(t * 2.4 + ph[j] * 3)
         rad = 0.6 + 2.6 * z[j]
         tgt = big if z[j] > 0.75 else canvas
         cv2.circle(tgt, (int(px / 2), int(py / 2)), max(1, int(round(rad))), float(tw * (0.4 + 0.6 * z[j])), -1, cv2.LINE_AA)
@@ -337,60 +516,75 @@ def particles(shot, t, count, col):
     return np.clip(lay, 0, 1)[..., None] * np.array(col, np.float32)
 
 
-def render_frame(f):
-    shot = next(s for s in SHOTS if s["f0"] <= f < s["f1"])
+def light_leak(t, strength):
+    """Vazamentos de luz quentes que passeiam pelas bordas (película)."""
+    acc = np.zeros((H // 2, W // 2), np.float32)
+    for k, (sx, sy, ph, rr) in enumerate([(0.13, 0.09, 0.0, 0.55), (0.08, 0.15, 2.1, 0.45)]):
+        cx = W / 4 + math.cos(t * sx * 2 * math.pi / 3 + ph) * W * 0.42 / 2 * 1.9
+        cy = H / 4 + math.sin(t * sy * 2 * math.pi / 3 + ph * 1.3) * H * 0.40 / 2 * 1.9
+        d = ((_XX - cx) / (W * rr / 2)) ** 2 + ((_YY - cy) / (H * rr / 2)) ** 2
+        acc += np.exp(-d * 2.2) * (0.7 + 0.3 * math.sin(t * 0.9 + k * 2))
+    acc = cv2.resize(acc, (W, H), interpolation=cv2.INTER_LINEAR)[..., None]
+    return acc * strength * np.array([1.0, 0.62, 0.28], np.float32)
+
+
+# ---------------------------------------------------------------- render de um plano
+def render_shot(shot, f):
     src = IMGS[shot["img"]]
     n = shot["f1"] - shot["f0"]
-    lf = f - shot["f0"]  # frame local
-    u = lf / max(n - 1, 1)
+    lf = f - shot["f0"]
+    u = lf / max(n - 1, 1)  # pode passar de [0,1] durante dissolves
     t = f / FPS
-    # progresso: impacto rápido no início + deriva contínua
-    prog = 0.4 * ease_out(u, 4) + 0.6 * ease_io(u)
-    if shot["cut"] == "intro":
-        # quase parado enquanto o quadro abre; depois um zoom acelerado no rosto
-        hold = n - 16  # o zoom no rosto acontece nos últimos ~0,5 s, antes da batida
+    cut = shot["cut"]
+    prog = 0.3 * ease_out(u, 3) + 0.7 * u
+    if cut == "intro":
+        hold = n - 16
         prog = 0.12 * ease_io(min(lf / hold, 1.0)) + 0.88 * max(0.0, (lf - hold) / 15) ** 2
     cx, cy, wf = (lerp(shot["a"][i], shot["b"][i], prog) for i in range(3))
 
-    extra, off, rblur, wblur, flash = 1.0, [0.0, 0.0], 0.0, 0.0, 0.0
-    rot = 0.0
-    cut = shot["cut"]
-    # ---- transição de entrada
-    if cut == "zoom" and lf < 7:
-        e = 1 - ease_out(lf / 7, 2)
-        extra *= 1 + 0.22 * e
-        rblur = max(rblur, 0.16 * e)
-    elif cut == "whip" and lf < 6:
-        e = 1 - ease_out(lf / 6, 3)
-        off[0] += shot.get("wdir", 1) * W * 0.30 * e
-        wblur = max(wblur, 160 * e)
-        rot += shot.get("wdir", 1) * 1.5 * e
-    elif cut == "flash" and lf < 8:
+    # micro-movimento de câmera na mão (bem sutil)
+    sd = shot["seed"]
+    off = [5 * math.sin(t * 0.73 + sd) + 3 * math.sin(t * 1.9 + sd * 2),
+           4 * math.sin(t * 0.61 + sd * 3) + 2 * math.sin(t * 1.7 + sd)]
+    rot = 0.22 * math.sin(t * 0.45 + sd)
+    extra, rblur, wblur, flash = 1.0, 0.0, 0.0, 0.0
+
+    if cut == "zoom" and 0 <= lf < 8:
         e = 1 - ease_out(lf / 8, 2)
-        flash = 0.85 * e
-        extra *= 1 + 0.08 * e
-    elif cut == "punch" and lf < 5:
-        extra *= 1 + 0.10 * (1 - ease_out(lf / 5, 2))
-    # ---- transição de saída (antecipa o próximo corte)
+        extra *= 1 + 0.18 * e
+        rblur = max(rblur, 0.13 * e)
+    elif cut == "whip" and 0 <= lf < 7:
+        e = 1 - ease_out(lf / 7, 3)
+        off[0] += shot.get("wdir", 1) * W * 0.26 * e
+        wblur = max(wblur, 130 * e)
+    elif cut == "flash" and 0 <= lf < 9:
+        e = 1 - ease_out(lf / 9, 2)
+        flash = 0.7 * e
+        extra *= 1 + 0.06 * e
+    elif cut == "punch" and 0 <= lf < 6:
+        extra *= 1 + 0.08 * (1 - ease_out(lf / 6, 2))
+    elif cut == "dissolve" and lf < XF:
+        e = 1 - ease_io((lf + XF) / (2 * XF))
+        extra *= 1 + 0.05 * e  # chega com um leve zoom-out
     rem = n - 1 - lf
     nxt = shot["next"]
-    if nxt == "zoom" and rem < 3:
+    if nxt == "zoom" and 0 <= rem < 3:
         e = ease_out((3 - rem) / 3, 2)
-        extra *= 1 + 0.12 * e
-        rblur = max(rblur, 0.12 * e)
-    elif nxt == "whip" and rem < 3:
+        extra *= 1 + 0.10 * e
+        rblur = max(rblur, 0.10 * e)
+    elif nxt == "whip" and 0 <= rem < 3:
         e = ease_out((3 - rem) / 3, 2) ** 1.5
-        off[0] -= shot["next_dir"] * W * 0.25 * e
-        wblur = max(wblur, 140 * e)
-    elif nxt == "flash" and rem < 2:
-        flash = max(flash, 0.35 * (2 - rem) / 2)
-    # pulso nas batidas
+        off[0] -= shot["next_dir"] * W * 0.22 * e
+        wblur = max(wblur, 120 * e)
+    elif nxt == "flash" and 0 <= rem < 2:
+        flash = max(flash, 0.3 * (2 - rem) / 2)
+    elif nxt == "dissolve" and rem < XF:
+        extra *= 1 + 0.04 * ease_io((XF - rem) / (2 * XF))
     for b in BEATS:
         d = t - b
-        if 0 <= d < 0.25:
-            extra *= 1 + 0.018 * (1 - d / 0.25) ** 2
+        if 0 <= d < 0.35:
+            extra *= 1 + 0.014 * (1 - d / 0.35) ** 2
 
-    # ---- intro em tela cheia: entra com flash de luz, leve giro e zoom que assenta
     if cut == "intro":
         if lf < 23:
             e = ease_out(lf / 23, 3)
@@ -399,133 +593,148 @@ def render_frame(f):
             e = ease_io(min(1.0, (lf - 23) / 40))
             ang, zin = lerp(-1.5, 0.0, e), 1.0
         rot += ang
-        a_ = math.radians(abs(ang))
-        extra *= zin * (math.cos(a_) + W / H * math.sin(a_))  # cobre a tela sem bordas
+        a_ = math.radians(abs(rot))
+        extra *= zin * (math.cos(a_) + W / H * math.sin(a_))
         if lf < 7:
             k_ = 1 - ease_out(lf / 7, 2)
             flash = max(flash, 0.9 * k_)
             rblur = max(rblur, 0.14 * k_)
+        if lf >= n - 12:
+            rblur = max(rblur, 0.30 * ease_out((lf - (n - 12)) / 12, 1.5))
+    if shot["idx"] == 1 and lf < 9:  # saída da intro
+        rblur = max(rblur, 0.30 * (1 - ease_out(lf / 9, 2)))
+    # margem para o micro-movimento não revelar bordas
+    extra *= 1.012
+
     M = camera_matrix(src, cx, cy, wf, rot, extra, off)
 
-    # ---- parallax 2.5D: figura aproxima mais que o fundo
+    # parallax 2.5D: a figura aproxima mais que o fundo e desliza lateralmente
     x0, y0, x1, y1 = src["bbox"]
     floating = shot["img"] in (4, 9)
     pvx, pvy = apply_pt(M, (x0 + x1) / 2, (y0 + y1) / 2 if floating else y1)
     k = 1 + shot.get("par", 0.04) * ease_io(u)
-    Pm = np.float32([[k, 0, (1 - k) * pvx], [0, k, (1 - k) * pvy]])
+    lat = shot.get("lat", 0.0) * (u - 0.5) * W
+    Pm = np.float32([[k, 0, (1 - k) * pvx + lat], [0, k, (1 - k) * pvy]])
     Mf = (Pm[:, :2] @ M).astype(np.float32)
     Mf[:, 2] += Pm[:, 2]
 
-    bgsrc = INTRO_BG if cut == "intro" else src["bg"]
-    flags = dict(flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT)
-    bg = cv2.warpAffine(bgsrc, M, (W, H), **flags)
-    fg = cv2.warpAffine(src["img"], Mf, (W, H), **flags)
-    mk = cv2.warpAffine(src["mask"], Mf, (W, H), flags=cv2.INTER_LINEAR)[..., None]
+    bg = warp_level(src, M, "bg", intro=(cut == "intro")).astype(np.float32) / 255
+    fg = warp_level(src, Mf, "img").astype(np.float32) / 255
+    mk = (warp_level(src, Mf, "mask").astype(np.float32) / 255)[..., None]
+
     rays = None
     if shot.get("rays"):
         rx, ry, rs = shot["rays"]
         ox, oy = apply_pt(M, rx * src["w"], ry * src["h"])
-        rays = np.clip(god_rays(ox, oy, t, shot["seed"], rs), 0, 1)
-        bg = 1 - (1 - bg) * (1 - rays)  # raios atrás da figura
+        rays = np.clip(god_rays(ox, oy, t, sd, rs), 0, 1)
+        bg = 1 - (1 - bg) * (1 - rays)
     frame = bg * (1 - mk) + fg * mk
 
-    # ---- nuvens em movimento (na frente da figura)
     if shot.get("clouds"):
         tex = CLOUDS[shot["clouds"]]
-        rise = (1 - ease_out(u, 2)) * 60 if shot["clouds"] != "intro" else 0
-        for li, (layer, spd) in enumerate(zip(tex, (40, 75))):
+        rise = (1 - ease_out(min(max(u, 0), 1), 2)) * 60 if shot["clouds"] != "intro" else 0
+        for li, (layer, spd) in enumerate(zip(tex, (32, 60))):
             x = int((t * spd + li * 300) % W)
             sl = layer[:, x:x + W]
-            if rise:
-                dy = int(rise * (li + 1) * 0.6)  # nuvens sobem ao entrar na cena
-                if dy > 0:
-                    sl = np.concatenate([np.zeros_like(sl[:dy]), sl[:-dy]], axis=0)
+            dy = int(rise * (li + 1) * 0.6)
+            if dy > 0:
+                sl = np.concatenate([np.zeros_like(sl[:dy]), sl[:-dy]], axis=0)
             a = sl[..., 3:4] * (0.95 if shot["clouds"] == "intro" else 0.8)
             frame = frame * (1 - a) + sl[..., :3] * a
 
-    # ---- raios de luz
-    if rays is not None:  # leve névoa luminosa também na frente
+    if rays is not None:
         frame = 1 - (1 - frame) * (1 - rays * 0.25)
-
-    # ---- partículas douradas
     if shot.get("particles"):
-        p = particles(shot, t, shot["particles"], shot.get("pcol", (1.0, 0.85, 0.55)))
-        frame = 1 - (1 - frame) * (1 - p * 0.75)
+        p = particles(sd, t, shot["particles"], shot.get("pcol", (1.0, 0.85, 0.55)))
+        frame = 1 - (1 - frame) * (1 - p * 0.7)
 
-    if cut == "intro":
-        if lf >= n - 12:
-            rblur = max(rblur, 0.30 * ease_out((lf - (n - 12)) / 12, 1.5))
-    if cut == "zoom" and shot["f0"] == SHOTS[1]["f0"] and lf < 9:  # saída da intro
-        rblur = max(rblur, 0.30 * (1 - ease_out(lf / 9, 2)))
-
-    # ---- blur de transição
     if rblur > 0:
         fx, fy = apply_pt(Mf, (x0 + x1) / 2, y0 + (y1 - y0) * 0.25)
         fx, fy = min(max(fx, W * 0.3), W * 0.7), min(max(fy, H * 0.3), H * 0.7)
         frame = radial_blur(frame, rblur, fx, fy)
     if wblur > 0:
         frame = dir_blur(frame, wblur)
+    return frame, flash
+
+
+def render_frame(f):
+    t = f / FPS
+    k = next(i for i, s in enumerate(SHOTS) if s["f0"] <= f < s["f1"])
+    shot = SHOTS[k]
+    frame, flash = render_shot(shot, f)
+    # dissolve com brilho: mistura o plano anterior/seguinte em volta do corte
+    other, w = None, 0.0
+    if shot["cut"] == "dissolve" and f - shot["f0"] < XF and k > 0:
+        other = SHOTS[k - 1]
+        w = 1 - ease_io((f - shot["f0"] + XF) / (2 * XF))
+    elif shot["next"] == "dissolve" and shot["f1"] - f <= XF:
+        other = SHOTS[k + 1]
+        w = ease_io((f - (shot["f1"] - XF)) / (2 * XF))
+    leak = 0.10
+    if other is not None:
+        o, _ = render_shot(other, f)
+        frame = frame * (1 - w) + o * w
+        peak = 1 - abs(2 * w - 1) if shot["cut"] != "dissolve" else 1 - abs(2 * (1 - w) - 1)
+        frame = 1 - (1 - frame) * (1 - 0.18 * peak * np.array([1.0, 0.85, 0.6], np.float32))
+        leak += 0.25 * peak
+    frame = 1 - (1 - frame) * (1 - light_leak(t, leak))
 
     frame = grade(frame, f)
     if flash > 0:
-        frame = frame + (1 - frame) * flash * np.array([1.0, 0.95, 0.85], np.float32)
+        frame = frame + (1 - frame) * flash * np.array([1.0, 0.94, 0.82], np.float32)
     if shot.get("fade"):
+        n, lf = shot["f1"] - shot["f0"], f - shot["f0"]
         nf = int(shot["fade"] * FPS)
         e = max(0.0, (lf - (n - nf)) / (nf - 1))
-        frame = frame + (1 - frame) * (ease_io(e) * 0.92) * np.array([1.0, 0.94, 0.82], np.float32)
-        frame = frame * (1 - ease_io(max(0.0, (lf - (n - 12)) / 11)))
+        frame = frame + (1 - frame) * (ease_io(e) * 0.85) * np.array([1.0, 0.94, 0.82], np.float32)
+    draw_lyrics(frame, t)
+    if shot.get("fade"):
+        frame = frame * (1 - ease_io(max(0.0, (f - (shot["f1"] - 10)) / 9)))
     return (np.clip(frame, 0, 1) * 255 + 0.5).astype(np.uint8)
 
 
 def grade(fr, f):
-    global VIGNETTE
-    if VIGNETTE is None:
-        yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
-        r = np.sqrt(((xx - W / 2) / (W / 2)) ** 2 + ((yy - H / 2) / (H / 2)) ** 2) / math.sqrt(2)
-        VIGNETTE = (1 - 0.32 * smoothstep(0.45, 1.0, r))[..., None]
-    # bloom suave nas altas luzes (atmosfera celestial)
     lum = fr.mean(2, keepdims=True)
     hi = fr * smoothstep(0.62, 1.0, lum)
     sm = cv2.resize(hi, (W // 4, H // 4), interpolation=cv2.INTER_AREA)
     bloom = cv2.resize(cv2.GaussianBlur(sm, (0, 0), 9), (W, H), interpolation=cv2.INTER_LINEAR)
-    fr = 1 - (1 - fr) * (1 - bloom * 0.35)
-    # tom dourado leve nas altas luzes, contraste suave
+    fr = 1 - (1 - fr) * (1 - bloom * 0.32)
     fr = fr + (smoothstep(0.4, 1.0, lum) * 0.035) * np.array([1.0, 0.45, -0.6], np.float32)
     fr = fr + 0.06 * (fr - 0.5) * (1 - np.abs(2 * fr - 1))
     fr = fr * VIGNETTE
-    # grão de filme
     g = np.random.default_rng(f).standard_normal((H // 2, W // 2)).astype(np.float32)
     g = cv2.resize(g, (W, H), interpolation=cv2.INTER_LINEAR)[..., None]
-    return fr + g * 0.012
+    return fr + g * 0.009
 
 
 # ---------------------------------------------------------------- main
 def main():
+    os.makedirs(os.path.join(ROOT, "saida"), exist_ok=True)
     if "--preview" in sys.argv:
         fs = list(range(0, NFRAMES, 15))
         with Pool(os.cpu_count()) as pool:
             frames = pool.map(render_frame, fs)
         th = [cv2.resize(fr, (320, 240), interpolation=cv2.INTER_AREA) for fr in frames]
-        while len(th) % 8:
+        while len(th) % 9:
             th.append(np.zeros_like(th[0]))
-        rows = [np.hstack(th[i:i + 8]) for i in range(0, len(th), 8)]
+        rows = [np.hstack(th[i:i + 9]) for i in range(0, len(th), 9)]
         cv2.imwrite(os.path.join(ROOT, "saida", "preview.jpg"), np.vstack(rows)[:, :, ::-1])
         return
     if "--frames" in sys.argv:
         for a in sys.argv[sys.argv.index("--frames") + 1].split(","):
-            cv2.imwrite(os.path.join(ROOT, "saida", f"f{int(a):03d}.jpg"), render_frame(int(a))[:, :, ::-1])
+            cv2.imwrite(os.path.join(ROOT, "saida", f"f{int(a):04d}.jpg"), render_frame(int(a))[:, :, ::-1])
         return
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
     cmd = ["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
            "-r", str(FPS), "-i", "-", "-i", AUDIO, "-map", "0:v", "-map", "1:a",
            "-c:v", "libx264", "-preset", "slow", "-crf", "17", "-tune", "film",
-           "-profile:v", "high", "-pix_fmt", "yuv420p", "-af", f"afade=t=out:st={DUR - 2.5}:d=2.5", "-c:a", "aac", "-b:a", "320k",
-           "-shortest", "-movflags", "+faststart", OUT]
+           "-profile:v", "high", "-pix_fmt", "yuv420p",
+           "-af", f"afade=t=out:st={DUR - 0.8}:d=0.8", "-c:a", "aac", "-b:a", "320k",
+           "-t", str(DUR), "-movflags", "+faststart", OUT]
     ff = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     with Pool(os.cpu_count()) as pool:
         for i, fr in enumerate(pool.imap(render_frame, range(NFRAMES), chunksize=2)):
             ff.stdin.write(fr.tobytes())
-            if i % 60 == 0:
+            if i % 120 == 0:
                 print(f"frame {i}/{NFRAMES}", flush=True)
     ff.stdin.close()
     ff.wait()
