@@ -36,9 +36,21 @@ Transições (sempre misturando as duas cenas, nunca corte seco):
 - **spin** — giro com desfoque rotacional · **punch** — zoom de impacto com tremor
 
 Legendas no estilo editorial: palavras de destaque em itálico serifado (Cormorant Garamond) em
-ouro metálico com reflexo de luz que atravessa a palavra; versos em caixa-alta espaçada (Cinzel)
-cor marfim. Entrada palavra por palavra com revelação suave, desfoque que assenta e leve subida;
-saída com desfoque; sombra elíptica macia atrás do bloco para leitura.
+ouro metálico com reflexo de luz; versos em caixa-alta espaçada (Cinzel) cor marfim; sombra elíptica
+macia atrás do bloco. Cada frase tem uma animação própria de entrada / saída:
+
+| frase | entrada | saída |
+|---|---|---|
+| golden brown / texture like sun | revelação macia com desfoque | desfoque subindo |
+| lays me down / with my mind | sobe de uma fenda invisível | sobe e some na fenda |
+| she runs throughout / the night | letras caem em cascata | apagada da esquerda p/ direita |
+| no need / to fight | letras afastadas que se juntam (tracking) | zoom de impacto |
+| never a frown / with golden brown | acende com clarão dourado | flutua para cima |
+| golden brown / finer temptress through | cascata | desfoque + fade final |
+
+Jesus "vivo" (`alive_field`): respiração no peito, cabeça inclinando devagar em torno do pescoço
+(o rosto se move como um bloco rígido, sem deformar), balanço leve do corpo e onda descendo pela
+roupa e pelo cabelo — tudo por um campo de deslocamento suave aplicado só à figura recortada.
 
 Efeitos: parallax 2.5D com travelling lateral, câmera na mão sutil, nuvens, raios de luz,
 partículas, light leaks, bloom e grão.
