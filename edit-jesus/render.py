@@ -222,7 +222,7 @@ del _yy, _xx, _r
 
 # ---------------------------------------------------------------- roteiro
 # crop: (cx, cy, w) normalizados na imagem; w = fração da largura enquadrada (4:3)
-# cut:  transição de ENTRADA: intro | zoom | dissolve | flash | punch | whip
+# cut:  transição de ENTRADA: intro | zoom | dissolve | flash | punch | slide | spin
 # lat:  deslocamento lateral da figura em relação ao fundo (parallax de travelling)
 S = lambda **k: k  # noqa: E731
 SHOTS = [
@@ -242,16 +242,16 @@ SHOTS = [
     # --- instrumental (cortes nas batidas do baixo)
     S(img=3, t0=15.44, t1=17.35, a=(0.50, 0.42, 1.00), b=(0.50, 0.37, 0.84), cut="flash",
       rays=(0.52, 0.12, 0.24), particles=40, par=0.07, lat=0.010),
-    S(img=6, t0=17.35, t1=19.57, a=(0.50, 0.43, 1.00), b=(0.52, 0.39, 0.86), cut="dissolve",
+    S(img=6, t0=17.35, t1=19.57, a=(0.50, 0.43, 1.00), b=(0.52, 0.39, 0.86), cut="slide", wdir=1,
       particles=30, par=0.07, lat=-0.012),
     S(img=6, t0=19.57, t1=21.51, a=(0.45, 0.41, 0.64), b=(0.45, 0.39, 0.56), cut="punch", par=0.04),
     S(img=9, t0=21.51, t1=23.63, a=(0.50, 0.41, 1.00), b=(0.50, 0.39, 0.88), cut="zoom",
       clouds="cool", rays=(0.50, 0.36, 0.38), particles=60, par=0.04),
     S(img=1, t0=23.63, t1=25.72, a=(0.56, 0.33, 0.64), b=(0.56, 0.31, 0.55), cut="dissolve",
       particles=40, par=0.04, lat=0.008),
-    S(img=2, t0=25.72, t1=27.96, a=(0.44, 0.34, 0.68), b=(0.41, 0.31, 0.57), cut="whip", wdir=1,
+    S(img=2, t0=25.72, t1=27.96, a=(0.44, 0.34, 0.68), b=(0.41, 0.31, 0.57), cut="slide", wdir=-1,
       particles=35, par=0.04, lat=-0.008, pcol=(0.85, 0.95, 1.0)),
-    S(img=5, t0=27.96, t1=29.88, a=(0.52, 0.42, 0.66), b=(0.52, 0.40, 0.56), cut="dissolve",
+    S(img=5, t0=27.96, t1=29.88, a=(0.52, 0.42, 0.66), b=(0.52, 0.40, 0.56), cut="spin",
       rays=(0.80, 0.0, 0.26), particles=40, par=0.04, lat=0.008),
     S(img=3, t0=29.88, t1=31.78, a=(0.48, 0.41, 0.60), b=(0.48, 0.38, 0.52), cut="zoom",
       rays=(0.52, 0.10, 0.24), particles=35, par=0.04),
@@ -276,152 +276,194 @@ for k, s in enumerate(SHOTS):
     s["next_dir"] = SHOTS[k + 1].get("wdir", 1) if k + 1 < len(SHOTS) else 1
     s["seed"] = 100 + k
     s["idx"] = k
-XF = 8  # meia duração do dissolve, em frames
-
 # letra (tempo de entrada de cada palavra, tirado do vídeo de referência)
+# cada linha tem fileiras "hero" (itálico serifado em ouro metálico) e "small" (caixa-alta espaçada, marfim)
 LYRICS = [
-    dict(end=3.70, rows=[[("golden", 0.77), ("brown", 0.93)],
-                         [("texture", 1.60), ("like", 2.43), ("sun", 2.77)]]),
-    dict(end=6.42, rows=[[("lays", 3.93), ("me", 4.60), ("down", 4.77)],
-                         [("with", 5.60), ("my", 6.10), ("mind", 6.27)]]),
-    dict(end=9.25, rows=[[("she", 6.60), ("runs", 6.93), ("throughout", 7.60)],
-                         [("the", 8.35), ("night", 8.43)]]),
-    dict(end=11.25, rows=[[("no", 9.43), ("need", 9.93), ("to", 10.27), ("fight", 10.43)]]),
-    dict(end=15.50, rows=[[("never", 11.43), ("a", 11.93), ("frown", 12.27)],
-                          [("with", 13.27), ("golden", 13.77), ("brown", 14.43)]]),
-    dict(end=40.30, rows=[[("golden", 35.97), ("brown", 36.97)],
-                          [("finer", 37.47), ("temptress", 38.63), ("through", 39.80)]]),
+    dict(end=3.70, rows=[("hero", [("golden", 0.77), ("brown", 0.93)]),
+                         ("small", [("texture", 1.60), ("like", 2.43), ("sun", 2.77)])]),
+    dict(end=6.42, rows=[("small", [("lays", 3.93), ("me", 4.60), ("down", 4.77)]),
+                         ("hero", [("with", 5.60), ("my", 6.10), ("mind", 6.27)])]),
+    dict(end=9.25, rows=[("small", [("she", 6.60), ("runs", 6.93), ("throughout", 7.60)]),
+                         ("hero", [("the", 8.35), ("night", 8.43)])]),
+    dict(end=11.25, rows=[("small", [("no", 9.43), ("need", 9.93)]),
+                          ("hero", [("to", 10.27), ("fight", 10.43)])]),
+    dict(end=15.40, rows=[("small", [("never", 11.43), ("a", 11.93), ("frown", 12.27)]),
+                          ("hero", [("with", 13.27), ("golden", 13.77), ("brown", 14.43)])]),
+    dict(end=40.30, rows=[("hero", [("golden", 35.97), ("brown", 36.97)]),
+                          ("small", [("finer", 37.47), ("temptress", 38.63), ("through", 39.80)])]),
 ]
 
 
-# ---------------------------------------------------------------- legendas em ouro marrom
-FS = 66  # tamanho da fonte
-OUT_T = 0.16  # saída da linha (s), antes da frase seguinte
-_WORD_CACHE = {}
+# ---------------------------------------------------------------- legendas (estilo editorial)
+HERO_FONT = os.path.join(ROOT, "fontes", "cormorant-garamond-latin-600-italic.woff")
+SMALL_FONT = os.path.join(ROOT, "fontes", "cinzel-latin-600-normal.woff")
+HERO_SZ, SMALL_SZ = 112, 40
+SMALL_TRACK = 0.30  # espaçamento entre letras (em) da fileira pequena
+OUT_T = 0.28  # duração da saída da linha (s)
+_SPR = {}
 
 
-def word_sprite(word):
-    """RGBA float da palavra: gradiente ouro→marrom, brilho especular, contorno e sombra."""
-    if word in _WORD_CACHE:
-        return _WORD_CACHE[word]
-    ss = 2
-    font = ImageFont.truetype(FONT, FS * ss)
-    bb = font.getbbox(word)
-    pad = 26 * ss
-    cw, ch = bb[2] - bb[0] + 2 * pad, int(FS * ss * 1.25) + 2 * pad
+def _gold(t):
+    """Rampa de ouro metálico ao longo da altura da letra (0 = topo, 1 = base)."""
+    stops = [(0.00, (1.00, 0.95, 0.76)), (0.30, (0.97, 0.80, 0.45)), (0.52, (0.74, 0.48, 0.18)),
+             (0.60, (0.62, 0.38, 0.13)), (0.70, (0.92, 0.74, 0.42)), (1.00, (0.80, 0.56, 0.26))]
+    out = np.zeros(t.shape + (3,), np.float32)
+    for (a, ca), (b, cb) in zip(stops[:-1], stops[1:]):
+        k = np.clip((t - a) / (b - a), 0, 1)[..., None]
+        sel = ((t >= a) & (t <= b))[..., None]
+        out = np.where(sel, np.array(ca, np.float32) * (1 - k) + np.array(cb, np.float32) * k, out)
+    return out
+
+
+def text_mask(text, font_path, size, track=0.0, ss=3):
+    """Máscara da palavra (supersample), com tracking opcional. Retorna máscara, avanço, baseline."""
+    font = ImageFont.truetype(font_path, size * ss)
+    asc, desc = font.getmetrics()
+    pad = int(size * ss * 0.45)
+    if track:
+        adv = sum(font.getlength(c) for c in text) + track * size * ss * (len(text) - 1)
+    else:
+        adv = font.getlength(text)
+    cw, ch = int(adv + 2 * pad), int(asc + desc + 2 * pad)
     pil = Image.new("L", (cw, ch), 0)
-    top = pad + int(FS * ss * 0.1)
-    ImageDraw.Draw(pil).text((pad - bb[0], top - font.getbbox("Hg")[1]), word, font=font, fill=255)
+    dr = ImageDraw.Draw(pil)
+    if track:
+        x = pad
+        for c in text:
+            dr.text((x, pad), c, font=font, fill=255)
+            x += font.getlength(c) + track * size * ss
+    else:
+        dr.text((pad, pad), text, font=font, fill=255)
     m = np.asarray(pil, np.float32) / 255
     m = cv2.resize(m, (cw // ss, ch // ss), interpolation=cv2.INTER_AREA)
-    ch, cw = m.shape
-    yy = np.linspace(0, 1, ch, dtype=np.float32)[:, None]
-    t0, t1 = (top / ss) / ch, (top / ss + FS * 0.95) / ch
-    t = np.clip((yy - t0) / (t1 - t0), 0, 1)[..., None]
-    # ouro marrom: dourado claro em cima, bronze/marrom embaixo, faixa de reflexo no meio
-    c_top = np.array([1.00, 0.88, 0.58], np.float32)
-    c_mid = np.array([0.86, 0.60, 0.26], np.float32)
-    c_bot = np.array([0.55, 0.33, 0.14], np.float32)
-    grad = np.where(t < 0.5, c_top + (c_mid - c_top) * (t / 0.5), c_mid + (c_bot - c_mid) * ((t - 0.5) / 0.5))
-    band = np.exp(-((t - 0.38) / 0.06) ** 2) * 0.22
-    face = np.clip(grad + band, 0, 1)
-    face = np.broadcast_to(face, (ch, cw, 3))
-    # bisel leve
-    hgt = cv2.GaussianBlur(m, (0, 0), 1.2)
-    gy = cv2.Sobel(hgt, cv2.CV_32F, 0, 1, ksize=3)
-    face = np.clip(face * (1 - 0.25 * np.clip(gy, 0, 1)[..., None]) + 0.18 * np.clip(-gy, 0, 1)[..., None], 0, 1)
-    # contorno marrom escuro
-    outline = cv2.dilate(m, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
-    outline = cv2.GaussianBlur(outline, (0, 0), 0.7)
-    ocol = np.array([0.20, 0.11, 0.04], np.float32)
-    # sombra projetada suave
-    sh = cv2.GaussianBlur(np.roll(np.roll(outline, 4, 0), 2, 1), (0, 0), 6) * 0.75
-    a_out = np.clip(np.maximum(outline, sh), 0, 1)
-    rgb = np.broadcast_to(ocol, (ch, cw, 3)).copy()  # contorno/sombra
-    a = m[..., None]
-    rgb = rgb * (1 - a) + face * a
-    alpha = np.clip(a_out + m * (1 - a_out), 0, 1)
-    glow = cv2.GaussianBlur(m, (0, 0), 9)
-    spr = dict(rgba=np.dstack([rgb, alpha]).astype(np.float32), glow=glow, w=cw, h=ch,
-               adv=(bb[2] - bb[0]) / ss)
-    _WORD_CACHE[word] = spr
+    return m, adv / ss, (pad + asc) / ss, pad / ss
+
+
+def word_sprite(word, kind):
+    key = (word, kind)
+    if key in _SPR:
+        return _SPR[key]
+    if kind == "hero":
+        m, adv, base, top = text_mask(word, HERO_FONT, HERO_SZ)
+        h, w = m.shape
+        yy = np.linspace(0, 1, h, dtype=np.float32)[:, None]
+        cap_top, cap_bot = top + HERO_SZ * 0.18, base + HERO_SZ * 0.05
+        t = np.clip((yy * h - cap_top) / (cap_bot - cap_top), 0, 1)
+        face = np.broadcast_to(_gold(t), (h, w, 3)).copy()
+        # bisel sutil: realce em cima, sombra embaixo das hastes
+        hb = cv2.GaussianBlur(m, (0, 0), 1.4)
+        gy = cv2.Sobel(hb, cv2.CV_32F, 0, 1, ksize=3)
+        face = np.clip(face + 0.22 * np.clip(gy, 0, 1)[..., None] - 0.18 * np.clip(-gy, 0, 1)[..., None], 0, 1)
+        glow_col, glow_r, glow_k = (1.0, 0.78, 0.42), 16, 0.30
+    else:
+        m, adv, base, top = text_mask(word.upper(), SMALL_FONT, SMALL_SZ, SMALL_TRACK)
+        h, w = m.shape
+        yy = np.linspace(0, 1, h, dtype=np.float32)[:, None]
+        t = np.clip((yy * h - top) / (base - top), 0, 1)[..., None]
+        face = np.array([0.99, 0.95, 0.87], np.float32) * (1 - t) + np.array([0.90, 0.82, 0.68], np.float32) * t
+        face = np.broadcast_to(face, (h, w, 3)).copy()
+        glow_col, glow_r, glow_k = (1.0, 0.85, 0.6), 10, 0.12
+    # sombra projetada macia (legibilidade sem contorno grosseiro)
+    sh = cv2.GaussianBlur(m, (0, 0), HERO_SZ * 0.09 if kind == "hero" else 5)
+    sh = np.roll(sh, 3, 0) * (0.62 if kind == "hero" else 0.70)
+    glow = cv2.GaussianBlur(m, (0, 0), glow_r) * glow_k
+    # composição pré-multiplicada: sombra escura + brilho quente + face
+    a_sh = sh * (1 - m)
+    rgbp = np.zeros((h, w, 3), np.float32)
+    rgbp += np.array([0.06, 0.035, 0.015], np.float32) * a_sh[..., None]
+    rgbp = rgbp * (1 - glow[..., None]) + np.array(glow_col, np.float32) * glow[..., None]
+    alpha = np.clip(a_sh + glow - a_sh * glow, 0, 1)
+    rgbp = rgbp * (1 - m[..., None]) + face * m[..., None]
+    alpha = alpha * (1 - m) + m
+    xs = np.linspace(0, 1, w, dtype=np.float32)[None, :].repeat(h, 0)
+    spr = dict(rgbp=rgbp.astype(np.float32), a=alpha.astype(np.float32), m=m, xs=xs, w=w, h=h, adv=adv,
+               base=base, kind=kind)
+    _SPR[key] = spr
     return spr
 
 
 def layout_line(line):
-    """Posição (x do centro, y do topo) de cada palavra; bloco centralizado no terço inferior."""
-    space = FS * 0.42
-    row_h = FS * 1.18
+    """Fileiras centralizadas; o bloco fica no terço inferior."""
+    gap = {"hero": HERO_SZ * 0.26, "small": SMALL_SZ * 0.95}
+    row_h = {"hero": HERO_SZ * 0.98, "small": SMALL_SZ * 2.0}
     rows = line["rows"]
-    y_bottom = H * 0.905
-    y0 = y_bottom - row_h * len(rows)
+    total_h = sum(row_h[k] for k, _ in rows)
+    y = H * 0.835 - total_h / 2
     out = []
-    for r, row in enumerate(rows):
-        sprites = [word_sprite(w) for w, _ in row]
-        total = sum(s["adv"] for s in sprites) + space * (len(row) - 1)
-        x = W / 2 - total / 2
-        for (w, tw), s in zip(row, sprites):
-            out.append(dict(word=w, t=tw, cx=x + s["adv"] / 2, y=y0 + r * row_h, spr=s, row=r,
-                            step=s["adv"] + space))
-            x += s["adv"] + space
-    return out
+    for r, (kind, words) in enumerate(rows):
+        sprs = [word_sprite(w, kind) for w, _ in words]
+        tot = sum(s["adv"] for s in sprs) + gap[kind] * (len(words) - 1)
+        x = W / 2 - tot / 2
+        base_y = y + row_h[kind] * (0.80 if kind == "hero" else 0.72)
+        for (w, tw), s in zip(words, sprs):
+            out.append(dict(word=w, t=tw, x=x, base_y=base_y, spr=s, row=r, step=s["adv"] + gap[kind]))
+            x += s["adv"] + gap[kind]
+        y += row_h[kind]
+    return out, H * 0.835
 
 
-LAYOUT = [(ln, layout_line(ln)) for ln in LYRICS]
+LAYOUT = [(ln,) + layout_line(ln) for ln in LYRICS]
+_EY, _EX = np.mgrid[0:H // 4, 0:W // 4].astype(np.float32)
 
 
-def paste(frame, rgba, cx, cy, scale, alpha):
-    """Cola um sprite RGBA centralizado em (cx, cy) com escala e opacidade."""
-    h, w = rgba.shape[:2]
-    if scale != 1.0:
-        rgba = cv2.resize(rgba, (max(1, int(w * scale)), max(1, int(h * scale))), interpolation=cv2.INTER_LINEAR)
-        h, w = rgba.shape[:2]
-    x0, y0 = int(round(cx - w / 2)), int(round(cy - h / 2))
+def comp(frame, rgbp, a, x0, y0):
+    h, w = a.shape
+    x0, y0 = int(round(x0)), int(round(y0))
     sx0, sy0 = max(0, -x0), max(0, -y0)
-    dx0, dy0 = max(0, x0), max(0, y0)
-    dx1, dy1 = min(W, x0 + w), min(H, y0 + h)
+    dx0, dy0, dx1, dy1 = max(0, x0), max(0, y0), min(W, x0 + w), min(H, y0 + h)
     if dx1 <= dx0 or dy1 <= dy0:
         return
-    s = rgba[sy0:sy0 + dy1 - dy0, sx0:sx0 + dx1 - dx0]
-    a = s[..., 3:4] * alpha
-    reg = frame[dy0:dy1, dx0:dx1]
-    frame[dy0:dy1, dx0:dx1] = reg * (1 - a) + s[..., :3] * a
+    s = (slice(sy0, sy0 + dy1 - dy0), slice(sx0, sx0 + dx1 - dx0))
+    frame[dy0:dy1, dx0:dx1] = frame[dy0:dy1, dx0:dx1] * (1 - a[s][..., None]) + rgbp[s]
 
 
 def draw_lyrics(frame, t):
-    for line, words in LAYOUT:
+    for line, words, cy in LAYOUT:
         start = words[0]["t"]
         if not (start - 0.05 <= t < line["end"] + OUT_T):
             continue
         out = ease_io((t - line["end"]) / OUT_T) if t > line["end"] else 0.0
-        # cada linha fica centralizada nas palavras já visíveis e desliza ao surgir a próxima
+        vis = min(1.0, (t - start) / 0.4) * (1 - out)
+        # sombra elíptica suave atrás do bloco (em vez de faixa ou caixa)
+        d = ((_EX * 4 - W / 2) / (W * 0.42)) ** 2 + ((_EY * 4 - cy) / (H * 0.17)) ** 2
+        sh = cv2.resize(np.exp(-d * 1.6), (W, H), interpolation=cv2.INTER_LINEAR)[..., None]
+        frame *= 1 - 0.38 * vis * sh
         shift = {}
         for wd in words:
-            e = ease_io((t - wd["t"]) / 0.32)
+            e = ease_io((t - wd["t"]) / 0.4)
             shift[wd["row"]] = shift.get(wd["row"], 0.0) + wd["step"] / 2 * (1 - e)
-        # base levemente escurecida para leitura
-        vis = min(1.0, (t - start) / 0.3) * (1 - out)
-        frame *= 1 - 0.28 * vis * BOTTOM_SHADE
         for wd in words:
             age = t - wd["t"]
             if age < 0:
                 continue
-            e = ease_out(age / 0.32, 3)
-            alpha = e * (1 - out)
-            scale = lerp(1.18, 1.0, e)
-            dy = lerp(16, 0, e) - 10 * out
             spr = wd["spr"]
-            cy = wd["y"] + spr["h"] / 2 + dy
-            # brilho dourado na palavra que acabou de ser cantada
-            if age < 0.9:
-                g = spr["glow"] * (0.55 * (1 - age / 0.9)) * alpha
-                hh, ww = g.shape
-                x0, y0 = int(wd["cx"] + shift[wd["row"]] - ww / 2), int(cy - hh / 2)
-                ys, xs = slice(max(0, y0), min(H, y0 + hh)), slice(max(0, x0), min(W, x0 + ww))
-                gs = g[ys.start - y0:ys.stop - y0, xs.start - x0:xs.stop - x0][..., None]
-                frame[ys, xs] = 1 - (1 - frame[ys, xs]) * (1 - gs * np.array([1.0, 0.75, 0.35], np.float32))
-            cxw = wd["cx"] + shift[wd["row"]]
-            paste(frame, spr["rgba"], cxw, cy, scale, alpha)
+            hero = spr["kind"] == "hero"
+            dur = 0.55 if hero else 0.38
+            p = min(1.0, age / dur)
+            e = ease_out(p, 3)
+            # revelação da esquerda para a direita com borda macia + desfoque que assenta
+            soft = 0.35
+            wipe = np.clip((p * (1 + soft) * 1.15 - spr["xs"]) / soft, 0, 1)
+            blur = (1 - e) * (7.0 if hero else 4.0) + out * 6.0
+            rgbp, a = spr["rgbp"], spr["a"] * wipe
+            rgbp = rgbp * wipe[..., None]
+            # reflexo de luz que atravessa a palavra dourada depois que ela aparece
+            if hero:
+                sp = (age - 0.25) / 1.1
+                if 0 < sp < 1:
+                    pos = lerp(-0.3, 1.3, ease_io(sp))
+                    yy = np.linspace(0, 1, spr["h"], dtype=np.float32)[:, None]
+                    band = np.exp(-(((spr["xs"] + 0.25 * yy) - pos) / 0.07) ** 2) * spr["m"] * wipe
+                    rgbp = rgbp + band[..., None] * np.array([0.55, 0.45, 0.28], np.float32)
+            if blur > 0.4:
+                k = int(blur * 3) | 1
+                rgbp = cv2.GaussianBlur(rgbp, (k, k), blur)
+                a = cv2.GaussianBlur(a, (k, k), blur)
+            fade = e * (1 - out)
+            dy = (1 - e) * (14 if hero else 9) - 8 * out
+            x0 = wd["x"] + shift[wd["row"]] - (spr["w"] - spr["adv"]) / 2
+            y0 = wd["base_y"] - spr["base"] + dy
+            comp(frame, np.clip(rgbp, 0, None) * fade, np.clip(a, 0, 1) * fade, x0, y0)
 
 
 # ---------------------------------------------------------------- câmera e efeitos
@@ -529,17 +571,19 @@ def light_leak(t, strength):
 
 
 # ---------------------------------------------------------------- render de um plano
-def render_shot(shot, f):
+def render_shot(shot, f, tx=None):
+    """Renderiza o plano no frame f (pode ser antes/depois do plano, durante transições).
+    tx: transformação extra de tela vinda da transição (scale, dx, dy, rot)."""
     src = IMGS[shot["img"]]
     n = shot["f1"] - shot["f0"]
     lf = f - shot["f0"]
-    u = lf / max(n - 1, 1)  # pode passar de [0,1] durante dissolves
+    u = lf / max(n - 1, 1)
     t = f / FPS
     cut = shot["cut"]
     prog = 0.3 * ease_out(u, 3) + 0.7 * u
     if cut == "intro":
         hold = n - 16
-        prog = 0.12 * ease_io(min(lf / hold, 1.0)) + 0.88 * max(0.0, (lf - hold) / 15) ** 2
+        prog = 0.12 * ease_io(min(lf / hold, 1.0)) + 0.88 * min(1.0, max(0.0, (lf - hold) / 15)) ** 2
     cx, cy, wf = (lerp(shot["a"][i], shot["b"][i], prog) for i in range(3))
 
     # micro-movimento de câmera na mão (bem sutil)
@@ -547,39 +591,7 @@ def render_shot(shot, f):
     off = [5 * math.sin(t * 0.73 + sd) + 3 * math.sin(t * 1.9 + sd * 2),
            4 * math.sin(t * 0.61 + sd * 3) + 2 * math.sin(t * 1.7 + sd)]
     rot = 0.22 * math.sin(t * 0.45 + sd)
-    extra, rblur, wblur, flash = 1.0, 0.0, 0.0, 0.0
-
-    if cut == "zoom" and 0 <= lf < 8:
-        e = 1 - ease_out(lf / 8, 2)
-        extra *= 1 + 0.18 * e
-        rblur = max(rblur, 0.13 * e)
-    elif cut == "whip" and 0 <= lf < 7:
-        e = 1 - ease_out(lf / 7, 3)
-        off[0] += shot.get("wdir", 1) * W * 0.26 * e
-        wblur = max(wblur, 130 * e)
-    elif cut == "flash" and 0 <= lf < 9:
-        e = 1 - ease_out(lf / 9, 2)
-        flash = 0.7 * e
-        extra *= 1 + 0.06 * e
-    elif cut == "punch" and 0 <= lf < 6:
-        extra *= 1 + 0.08 * (1 - ease_out(lf / 6, 2))
-    elif cut == "dissolve" and lf < XF:
-        e = 1 - ease_io((lf + XF) / (2 * XF))
-        extra *= 1 + 0.05 * e  # chega com um leve zoom-out
-    rem = n - 1 - lf
-    nxt = shot["next"]
-    if nxt == "zoom" and 0 <= rem < 3:
-        e = ease_out((3 - rem) / 3, 2)
-        extra *= 1 + 0.10 * e
-        rblur = max(rblur, 0.10 * e)
-    elif nxt == "whip" and 0 <= rem < 3:
-        e = ease_out((3 - rem) / 3, 2) ** 1.5
-        off[0] -= shot["next_dir"] * W * 0.22 * e
-        wblur = max(wblur, 120 * e)
-    elif nxt == "flash" and 0 <= rem < 2:
-        flash = max(flash, 0.3 * (2 - rem) / 2)
-    elif nxt == "dissolve" and rem < XF:
-        extra *= 1 + 0.04 * ease_io((XF - rem) / (2 * XF))
+    extra, rblur, flash = 1.0, 0.0, 0.0
     for b in BEATS:
         d = t - b
         if 0 <= d < 0.35:
@@ -593,18 +605,19 @@ def render_shot(shot, f):
             e = ease_io(min(1.0, (lf - 23) / 40))
             ang, zin = lerp(-1.5, 0.0, e), 1.0
         rot += ang
-        a_ = math.radians(abs(rot))
-        extra *= zin * (math.cos(a_) + W / H * math.sin(a_))
+        extra *= zin
         if lf < 7:
             k_ = 1 - ease_out(lf / 7, 2)
-            flash = max(flash, 0.9 * k_)
-            rblur = max(rblur, 0.14 * k_)
-        if lf >= n - 12:
-            rblur = max(rblur, 0.30 * ease_out((lf - (n - 12)) / 12, 1.5))
-    if shot["idx"] == 1 and lf < 9:  # saída da intro
-        rblur = max(rblur, 0.30 * (1 - ease_out(lf / 9, 2)))
-    # margem para o micro-movimento não revelar bordas
-    extra *= 1.012
+            flash = 0.9 * k_
+            rblur = 0.14 * k_
+    if tx:
+        extra *= tx.get("scale", 1.0)
+        off[0] += tx.get("dx", 0.0)
+        off[1] += tx.get("dy", 0.0)
+        rot += tx.get("rot", 0.0)
+    # escala mínima que cobre a tela com a rotação + margem do micro-movimento
+    a_ = math.radians(abs(rot))
+    extra *= (math.cos(a_) + W / H * math.sin(a_)) * 1.012
 
     M = camera_matrix(src, cx, cy, wf, rot, extra, off)
 
@@ -613,7 +626,7 @@ def render_shot(shot, f):
     floating = shot["img"] in (4, 9)
     pvx, pvy = apply_pt(M, (x0 + x1) / 2, (y0 + y1) / 2 if floating else y1)
     k = 1 + shot.get("par", 0.04) * ease_io(u)
-    lat = shot.get("lat", 0.0) * (u - 0.5) * W
+    lat = shot.get("lat", 0.0) * (min(max(u, -0.2), 1.2) - 0.5) * W
     Pm = np.float32([[k, 0, (1 - k) * pvx + lat], [0, k, (1 - k) * pvy]])
     Mf = (Pm[:, :2] @ M).astype(np.float32)
     Mf[:, 2] += Pm[:, 2]
@@ -647,41 +660,152 @@ def render_shot(shot, f):
     if shot.get("particles"):
         p = particles(sd, t, shot["particles"], shot.get("pcol", (1.0, 0.85, 0.55)))
         frame = 1 - (1 - frame) * (1 - p * 0.7)
-
     if rblur > 0:
-        fx, fy = apply_pt(Mf, (x0 + x1) / 2, y0 + (y1 - y0) * 0.25)
-        fx, fy = min(max(fx, W * 0.3), W * 0.7), min(max(fy, H * 0.3), H * 0.7)
-        frame = radial_blur(frame, rblur, fx, fy)
-    if wblur > 0:
-        frame = dir_blur(frame, wblur)
-    return frame, flash
+        frame = radial_blur(frame, rblur, W / 2, H * 0.4)
+    if flash > 0:
+        frame = frame + (1 - frame) * flash * np.array([1.0, 0.94, 0.82], np.float32)
+    return frame
+
+
+# ---------------------------------------------------------------- transições
+# janela (frames antes, frames depois do corte) de cada tipo
+TWIN = {"zoom": (7, 8), "dissolve": (10, 10), "slide": (6, 6), "flash": (3, 9), "spin": (6, 7),
+        "punch": (0, 6)}
+
+
+def chroma(img, amt):
+    """Aberração cromática radial (separa R e B do centro para as bordas)."""
+    if amt < 0.3:
+        return img
+    out = img.copy()
+    for c, s in ((0, 1 + amt / W), (2, 1 - amt / W)):
+        M = np.float32([[s, 0, (1 - s) * W / 2], [0, s, (1 - s) * H / 2]])
+        out[..., c] = cv2.warpAffine(img[..., c], M, (W, H), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
+    return out
+
+
+def spin_blur(img, ang_deg, n=8):
+    if abs(ang_deg) < 0.5:
+        return img
+    sm = cv2.resize(img, (W // 2, H // 2), interpolation=cv2.INTER_AREA)
+    acc = np.zeros_like(sm)
+    for i in range(n):
+        a = ang_deg * (i / (n - 1) - 0.5)
+        M = cv2.getRotationMatrix2D((W / 4, H / 4), a, 1.0)
+        acc += cv2.warpAffine(sm, M, (W // 2, H // 2), borderMode=cv2.BORDER_REFLECT)
+    bl = cv2.resize(acc / n, (W, H), interpolation=cv2.INTER_LINEAR)
+    r = np.sqrt(((_XX * 2 - W / 2) / W) ** 2 + ((_YY * 2 - H / 2) / H) ** 2)
+    wgt = cv2.resize(np.clip(r * 2.5, 0, 1), (W, H))[..., None]
+    return img * (1 - wgt) + bl * wgt
+
+
+def shake(e, seed):
+    """Tremor de impacto que decai (dx, dy, rot)."""
+    a = (1 - e) ** 2
+    return dict(dx=14 * a * math.sin(seed * 7.1 + e * 40), dy=10 * a * math.sin(seed * 3.3 + e * 33),
+                rot=0.5 * a * math.sin(seed * 5.7 + e * 37))
+
+
+def transition_frame(f):
+    """Se f cai na janela de uma transição, devolve o frame composto; senão None."""
+    for k in range(1, len(SHOTS)):
+        B = SHOTS[k]
+        typ = B["cut"]
+        pre, post = TWIN.get(typ, (0, 0))
+        c = B["f0"]
+        if not (c - pre <= f < c + post):
+            continue
+        A = SHOTS[k - 1]
+        p = (f - (c - pre) + 0.5) / (pre + post)  # 0..1 ao longo da janela
+        m = pre / (pre + post)  # ponto do corte
+        fx = None
+        if typ == "zoom":
+            # zoom contínuo: A acelera para dentro, B chega desacelerando de dentro
+            if p < m:
+                q = p / m
+                fr = render_shot(A, f, dict(scale=1 + 0.85 * q ** 2.2))
+                amt = q ** 2
+            else:
+                q = (p - m) / (1 - m)
+                fr = render_shot(B, f, dict(scale=1 + 0.85 * (1 - ease_out(q, 3))))
+                amt = (1 - ease_out(q, 2)) ** 1.5
+                if q < 0.2:  # dois frames de mistura no ponto do corte
+                    fa = render_shot(A, f, dict(scale=1.85))
+                    fr = fr * (q / 0.2) + fa * (1 - q / 0.2)
+            fr = radial_blur(fr, 0.32 * amt, W / 2, H / 2)
+            fr = chroma(fr, 18 * amt)
+            fr = 1 - (1 - fr) * (1 - 0.10 * amt)
+            return fr
+        if typ == "dissolve":
+            # dissolve por luminância: as luzes da cena nova surgem primeiro, com brilho
+            fa = render_shot(A, f, dict(scale=1 + 0.03 * p))
+            fb = render_shot(B, f, dict(scale=1.03 - 0.03 * p))
+            lum = cv2.GaussianBlur(fb.mean(2), (0, 0), 6)
+            th = lerp(1.25, -0.25, ease_io(p))
+            w = smoothstep(th - 0.22, th + 0.22, lum)[..., None]
+            fr = fa * (1 - w) + fb * w
+            pk = math.sin(math.pi * p)
+            fr = 1 - (1 - fr) * (1 - 0.16 * pk * np.array([1.0, 0.86, 0.62], np.float32))
+            return fr
+        if typ == "slide":
+            # as duas cenas deslizam juntas com motion blur proporcional à velocidade
+            d = B.get("wdir", 1)
+            e = ease_io(p) ** 1.0
+            sh = e * W
+            fa = render_shot(A, f, dict(dx=-d * sh))
+            fb = render_shot(B, f, dict(dx=d * (W - sh)))
+            xx = np.arange(W, dtype=np.float32)[None, :, None]
+            edge = W - sh if d > 0 else sh
+            sel = (xx >= edge) if d > 0 else (xx < edge)
+            fr = np.where(sel, fb, fa)
+            v = math.pi / 2 * math.sin(math.pi * p) * W / (pre + post)
+            fr = dir_blur(fr, v * 0.6)
+            return chroma(fr, 8 * math.sin(math.pi * p))
+        if typ == "flash":
+            if p < m:  # A estoura a exposição
+                q = p / m
+                fr = render_shot(A, f, dict(scale=1 + 0.04 * q))
+                g = q ** 2
+            else:
+                q = (p - m) / (1 - m)
+                tx = shake(q, k)
+                tx["scale"] = 1 + 0.07 * (1 - ease_out(q, 2))
+                fr = render_shot(B, f, tx)
+                g = (1 - ease_out(q, 2))
+            fr = 1 - (1 - fr) ** (1 + 3 * g)  # superexposição suave (não é branco chapado)
+            fr = fr + (1 - fr) * 0.55 * g * np.array([1.0, 0.95, 0.85], np.float32)
+            return fr
+        if typ == "spin":
+            if p < m:
+                q = p / m
+                fr = render_shot(A, f, dict(rot=28 * q ** 2.2, scale=1 + 0.2 * q ** 2))
+                fr = spin_blur(fr, 30 * q ** 1.5)
+                amt = q
+            else:
+                q = (p - m) / (1 - m)
+                e = 1 - ease_out(q, 3)
+                fr = render_shot(B, f, dict(rot=-28 * e, scale=1 + 0.2 * e))
+                fr = spin_blur(fr, 30 * e ** 1.2)
+                amt = e
+            return chroma(fr, 14 * amt)
+        if typ == "punch":
+            q = p
+            tx = shake(q, k)
+            tx["scale"] = 1 + 0.12 * (1 - ease_out(q, 3))
+            fr = render_shot(B, f, tx)
+            return chroma(fr, 10 * (1 - q))
+        return fx
+    return None
 
 
 def render_frame(f):
     t = f / FPS
-    k = next(i for i, s in enumerate(SHOTS) if s["f0"] <= f < s["f1"])
-    shot = SHOTS[k]
-    frame, flash = render_shot(shot, f)
-    # dissolve com brilho: mistura o plano anterior/seguinte em volta do corte
-    other, w = None, 0.0
-    if shot["cut"] == "dissolve" and f - shot["f0"] < XF and k > 0:
-        other = SHOTS[k - 1]
-        w = 1 - ease_io((f - shot["f0"] + XF) / (2 * XF))
-    elif shot["next"] == "dissolve" and shot["f1"] - f <= XF:
-        other = SHOTS[k + 1]
-        w = ease_io((f - (shot["f1"] - XF)) / (2 * XF))
-    leak = 0.10
-    if other is not None:
-        o, _ = render_shot(other, f)
-        frame = frame * (1 - w) + o * w
-        peak = 1 - abs(2 * w - 1) if shot["cut"] != "dissolve" else 1 - abs(2 * (1 - w) - 1)
-        frame = 1 - (1 - frame) * (1 - 0.18 * peak * np.array([1.0, 0.85, 0.6], np.float32))
-        leak += 0.25 * peak
-    frame = 1 - (1 - frame) * (1 - light_leak(t, leak))
-
+    shot = next(s for s in SHOTS if s["f0"] <= f < s["f1"])
+    frame = transition_frame(f)
+    if frame is None:
+        frame = render_shot(shot, f)
+    frame = 1 - (1 - frame) * (1 - light_leak(t, 0.09))
     frame = grade(frame, f)
-    if flash > 0:
-        frame = frame + (1 - frame) * flash * np.array([1.0, 0.94, 0.82], np.float32)
     if shot.get("fade"):
         n, lf = shot["f1"] - shot["f0"], f - shot["f0"]
         nf = int(shot["fade"] * FPS)

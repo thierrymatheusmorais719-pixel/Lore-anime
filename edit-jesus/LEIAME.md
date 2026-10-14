@@ -28,6 +28,17 @@ Versos: corte no início de cada frase. Instrumental: cortes nas batidas do baix
 | 15.44–35.92 | 3, 6, 6 close, 9, 1, 2, 5, 3, 7, 8 | (instrumental) |
 | 35.92–40.40 | 4 nuvens → 7 halo → 9 ascensão final | golden brown finer temptress through |
 
-Transições: dissolve com brilho, zoom blur, flash, punch e whip. Efeitos: parallax 2.5D com
-travelling lateral, câmera na mão sutil, nuvens, raios de luz, partículas, light leaks, bloom e grão.
-Legendas palavra por palavra em ouro marrom (gradiente dourado→bronze, contorno marrom e brilho).
+Transições (sempre misturando as duas cenas, nunca corte seco):
+- **zoom-through** — a cena acelera para dentro e a próxima chega desacelerando, com zoom blur e aberração cromática
+- **dissolve por luminância** — as luzes da cena nova surgem primeiro, com brilho dourado
+- **slide** — as duas cenas deslizam juntas com motion blur proporcional à velocidade
+- **flash** — superexposição suave + tremor de impacto ao aterrissar
+- **spin** — giro com desfoque rotacional · **punch** — zoom de impacto com tremor
+
+Legendas no estilo editorial: palavras de destaque em itálico serifado (Cormorant Garamond) em
+ouro metálico com reflexo de luz que atravessa a palavra; versos em caixa-alta espaçada (Cinzel)
+cor marfim. Entrada palavra por palavra com revelação suave, desfoque que assenta e leve subida;
+saída com desfoque; sombra elíptica macia atrás do bloco para leitura.
+
+Efeitos: parallax 2.5D com travelling lateral, câmera na mão sutil, nuvens, raios de luz,
+partículas, light leaks, bloom e grão.
