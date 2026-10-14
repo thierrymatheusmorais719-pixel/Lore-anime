@@ -61,6 +61,9 @@ Animação das fotos (tudo procedural, calculado quadro a quadro a 120 fps):
 - **Jesus vivo** (`alive_field`): respiração, cabeça inclinando (rosto rígido), balanço do corpo,
   **cabelo** com mechas presas na raiz e pontas soltas balançando com rajadas de vento, roupa ondulando.
   Rostos secundários (Pedro, anjos, o tentador) ficam travados.
+- **Braços articulados** (`ARMS` / `arm_field`): nas fotos com braços livres (3, 4, 7, 9, 10, 12), o ombro
+  gira o braço inteiro e o cotovelo gira o antebraço com leve atraso, como ossos rígidos — mãos e dedos
+  se movem inteiros, sem deformar.
 - **Ambiente vivo** (`ENV` / `env_field`): água com ondulação orgânica e brilhos nas cristas (cena do mar),
   nuvens que derivam e mudam de forma, folhas/flores/capim balançando, névoa e calor tremulando.
 - **GOD** com reflexo de luz que atravessa as letras e faísca em estrela nas batidas da introdução.

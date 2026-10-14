@@ -704,6 +704,60 @@ _QY, _QX = np.mgrid[0:H // 4, 0:W // 4].astype(np.float32) * 4
 # outros rostos na cena que também não podem deformar (Pedro, anjos, o tentador) e ganho da onda
 EXTRA_RIGID = {2: [(0.55, 0.30, 0.07)], 7: [(0.22, 0.66, 0.05), (0.80, 0.68, 0.05)], 12: [(0.20, 0.20, 0.06)]}
 WAVE_GAIN = {10: 0.4}
+# braços articulados: (ombro, cotovelo, mão) normalizados na imagem, espessura (fração da largura),
+# amplitude no ombro e no cotovelo (graus), período (s) e fase
+ARMS = {
+    3: [((0.42, 0.37), (0.38, 0.30), (0.36, 0.22), 0.035, 2.5, 4.0, 3.6, 0.0)],
+    4: [((0.35, 0.25), (0.24, 0.27), (0.23, 0.10), 0.065, 2.2, 3.0, 4.2, 0.0),
+        ((0.66, 0.25), (0.76, 0.27), (0.75, 0.08), 0.065, 2.2, 3.0, 4.2, 2.2)],
+    7: [((0.42, 0.27), (0.36, 0.20), (0.33, 0.15), 0.040, 2.4, 3.2, 4.0, 0.5),
+        ((0.57, 0.27), (0.63, 0.19), (0.66, 0.15), 0.040, 2.4, 3.2, 4.0, 2.6)],
+    9: [((0.47, 0.27), (0.37, 0.25), (0.27, 0.20), 0.040, 2.6, 3.4, 4.6, 0.0),
+        ((0.62, 0.28), (0.73, 0.29), (0.83, 0.29), 0.040, 2.6, 3.4, 4.6, 2.4)],
+    10: [((0.43, 0.28), (0.40, 0.22), (0.395, 0.13), 0.030, 2.4, 3.0, 3.8, 0.0),
+         ((0.57, 0.29), (0.60, 0.30), (0.655, 0.25), 0.030, 2.0, 2.6, 3.4, 1.8)],
+    12: [((0.50, 0.27), (0.45, 0.20), (0.47, 0.10), 0.040, 2.2, 3.0, 3.9, 0.7)],
+}
+
+
+def _seg(X, Y, a, b):
+    """Distância de cada ponto ao segmento a-b e parâmetro ao longo dele (0 em a, 1 em b)."""
+    vx, vy = b[0] - a[0], b[1] - a[1]
+    L2 = vx * vx + vy * vy + 1e-6
+    s_ = ((X - a[0]) * vx + (Y - a[1]) * vy) / L2
+    sc = np.clip(s_, 0, 1)
+    return np.sqrt((X - a[0] - sc * vx) ** 2 + (Y - a[1] - sc * vy) ** 2), s_
+
+
+def arm_field(shot, src, Mf, t, X, Y):
+    """Braços se mexendo como ossos rígidos (ombro gira o braço todo, cotovelo gira o antebraço);
+    mãos e dedos se movem inteiros, sem deformar."""
+    dx = np.zeros_like(X)
+    dy = np.zeros_like(Y)
+    wall = np.zeros_like(X)
+    scl = math.hypot(Mf[0, 0], Mf[1, 0])
+    for (S, E, Hn, wd, a_sh, a_el, per, ph) in ARMS.get(shot["img"], []):
+        Sp = apply_pt(Mf, S[0] * src["w"], S[1] * src["h"])
+        Ep = apply_pt(Mf, E[0] * src["w"], E[1] * src["h"])
+        Hp = apply_pt(Mf, Hn[0] * src["w"], Hn[1] * src["h"])
+        Hx = (Hp[0] + 0.25 * (Hp[0] - Ep[0]), Hp[1] + 0.25 * (Hp[1] - Ep[1]))  # inclui os dedos
+        r = wd * src["w"] * scl
+        d1, s1 = _seg(X, Y, Sp, Ep)
+        d2, s2 = _seg(X, Y, Ep, Hx)
+        w_up = (1 - smoothstep(r, 1.9 * r, d1)) * smoothstep(-0.15, 0.45, s1)
+        w_fo = 1 - smoothstep(r, 1.9 * r, d2)
+        w_arm = np.maximum(w_up, w_fo)
+        w_el = w_fo * smoothstep(-0.05, 0.3, s2)
+        ths = math.radians(1.4 * a_sh * math.sin(2 * math.pi * t / per + ph))
+        the = math.radians(1.4 * a_el * math.sin(2 * math.pi * t / per + ph - 0.9))  # cotovelo atrasado
+        rx, ry = X - Sp[0], Y - Sp[1]
+        dx += (math.cos(ths) * rx - math.sin(ths) * ry - rx) * w_arm
+        dy += (math.sin(ths) * rx + math.cos(ths) * ry - ry) * w_arm
+        rx, ry = X - Ep[0], Y - Ep[1]
+        dx += (math.cos(the) * rx - math.sin(the) * ry - rx) * w_el
+        dy += (math.sin(the) * rx + math.cos(the) * ry - ry) * w_el
+        wall = np.maximum(wall, w_arm)
+    return dx, dy, wall
 _FY, _FX = _YF, _XF
 
 
@@ -745,6 +799,12 @@ def alive_field(shot, src, Mf, t):
     dy += -0.10 * R * br * g
     dx += (X - cx) * 0.025 * br * g
 
+    # braços articulados
+    adx, ady, armw = arm_field(shot, src, Mf, t, X, Y)
+    dx += adx
+    dy += ady
+    free = 1 - armw  # cabelo e onda da roupa não entram nos braços (mãos ficam rígidas)
+
     # 4) cabelo: mechas balançando com vento (raiz presa no topo da cabeça, pontas soltas);
     #    o rosto e a barba ficam rígidos
     hair_reg = 1 - smoothstep(0.85, 1.15, ((X - fx) / (2.4 * R)) ** 2 + ((Y - (fy + 1.1 * R)) / (3.4 * R)) ** 2)
@@ -756,7 +816,7 @@ def alive_field(shot, src, Mf, t):
     a1 = 2 * math.pi * t / 2.2 - yh / 1.3 + ph
     a2 = 2 * math.pi * t / 1.15 - yh / 0.7 + (X - fx) / (1.1 * R) + 2 * ph
     a3 = 2 * math.pi * t / 0.6 - yh / 0.35 + (X - fx) / (0.5 * R)
-    amp = 0.12 * R * w_hair * s_len * gust
+    amp = 0.12 * R * w_hair * s_len * gust * free
     dx += amp * (np.sin(a1) + 0.5 * np.sin(a2) + 0.22 * np.sin(a3))
     dy += amp * (0.35 * np.cos(a1) + 0.12 * np.cos(a3))
 
@@ -768,6 +828,7 @@ def alive_field(shot, src, Mf, t):
         rr = er * src["w"] * sc_
         wc = wc * smoothstep(1.2 * rr, 2.2 * rr, np.sqrt((X - qx) ** 2 + (Y - qy) ** 2))
     wave = 2 * math.pi * (Y / (7 * R) + X / (21 * R)) - 2 * math.pi * t / 2.7 + ph
+    wc = wc * free
     dx += 0.055 * R * wc * np.sin(wave)
     dy += 0.018 * R * wc * np.cos(wave * 0.8)
     return dx, dy
