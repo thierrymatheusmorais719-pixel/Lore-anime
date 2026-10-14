@@ -7,7 +7,8 @@ Edit sincronizada com o trecho de "Golden Brown" do vídeo de referência, usand
 - `fontes/` — Cinzel (SIL Open Font License) usada nas legendas
 - `upscale.py` — Real-ESRGAN x4plus rodando em ONNX Runtime (lê o .pth sem PyTorch)
 - `render.py` — a edição completa
-- `saida/edit_jesus.mp4` — 1440×1080, 30 fps, H.264 CRF 17 + AAC 320k, 40,4 s
+- `god_text.py` — letreiro GOD em ouro (Cinzel Black, bisel, reflexo, metal escovado)
+- `saida/edit_jesus.mp4` — 1920×1440, 120 fps, H.264 CRF 18 + AAC 320k, 40,4 s (render direto em CRF 17 e recomprimido para caber no GitHub)
 
 Requisitos: `pip install opencv-contrib-python-headless numpy pillow onnx onnxruntime` e `ffmpeg`.
 
@@ -55,6 +56,14 @@ macia atrás do bloco. Cada frase tem uma animação própria de entrada / saíd
 Jesus "vivo" (`alive_field`): respiração no peito, cabeça inclinando devagar em torno do pescoço
 (o rosto se move como um bloco rígido, sem deformar), balanço leve do corpo e onda descendo pela
 roupa e pelo cabelo — tudo por um campo de deslocamento suave aplicado só à figura recortada.
+
+Animação das fotos (tudo procedural, calculado quadro a quadro a 120 fps):
+- **Jesus vivo** (`alive_field`): respiração, cabeça inclinando (rosto rígido), balanço do corpo,
+  **cabelo** com mechas presas na raiz e pontas soltas balançando com rajadas de vento, roupa ondulando.
+  Rostos secundários (Pedro, anjos, o tentador) ficam travados.
+- **Ambiente vivo** (`ENV` / `env_field`): água com ondulação orgânica e brilhos nas cristas (cena do mar),
+  nuvens que derivam e mudam de forma, folhas/flores/capim balançando, névoa e calor tremulando.
+- **GOD** com reflexo de luz que atravessa as letras e faísca em estrela nas batidas da introdução.
 
 Efeitos: parallax 2.5D com travelling lateral, câmera na mão sutil, nuvens, raios de luz,
 partículas, light leaks, bloom e grão.

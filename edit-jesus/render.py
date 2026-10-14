@@ -22,8 +22,12 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
+from god_text import make_god
+
 ROOT = os.path.dirname(os.path.abspath(__file__))
-W, H, FPS = 1440, 1080, 30
+W, H, FPS = 1920, 1440, 120
+SC = W / 1440  # escala dos tamanhos em pixel (referência 1440 px)
+R30 = FPS / 30  # quadros de saída por quadro de 30 fps (animações foram afinadas a 30 fps)
 DUR = 40.4
 NFRAMES = int(round(DUR * FPS))
 AUDIO = os.path.join(ROOT, "audio", "golden_brown.m4a")
@@ -64,72 +68,6 @@ def fbm(h, w, seed, base=6, octaves=6, persistence=0.55):
         amp *= persistence
     acc /= tot
     return (acc - acc.min()) / (acc.max() - acc.min())
-
-
-def make_god_text(width_px):
-    """Letras 'GOD' douradas 3D (extrusão + bisel + especular). Retorna RGBA float."""
-    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 400)
-    tw = font.getbbox("GOD")
-    size = int(400 * width_px / (tw[2] - tw[0]))
-    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", size)
-    bb = font.getbbox("GOD")
-    pad = int(size * 0.25)
-    cw, ch = bb[2] - bb[0] + 2 * pad, bb[3] - bb[1] + 2 * pad
-    pil = Image.new("L", (cw, ch), 0)
-    ImageDraw.Draw(pil).text((pad - bb[0], pad - bb[1]), "GOD", font=font, fill=255)
-    face = cv2.GaussianBlur(np.asarray(pil, np.float32) / 255, (0, 0), 1.0)
-
-    depth = int(size * 0.075)
-    rgb = np.zeros((ch, cw, 3), np.float32)
-    alpha = np.zeros((ch, cw), np.float32)
-    # extrusão: camadas escuras deslocadas para baixo/direita
-    for k in range(depth, 0, -1):
-        dx, dy = k * 0.35, k * 0.9
-        M = np.float32([[1, 0, dx], [0, 1, dy]])
-        lay = cv2.warpAffine(face, M, (cw, ch))
-        shade = 0.55 - 0.3 * k / depth
-        col = np.array([0.78, 0.52, 0.14], np.float32) * shade
-        a = lay[..., None]
-        rgb = rgb * (1 - a) + col * a
-        alpha = np.maximum(alpha, lay)
-
-    # bisel: altura a partir da distância à borda
-    dist = cv2.distanceTransform((face > 0.5).astype(np.uint8), cv2.DIST_L2, 5)
-    bev = size * 0.045
-    hgt = cv2.GaussianBlur(np.clip(dist / bev, 0, 1), (0, 0), 1.5)
-    gx = cv2.Sobel(hgt, cv2.CV_32F, 1, 0, ksize=3)
-    gy = cv2.Sobel(hgt, cv2.CV_32F, 0, 1, ksize=3)
-    n = np.dstack([-gx * 2.2, -gy * 2.2, np.ones_like(gx)])
-    n /= np.linalg.norm(n, axis=2, keepdims=True)
-    L = np.array([-0.45, -0.65, 0.62], np.float32)
-    L /= np.linalg.norm(L)
-    diff = np.clip((n * L).sum(2), 0, 1)
-    Hh = L + np.array([0, 0, 1], np.float32)
-    Hh /= np.linalg.norm(Hh)
-    spec = np.clip((n * Hh).sum(2), 0, 1) ** 40
-    yy = np.linspace(0, 1, ch, dtype=np.float32)[:, None]
-    # gradiente dourado vertical com faixa de reflexo
-    g1 = np.array([1.00, 0.86, 0.46], np.float32)
-    g2 = np.array([0.80, 0.53, 0.13], np.float32)
-    g3 = np.array([0.98, 0.78, 0.36], np.float32)
-    t = ((yy - pad / ch) / (1 - 2 * pad / ch))[..., None]
-    base = np.where(t < 0.55, g1 + (g2 - g1) * np.clip(t / 0.55, 0, 1),
-                    g2 + (g3 - g2) * np.clip((t - 0.55) / 0.45, 0, 1))
-    base = np.broadcast_to(base, (ch, cw, 3))
-    flat = (hgt >= 0.98)[..., None]
-    lit = base * (0.45 + 0.75 * diff[..., None]) + 0.55 * spec[..., None]
-    lit = np.where(flat, base * 0.98 + 0.08, lit)
-    edge = smoothstep(0.0, 0.12, hgt)[..., None]
-    lit = lit * (0.55 + 0.45 * edge)
-    a = face[..., None]
-    rgb = rgb * (1 - a) + np.clip(lit, 0, 1) * a
-    alpha = np.maximum(alpha, face)
-    # sombra suave atrás
-    sh = cv2.GaussianBlur(alpha, (0, 0), size * 0.04) * 0.45
-    out_a = np.clip(alpha + sh * (1 - alpha), 0, 1)
-    out_rgb = rgb * alpha[..., None] / np.maximum(out_a[..., None], 1e-4)
-    out_rgb = np.where(alpha[..., None] > 1e-3, out_rgb, 0.08)
-    return np.dstack([out_rgb, out_a]).astype(np.float32)
 
 
 def make_cloud_texture(w, h, seed, top, soft, tint):
@@ -185,21 +123,59 @@ def load_image(i):
 print("carregando imagens…", flush=True)
 IMGS = {i: load_image(i) for i in range(1, 14)}
 
-# texto GOD no espaço da imagem 4 (fica atrás de Jesus e na frente do céu)
+# letreiro GOD (camada própria no espaço da imagem 4: atrás de Jesus, na frente do céu)
 _i4 = IMGS[4]
-GOD = make_god_text(int(_i4["w"] * 0.84))
-_gh, _gw = GOD.shape[:2]
-_gx, _gy = int(_i4["w"] * 0.5 - _gw / 2), int(_i4["h"] * 0.215 - _gh / 2)
-_bg4 = _i4["lv"][0]["bg"].astype(np.float32) / 255
-_sx0, _sy0 = max(0, -_gx), max(0, -_gy)
-_dx0, _dy0 = max(0, _gx), max(0, _gy)
-_dx1, _dy1 = min(_i4["w"], _gx + _gw), min(_i4["h"], _gy + _gh)
-_g = GOD[_sy0:_sy0 + _dy1 - _dy0, _sx0:_sx0 + _dx1 - _dx0]
-_reg = _bg4[_dy0:_dy1, _dx0:_dx1]
-_bg4[_dy0:_dy1, _dx0:_dx1] = _reg * (1 - _g[..., 3:4]) + _g[..., :3] * _g[..., 3:4]
-_ib = (np.clip(_bg4, 0, 1) * 255 + 0.5).astype(np.uint8)
-INTRO_BG = [_ib, cv2.resize(_ib, (_i4["w"] // 2, _i4["h"] // 2), interpolation=cv2.INTER_AREA)]
-del _bg4, _reg, _g
+GOD = make_god(int(_i4["w"] * 0.84))
+GOD_POS = (_i4["w"] * 0.5 - GOD["w"] / 2, _i4["h"] * 0.215 - GOD["h"] / 2)
+GOD_LV = [GOD, {k: (cv2.resize(v, (GOD["w"] // 2, GOD["h"] // 2), interpolation=cv2.INTER_AREA)
+                    if isinstance(v, np.ndarray) else v) for k, v in GOD.items()}]
+GOD_SWEEPS = [(0.45, 1.25), (2.75, 1.25)]  # (início, duração) do reflexo, nas batidas da introdução
+
+
+def draw_god(bg, M, t):
+    """Compõe o GOD sobre o fundo já projetado na tela, com reflexo de luz e faísca animados."""
+    scale = math.hypot(M[0, 0], M[1, 0])
+    lv = 1 if scale < 0.6 else 0
+    g = GOD_LV[lv]
+    f = 0.5 ** lv
+    Mt = M.copy()
+    Mt[:, :2] /= f
+    Mt[:, 2] = M[:, :2] @ np.float32(GOD_POS) + M[:, 2]
+    kw = dict(flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT)
+    rgbp = cv2.warpAffine(g["rgbp"], Mt, (W, H), **kw)
+    a = np.clip(cv2.warpAffine(g["a"], Mt, (W, H), **kw), 0, 1)[..., None]
+    out = bg * (1 - a) + np.clip(rgbp, 0, None)
+    for t0, dur in GOD_SWEEPS:
+        p = (t - t0) / dur
+        if 0 < p < 1:
+            sh = cv2.warpAffine(g["shine"], Mt, (W, H), **kw)
+            pos = lerp(-0.25, 1.35, ease_io(p))
+            band = np.exp(-(((_XF / W) + 0.45 * (_YF / H) - pos) / 0.055) ** 2) * sh
+            out = out + band[..., None] * np.float32([0.75, 0.62, 0.40])
+            # faísca em estrela no topo do "O" quando o reflexo passa por ele
+            sx, sy = apply_pt(M, GOD_POS[0] + GOD["w"] * 0.505, GOD_POS[1] + GOD["h"] * 0.20)
+            k = math.exp(-(((sx / W) + 0.45 * (sy / H) - pos) / 0.05) ** 2)
+            if k > 0.02:
+                out = out + star(sx, sy, 140 * SC * k, k)
+    return out
+
+
+def star(cx, cy, size, k):
+    """Faísca de 4 pontas (brilho de lente) centrada em (cx, cy)."""
+    x0, x1 = int(max(0, cx - size)), int(min(W, cx + size))
+    y0, y1 = int(max(0, cy - size)), int(min(H, cy + size))
+    out = np.zeros((H, W, 3), np.float32)
+    if x1 <= x0 or y1 <= y0:
+        return out
+    X, Y = _XF[y0:y1, x0:x1] - cx, _YF[y0:y1, x0:x1] - cy
+    r = np.sqrt(X ** 2 + Y ** 2) / size
+    rays = np.exp(-np.abs(Y) / (size * 0.018)) * np.exp(-np.abs(X) / (size * 0.55))
+    rays += np.exp(-np.abs(X) / (size * 0.018)) * np.exp(-np.abs(Y) / (size * 0.40))
+    core = np.exp(-r * 9)
+    v = (rays * 0.8 + core) * k
+    out[y0:y1, x0:x1] = v[..., None] * np.float32([1.0, 0.93, 0.78])
+    return out
+
 
 CLOUDS = {
     "intro": [make_cloud_texture(W * 2, H, 11, 0.70, 0.22, (1.0, 0.96, 0.9)),
@@ -213,6 +189,7 @@ _rng = np.random.default_rng(5)
 RAY_NOISE = cv2.GaussianBlur(_rng.random((1, 720)).astype(np.float32), (0, 0), 2.2)[0]
 RAY_NOISE = (RAY_NOISE - RAY_NOISE.min()) / (RAY_NOISE.max() - RAY_NOISE.min())
 _YY, _XX = np.mgrid[0:H // 2, 0:W // 2].astype(np.float32)
+_YF, _XF = np.mgrid[0:H, 0:W].astype(np.float32)
 _yy, _xx = np.mgrid[0:H, 0:W].astype(np.float32)
 _r = np.sqrt(((_xx - W / 2) / (W / 2)) ** 2 + ((_yy - H / 2) / (H / 2)) ** 2) / math.sqrt(2)
 VIGNETTE = (1 - 0.30 * smoothstep(0.45, 1.0, _r))[..., None]
@@ -319,7 +296,7 @@ LYRICS = [
 # ---------------------------------------------------------------- legendas (estilo editorial)
 HERO_FONT = os.path.join(ROOT, "fontes", "cormorant-garamond-latin-600-italic.woff")
 SMALL_FONT = os.path.join(ROOT, "fontes", "cinzel-latin-600-normal.woff")
-HERO_SZ, SMALL_SZ = 80, 27
+HERO_SZ, SMALL_SZ = round(80 * SC), round(27 * SC)
 SMALL_TRACK = 0.36  # espaçamento entre letras (em) da fileira pequena
 OUT_T = 0.28  # duração da saída da linha (s)
 _SPR = {}
@@ -376,7 +353,7 @@ def word_sprite(word, kind):
         hb = cv2.GaussianBlur(m, (0, 0), 1.4)
         gy = cv2.Sobel(hb, cv2.CV_32F, 0, 1, ksize=3)
         face = np.clip(face + 0.22 * np.clip(gy, 0, 1)[..., None] - 0.18 * np.clip(-gy, 0, 1)[..., None], 0, 1)
-        glow_col, glow_r, glow_k = (1.0, 0.78, 0.42), 16, 0.30
+        glow_col, glow_r, glow_k = (1.0, 0.78, 0.42), 16 * SC, 0.30
     else:
         m, adv, base, top = text_mask(word.upper(), SMALL_FONT, SMALL_SZ, SMALL_TRACK)
         h, w = m.shape
@@ -384,10 +361,10 @@ def word_sprite(word, kind):
         t = np.clip((yy * h - top) / (base - top), 0, 1)[..., None]
         face = np.array([0.99, 0.95, 0.87], np.float32) * (1 - t) + np.array([0.90, 0.82, 0.68], np.float32) * t
         face = np.broadcast_to(face, (h, w, 3)).copy()
-        glow_col, glow_r, glow_k = (1.0, 0.85, 0.6), 10, 0.12
+        glow_col, glow_r, glow_k = (1.0, 0.85, 0.6), 10 * SC, 0.12
     # sombra projetada macia (legibilidade sem contorno grosseiro)
-    sh = cv2.GaussianBlur(m, (0, 0), HERO_SZ * 0.09 if kind == "hero" else 5)
-    sh = np.roll(sh, 3, 0) * (0.62 if kind == "hero" else 0.70)
+    sh = cv2.GaussianBlur(m, (0, 0), HERO_SZ * 0.09 if kind == "hero" else 5 * SC)
+    sh = np.roll(sh, round(3 * SC), 0) * (0.62 if kind == "hero" else 0.70)
     glow = cv2.GaussianBlur(m, (0, 0), glow_r) * glow_k
     # composição pré-multiplicada: sombra escura + brilho quente + face
     a_sh = sh * (1 - m)
@@ -398,7 +375,7 @@ def word_sprite(word, kind):
     rgbp = rgbp * (1 - m[..., None]) + face * m[..., None]
     alpha = alpha * (1 - m) + m
     xs = np.linspace(0, 1, w, dtype=np.float32)[None, :].repeat(h, 0)
-    bloom = np.clip(cv2.GaussianBlur(m, (0, 0), 14 if kind == "hero" else 8) * 1.6, 0, 1)
+    bloom = np.clip(cv2.GaussianBlur(m, (0, 0), (14 if kind == "hero" else 8) * SC) * 1.6, 0, 1)
     spr = dict(rgbp=rgbp.astype(np.float32), a=alpha.astype(np.float32), m=m, xs=xs, w=w, h=h, adv=adv,
                base=base, kind=kind, bloom=bloom)
     _SPR[key] = spr
@@ -451,7 +428,7 @@ CY = H * 0.86  # centro vertical do bloco de legenda
 LAYOUT = [(ln,) + layout_line(ln) for ln in LYRICS]
 
 
-def _ornament(w=300, h=11):
+def _ornament(w=round(300 * SC), h=round(11 * SC) | 1):
     """Filete dourado com losango central (pré-multiplicado)."""
     xs = np.linspace(-1, 1, w, dtype=np.float32)
     line = np.zeros((h, w), np.float32)
@@ -463,7 +440,8 @@ def _ornament(w=300, h=11):
     line[:, gap] = 0
     dm = np.zeros((h, w), np.uint8)
     cx = w // 2
-    cv2.fillConvexPoly(dm, np.int32([[cx, yc - 4], [cx + 4, yc], [cx, yc + 4], [cx - 4, yc]]), 255, cv2.LINE_AA)
+    q = round(4 * SC)
+    cv2.fillConvexPoly(dm, np.int32([[cx, yc - q], [cx + q, yc], [cx, yc + q], [cx - q, yc]]), 255, cv2.LINE_AA)
     a = np.clip(line + dm.astype(np.float32) / 255, 0, 1)
     col = np.array([0.96, 0.82, 0.52], np.float32)
     return a, col, xs
@@ -556,17 +534,17 @@ def draw_lyrics(frame, t):
             fade, dy, blur, scale, clip, xmask = 1.0, 0.0, 0.0, 1.0, None, None
             if o > 0:
                 if fout == "blur":
-                    fade, dy, blur = 1 - o, -10 * o, 6 * o
+                    fade, dy, blur = 1 - o, -10 * SC * o, 6 * SC * o
                 elif fout == "slot":  # sobe e some atrás de uma linha invisível
                     dy, clip = -o * sz * 1.1, (by - sz * (0.95 if hero else 1.0), H)
                 elif fout == "wipe":  # apagada da esquerda para a direita
-                    edge = lerp(lx0 - 60, lx1 + 60, o)
+                    edge = lerp(lx0 - 60 * SC, lx1 + 60 * SC, o)
                     xpx = x - (spr["w"] - spr["adv"]) / 2 + np.arange(spr["w"], dtype=np.float32)
-                    xmask = np.clip((xpx - edge) / 60, 0, 1)
+                    xmask = np.clip((xpx - edge) / (60 * SC), 0, 1)
                 elif fout == "punch":
-                    fade, scale, blur = 1 - o, 1 + 0.2 * o, 3 * o
+                    fade, scale, blur = 1 - o, 1 + 0.2 * o, 3 * SC * o
                 elif fout == "drift":
-                    fade, dy = 1 - o, -26 * o
+                    fade, dy = 1 - o, -26 * SC * o
             # ---- entrada da palavra
             shimmer = None
             if hero:
@@ -589,7 +567,7 @@ def draw_lyrics(frame, t):
                         else:  # tracking: letras afastadas que se juntam
                             mid = off + cs["adv"] / 2 - spr["adv"] / 2
                             cx += mid * lerp(0.45, 0.0, e)
-                        draw_sprite(frame, cs, cx, by, fade * e, cdy, blur + (1 - e) * (5 if hero else 3),
+                        draw_sprite(frame, cs, cx, by, fade * e, cdy, blur + (1 - e) * (5 if hero else 3) * SC,
                                     scale, clip=clip)
                     continue
                 draw_sprite(frame, spr, x, by, fade, dy, blur, scale, xmask=xmask, clip=clip, shimmer=shimmer)
@@ -600,15 +578,15 @@ def draw_lyrics(frame, t):
                             clip=c2, shimmer=shimmer)
             elif fin == "glow":  # acende com um clarão dourado e assenta
                 e = ease_out(age / 0.5, 3)
-                draw_sprite(frame, spr, x, by, fade * e, dy, blur + (1 - e) * 3, scale * lerp(0.9, 1.0, e),
+                draw_sprite(frame, spr, x, by, fade * e, dy, blur + (1 - e) * 3 * SC, scale * lerp(0.9, 1.0, e),
                             xmask=xmask, clip=clip, shimmer=shimmer, bloom=(1 - e) ** 1.3 * (1.0 if hero else 0.6))
             else:  # wipe: revelação macia da esquerda para a direita com desfoque
                 p = min(1.0, age / (0.55 if hero else 0.38))
                 e = ease_out(p, 3)
                 soft = 0.35
                 wipe = np.clip((p * (1 + soft) * 1.15 - spr["xs"]) / soft, 0, 1)
-                draw_sprite(frame, spr, x, by, fade * e, dy + (1 - e) * (14 if hero else 9),
-                            blur + (1 - e) * (7 if hero else 4), scale, wipe=wipe, xmask=xmask, clip=clip,
+                draw_sprite(frame, spr, x, by, fade * e, dy + (1 - e) * (14 if hero else 9) * SC,
+                            blur + (1 - e) * (7 if hero else 4) * SC, scale, wipe=wipe, xmask=xmask, clip=clip,
                             shimmer=shimmer)
 
 
@@ -631,14 +609,14 @@ def apply_pt(M, x, y):
     return M[0, 0] * x + M[0, 1] * y + M[0, 2], M[1, 0] * x + M[1, 1] * y + M[1, 2]
 
 
-def warp_level(src, M, key, intro=False):
+def warp_level(src, M, key):
     """Escolhe o nível de resolução adequado à escala (evita serrilhado) e aplica o warp."""
     scale = math.hypot(M[0, 0], M[1, 0])
     lv = 1 if scale < 0.6 else 0
     L = src["lv"][lv]
     Ml = M.copy()
     Ml[:, :2] /= L["f"]
-    arr = INTRO_BG[lv] if intro else L[key]
+    arr = L[key]
     interp = cv2.INTER_LINEAR if key == "mask" else cv2.INTER_CUBIC
     return cv2.warpAffine(arr, Ml, (W, H), flags=interp, borderMode=cv2.BORDER_REFLECT)
 
@@ -688,15 +666,15 @@ def particles(seed, t, count, col):
     x = rng.random(count) * W
     y = rng.random(count) * H
     z = rng.random(count) ** 1.5
-    sp = 18 + 55 * z
+    sp = (18 + 55 * z) * SC
     ph = rng.random(count) * 6.28
     canvas = np.zeros((H // 2, W // 2), np.float32)
     big = np.zeros_like(canvas)
     for j in range(count):
-        px = (x[j] + 22 * math.sin(t * 0.7 + ph[j]) + t * 8 * (z[j] - 0.4)) % W
+        px = (x[j] + 22 * SC * math.sin(t * 0.7 + ph[j]) + t * 8 * SC * (z[j] - 0.4)) % W
         py = (y[j] - sp[j] * t) % H
         tw = 0.55 + 0.45 * math.sin(t * 2.4 + ph[j] * 3)
-        rad = 0.6 + 2.6 * z[j]
+        rad = (0.6 + 2.6 * z[j]) * SC
         tgt = big if z[j] > 0.75 else canvas
         cv2.circle(tgt, (int(px / 2), int(py / 2)), max(1, int(round(rad))), float(tw * (0.4 + 0.6 * z[j])), -1, cv2.LINE_AA)
     lay = cv2.GaussianBlur(canvas, (0, 0), 1.2) * 1.6 + cv2.GaussianBlur(big, (0, 0), 3.5) * 1.2
@@ -721,9 +699,12 @@ def light_leak(t, strength):
 FACE = {1: (0.57, 0.25, 0.07), 2: (0.355, 0.235, 0.07), 3: (0.50, 0.30, 0.06), 4: (0.51, 0.19, 0.07),
         5: (0.41, 0.36, 0.06), 6: (0.41, 0.33, 0.07), 7: (0.50, 0.27, 0.06), 8: (0.45, 0.16, 0.06),
         9: (0.55, 0.255, 0.04), 10: (0.49, 0.226, 0.03), 11: (0.41, 0.45, 0.035), 12: (0.655, 0.185, 0.045),
-        13: (0.53, 0.31, 0.08)}
+        13: (0.55, 0.27, 0.075)}
 _QY, _QX = np.mgrid[0:H // 4, 0:W // 4].astype(np.float32) * 4
-_FY, _FX = np.mgrid[0:H, 0:W].astype(np.float32)
+# outros rostos na cena que também não podem deformar (Pedro, anjos, o tentador) e ganho da onda
+EXTRA_RIGID = {2: [(0.55, 0.30, 0.07)], 7: [(0.22, 0.66, 0.05), (0.80, 0.68, 0.05)], 12: [(0.20, 0.20, 0.06)]}
+WAVE_GAIN = {10: 0.4}
+_FY, _FX = _YF, _XF
 
 
 def alive_field(shot, src, Mf, t):
@@ -764,8 +745,28 @@ def alive_field(shot, src, Mf, t):
     dy += -0.10 * R * br * g
     dx += (X - cx) * 0.025 * br * g
 
-    # 4) roupa e cabelo: onda que desce pelo tecido (longe do rosto)
-    wc = smoothstep(2.0 * R, 4.5 * R, dist) * np.clip((Y - fy) / (5 * R), 0, 1)
+    # 4) cabelo: mechas balançando com vento (raiz presa no topo da cabeça, pontas soltas);
+    #    o rosto e a barba ficam rígidos
+    hair_reg = 1 - smoothstep(0.85, 1.15, ((X - fx) / (2.4 * R)) ** 2 + ((Y - (fy + 1.1 * R)) / (3.4 * R)) ** 2)
+    face_e = ((X - fx) / (1.05 * R)) ** 2 + ((Y - (fy + 0.3 * R)) / (1.5 * R)) ** 2
+    w_hair = hair_reg * smoothstep(1.0, 1.7, face_e)
+    s_len = np.clip((Y - (fy - 1.1 * R)) / (3.8 * R), 0, 1) ** 1.2 + 0.35 * np.clip(np.abs(X - fx) / (2 * R), 0, 1)
+    gust = 0.6 + 0.4 * math.sin(2 * math.pi * t / 4.7 + ph)
+    yh = (Y - fy) / R
+    a1 = 2 * math.pi * t / 2.2 - yh / 1.3 + ph
+    a2 = 2 * math.pi * t / 1.15 - yh / 0.7 + (X - fx) / (1.1 * R) + 2 * ph
+    a3 = 2 * math.pi * t / 0.6 - yh / 0.35 + (X - fx) / (0.5 * R)
+    amp = 0.12 * R * w_hair * s_len * gust
+    dx += amp * (np.sin(a1) + 0.5 * np.sin(a2) + 0.22 * np.sin(a3))
+    dy += amp * (0.35 * np.cos(a1) + 0.12 * np.cos(a3))
+
+    # 5) roupa: onda que desce pelo tecido (longe do rosto)
+    wc = smoothstep(2.0 * R, 4.5 * R, dist) * np.clip((Y - fy) / (5 * R), 0, 1) * WAVE_GAIN.get(shot["img"], 1.0)
+    sc_ = math.hypot(Mf[0, 0], Mf[1, 0])
+    for ex, ey, er in EXTRA_RIGID.get(shot["img"], []):
+        qx, qy = apply_pt(Mf, ex * src["w"], ey * src["h"])
+        rr = er * src["w"] * sc_
+        wc = wc * smoothstep(1.2 * rr, 2.2 * rr, np.sqrt((X - qx) ** 2 + (Y - qy) ** 2))
     wave = 2 * math.pi * (Y / (7 * R) + X / (21 * R)) - 2 * math.pi * t / 2.7 + ph
     dx += 0.055 * R * wc * np.sin(wave)
     dy += 0.018 * R * wc * np.cos(wave * 0.8)
@@ -782,6 +783,116 @@ def animate_figure(fg, mk, shot, src, Mf, t):
     return fg, mk
 
 
+# ---------------------------------------------------------------- ambiente vivo
+# zonas por imagem (caixas normalizadas na imagem): o fundo se mexe conforme o tipo
+#   sky   = nuvens derivando com o vento e mudando de forma devagar
+#   water = ondas que correm, com brilhos de luz que piscam na superfície
+#   sway  = folhas, galhos, flores e capim balançando
+#   haze  = névoa / calor tremulando no horizonte
+ENV = {
+    1: [("sky", 0, 0, 1, 0.60), ("haze", 0, 0.52, 1, 0.70)],
+    2: [("water", 0, 0, 1, 1)],
+    3: [("sky", 0, 0, 1, 0.55)],
+    4: [("sky", 0, 0, 1, 1)],
+    5: [("sky", 0.25, 0, 1, 0.42)],
+    6: [("sky", 0, 0, 1, 0.75)],
+    8: [("sway", 0.70, 0.0, 1.0, 0.80)],
+    9: [("sky", 0, 0, 1, 1)],
+    10: [("sky", 0, 0, 1, 0.45)],
+    11: [("sky", 0.30, 0, 1, 0.42), ("haze", 0.45, 0.40, 1, 0.80), ("sway", 0, 0, 0.32, 0.55),
+         ("sway", 0, 0.70, 0.5, 1)],
+    12: [("sky", 0, 0, 1, 0.60)],
+    13: [("sky", 0, 0, 1, 0.45), ("sway", 0.55, 0.62, 1, 1)],
+}
+
+
+def _box(sx, sy, x0, y0, x1, y1, fe=0.05):
+    return (smoothstep(x0 - fe, x0 + fe, sx) * (1 - smoothstep(x1 - fe, x1 + fe, sx)) *
+            smoothstep(y0 - fe, y0 + fe, sy) * (1 - smoothstep(y1 - fe, y1 + fe, sy)))
+
+
+def _periodic_noise(n, seed, beta=1.7):
+    """Ruído fractal que se repete sem emenda (filtrado no espectro), valores ~[-1, 1]."""
+    rng = np.random.default_rng(seed)
+    f = np.fft.fftfreq(n)[:, None] ** 2 + np.fft.fftfreq(n)[None, :] ** 2
+    f[0, 0] = 1
+    spec = (rng.standard_normal((n, n)) + 1j * rng.standard_normal((n, n))) / f ** (beta / 2)
+    spec[0, 0] = 0
+    x = np.real(np.fft.ifft2(spec)).astype(np.float32)
+    return x / (np.abs(x).max() + 1e-6)
+
+
+NOISE_N = 256
+NOISE = [_periodic_noise(NOISE_N, s_) for s_ in (11, 29, 47)]
+
+
+def tex(T, u, v):
+    """Amostra o ruído periódico nas coordenadas (u, v) em unidades de repetição."""
+    return cv2.remap(T, (u * NOISE_N).astype(np.float32), (v * NOISE_N).astype(np.float32),
+                     cv2.INTER_LINEAR, borderMode=cv2.BORDER_WRAP)
+
+
+def env_field(shot, src, M, t):
+    """Deslocamento (dx, dy) e sombreamento do fundo, em 1/4 da resolução da tela."""
+    zones = ENV.get(shot["img"])
+    if not zones:
+        return None
+    Mi = cv2.invertAffineTransform(M)
+    sx = (Mi[0, 0] * _QX + Mi[0, 1] * _QY + Mi[0, 2]) / src["w"]
+    sy = (Mi[1, 0] * _QX + Mi[1, 1] * _QY + Mi[1, 2]) / src["h"]
+    asp = src["h"] / src["w"]
+    dx = np.zeros_like(_QX)
+    dy = np.zeros_like(_QX)
+    shade = np.zeros_like(_QX)
+    tau = 2 * math.pi
+    tm = t - (shot["t0"] + shot["t1"]) / 2
+    for kind, x0, y0, x1, y1 in zones:
+        w = _box(sx, sy, x0, y0, x1, y1)
+        if kind == "sky":
+            # turbulência lenta (as nuvens mudam de forma) + deriva com o vento
+            u, v = sx * 1.2, sy * 1.2 * asp
+            n1 = tex(NOISE[0], u + t * 0.020, v + t * 0.006)
+            n2 = tex(NOISE[1], u * 2.1 - t * 0.030, v * 2.1 + t * 0.010)
+            A = 9 * SC
+            dx += w * (A * (n1 + 0.5 * n2) + 12 * SC * tm)
+            dy += w * A * 0.5 * (n2 - 0.4 * n1)
+            shade += w * 0.025 * n2
+        elif kind == "water":
+            # ondulação orgânica: ruído esticado na horizontal correndo em direção à câmera,
+            # duas camadas cruzadas; brilhos onde as cristas se encontram
+            depth = 0.5 + 0.8 * np.clip(sy, 0, 1)
+            u, v = sx * 2.2, sy * 2.2 * asp
+            n1 = tex(NOISE[0], u * 0.9 + t * 0.03, v * 3.2 - t * 0.22)
+            n2 = tex(NOISE[1], u * 1.7 - t * 0.05, v * 5.0 - t * 0.35)
+            n3 = tex(NOISE[2], u * 4.0 + t * 0.07, v * 9.0 - t * 0.55)
+            A = 6.5 * SC * depth
+            dy += w * A * (n1 + 0.55 * n2 + 0.25 * n3)
+            dx += w * A * 0.45 * (n2 - 0.5 * n3)
+            crest = np.clip(n2 + 0.6 * n3 - 0.55, 0, 1)
+            shade += w * (0.035 * n1 + 0.30 * crest ** 2 * depth)
+        elif kind == "sway":
+            A = 7 * SC
+            n1 = tex(NOISE[2], sx * 2 + t * 0.15, sy * 2 * asp)
+            p1 = tau * t / 2.4 + sx * 3.0
+            p2 = tau * t / 0.9 + sy * 12 + sx * 5
+            dx += w * A * (np.sin(p1) * (0.7 + 0.3 * n1) + 0.35 * np.sin(p2))
+            dy += w * A * 0.3 * np.cos(p1 * 1.1)
+        elif kind == "haze":
+            n1 = tex(NOISE[1], sx * 6 + t * 0.05, sy * 30 * asp - t * 0.8)
+            dx += w * (2.2 * SC * n1 + 6 * SC * tm)
+            shade += w * 0.02 * n1
+    return dx, dy, shade
+
+
+def animate_env(bg, shot, src, M, t):
+    fld = env_field(shot, src, M, t)
+    if fld is None:
+        return bg
+    dx, dy, shade = (cv2.resize(a, (W, H), interpolation=cv2.INTER_LINEAR) for a in fld)
+    bg = cv2.remap(bg, _FX - dx, _FY - dy, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
+    return np.clip(bg * (1 + shade[..., None]), 0, 1)
+
+
 # ---------------------------------------------------------------- feixe de luz animado (imagem 13)
 BEAM_QUAD = [(0.67, 0.0), (0.79, 0.0), (0.87, 0.70), (0.58, 0.70)]  # normalizado na imagem
 BEAM_GLOW = (0.70, 0.31)  # onde a luz toca o rosto
@@ -793,7 +904,7 @@ def light_beam(M, src, t, seed):
     pts = np.float32([apply_pt(M, x * src["w"], y * src["h"]) for x, y in BEAM_QUAD]) / 2
     canvas = np.zeros((H // 2, W // 2), np.float32)
     cv2.fillConvexPoly(canvas, pts.astype(np.int32), 1.0, cv2.LINE_AA)
-    mask = cv2.GaussianBlur(canvas, (0, 0), 16)
+    mask = cv2.GaussianBlur(canvas, (0, 0), 16 * SC)
     tc, bc = (pts[0] + pts[1]) / 2, (pts[2] + pts[3]) / 2
     axis = bc - tc
     Lb = float(np.hypot(*axis)) + 1e-3
@@ -820,9 +931,9 @@ def light_beam(M, src, t, seed):
         a0, c0, sp, sz = rng.random(), rng.random() * 2 - 1, 0.06 + 0.10 * rng.random(), rng.random()
         al = (a0 + t * sp) % 1.0
         hw = hw0 + (hw1 - hw0) * al
-        p = tc + axis * al + nrm * (c0 * 0.85 * hw + 6 * math.sin(t * 1.3 + j))
+        p = tc + axis * al + nrm * (c0 * 0.85 * hw + 6 * SC * math.sin(t * 1.3 + j))
         tw = 0.5 + 0.5 * math.sin(t * 3 + j * 1.7)
-        cv2.circle(motes, (int(p[0]), int(p[1])), 1 + int(sz * 2.2), float(0.5 + 0.5 * tw), -1, cv2.LINE_AA)
+        cv2.circle(motes, (int(p[0]), int(p[1])), 1 + int(sz * 2.2 * SC), float(0.5 + 0.5 * tw), -1, cv2.LINE_AA)
     lay = lay + cv2.GaussianBlur(motes, (0, 0), 1.3) * mask * 1.4
     # brilho onde a luz toca o rosto
     gx, gy = apply_pt(M, BEAM_GLOW[0] * src["w"], BEAM_GLOW[1] * src["h"])
@@ -838,7 +949,8 @@ def render_shot(shot, f, tx=None):
     tx: transformação extra de tela vinda da transição (scale, dx, dy, rot)."""
     src = IMGS[shot["img"]]
     n = shot["f1"] - shot["f0"]
-    lf = f - shot["f0"]
+    lf = (f - shot["f0"]) / R30  # em quadros de 30 fps (pode ser fracionário)
+    n = n / R30
     u = lf / max(n - 1, 1)
     t = f / FPS
     cut = shot["cut"]
@@ -850,8 +962,8 @@ def render_shot(shot, f, tx=None):
 
     # micro-movimento de câmera na mão (bem sutil)
     sd = shot["seed"]
-    off = [5 * math.sin(t * 0.73 + sd) + 3 * math.sin(t * 1.9 + sd * 2),
-           4 * math.sin(t * 0.61 + sd * 3) + 2 * math.sin(t * 1.7 + sd)]
+    off = [SC * (5 * math.sin(t * 0.73 + sd) + 3 * math.sin(t * 1.9 + sd * 2)),
+           SC * (4 * math.sin(t * 0.61 + sd * 3) + 2 * math.sin(t * 1.7 + sd))]
     rot = 0.22 * math.sin(t * 0.45 + sd)
     extra, rblur, flash = 1.0, 0.0, 0.0
     for b, st in PULSES:
@@ -893,7 +1005,10 @@ def render_shot(shot, f, tx=None):
     Mf = (Pm[:, :2] @ M).astype(np.float32)
     Mf[:, 2] += Pm[:, 2]
 
-    bg = warp_level(src, M, "bg", intro=(cut == "intro")).astype(np.float32) / 255
+    bg = warp_level(src, M, "bg").astype(np.float32) / 255
+    bg = animate_env(bg, shot, src, M, t)  # céu, água, vegetação e névoa em movimento
+    if cut == "intro":
+        bg = draw_god(bg, M, t)
     fg = warp_level(src, Mf, "img").astype(np.float32) / 255
     mk = warp_level(src, Mf, "mask").astype(np.float32) / 255
     fg, mk = animate_figure(fg, mk, shot, src, Mf, t)  # Jesus "vivo"
@@ -909,8 +1024,8 @@ def render_shot(shot, f, tx=None):
 
     if shot.get("clouds"):
         tex = CLOUDS[shot["clouds"]]
-        rise = (1 - ease_out(min(max(u, 0), 1), 2)) * 60 if shot["clouds"] != "intro" else 0
-        for li, (layer, spd) in enumerate(zip(tex, (32, 60))):
+        rise = (1 - ease_out(min(max(u, 0), 1), 2)) * 60 * SC if shot["clouds"] != "intro" else 0
+        for li, (layer, spd) in enumerate(zip(tex, (32 * SC, 60 * SC))):
             x = int((t * spd + li * 300) % W)
             sl = layer[:, x:x + W]
             dy = int(rise * (li + 1) * 0.6)
@@ -968,7 +1083,7 @@ def spin_blur(img, ang_deg, n=8):
 def shake(e, seed):
     """Tremor de impacto que decai (dx, dy, rot)."""
     a = (1 - e) ** 2
-    return dict(dx=14 * a * math.sin(seed * 7.1 + e * 40), dy=10 * a * math.sin(seed * 3.3 + e * 33),
+    return dict(dx=14 * SC * a * math.sin(seed * 7.1 + e * 40), dy=10 * SC * a * math.sin(seed * 3.3 + e * 33),
                 rot=0.5 * a * math.sin(seed * 5.7 + e * 37))
 
 
@@ -977,7 +1092,7 @@ def transition_frame(f):
     for k in range(1, len(SHOTS)):
         B = SHOTS[k]
         typ = B["cut"]
-        pre, post = TWIN.get(typ, (0, 0))
+        pre, post = (v * R30 for v in TWIN.get(typ, (0, 0)))  # janelas definidas em quadros de 30 fps
         c = B["f0"]
         if not (c - pre <= f < c + post):
             continue
@@ -999,7 +1114,7 @@ def transition_frame(f):
                     fa = render_shot(A, f, dict(scale=1.85))
                     fr = fr * (q / 0.2) + fa * (1 - q / 0.2)
             fr = radial_blur(fr, 0.32 * amt, W / 2, H / 2)
-            fr = chroma(fr, 18 * amt)
+            fr = chroma(fr, 18 * SC * amt)
             fr = 1 - (1 - fr) * (1 - 0.10 * amt)
             return fr
         if typ == "dissolve":
@@ -1026,7 +1141,7 @@ def transition_frame(f):
             fr = np.where(sel, fb, fa)
             v = math.pi / 2 * math.sin(math.pi * p) * W / (pre + post)
             fr = dir_blur(fr, v * 0.6)
-            return chroma(fr, 8 * math.sin(math.pi * p))
+            return chroma(fr, 8 * SC * math.sin(math.pi * p))
         if typ == "flash":
             if p < m:  # A estoura a exposição
                 q = p / m
@@ -1038,7 +1153,7 @@ def transition_frame(f):
                 tx["scale"] = 1 + 0.07 * (1 - ease_out(q, 2))
                 fr = render_shot(B, f, tx)
                 g = (1 - ease_out(q, 2))
-            fr = 1 - (1 - fr) ** (1 + 3 * g)  # superexposição suave (não é branco chapado)
+            fr = 1 - (1 - np.clip(fr, 0, 1)) ** (1 + 3 * g)  # superexposição suave (não é branco chapado)
             fr = fr + (1 - fr) * 0.55 * g * np.array([1.0, 0.95, 0.85], np.float32)
             return fr
         if typ == "spin":
@@ -1053,13 +1168,13 @@ def transition_frame(f):
                 fr = render_shot(B, f, dict(rot=-28 * e, scale=1 + 0.2 * e))
                 fr = spin_blur(fr, 30 * e ** 1.2)
                 amt = e
-            return chroma(fr, 14 * amt)
+            return chroma(fr, 14 * SC * amt)
         if typ == "punch":
             q = p
             tx = shake(q, k)
             tx["scale"] = 1 + 0.12 * (1 - ease_out(q, 3))
             fr = render_shot(B, f, tx)
-            return chroma(fr, 10 * (1 - q))
+            return chroma(fr, 10 * SC * (1 - q))
         return fx
     return None
 
@@ -1089,8 +1204,8 @@ def render_frame(f):
         frame = frame + (1 - frame) * (ease_io(e) * 0.85) * np.array([1.0, 0.94, 0.82], np.float32)
     draw_lyrics(frame, t)
     if shot.get("fade"):
-        frame = frame * (1 - ease_io(max(0.0, (f - (shot["f1"] - 10)) / 9)))
-    return (np.clip(frame, 0, 1) * 255 + 0.5).astype(np.uint8)
+        frame = frame * (1 - ease_io(max(0.0, (f - (shot["f1"] - 10 * R30)) / (9 * R30))))
+    return (np.clip(np.nan_to_num(frame), 0, 1) * 255 + 0.5).astype(np.uint8)
 
 
 def grade(fr, f):
@@ -1111,7 +1226,7 @@ def grade(fr, f):
 def main():
     os.makedirs(os.path.join(ROOT, "saida"), exist_ok=True)
     if "--preview" in sys.argv:
-        fs = list(range(0, NFRAMES, 15))
+        fs = list(range(0, NFRAMES, FPS // 2))
         with Pool(os.cpu_count()) as pool:
             frames = pool.map(render_frame, fs)
         th = [cv2.resize(fr, (320, 240), interpolation=cv2.INTER_AREA) for fr in frames]
