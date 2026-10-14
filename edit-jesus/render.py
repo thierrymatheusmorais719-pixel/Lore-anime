@@ -21,9 +21,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 W, H, FPS = 1440, 1080, 30
-DUR = 19.8
+DUR = 40.5
 NFRAMES = int(round(DUR * FPS))  # 594
-AUDIO = os.path.join(ROOT, "audio", "musica_referencia.m4a")
+AUDIO = os.path.join(ROOT, "audio", "musica.m4a")
 OUT = os.path.join(ROOT, "saida", "edit_jesus.mp4")
 
 cv2.setNumThreads(1)
@@ -204,46 +204,49 @@ VIGNETTE = None
 # cut:  transição de ENTRADA: zoom | whip | flash | punch | intro
 S = lambda **k: k  # noqa: E731
 SHOTS = [
-    S(img=4, t0=0.00, t1=1.30, a=(0.50, 0.40, 1.00), b=(0.52, 0.32, 0.62), cut="intro",
-      clouds="intro", rays=(0.53, 0.20, 0.30), particles=40, par=0.05),
-    S(img=1, t0=1.30, t1=2.20, a=(0.54, 0.37, 1.00), b=(0.55, 0.34, 0.88), cut="zoom",
-      particles=45, par=0.04),
-    S(img=2, t0=2.20, t1=3.73, a=(0.50, 0.43, 1.00), b=(0.44, 0.39, 0.86), cut="whip", wdir=1,
+    S(img=4, t0=0.00, t1=3.88, a=(0.50, 0.40, 1.00), b=(0.52, 0.32, 0.62), cut="intro",
+      clouds="intro", rays=(0.53, 0.20, 0.30), particles=45, par=0.06),
+    S(img=1, t0=3.88, t1=6.18, a=(0.54, 0.37, 1.00), b=(0.55, 0.33, 0.84), cut="zoom",
+      particles=45, par=0.05),
+    S(img=2, t0=6.18, t1=8.48, a=(0.50, 0.43, 1.00), b=(0.44, 0.38, 0.82), cut="whip", wdir=1,
       particles=35, par=0.05, pcol=(0.85, 0.95, 1.0)),
-    S(img=3, t0=3.73, t1=4.97, a=(0.50, 0.42, 1.00), b=(0.50, 0.37, 0.86), cut="zoom",
+    S(img=3, t0=8.48, t1=10.75, a=(0.50, 0.42, 1.00), b=(0.50, 0.36, 0.82), cut="zoom",
       rays=(0.52, 0.12, 0.22), particles=40, par=0.05),
-    S(img=5, t0=4.97, t1=6.13, a=(0.52, 0.37, 1.00), b=(0.56, 0.32, 0.86), cut="flash",
-      rays=(0.75, 0.0, 0.22), particles=40, par=0.04),
-    S(img=6, t0=6.13, t1=7.17, a=(0.50, 0.42, 1.00), b=(0.52, 0.39, 0.90), cut="whip", wdir=-1,
+    S(img=5, t0=10.75, t1=13.05, a=(0.52, 0.37, 1.00), b=(0.56, 0.34, 0.82), cut="flash",
+      rays=(0.75, 0.0, 0.22), particles=40, par=0.05),
+    S(img=6, t0=13.05, t1=14.21, a=(0.50, 0.42, 1.00), b=(0.52, 0.39, 0.90), cut="whip", wdir=-1,
       particles=30, par=0.05),
-    S(img=6, t0=7.17, t1=7.50, a=(0.45, 0.40, 0.62), b=(0.45, 0.40, 0.58), cut="punch", par=0.02),
-    S(img=7, t0=7.50, t1=8.07, a=(0.50, 0.40, 0.86), b=(0.50, 0.42, 1.00), cut="zoom",
+    S(img=6, t0=14.21, t1=15.35, a=(0.45, 0.40, 0.64), b=(0.45, 0.39, 0.58), cut="punch", par=0.03),
+    S(img=7, t0=15.35, t1=16.51, a=(0.50, 0.40, 0.86), b=(0.50, 0.42, 1.00), cut="zoom",
       rays=(0.50, 0.24, 0.30), particles=50, par=0.04),
-    S(img=7, t0=8.07, t1=8.63, a=(0.50, 0.30, 0.58), b=(0.50, 0.29, 0.53), cut="flash",
+    S(img=7, t0=16.51, t1=17.65, a=(0.50, 0.30, 0.60), b=(0.50, 0.29, 0.53), cut="flash",
       rays=(0.50, 0.24, 0.30), particles=40, par=0.03),
-    S(img=8, t0=8.63, t1=9.93, a=(0.50, 0.34, 1.00), b=(0.50, 0.30, 0.85), cut="whip", wdir=1,
+    S(img=8, t0=17.65, t1=19.95, a=(0.50, 0.34, 1.00), b=(0.50, 0.29, 0.82), cut="whip", wdir=1,
       rays=(0.48, 0.10, 0.20), particles=40, par=0.05),
-    S(img=9, t0=9.93, t1=11.23, a=(0.50, 0.41, 1.00), b=(0.50, 0.39, 0.90), cut="zoom",
+    S(img=9, t0=19.95, t1=22.22, a=(0.50, 0.41, 1.00), b=(0.50, 0.39, 0.88), cut="zoom",
       clouds="cool", rays=(0.50, 0.36, 0.38), particles=60, par=0.03),
-    S(img=1, t0=11.23, t1=12.47, a=(0.56, 0.32, 0.62), b=(0.56, 0.31, 0.56), cut="whip", wdir=-1,
+    S(img=1, t0=22.22, t1=23.38, a=(0.56, 0.32, 0.62), b=(0.56, 0.31, 0.56), cut="whip", wdir=-1,
       particles=40, par=0.03),
-    S(img=2, t0=12.47, t1=13.60, a=(0.44, 0.33, 0.66), b=(0.42, 0.31, 0.58), cut="zoom",
+    S(img=2, t0=23.38, t1=24.52, a=(0.44, 0.33, 0.66), b=(0.42, 0.31, 0.58), cut="zoom",
       particles=35, par=0.03, pcol=(0.85, 0.95, 1.0)),
-    S(img=5, t0=13.60, t1=14.87, a=(0.52, 0.42, 0.64), b=(0.52, 0.40, 0.56), cut="whip", wdir=1,
+    S(img=5, t0=24.52, t1=25.66, a=(0.52, 0.42, 0.64), b=(0.52, 0.40, 0.56), cut="whip", wdir=1,
       rays=(0.80, 0.0, 0.24), particles=40, par=0.03),
-    S(img=4, t0=14.87, t1=16.07, a=(0.50, 0.46, 1.00), b=(0.51, 0.40, 0.86), cut="flash",
+    S(img=4, t0=25.66, t1=27.96, a=(0.50, 0.46, 1.00), b=(0.51, 0.39, 0.82), cut="flash",
       clouds="warm", rays=(0.53, 0.25, 0.34), particles=60, par=0.06),
-    S(img=3, t0=16.07, t1=17.03, a=(0.48, 0.40, 0.58), b=(0.48, 0.38, 0.52), cut="punch",
+    S(img=3, t0=27.96, t1=29.07, a=(0.48, 0.40, 0.58), b=(0.48, 0.38, 0.52), cut="punch",
       rays=(0.52, 0.10, 0.22), particles=35, par=0.03),
-    S(img=7, t0=17.03, t1=17.37, a=(0.50, 0.29, 0.60), b=(0.50, 0.29, 0.56), cut="flash",
-      rays=(0.50, 0.24, 0.30), particles=30, par=0.02),
-    S(img=8, t0=17.37, t1=18.47, a=(0.50, 0.25, 0.64), b=(0.50, 0.23, 0.57), cut="zoom",
-      rays=(0.48, 0.10, 0.20), particles=40, par=0.03),
-    S(img=9, t0=18.47, t1=19.80, a=(0.50, 0.36, 0.74), b=(0.50, 0.41, 1.00), cut="flash",
-      clouds="cool", rays=(0.50, 0.36, 0.45), particles=70, par=0.03, fade=True),
+    S(img=7, t0=29.07, t1=30.23, a=(0.50, 0.29, 0.62), b=(0.50, 0.29, 0.55), cut="flash",
+      rays=(0.50, 0.24, 0.30), particles=30, par=0.03),
+    S(img=8, t0=30.23, t1=32.53, a=(0.50, 0.25, 0.66), b=(0.50, 0.23, 0.56), cut="zoom",
+      rays=(0.48, 0.10, 0.20), particles=40, par=0.04),
+    S(img=5, t0=32.53, t1=34.83, a=(0.53, 0.40, 0.90), b=(0.53, 0.40, 0.72), cut="flash",
+      rays=(0.78, 0.0, 0.26), particles=45, par=0.04),
+    S(img=9, t0=34.83, t1=40.50, a=(0.50, 0.36, 0.74), b=(0.50, 0.41, 1.00), cut="flash",
+      clouds="cool", rays=(0.50, 0.36, 0.45), particles=70, par=0.04, fade=2.5),
 ]
-# batidas (fora dos cortes) que recebem um pulso de zoom
-BEATS = [2.53, 2.69, 4.18, 4.37, 13.37, 13.98, 14.26, 15.46, 18.85]
+# batidas fortes dentro dos planos (fora dos cortes) que recebem um pulso de zoom
+BEATS = [4.27, 5.02, 6.94, 7.34, 9.26, 9.61, 11.91, 13.84, 18.04, 18.44, 18.81, 21.08,
+         26.80, 27.59, 30.23, 31.37, 33.67]
 for k, s in enumerate(SHOTS):
     s["f0"], s["f1"] = int(round(s["t0"] * FPS)), int(round(s["t1"] * FPS))
     s["next"] = SHOTS[k + 1]["cut"] if k + 1 < len(SHOTS) else None
@@ -345,7 +348,8 @@ def render_frame(f):
     prog = 0.4 * ease_out(u, 4) + 0.6 * ease_io(u)
     if shot["cut"] == "intro":
         # quase parado enquanto o quadro abre; depois um zoom acelerado no rosto
-        prog = 0.08 * min(lf / 23, 1.0) + 0.92 * max(0.0, (lf - 23) / (n - 24)) ** 2
+        hold = n - 16  # o zoom no rosto acontece nos últimos ~0,5 s, antes da batida
+        prog = 0.12 * ease_io(min(lf / hold, 1.0)) + 0.88 * max(0.0, (lf - hold) / 15) ** 2
     cx, cy, wf = (lerp(shot["a"][i], shot["b"][i], prog) for i in range(3))
 
     extra, off, rblur, wblur, flash = 1.0, [0.0, 0.0], 0.0, 0.0, 0.0
@@ -384,7 +388,7 @@ def render_frame(f):
     for b in BEATS:
         d = t - b
         if 0 <= d < 0.25:
-            extra *= 1 + 0.025 * (1 - d / 0.25) ** 2
+            extra *= 1 + 0.018 * (1 - d / 0.25) ** 2
 
     # ---- intro em tela cheia: entra com flash de luz, leve giro e zoom que assenta
     if cut == "intro":
@@ -392,7 +396,7 @@ def render_frame(f):
             e = ease_out(lf / 23, 3)
             ang, zin = lerp(-5.0, -1.5, e), lerp(1.30, 1.0, e)
         else:
-            e = ease_out((lf - 23) / (n - 23), 2)
+            e = ease_io(min(1.0, (lf - 23) / 40))
             ang, zin = lerp(-1.5, 0.0, e), 1.0
         rot += ang
         a_ = math.radians(abs(ang))
@@ -449,8 +453,8 @@ def render_frame(f):
         frame = 1 - (1 - frame) * (1 - p * 0.75)
 
     if cut == "intro":
-        if lf >= 27:
-            rblur = max(rblur, 0.30 * ease_out((lf - 27) / (n - 27), 1.5))
+        if lf >= n - 12:
+            rblur = max(rblur, 0.30 * ease_out((lf - (n - 12)) / 12, 1.5))
     if cut == "zoom" and shot["f0"] == SHOTS[1]["f0"] and lf < 9:  # saída da intro
         rblur = max(rblur, 0.30 * (1 - ease_out(lf / 9, 2)))
 
@@ -466,9 +470,10 @@ def render_frame(f):
     if flash > 0:
         frame = frame + (1 - frame) * flash * np.array([1.0, 0.95, 0.85], np.float32)
     if shot.get("fade"):
-        e = max(0.0, (lf - (n - 14)) / 13)
+        nf = int(shot["fade"] * FPS)
+        e = max(0.0, (lf - (n - nf)) / (nf - 1))
         frame = frame + (1 - frame) * (ease_io(e) * 0.92) * np.array([1.0, 0.94, 0.82], np.float32)
-        frame = frame * (1 - ease_io(max(0.0, (lf - (n - 4)) / 3)))
+        frame = frame * (1 - ease_io(max(0.0, (lf - (n - 12)) / 11)))
     return (np.clip(frame, 0, 1) * 255 + 0.5).astype(np.uint8)
 
 
@@ -513,8 +518,8 @@ def main():
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     cmd = ["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
            "-r", str(FPS), "-i", "-", "-i", AUDIO, "-map", "0:v", "-map", "1:a",
-           "-c:v", "libx264", "-preset", "slow", "-crf", "14", "-tune", "film",
-           "-profile:v", "high", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "320k",
+           "-c:v", "libx264", "-preset", "slow", "-crf", "17", "-tune", "film",
+           "-profile:v", "high", "-pix_fmt", "yuv420p", "-af", f"afade=t=out:st={DUR - 2.5}:d=2.5", "-c:a", "aac", "-b:a", "320k",
            "-shortest", "-movflags", "+faststart", OUT]
     ff = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     with Pool(os.cpu_count()) as pool:
