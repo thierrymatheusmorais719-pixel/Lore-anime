@@ -183,7 +183,7 @@ def load_image(i):
 
 
 print("carregando imagens…", flush=True)
-IMGS = {i: load_image(i) for i in range(1, 10)}
+IMGS = {i: load_image(i) for i in range(1, 14)}
 
 # texto GOD no espaço da imagem 4 (fica atrás de Jesus e na frente do céu)
 _i4 = IMGS[4]
@@ -225,51 +225,68 @@ del _yy, _xx, _r
 # cut:  transição de ENTRADA: intro | zoom | dissolve | flash | punch | slide | spin
 # lat:  deslocamento lateral da figura em relação ao fundo (parallax de travelling)
 S = lambda **k: k  # noqa: E731
+# grade da música: pulso de 0,321 s (compasso de 3 = 0,963 s), fase 0,15 s. Todos os cortes caem em
+# pulsos da grade; nos versos, no pulso mais próximo do início de cada frase.
+PULSE, PHASE = 0.321, 0.15
+
+
+def G(k):
+    """Tempo do k-ésimo pulso da música."""
+    return round(PHASE + PULSE * k, 3)
+
+
 SHOTS = [
-    # --- versos (corte no início de cada frase)
-    S(img=4, t0=0.00, t1=3.85, a=(0.50, 0.40, 1.00), b=(0.52, 0.32, 0.62), cut="intro",
+    # --- versos
+    S(img=4, t0=0.00, t1=G(12), a=(0.50, 0.40, 1.00), b=(0.52, 0.32, 0.62), cut="intro",
       clouds="intro", rays=(0.53, 0.20, 0.30), particles=45, par=0.06),
-    S(img=1, t0=3.85, t1=6.60, a=(0.53, 0.38, 1.00), b=(0.55, 0.33, 0.80), cut="zoom",
-      particles=45, par=0.07, lat=0.012),
-    S(img=2, t0=6.60, t1=9.43, a=(0.52, 0.44, 1.00), b=(0.44, 0.38, 0.80), cut="dissolve",
+    S(img=11, t0=G(12), t1=G(20), a=(0.50, 0.50, 0.95), b=(0.44, 0.52, 0.78), cut="zoom",
+      rays=(0.85, 0.30, 0.22), particles=45, par=0.07, lat=0.012),
+    S(img=2, t0=G(20), t1=G(29), a=(0.52, 0.44, 1.00), b=(0.44, 0.38, 0.80), cut="dissolve",
       particles=35, par=0.07, lat=-0.012, pcol=(0.85, 0.95, 1.0)),
-    S(img=5, t0=9.43, t1=11.43, a=(0.50, 0.38, 1.00), b=(0.55, 0.35, 0.82), cut="flash",
-      rays=(0.75, 0.0, 0.24), particles=40, par=0.06, lat=0.010),
-    S(img=8, t0=11.43, t1=13.27, a=(0.50, 0.36, 1.00), b=(0.50, 0.30, 0.84), cut="dissolve",
+    S(img=12, t0=G(29), t1=G(35), a=(0.50, 0.27, 1.00), b=(0.58, 0.25, 0.84), cut="flash",
+      rays=(0.66, 0.10, 0.22), particles=40, par=0.07, lat=0.010),
+    S(img=8, t0=G(35), t1=G(41), a=(0.50, 0.36, 1.00), b=(0.50, 0.30, 0.84), cut="dissolve",
       rays=(0.48, 0.10, 0.22), particles=40, par=0.07, lat=-0.010),
-    S(img=7, t0=13.27, t1=15.44, a=(0.50, 0.33, 0.66), b=(0.50, 0.29, 0.54), cut="zoom",
-      rays=(0.50, 0.24, 0.32), particles=50, par=0.04),
-    # --- instrumental (cortes nas batidas do baixo)
-    S(img=3, t0=15.44, t1=17.35, a=(0.50, 0.42, 1.00), b=(0.50, 0.37, 0.84), cut="flash",
-      rays=(0.52, 0.12, 0.24), particles=40, par=0.07, lat=0.010),
-    S(img=6, t0=17.35, t1=19.57, a=(0.50, 0.43, 1.00), b=(0.52, 0.39, 0.86), cut="slide", wdir=1,
-      particles=30, par=0.07, lat=-0.012),
-    S(img=6, t0=19.57, t1=21.51, a=(0.45, 0.41, 0.64), b=(0.45, 0.39, 0.56), cut="punch", par=0.04),
-    S(img=9, t0=21.51, t1=23.63, a=(0.50, 0.41, 1.00), b=(0.50, 0.39, 0.88), cut="zoom",
-      clouds="cool", rays=(0.50, 0.36, 0.38), particles=60, par=0.04),
-    S(img=1, t0=23.63, t1=25.72, a=(0.56, 0.33, 0.64), b=(0.56, 0.31, 0.55), cut="dissolve",
-      particles=40, par=0.04, lat=0.008),
-    S(img=2, t0=25.72, t1=27.96, a=(0.44, 0.34, 0.68), b=(0.41, 0.31, 0.57), cut="slide", wdir=-1,
-      particles=35, par=0.04, lat=-0.008, pcol=(0.85, 0.95, 1.0)),
-    S(img=5, t0=27.96, t1=29.88, a=(0.52, 0.42, 0.66), b=(0.52, 0.40, 0.56), cut="spin",
-      rays=(0.80, 0.0, 0.26), particles=40, par=0.04, lat=0.008),
-    S(img=3, t0=29.88, t1=31.78, a=(0.48, 0.41, 0.60), b=(0.48, 0.38, 0.52), cut="zoom",
-      rays=(0.52, 0.10, 0.24), particles=35, par=0.04),
-    S(img=7, t0=31.78, t1=33.69, a=(0.50, 0.40, 0.86), b=(0.50, 0.42, 1.00), cut="flash",
+    S(img=7, t0=G(41), t1=G(48), a=(0.50, 0.40, 0.86), b=(0.50, 0.30, 0.58), cut="zoom",
       rays=(0.50, 0.24, 0.32), particles=50, par=0.05),
-    S(img=8, t0=33.69, t1=35.92, a=(0.50, 0.25, 0.66), b=(0.50, 0.23, 0.55), cut="dissolve",
+    # --- instrumental
+    S(img=10, t0=G(48), t1=G(52), a=(0.50, 0.50, 0.95), b=(0.47, 0.45, 0.80), cut="flash",
+      particles=40, par=0.06, lat=0.010),
+    S(img=10, t0=G(52), t1=G(57), a=(0.49, 0.36, 0.50), b=(0.49, 0.33, 0.42), cut="punch",
+      particles=30, par=0.04),
+    S(img=13, t0=G(57), t1=G(63), a=(0.50, 0.45, 1.00), b=(0.50, 0.40, 0.84), cut="dissolve",
+      rays=(0.72, 0.0, 0.30), particles=55, par=0.06, lat=-0.010),
+    S(img=1, t0=G(63), t1=G(69), a=(0.53, 0.38, 1.00), b=(0.55, 0.33, 0.80), cut="zoom",
+      particles=45, par=0.07, lat=0.012),
+    S(img=6, t0=G(69), t1=G(72), a=(0.50, 0.43, 1.00), b=(0.52, 0.40, 0.90), cut="slide", wdir=1,
+      particles=30, par=0.06, lat=-0.012),
+    S(img=6, t0=G(72), t1=G(74), a=(0.45, 0.41, 0.62), b=(0.45, 0.40, 0.58), cut="punch", par=0.03),
+    S(img=3, t0=G(74), t1=G(80), a=(0.50, 0.42, 1.00), b=(0.50, 0.36, 0.82), cut="zoom",
+      rays=(0.52, 0.12, 0.24), particles=40, par=0.07, lat=0.010),
+    S(img=5, t0=G(80), t1=G(83), a=(0.50, 0.38, 1.00), b=(0.53, 0.36, 0.88), cut="flash",
+      rays=(0.75, 0.0, 0.24), particles=40, par=0.06),
+    S(img=5, t0=G(83), t1=G(85), a=(0.45, 0.40, 0.58), b=(0.45, 0.39, 0.54), cut="punch", par=0.03),
+    S(img=13, t0=G(85), t1=G(91), a=(0.53, 0.38, 0.62), b=(0.55, 0.35, 0.52), cut="spin",
+      rays=(0.72, 0.0, 0.30), particles=45, par=0.04),
+    S(img=12, t0=G(91), t1=G(98), a=(0.60, 0.26, 0.62), b=(0.63, 0.23, 0.52), cut="zoom",
+      rays=(0.66, 0.10, 0.22), particles=35, par=0.04),
+    S(img=11, t0=G(98), t1=G(101), a=(0.45, 0.55, 0.55), b=(0.43, 0.52, 0.46), cut="slide", wdir=-1,
+      rays=(0.85, 0.30, 0.22), particles=40, par=0.04),
+    S(img=2, t0=G(101), t1=G(105), a=(0.44, 0.34, 0.68), b=(0.41, 0.31, 0.57), cut="flash",
+      particles=35, par=0.04, lat=-0.008, pcol=(0.85, 0.95, 1.0)),
+    S(img=8, t0=G(105), t1=G(111), a=(0.50, 0.25, 0.66), b=(0.50, 0.23, 0.55), cut="dissolve",
       rays=(0.48, 0.10, 0.22), particles=40, par=0.04, lat=-0.008),
     # --- volta da letra
-    S(img=4, t0=35.92, t1=37.57, a=(0.50, 0.46, 1.00), b=(0.51, 0.40, 0.84), cut="flash",
+    S(img=4, t0=G(111), t1=G(116), a=(0.50, 0.46, 1.00), b=(0.51, 0.40, 0.84), cut="flash",
       clouds="warm", rays=(0.53, 0.25, 0.36), particles=60, par=0.07),
-    S(img=7, t0=37.57, t1=38.72, a=(0.50, 0.30, 0.62), b=(0.50, 0.29, 0.54), cut="zoom",
+    S(img=7, t0=G(116), t1=G(120), a=(0.50, 0.30, 0.62), b=(0.50, 0.29, 0.54), cut="zoom",
       rays=(0.50, 0.24, 0.32), particles=40, par=0.03),
-    S(img=9, t0=38.72, t1=40.40, a=(0.50, 0.37, 0.76), b=(0.50, 0.41, 1.00), cut="dissolve",
+    S(img=9, t0=G(120), t1=40.40, a=(0.50, 0.37, 0.76), b=(0.50, 0.41, 1.00), cut="dissolve",
       clouds="cool", rays=(0.50, 0.36, 0.45), particles=70, par=0.04, fade=1.4),
 ]
-# batidas do baixo (≈ 1 por compasso) dentro dos planos: pulso de zoom suave
-BEATS = [0.79, 1.89, 2.89, 4.83, 5.78, 7.70, 8.65, 10.50, 12.33, 14.44, 16.38, 18.30,
-         20.41, 22.50, 24.74, 26.67, 28.92, 30.82, 32.72, 34.84, 36.90, 37.88]
+# pulsos com acento forte do baixo (fora dos cortes): pulso de zoom + leve brilho no tempo da música
+BEATS = [G(k) for k in (1, 2, 8, 10, 13, 14, 15, 19, 21, 25, 26, 30, 31, 32, 33, 37, 38, 39, 40, 43, 46, 49,
+                        50, 71, 73, 78, 81, 82, 88, 99, 102, 108, 113, 115, 119, 123)]
 for k, s in enumerate(SHOTS):
     s["f0"], s["f1"] = int(round(s["t0"] * FPS)), int(round(s["t1"] * FPS))
     s["next"] = SHOTS[k + 1]["cut"] if k + 1 < len(SHOTS) else None
@@ -664,7 +681,8 @@ def light_leak(t, strength):
 # rosto de Jesus em cada imagem: (cx, cy, raio) normalizados pela largura/altura da imagem
 FACE = {1: (0.57, 0.25, 0.07), 2: (0.355, 0.235, 0.07), 3: (0.50, 0.30, 0.06), 4: (0.51, 0.19, 0.07),
         5: (0.41, 0.36, 0.06), 6: (0.41, 0.33, 0.07), 7: (0.50, 0.27, 0.06), 8: (0.45, 0.16, 0.06),
-        9: (0.55, 0.255, 0.04)}
+        9: (0.55, 0.255, 0.04), 10: (0.49, 0.226, 0.03), 11: (0.41, 0.45, 0.035), 12: (0.655, 0.185, 0.045),
+        13: (0.53, 0.31, 0.08)}
 _QY, _QX = np.mgrid[0:H // 4, 0:W // 4].astype(np.float32) * 4
 _FY, _FX = np.mgrid[0:H, 0:W].astype(np.float32)
 
@@ -749,8 +767,8 @@ def render_shot(shot, f, tx=None):
     extra, rblur, flash = 1.0, 0.0, 0.0
     for b in BEATS:
         d = t - b
-        if 0 <= d < 0.35:
-            extra *= 1 + 0.014 * (1 - d / 0.35) ** 2
+        if 0 <= d < 0.3:
+            extra *= 1 + 0.022 * (1 - d / 0.3) ** 2
 
     if cut == "intro":
         if lf < 23:
@@ -955,6 +973,15 @@ def transition_frame(f):
     return None
 
 
+def beat_env(t):
+    v = 0.0
+    for b in BEATS:
+        d = t - b
+        if 0 <= d < 0.25:
+            v = max(v, 0.045 * (1 - d / 0.25) ** 2)
+    return v
+
+
 def render_frame(f):
     t = f / FPS
     shot = next(s for s in SHOTS if s["f0"] <= f < s["f1"])
@@ -963,6 +990,7 @@ def render_frame(f):
         frame = render_shot(shot, f)
     frame = 1 - (1 - frame) * (1 - light_leak(t, 0.09))
     frame = grade(frame, f)
+    frame = frame * (1 + beat_env(t))  # leve pulso de luz em cada batida forte
     if shot.get("fade"):
         n, lf = shot["f1"] - shot["f0"], f - shot["f0"]
         nf = int(shot["fade"] * FPS)

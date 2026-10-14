@@ -16,17 +16,19 @@ Requisitos: `pip install opencv-contrib-python-headless numpy pillow onnx onnxru
 
 ## Sequência
 
-Versos: corte no início de cada frase. Instrumental: cortes nas batidas do baixo.
+A música tem pulso de 0,321 s (compasso de 3 tempos = 0,963 s). **Todo corte cai exatamente num pulso**
+(`G(k)` no `render.py`); nos versos, no pulso mais próximo do início da frase cantada. Nos pulsos com
+acento forte do baixo há um pulso de zoom e um leve pulso de luz.
 
 | tempo | imagem | letra |
 |---|---|---|
-| 0.00–3.85 | 4 Ascensão + GOD dourado | golden brown texture like sun |
-| 3.85–6.60 | 1 Cristo no deserto | lays me down with my mind |
-| 6.60–9.43 | 2 Sobre as águas (noite) | she runs throughout the night |
-| 9.43–11.43 | 5 Getsêmani | no need to fight |
-| 11.43–15.44 | 8 Sepulcro → 7 halo | never a frown with golden brown |
-| 15.44–35.92 | 3, 6, 6 close, 9, 1, 2, 5, 3, 7, 8 | (instrumental) |
-| 35.92–40.40 | 4 nuvens → 7 halo → 9 ascensão final | golden brown finer temptress through |
+| 0.00–4.00 | 4 Ascensão + GOD dourado | golden brown texture like sun |
+| 4.00–6.57 | 11 Jesus olhando Jerusalém | lays me down with my mind |
+| 6.57–9.46 | 2 Sobre as águas (noite) | she runs throughout the night |
+| 9.46–11.38 | 12 Tentação no deserto | no need to fight |
+| 11.38–15.56 | 8 Sepulcro → 7 Ressurreição | never a frown with golden brown |
+| 15.56–35.78 | 10 Sermão (geral/close), 13 oração na luz, 1, 6 (geral/close), 3, 5 (geral/close), 13 close, 12 close, 11 close, 2 close, 8 close | (instrumental) |
+| 35.78–40.40 | 4 nuvens → 7 halo → 9 ascensão final | golden brown finer temptress through |
 
 Transições (sempre misturando as duas cenas, nunca corte seco):
 - **zoom-through** — a cena acelera para dentro e a próxima chega desacelerando, com zoom blur e aberração cromática

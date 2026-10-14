@@ -135,7 +135,7 @@ def upscale(sess, img, tile=160, pad=12):
 def main():
     sess = build_model(load_pth(sys.argv[1]))
     os.makedirs(os.path.join(ROOT, "imagens_hd"), exist_ok=True)
-    only = [int(a) for a in sys.argv[2].split(",")] if len(sys.argv) > 2 else range(1, 10)
+    only = [int(a) for a in sys.argv[2].split(",")] if len(sys.argv) > 2 else range(1, 14)
     for i in only:
         dst = os.path.join(ROOT, "imagens_hd", f"{i}.png")
         if os.path.exists(dst):
