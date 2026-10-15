@@ -325,16 +325,19 @@ def rose_petals(frame, t, t0, M, src, pos):
 
 
 # ---------------------------------------------------------------- personagens vivos
-# rostos/cabeças: (cx, cy, raio, cabelo, ganho) normalizados pela largura/altura da imagem.
-# Cabeças giram rígidas em torno do pescoço (o rosto não deforma); "cabelo" liga as mechas ao vento.
+# rostos/cabeças: (cx, cy, raio, cabelo, ganho, lado) normalizados pela largura/altura da imagem.
+# Cabeças giram rígidas em torno do pescoço (o rosto não deforma); "cabelo" liga as mechas ao vento;
+# "lado" (+1 olha para a direita, -1 para a esquerda): a cabeça se inclina para o outro personagem.
 FACE = {
-    1: [(0.335, 0.345, 0.045, False, 1.0), (0.555, 0.395, 0.035, True, 1.0)],
-    2: [(0.245, 0.270, 0.050, False, 1.2), (0.790, 0.420, 0.040, True, 0.8)],
-    3: [(0.410, 0.505, 0.040, False, 1.2), (0.645, 0.320, 0.033, True, 0.9)],
-    4: [(0.370, 0.280, 0.075, True, 0.8), (0.620, 0.400, 0.095, False, 0.8)],
-    5: [(0.400, 0.380, 0.055, False, 1.0), (0.600, 0.600, 0.040, True, 1.6)],
+    1: [(0.335, 0.345, 0.045, False, 1.0, +1), (0.555, 0.395, 0.035, True, 1.0, -1)],
+    2: [(0.245, 0.270, 0.050, False, 1.0, +1), (0.790, 0.420, 0.040, True, 0.9, -1)],
+    3: [(0.410, 0.505, 0.040, False, 1.0, +1), (0.645, 0.320, 0.033, True, 1.0, -1)],
+    4: [(0.370, 0.280, 0.075, True, 0.8, +1), (0.620, 0.400, 0.095, False, 0.7, -1)],
+    5: [(0.400, 0.380, 0.055, False, 1.0, +1), (0.600, 0.600, 0.040, True, 1.2, +1)],
     6: [], 7: [],
 }
+HEAD_DEG = 4.2    # amplitude do gesto de cabeça (graus), no ritmo do compasso
+HEAD_LEAN = 3.0   # inclinação progressiva em direção ao outro personagem ao longo do plano
 # balanço do corpo (graus) por imagem; as armaduras vazias (6, 7) ficam paradas
 SWAY = {1: 0.5, 2: 0.45, 3: 0.4, 4: 0.35, 5: 0.6, 6: 0.0, 7: 0.0}
 # braços articulados: (ombro, cotovelo, mão) normalizados, espessura (fração da largura),
@@ -389,7 +392,7 @@ def arm_field(shot, src, Mf, t, X, Y):
     return dx, dy, wall
 
 
-def alive_field(shot, src, Mf, t):
+def alive_field(shot, src, Mf, t, u=0.5):
     """Deslocamento (tela, 1/4 da resolução) que dá vida aos personagens."""
     i = shot["img"]
     X, Y = _QX, _QY
@@ -419,19 +422,23 @@ def alive_field(shot, src, Mf, t):
         rr = er * src["w"] * scl
         rigid = rigid * smoothstep(1.0 * rr, 2.0 * rr, np.sqrt((X - qx) ** 2 + (Y - qy) ** 2))
 
-    for k, (fxn, fyn, frn, hair, gain) in enumerate(faces):
+    for k, (fxn, fyn, frn, hair, gain, side) in enumerate(faces):
         fx, fy = apply_pt(Mf, fxn * src["w"], fyn * src["h"])
         R = frn * src["w"] * scl
         dist = np.sqrt((X - fx) ** 2 + (Y - fy) ** 2)
         pk = ph + k * 2.3
-        # cabeça: rotação rígida em torno do pescoço, no ritmo do compasso
+        # cabeça: rotação rígida em torno do pescoço — inclina para o outro personagem ao longo
+        # do plano e faz um gesto (aceno) a cada compasso, com um toque leve a cada 2 tempos
         nx, ny = fx, fy + 1.25 * R
-        th = math.radians(gain * (1.8 * math.sin(2 * math.pi * t / BAR + pk)
-                                  + 0.6 * math.sin(2 * math.pi * t / (BAR / 2) + 2 * pk)))
+        nod = 0.5 - 0.5 * math.cos(2 * math.pi * t / BAR + pk)
+        th = math.radians(gain * side * (HEAD_LEAN * ease_io(u) + HEAD_DEG * (nod - 0.5)
+                                         + 0.8 * math.sin(2 * math.pi * t / (BAR / 4) + 2 * pk)))
         wh = 1 - smoothstep(1.35 * R, 2.4 * R, dist)
         rx, ry = X - nx, Y - ny
         dx += (math.cos(th) * rx - math.sin(th) * ry - rx) * wh
         dy += (math.sin(th) * rx + math.cos(th) * ry - ry) * wh
+        # a cabeça avança um pouco junto com o gesto
+        dx += side * 0.10 * R * gain * nod * wh
         # respiração: o peito sobe e expande (um ciclo a cada meio compasso)
         cx, cyy = fx, fy + 2.7 * R
         br = 0.5 - 0.5 * math.cos(2 * math.pi * t / (BAR / 2) + pk)
@@ -620,7 +627,7 @@ def render_shot(shot, f, tx=None):
     faces = FACE.get(shot["img"], [])
     if faces:
         LAST_FACE[0] = apply_pt(Mf, faces[-1][0] * src["w"], faces[-1][1] * src["h"])
-    adx, ady = alive_field(shot, src, Mf, t)
+    adx, ady = alive_field(shot, src, Mf, t, u)
     adx = cv2.resize(adx, (W, H), interpolation=cv2.INTER_LINEAR)
     ady = cv2.resize(ady, (W, H), interpolation=cv2.INTER_LINEAR)
     fg, mk = warp_figure(src, Mf, adx, ady)
@@ -737,7 +744,7 @@ def transition_frame(f):
             n = _scr_noise(k + 5, t, 2.6, 0.03)
             xn = _XF / W + 0.18 * n + 0.06 * np.sin(_YF / H * 6 + k)
             w = cv2.GaussianBlur((xn > pos).astype(np.float32), (0, 0), 25 * SC)
-            fr = _mix(fb, fa, w)
+            fr = _mix(fa, fb, w)  # começa na cena atual e termina na nova
             dens = np.clip(1.3 - np.abs(xn - pos) * 3.0 + 0.35 * n, 0, 1) ** 1.2
             shade = 0.82 + 0.18 * (_scr_noise(k + 9, t, 5.0, 0.06) * 0.5 + 0.5) - 0.08 * (_YF / H)
             col = np.dstack([shade, shade * 0.96, shade * 0.9]).astype(np.float32)
