@@ -1,34 +1,43 @@
-# Edit cinematográfica medieval
+# Edit cinematográfica medieval (16:9)
 
-Edit vertical (1080×1920, 30 fps, ~21 s) feita a partir das 7 pinturas em `refs/`,
-sincronizada à música (≈85 BPM). Resultado: `edit-medieval.mp4`.
+Edit horizontal (1920×1080, 30 fps, ~21 s) feita a partir das 7 pinturas em `refs/`,
+sincronizada à música (≈85 BPM). Resultado: `edit-medieval-16x9.mp4`.
 
-A arte original **não é redesenhada**: cada pintura é animada por um renderizador
-procedural (`render.py`, numpy + PIL + ffmpeg), preservando rostos, mãos e armaduras.
+As pinturas não são redesenhadas: `render.py` (numpy + OpenCV + ffmpeg) dá vida a elas:
 
-## Roteiro (cortes na grade de 8 colcheias = 2,84 s)
+- **Câmera 2.5D**: mapas de profundidade (`depth/`, gerados com Depth Anything V2 por
+  `depth.py`) separam primeiro plano, personagens e fundo, então pans, tilts e dollies
+  têm parallax real.
+- **Personagens animados ("rigs")**: braço e mão erguendo a rosa, cabeças que se inclinam
+  e viram, mãos que apertam, respiração. Cada rig gira em torno de uma articulação e é
+  recortado pela profundidade para não arrastar o fundo.
+- **Ambiente**: vento em cabelos, capas, vestidos, relva e flores; estrelas cintilando; lua
+  e sol pulsando no ritmo; raios de luz; nuvens; chuva e relâmpagos na tempestade;
+  vagalumes, poeira, pólen e pétalas (inclusive caindo da rosa).
+- **Sincronia**: cortes a cada compasso (2,84 s), gestos com período de 1 compasso,
+  brilho/luz pulsando a cada 2 tempos, pulsos de câmera e brilho metálico nos acentos.
 
-| Tempo | Plano | Câmera | Vida na cena | Transição de entrada |
+## Roteiro
+
+| Tempo | Plano | Câmera | Animação | Transição |
 |---|---|---|---|---|
-| 0,00 | Varanda, a rosa | push-in lento até a rosa | estrelas cintilando, lua respirando, vagalumes | fade do preto |
-| 3,98 | Varanda ao luar | travelling lateral do cavaleiro à dama | estrelas, vagalumes, brilho no aço | light leak dourado |
-| 6,82 | Juramento no castelo | tilt-down do castelo ao juramento | nuvens passando, relva ao vento, poeira | chicote lateral (whip) |
-| 9,66 | O abraço | push-in com leve rotação | reflexo varrendo o elmo, cabelo/capa | flash de luz |
-| 12,50 | Tempestade | pull-out | relâmpagos, nuvens, cabelos e capa ao vento, pétalas | mergulho no preto + relâmpago |
-| 15,34 | Armadura na relva | plano zenital girando | relva ao vento, pólen | dissolução pelas sombras |
-| 18,18 | Armadura nas flores | push-in dourado | flores ao vento, pólen dourado, brilho | light leak + fade final |
-
-Em todos os planos: parallax por profundidade, micro movimento de câmera na mão,
-pulsos sutis nos acentos da música, bloom, grade (preto profundo, sombras
-musgo/azul, altas douradas), vinheta e granulação de filme.
+| 0,00 | Varanda, a rosa | tilt do céu até a rosa + push-in | ele ergue a rosa, os dois se inclinam, pétalas caem | fade do preto |
+| 3,98 | Varanda ao luar | da lua até o casal | elmo vira para ela, ela ergue o olhar, respira | light leak |
+| 6,82 | Juramento | do castelo ao juramento | ele curva a cabeça, ela se inclina, capa ao vento | chicote |
+| 9,66 | O abraço | push-in com rotação | elmo encosta nas mãos dela, ela se inclina | flash |
+| 12,50 | Tempestade | pull-out | cabelos e capa ao vento, chuva, relâmpagos | preto + relâmpago |
+| 15,34 | Armadura na relva | vista de cima girando | relva e flores ao vento, pólen | dissolução |
+| 18,18 | Armadura nas flores | tilt até o elmo | flores ao vento, raios dourados | light leak + fade |
 
 ## Como renderizar
 
 ```bash
-python3 edit-medieval/render.py musica.m4a edit-medieval/edit-medieval.mp4
-# quadros de teste:
-python3 edit-medieval/render.py musica.m4a /tmp/x.mp4 --stills 1.5,6.82,12.7
+pip install onnxruntime opencv-python-headless numpy pillow
+# uma vez (modelo: github.com/fabio-sim/Depth-Anything-ONNX, depth_anything_v2_vits.onnx)
+python3 edit-medieval/depth.py depth_anything_v2_vits.onnx
+python3 edit-medieval/render.py musica.m4a edit-medieval/edit-medieval-16x9.mp4
+python3 edit-medieval/render.py musica.m4a /tmp/x.mp4 --stills 1.5,6.82   # quadros de teste
 ```
 
-Ajustes de direção (enquadramentos, intensidades, cortes, transições) ficam nas
-listas `SHOTS`, `CUTS` e `TRANS` no topo de `render.py`.
+Enquadramentos, rigs, intensidades, cortes e transições ficam em `SHOTS`, `CUTS` e
+`TRANS` no topo de `render.py`.
