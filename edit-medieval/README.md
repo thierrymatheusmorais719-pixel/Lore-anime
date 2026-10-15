@@ -1,8 +1,8 @@
 # Edit cinematográfica medieval (16:9, HD, 2.5D)
 
-Edit horizontal (1920×1080, 60 fps, ~21 s) feita a partir das 7 pinturas em `refs/`,
-sincronizada à música (≈85 BPM), no mesmo estilo 2.5D da edit de Jesus (`edit-jesus/`).
-Resultado: `edit-medieval-16x9.mp4`.
+Edit horizontal em **4K 60 fps** (3840×2160, ~21 s) feita a partir das 7 pinturas em `refs/`,
+sincronizada à música (≈85 BPM), com efeitos sonoros, no mesmo estilo 2.5D da edit de Jesus
+(`edit-jesus/`). Resultados: `edit-medieval-4k.mp4` (4K) e `edit-medieval-16x9.mp4` (Full HD).
 
 ## Pipeline
 
@@ -22,6 +22,13 @@ Resultado: `edit-medieval-16x9.mp4`.
 - Transições da edit de Jesus (íris dourada, nuvens, raio de luz, queima de filme, fumaça,
   clarão e zoom de impacto), com o impacto caindo na batida. Pulsos de zoom e de luz nas batidas
   medidas na música (`PULSES`).
+
+- `sfx.py`: efeitos sonoros sintetizados e mixados sob a música (`audio/mix.wav`; `audio/sfx.wav`
+  só os efeitos): sinos na íris dourada, vento nas nuvens, "shing" no raio de luz, impacto e metal
+  nos zooms, fogo na queima, sopro na fumaça, crescendo com sino no clarão, trovões nos relâmpagos,
+  e ambientes por cena (grilos à noite, vento no castelo e na relva, chuva na tempestade).
+- Realismo: desfoque de movimento (obturador 180°), profundidade de campo com puxada de foco,
+  movimento orgânico com inércia, halação de película e aberração cromática leve.
 
 ## Roteiro
 
@@ -44,8 +51,11 @@ Resultado: `edit-medieval-16x9.mp4`.
 pip install onnx onnxruntime opencv-python-headless numpy pillow
 python3 edit-medieval/upscale.py RealESRGAN_x4plus.pth     # uma vez -> refs_hd/
 python3 edit-medieval/mask.py <pasta_dos_modelos_rembg>    # uma vez -> mascaras_alt/
-python3 edit-medieval/render.py musica.m4a edit-medieval/edit-medieval-16x9.mp4
-python3 edit-medieval/render.py musica.m4a /tmp/x.mp4 --stills 1.5,6.82   # quadros de teste
+python3 edit-medieval/sfx.py musica.m4a                    # -> audio/mix.wav (música + efeitos)
+# 4K em 4 partes (cada uma ~16 min em 4 núcleos) e junção com o áudio
+for k in 0 1 2 3; do python3 edit-medieval/render.py edit-medieval/audio/mix.wav edit-medieval/edit-medieval-4k.mp4 --seg $k/4; done
+python3 edit-medieval/render.py edit-medieval/audio/mix.wav edit-medieval/edit-medieval-4k.mp4 --mux 4
+EDIT_RES=1080 python3 edit-medieval/render.py edit-medieval/audio/mix.wav /tmp/x.mp4 --stills 1.5,6.82   # testes
 ```
 
 `depth.py`/`depth/` (mapas de profundidade da versão anterior) ficam como referência.
