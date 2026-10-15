@@ -211,7 +211,7 @@ del _yy, _xx, _r
 
 # ---------------------------------------------------------------- roteiro
 # crop: (cx, cy, w) normalizados na imagem; w = fração da largura enquadrada (4:3)
-# cut:  transição de ENTRADA: intro | zoom | dissolve | flash | punch | slide | spin
+# cut:  transição de ENTRADA: intro | burn | iris | cloud | flare | smoke | bloom | punch
 # lat:  deslocamento lateral da figura em relação ao fundo (parallax de travelling)
 S = lambda **k: k  # noqa: E731
 # Sincronia: os cortes caem exatamente nas batidas do baixo/percussão detectadas no áudio
@@ -221,51 +221,51 @@ SHOTS = [
     # --- versos
     S(img=4, t0=0.00, t1=3.855, a=(0.50, 0.40, 1.00), b=(0.52, 0.32, 0.62), cut="intro",
       clouds="intro", rays=(0.53, 0.20, 0.30), particles=45, par=0.06),
-    S(img=11, t0=3.855, t1=6.56, a=(0.50, 0.50, 0.95), b=(0.44, 0.52, 0.78), cut="zoom",
+    S(img=11, t0=3.855, t1=6.56, a=(0.50, 0.50, 0.95), b=(0.44, 0.52, 0.78), cut="bloom",
       rays=(0.85, 0.30, 0.22), particles=45, par=0.07, lat=0.012),
-    S(img=2, t0=6.56, t1=9.317, a=(0.52, 0.44, 1.00), b=(0.44, 0.38, 0.80), cut="dissolve",
+    S(img=2, t0=6.56, t1=9.317, a=(0.52, 0.44, 1.00), b=(0.44, 0.38, 0.80), cut="smoke",
       particles=35, par=0.07, lat=-0.012, pcol=(0.85, 0.95, 1.0)),
-    S(img=12, t0=9.317, t1=11.238, a=(0.50, 0.27, 1.00), b=(0.58, 0.25, 0.84), cut="flash",
+    S(img=12, t0=9.317, t1=11.238, a=(0.50, 0.27, 1.00), b=(0.58, 0.25, 0.84), cut="flare",
       rays=(0.66, 0.10, 0.22), particles=40, par=0.07, lat=0.010),
-    S(img=8, t0=11.238, t1=13.502, a=(0.50, 0.36, 1.00), b=(0.50, 0.30, 0.84), cut="dissolve",
+    S(img=8, t0=11.238, t1=13.502, a=(0.50, 0.36, 1.00), b=(0.50, 0.30, 0.84), cut="cloud",
       rays=(0.48, 0.10, 0.22), particles=40, par=0.07, lat=-0.010),
-    S(img=7, t0=13.502, t1=15.447, a=(0.50, 0.35, 0.90), b=(0.50, 0.28, 0.70), cut="zoom",
+    S(img=7, t0=13.502, t1=15.447, a=(0.50, 0.35, 0.90), b=(0.50, 0.28, 0.70), cut="iris",
       rays=(0.50, 0.24, 0.32), particles=50, par=0.05),
     # --- instrumental (cada corte numa batida forte)
-    S(img=10, t0=15.447, t1=17.345, a=(0.50, 0.50, 0.95), b=(0.47, 0.45, 0.80), cut="flash",
+    S(img=10, t0=15.447, t1=17.345, a=(0.50, 0.50, 0.95), b=(0.47, 0.45, 0.80), cut="burn",
       particles=40, par=0.06, lat=0.010),
     S(img=10, t0=17.345, t1=18.303, a=(0.49, 0.34, 0.52), b=(0.49, 0.32, 0.46), cut="punch",
       particles=30, par=0.04),
-    S(img=13, t0=18.303, t1=20.55, a=(0.50, 0.45, 1.00), b=(0.50, 0.40, 0.84), cut="zoom",
+    S(img=13, t0=18.303, t1=20.55, a=(0.50, 0.45, 1.00), b=(0.50, 0.40, 0.84), cut="bloom",
       beam=True, particles=40, par=0.06, lat=-0.010),
-    S(img=1, t0=20.55, t1=22.5, a=(0.53, 0.38, 1.00), b=(0.55, 0.33, 0.80), cut="slide", wdir=1,
+    S(img=1, t0=20.55, t1=22.5, a=(0.53, 0.38, 1.00), b=(0.55, 0.33, 0.80), cut="cloud",
       particles=45, par=0.07, lat=0.012),
-    S(img=6, t0=22.5, t1=23.783, a=(0.50, 0.43, 1.00), b=(0.52, 0.40, 0.90), cut="flash",
+    S(img=6, t0=22.5, t1=23.783, a=(0.50, 0.43, 1.00), b=(0.52, 0.40, 0.90), cut="flare",
       particles=30, par=0.06, lat=-0.012),
     S(img=6, t0=23.783, t1=24.735, a=(0.45, 0.41, 0.62), b=(0.45, 0.40, 0.58), cut="punch", par=0.03),
-    S(img=3, t0=24.735, t1=25.71, a=(0.50, 0.42, 1.00), b=(0.50, 0.38, 0.88), cut="zoom",
+    S(img=3, t0=24.735, t1=25.71, a=(0.50, 0.42, 1.00), b=(0.50, 0.38, 0.88), cut="iris",
       rays=(0.52, 0.12, 0.24), particles=40, par=0.06, lat=0.010),
-    S(img=5, t0=25.71, t1=26.662, a=(0.50, 0.38, 1.00), b=(0.53, 0.36, 0.90), cut="slide", wdir=-1,
+    S(img=5, t0=25.71, t1=26.662, a=(0.50, 0.38, 1.00), b=(0.53, 0.36, 0.90), cut="smoke",
       rays=(0.75, 0.0, 0.24), particles=40, par=0.06),
-    S(img=13, t0=26.662, t1=27.951, a=(0.53, 0.38, 0.62), b=(0.55, 0.35, 0.54), cut="flash",
+    S(img=13, t0=26.662, t1=27.951, a=(0.53, 0.38, 0.62), b=(0.55, 0.35, 0.54), cut="burn",
       beam=True, particles=35, par=0.04),
     S(img=5, t0=27.951, t1=28.909, a=(0.45, 0.40, 0.58), b=(0.45, 0.39, 0.54), cut="punch", par=0.03),
-    S(img=12, t0=28.909, t1=30.824, a=(0.60, 0.24, 0.66), b=(0.62, 0.22, 0.58), cut="zoom",
+    S(img=12, t0=28.909, t1=30.824, a=(0.60, 0.24, 0.66), b=(0.62, 0.22, 0.58), cut="flare",
       rays=(0.66, 0.10, 0.22), particles=35, par=0.04),
-    S(img=11, t0=30.824, t1=31.782, a=(0.45, 0.55, 0.55), b=(0.43, 0.53, 0.50), cut="slide", wdir=1,
+    S(img=11, t0=30.824, t1=31.782, a=(0.45, 0.55, 0.55), b=(0.43, 0.53, 0.50), cut="cloud",
       rays=(0.85, 0.30, 0.22), particles=40, par=0.04),
-    S(img=2, t0=31.782, t1=33.03, a=(0.44, 0.34, 0.68), b=(0.41, 0.31, 0.58), cut="spin",
+    S(img=2, t0=31.782, t1=33.03, a=(0.44, 0.34, 0.68), b=(0.41, 0.31, 0.58), cut="iris",
       particles=35, par=0.04, lat=-0.008, pcol=(0.85, 0.95, 1.0)),
-    S(img=8, t0=33.03, t1=34.963, a=(0.50, 0.25, 0.66), b=(0.50, 0.23, 0.55), cut="flash",
+    S(img=8, t0=33.03, t1=34.963, a=(0.50, 0.25, 0.66), b=(0.50, 0.23, 0.55), cut="burn",
       rays=(0.48, 0.10, 0.22), particles=40, par=0.04, lat=-0.008),
-    S(img=12, t0=34.963, t1=35.927, a=(0.55, 0.30, 0.95), b=(0.57, 0.28, 0.86), cut="zoom",
+    S(img=12, t0=34.963, t1=35.927, a=(0.55, 0.30, 0.95), b=(0.57, 0.28, 0.86), cut="smoke",
       rays=(0.66, 0.10, 0.22), particles=40, par=0.05),
     # --- volta da letra
-    S(img=4, t0=35.927, t1=37.576, a=(0.50, 0.42, 1.00), b=(0.51, 0.38, 0.86), cut="flash",
+    S(img=4, t0=35.927, t1=37.576, a=(0.50, 0.42, 1.00), b=(0.51, 0.38, 0.86), cut="bloom",
       clouds="warm", rays=(0.53, 0.25, 0.36), particles=60, par=0.07),
-    S(img=7, t0=37.576, t1=38.83, a=(0.50, 0.29, 0.72), b=(0.50, 0.28, 0.66), cut="zoom",
+    S(img=7, t0=37.576, t1=38.83, a=(0.50, 0.29, 0.72), b=(0.50, 0.28, 0.66), cut="iris",
       rays=(0.50, 0.24, 0.32), particles=40, par=0.03),
-    S(img=9, t0=38.83, t1=40.40, a=(0.50, 0.37, 0.76), b=(0.50, 0.41, 1.00), cut="flash",
+    S(img=9, t0=38.83, t1=40.40, a=(0.50, 0.37, 0.76), b=(0.50, 0.41, 1.00), cut="bloom",
       clouds="cool", rays=(0.50, 0.36, 0.45), particles=70, par=0.04, fade=1.4),
 ]
 # demais batidas (tempo, força): pulso de zoom + pulso de luz proporcionais à força
@@ -518,88 +518,120 @@ def draw_sprite(frame, spr, x, base_y, fade, dy=0.0, blur=0.0, scale=1.0, wipe=N
     comp(frame, np.clip(rgbp, 0, None) * fade, np.clip(a, 0, 1) * fade, x0, y0, clip)
 
 
+def _rnd(*k):
+    """Número pseudo-aleatório estável em [0, 1) a partir de uma chave."""
+    h = 2166136261
+    for v in k:
+        for ch in str(v):
+            h = ((h ^ ord(ch)) * 16777619) & 0xFFFFFFFF
+    return (h % 100000) / 100000.0
+
+
+DUST_IN, DUST_OUT, CHAR_GAP = 0.62, 0.34, 0.035
+LEAD = 0.22  # a letra começa a se formar antes da voz para ficar pronta quando a palavra é cantada  # durações (s) e atraso entre letras
+
+
 def draw_lyrics(frame, t):
+    """Legendas que se formam de pó de ouro: partículas convergem para cada letra, a letra
+    acende do desfoque para o nítido com uma faísca; na saída, a letra se desfaz em pó que sobe."""
+    dust = np.zeros((H // 2, W // 2), np.float32)
+    sparks = []
     for line, words, cy, (lx0, lx1), seps in LAYOUT:
-        start = words[0]["t"]
-        if not (start - 0.05 <= t < line["end"] + OUT_T):
+        start = words[0]["t"] - LEAD
+        end = line["end"] - 0.15
+        if not (start - 0.05 <= t < end + DUST_OUT + 0.1):
             continue
-        fin, fout = line.get("fin", "wipe"), line.get("fout", "blur")
-        o = ease_io((t - line["end"]) / OUT_T) if t > line["end"] else 0.0
-        vis = min(1.0, (t - start) / 0.4) * (1 - o)
+        vis = min(1.0, (t - start) / 0.4) * (1 - ease_io((t - end) / (DUST_OUT + 0.1)) if t > end else 1.0)
         d = ((_EX * 4 - W / 2) / (W * 0.36)) ** 2 + ((_EY * 4 - cy) / (H * 0.12)) ** 2
         sh = cv2.resize(np.exp(-d * 1.6), (W, H), interpolation=cv2.INTER_LINEAR)[..., None]
         frame *= 1 - 0.30 * vis * sh
-        for sy in seps:  # filete abre do centro para as pontas
-            draw_ornament(frame, sy, ease_out((t - start - 0.1) / 0.7, 3), (1 - o) * min(1.0, (t - start) / 0.3))
+        for sy in seps:
+            draw_ornament(frame, sy, ease_out((t - start - 0.1) / 0.7, 3), vis)
         shift = {}
         for wd in words:
-            e = ease_io((t - wd["t"]) / 0.4)
+            e = ease_io((t - wd["t"] + LEAD) / 0.5)
             shift[wd["row"]] = shift.get(wd["row"], 0.0) + wd["step"] / 2 * (1 - e)
+        nchar_line = 0
         for wd in words:
-            age = t - wd["t"]
+            age = t - wd["t"] + LEAD
             if age < 0:
+                nchar_line += len(wd["chars"])
                 continue
             spr, sz, hero = wd["spr"], wd["size"], wd["kind"] == "hero"
             x = wd["x"] + shift[wd["row"]]
             by = wd["base_y"]
-            # ---- saída da linha
-            fade, dy, blur, scale, clip, xmask = 1.0, 0.0, 0.0, 1.0, None, None
-            if o > 0:
-                if fout == "blur":
-                    fade, dy, blur = 1 - o, -10 * SC * o, 6 * SC * o
-                elif fout == "slot":  # sobe e some atrás de uma linha invisível
-                    dy, clip = -o * sz * 1.1, (by - sz * (0.95 if hero else 1.0), H)
-                elif fout == "wipe":  # apagada da esquerda para a direita
-                    edge = lerp(lx0 - 60 * SC, lx1 + 60 * SC, o)
-                    xpx = x - (spr["w"] - spr["adv"]) / 2 + np.arange(spr["w"], dtype=np.float32)
-                    xmask = np.clip((xpx - edge) / (60 * SC), 0, 1)
-                elif fout == "punch":
-                    fade, scale, blur = 1 - o, 1 + 0.2 * o, 3 * SC * o
-                elif fout == "drift":
-                    fade, dy = 1 - o, -26 * SC * o
-            # ---- entrada da palavra
-            shimmer = None
-            if hero:
-                sp = (age - 0.45) / 1.1
-                if 0 < sp < 1:
-                    shimmer = lerp(-0.3, 1.3, ease_io(sp))
-            if fin in ("cascade", "track"):
-                per = 0.045 if fin == "cascade" else 0.0
-                dur = 0.42 if fin == "cascade" else 0.6
-                if age < per * len(wd["chars"]) + dur:
-                    for i, (cs, off) in enumerate(wd["chars"]):
-                        pc = (age - i * per) / dur
-                        if pc <= 0:
-                            continue
-                        e = ease_out(pc, 3)
-                        cx = x + off
-                        cdy = dy
-                        if fin == "cascade":  # letras caem uma a uma
-                            cdy += -(1 - e) * sz * 0.45
-                        else:  # tracking: letras afastadas que se juntam
-                            mid = off + cs["adv"] / 2 - spr["adv"] / 2
-                            cx += mid * lerp(0.45, 0.0, e)
-                        draw_sprite(frame, cs, cx, by, fade * e, cdy, blur + (1 - e) * (5 if hero else 3) * SC,
-                                    scale, clip=clip)
+            n = len(wd["chars"])
+            done_in = age > CHAR_GAP * n + DUST_IN
+            leaving = t > end
+            if done_in and not leaving:
+                # palavra pronta: desenha inteira, com o reflexo de luz nas palavras de destaque
+                shimmer = None
+                if hero:
+                    sp = (age - CHAR_GAP * n - DUST_IN) / 1.1
+                    if 0 < sp < 1:
+                        shimmer = lerp(-0.3, 1.3, ease_io(sp))
+                draw_sprite(frame, spr, x, by, 1.0, shimmer=shimmer)
+                nchar_line += n
+                continue
+            for i, (cs, off) in enumerate(wd["chars"]):
+                key = (wd["word"], wd["t"], i)
+                ccx = x + off + cs["adv"] / 2
+                ccy = by - sz * (0.38 if hero else 0.36)
+                # ---- entrada
+                pi_ = (age - i * CHAR_GAP) / DUST_IN
+                if pi_ <= 0:
                     continue
-                draw_sprite(frame, spr, x, by, fade, dy, blur, scale, xmask=xmask, clip=clip, shimmer=shimmer)
-            elif fin == "slot":  # sobe de dentro de uma fenda invisível
-                e = ease_out(age / 0.5, 4)
-                c2 = (clip[0] if clip else 0, by + sz * 0.3)
-                draw_sprite(frame, spr, x, by, fade, dy + (1 - e) * sz * 1.1, blur, scale, xmask=xmask,
-                            clip=c2, shimmer=shimmer)
-            elif fin == "glow":  # acende com um clarão dourado e assenta
-                e = ease_out(age / 0.5, 3)
-                draw_sprite(frame, spr, x, by, fade * e, dy, blur + (1 - e) * 3 * SC, scale * lerp(0.9, 1.0, e),
-                            xmask=xmask, clip=clip, shimmer=shimmer, bloom=(1 - e) ** 1.3 * (1.0 if hero else 0.6))
-            else:  # wipe: revelação macia da esquerda para a direita com desfoque
-                p = min(1.0, age / (0.55 if hero else 0.38))
-                e = ease_out(p, 3)
-                soft = 0.35
-                wipe = np.clip((p * (1 + soft) * 1.15 - spr["xs"]) / soft, 0, 1)
-                draw_sprite(frame, spr, x, by, fade * e, dy + (1 - e) * (14 if hero else 9) * SC,
-                            blur + (1 - e) * (7 if hero else 4) * SC, scale, wipe=wipe, xmask=xmask, clip=clip,
-                            shimmer=shimmer)
+                e = ease_out(min(pi_, 1.0), 3)
+                a_char = smoothstep(0.35, 0.9, min(pi_, 1.0))
+                blur = (1 - smoothstep(0.3, 1.0, min(pi_, 1.0))) * (6 if hero else 4) * SC
+                dy = (1 - e) * 6 * SC
+                sc_ = lerp(1.18, 1.0, e)
+                # ---- saída: a letra se desfaz em pó que sobe (da esquerda para a direita)
+                po = 0.0
+                if leaving:
+                    po = float(np.clip((t - end - (nchar_line + i) * 0.008) / DUST_OUT, 0, 1))
+                    a_char *= (1 - smoothstep(0.0, 0.8, po))
+                    blur += po * 5 * SC
+                    dy -= po * 14 * SC
+                if a_char > 0.01:
+                    draw_sprite(frame, cs, x + off, by, a_char, dy=dy, blur=blur, scale=sc_)
+                # ---- partículas de pó de ouro
+                npart = 9 if hero else 5
+                for j in range(npart):
+                    r1, r2, r3 = _rnd(*key, j, "a"), _rnd(*key, j, "b"), _rnd(*key, j, "c")
+                    if pi_ < 1.0:  # convergindo para a letra
+                        q = min(pi_ / 0.8, 1.0)
+                        ang = r1 * 6.283
+                        rad = (40 + 110 * r2) * SC * (1 - ease_out(q, 2))
+                        px = ccx + math.cos(ang) * rad + (r3 - 0.5) * cs["adv"] * 0.6
+                        py = ccy + math.sin(ang) * rad * 0.7 + (r3 - 0.5) * sz * 0.4
+                        al = math.sin(math.pi * q) * (0.9 if hero else 0.6)
+                        if al > 0.02:
+                            dust_dot(dust, px, py, (1.0 + 1.6 * r3) * SC, al)
+                    if po > 0:  # subindo como pó
+                        px = ccx + (r1 - 0.5) * cs["adv"] * 1.4 + math.sin(po * 5 + r2 * 6) * 8 * SC
+                        py = ccy + (r2 - 0.5) * sz * 0.6 - po * (40 + 70 * r3) * SC
+                        al = math.sin(math.pi * po) * (0.8 if hero else 0.5)
+                        if al > 0.02:
+                            dust_dot(dust, px, py, (1.0 + 1.4 * r3) * SC, al)
+                # faísca quando a letra de destaque termina de se formar
+                if hero and 0.75 < pi_ < 1.25 and _rnd(*key, "s") < 0.45:
+                    k_ = 1 - abs(pi_ - 1.0) / 0.25
+                    sparks.append((ccx + (_rnd(*key, "x") - 0.5) * cs["adv"] * 0.5, by - sz * 0.72, k_))
+            nchar_line += n
+    if dust.max() > 0:
+        g = cv2.GaussianBlur(dust, (0, 0), 1.1) * 1.4 + cv2.GaussianBlur(dust, (0, 0), 4) * 0.8
+        g = cv2.resize(np.clip(g, 0, 1), (W, H), interpolation=cv2.INTER_LINEAR)[..., None]
+        frame[:] = 1 - (1 - frame) * (1 - g * np.float32([1.0, 0.84, 0.5]))
+    for sx, sy, k_ in sparks:
+        frame[:] = frame + star(sx, sy, 34 * SC * k_ + 1, k_ * 0.9)
+
+
+def dust_dot(canvas, x, y, r, a):
+    xi, yi = int(x / 2), int(y / 2)
+    if 0 <= xi < canvas.shape[1] and 0 <= yi < canvas.shape[0]:
+        cv2.circle(canvas, (xi, yi), max(1, int(round(r / 2))), float(a), -1, cv2.LINE_AA)
+
 
 
 # ---------------------------------------------------------------- câmera e efeitos
@@ -1103,6 +1135,8 @@ def render_shot(shot, f, tx=None):
     bg = animate_env(bg, shot, src, M, t)  # céu, água, vegetação e névoa em movimento
     if cut == "intro":
         bg = draw_god(bg, M, t)
+    fxn_, fyn_, _ = FACE[shot["img"]]
+    LAST_FACE[0] = apply_pt(Mf, fxn_ * src["w"], fyn_ * src["h"])
     adx, ady = alive_field(shot, src, Mf, t, M)  # Jesus "vivo"
     adx = cv2.resize(adx, (W, H), interpolation=cv2.INTER_LINEAR)
     ady = cv2.resize(ady, (W, H), interpolation=cv2.INTER_LINEAR)
@@ -1145,9 +1179,10 @@ def render_shot(shot, f, tx=None):
 
 
 # ---------------------------------------------------------------- transições
-# janela (frames antes, frames depois do corte) de cada tipo
-TWIN = {"zoom": (7, 8), "dissolve": (10, 10), "slide": (6, 6), "flash": (3, 9), "spin": (6, 7),
-        "punch": (0, 6)}
+# janela (quadros de 30 fps antes, depois do corte); o corte (impacto) cai na batida
+TWIN = {"burn": (9, 10), "iris": (6, 10), "cloud": (12, 12), "flare": (8, 8), "smoke": (12, 12),
+        "bloom": (6, 9), "punch": (0, 6)}
+LAST_FACE = [None]  # posição do rosto de Jesus na tela no último plano renderizado
 
 
 def chroma(img, amt):
@@ -1161,21 +1196,6 @@ def chroma(img, amt):
     return out
 
 
-def spin_blur(img, ang_deg, n=8):
-    if abs(ang_deg) < 0.5:
-        return img
-    sm = cv2.resize(img, (W // 2, H // 2), interpolation=cv2.INTER_AREA)
-    acc = np.zeros_like(sm)
-    for i in range(n):
-        a = ang_deg * (i / (n - 1) - 0.5)
-        M = cv2.getRotationMatrix2D((W / 4, H / 4), a, 1.0)
-        acc += cv2.warpAffine(sm, M, (W // 2, H // 2), borderMode=cv2.BORDER_REFLECT)
-    bl = cv2.resize(acc / n, (W, H), interpolation=cv2.INTER_LINEAR)
-    r = np.sqrt(((_XX * 2 - W / 2) / W) ** 2 + ((_YY * 2 - H / 2) / H) ** 2)
-    wgt = cv2.resize(np.clip(r * 2.5, 0, 1), (W, H))[..., None]
-    return img * (1 - wgt) + bl * wgt
-
-
 def shake(e, seed):
     """Tremor de impacto que decai (dx, dy, rot)."""
     a = (1 - e) ** 2
@@ -1183,95 +1203,134 @@ def shake(e, seed):
                 rot=0.5 * a * math.sin(seed * 5.7 + e * 37))
 
 
+def _scr_noise(seed, t, scale=2.2, speed=0.05):
+    """Ruído orgânico em coordenadas de tela (1/4 da resolução), animado."""
+    u = _QX / W * scale + t * speed + seed * 0.37
+    v = _QY / H * scale * H / W + seed * 0.61
+    n = tex(NOISE[seed % 3], u, v) * 0.65 + tex(NOISE[(seed + 1) % 3], u * 2.3 - t * speed, v * 2.3) * 0.35
+    return cv2.resize(n, (W, H), interpolation=cv2.INTER_LINEAR)
+
+
+def _mix(a, b, w):
+    return a * (1 - w[..., None]) + b * w[..., None]
+
+
 def transition_frame(f):
     """Se f cai na janela de uma transição, devolve o frame composto; senão None."""
+    t = f / FPS
     for k in range(1, len(SHOTS)):
         B = SHOTS[k]
         typ = B["cut"]
-        pre, post = (v * R30 for v in TWIN.get(typ, (0, 0)))  # janelas definidas em quadros de 30 fps
+        pre, post = (v * R30 for v in TWIN.get(typ, (0, 0)))
         c = B["f0"]
         if not (c - pre <= f < c + post):
             continue
         A = SHOTS[k - 1]
         p = (f - (c - pre) + 0.5) / (pre + post)  # 0..1 ao longo da janela
-        m = pre / (pre + post)  # ponto do corte
-        fx = None
-        if typ == "zoom":
-            # zoom contínuo: A acelera para dentro, B chega desacelerando de dentro
-            if p < m:
-                q = p / m
-                fr = render_shot(A, f, dict(scale=1 + 0.85 * q ** 2.2))
-                amt = q ** 2
-            else:
-                q = (p - m) / (1 - m)
-                fr = render_shot(B, f, dict(scale=1 + 0.85 * (1 - ease_out(q, 3))))
-                amt = (1 - ease_out(q, 2)) ** 1.5
-                if q < 0.2:  # dois frames de mistura no ponto do corte
-                    fa = render_shot(A, f, dict(scale=1.85))
-                    fr = fr * (q / 0.2) + fa * (1 - q / 0.2)
-            fr = radial_blur(fr, 0.32 * amt, W / 2, H / 2)
-            fr = chroma(fr, 18 * SC * amt)
-            fr = 1 - (1 - fr) * (1 - 0.10 * amt)
-            return fr
-        if typ == "dissolve":
-            # dissolve por luminância: as luzes da cena nova surgem primeiro, com brilho
+        m = pre / (pre + post)                    # ponto do corte (na batida)
+        pk = math.exp(-((p - m) / 0.18) ** 2)     # pico de intensidade no corte
+
+        if typ == "burn":
+            # queima de filme: a cena nova "queima" a antiga a partir de um canto, borda incandescente
             fa = render_shot(A, f, dict(scale=1 + 0.03 * p))
+            fb = render_shot(B, f, dict(scale=1.04 - 0.04 * p))
+            corner = (k * 0.37) % 1.0
+            grad = np.clip((_XF / W) * (0.6 + 0.4 * corner) + (_YF / H) * (1.0 - 0.4 * corner), 0, 2) / 1.6
+            fld = 0.75 * (1 - grad) + 0.25 * (_scr_noise(k, t, 1.6, 0.08) * 0.5 + 0.5)
+            th = lerp(1.15, -0.15, ease_io(p))
+            w = smoothstep(th - 0.03, th + 0.03, fld)
+            edge = np.exp(-((fld - th) / 0.035) ** 2)
+            fr = _mix(fa, fb, w)
+            glow = cv2.GaussianBlur(edge, (0, 0), 18 * SC) * 0.9 + edge * 0.6
+            fr = 1 - (1 - fr) * (1 - np.clip(glow, 0, 1)[..., None] * np.float32([1.0, 0.68, 0.30]))
+            return fr + (edge[..., None] * 0.35) * np.float32([1.0, 0.88, 0.6])
+
+        if typ == "iris":
+            # íris dourada: círculo de luz se abre a partir do rosto de Jesus na cena nova
+            fb = render_shot(B, f, dict(scale=1.06 - 0.06 * ease_out(p, 2)))
+            cx, cy = LAST_FACE[0] or (W / 2, H * 0.38)
+            fa = render_shot(A, f, dict(scale=1 + 0.08 * ease_io(p)))
+            R = math.hypot(max(cx, W - cx), max(cy, H - cy)) * 1.05
+            q = max(0.0, (p - m * 0.6) / (1 - m * 0.6))
+            r = R * ease_io(q) ** 1.3
+            d = np.sqrt((_XF - cx) ** 2 + (_YF - cy) ** 2)
+            soft = 30 * SC + 0.08 * r
+            w = 1 - smoothstep(r - soft, r + soft, d)
+            fr = _mix(fa, fb, w)
+            ring = np.exp(-((d - r) / (14 * SC + 0.03 * r)) ** 2) * math.sin(math.pi * min(q * 1.2, 1.0))
+            halo = cv2.GaussianBlur(ring, (0, 0), 22 * SC)
+            fr = 1 - (1 - fr) * (1 - np.clip(ring * 0.9 + halo * 1.2, 0, 1)[..., None] * np.float32([1.0, 0.84, 0.5]))
+            return fr
+
+        if typ == "cloud":
+            # passagem de nuvens: um banco de nuvens atravessa a tela e a cena troca por trás dele
+            pos = lerp(1.45, -0.45, ease_io(p))
+            fa = render_shot(A, f, dict(dx=-60 * SC * ease_io(p)))
+            fb = render_shot(B, f, dict(dx=60 * SC * (1 - ease_io(p))))
+            n = _scr_noise(k + 5, t, 2.6, 0.03)
+            xn = _XF / W + 0.18 * n + 0.06 * np.sin(_YF / H * 6 + k)
+            w = (xn > pos).astype(np.float32)
+            w = cv2.GaussianBlur(w, (0, 0), 25 * SC)
+            fr = _mix(fb, fa, w)
+            dens = np.clip(1.3 - np.abs(xn - pos) * 3.0 + 0.35 * n, 0, 1) ** 1.2
+            shade = 0.82 + 0.18 * (_scr_noise(k + 9, t, 5.0, 0.06) * 0.5 + 0.5) - 0.08 * (_YF / H)
+            col = np.dstack([shade, shade * 0.96, shade * 0.9]).astype(np.float32)
+            return _mix(fr, col, dens)
+
+        if typ == "flare":
+            # raio de luz: faixa dourada diagonal com brilho de lente varre a tela e troca a cena
+            fa = render_shot(A, f)
             fb = render_shot(B, f, dict(scale=1.03 - 0.03 * p))
-            lum = cv2.GaussianBlur(fb.mean(2), (0, 0), 6)
-            th = lerp(1.25, -0.25, ease_io(p))
-            w = smoothstep(th - 0.22, th + 0.22, lum)[..., None]
-            fr = fa * (1 - w) + fb * w
-            pk = math.sin(math.pi * p)
-            fr = 1 - (1 - fr) * (1 - 0.16 * pk * np.array([1.0, 0.86, 0.62], np.float32))
-            return fr
-        if typ == "slide":
-            # as duas cenas deslizam juntas com motion blur proporcional à velocidade
-            d = B.get("wdir", 1)
-            e = ease_io(p) ** 1.0
-            sh = e * W
-            fa = render_shot(A, f, dict(dx=-d * sh))
-            fb = render_shot(B, f, dict(dx=d * (W - sh)))
-            xx = np.arange(W, dtype=np.float32)[None, :, None]
-            edge = W - sh if d > 0 else sh
-            sel = (xx >= edge) if d > 0 else (xx < edge)
-            fr = np.where(sel, fb, fa)
-            v = math.pi / 2 * math.sin(math.pi * p) * W / (pre + post)
-            fr = dir_blur(fr, v * 0.6)
-            return chroma(fr, 8 * SC * math.sin(math.pi * p))
-        if typ == "flash":
-            if p < m:  # A estoura a exposição
-                q = p / m
-                fr = render_shot(A, f, dict(scale=1 + 0.04 * q))
-                g = q ** 2
-            else:
-                q = (p - m) / (1 - m)
-                tx = shake(q, k)
-                tx["scale"] = 1 + 0.07 * (1 - ease_out(q, 2))
-                fr = render_shot(B, f, tx)
-                g = (1 - ease_out(q, 2))
-            fr = 1 - (1 - np.clip(fr, 0, 1)) ** (1 + 3 * g)  # superexposição suave (não é branco chapado)
-            fr = fr + (1 - fr) * 0.55 * g * np.array([1.0, 0.95, 0.85], np.float32)
-            return fr
-        if typ == "spin":
+            pos = lerp(-0.35, 1.35, ease_io(p))
+            dd = (_XF / W) * 0.8 + (_YF / H) * 0.35 - pos * 1.15
+            w = smoothstep(0.04, -0.04, dd)
+            fr = _mix(fa, fb, w)
+            band = np.exp(-(dd / 0.05) ** 2)
+            core = np.exp(-(dd / 0.012) ** 2)
+            fr = 1 - (1 - fr) * (1 - np.clip(band * 0.85, 0, 1)[..., None] * np.float32([1.0, 0.82, 0.45]))
+            fr = fr + core[..., None] * 0.7
+            # streak anamórfico horizontal pela tela, no centro da faixa
+            sy = H * (0.2 + 0.6 * ease_io(p))
+            streak = np.exp(-((_YF - sy) / (6 * SC)) ** 2) * (0.35 + 0.65 * np.exp(-(dd / 0.15) ** 2)) * pk
+            fr = fr + streak[..., None] * np.float32([0.55, 0.75, 1.0]) * 0.55
+            return chroma(fr, 10 * SC * pk)
+
+        if typ == "smoke":
+            # fumaça: dissolve orgânico com bordas de fumaça e leve desfoque nas bordas da troca
+            fa = render_shot(A, f, dict(scale=1 + 0.03 * p, dy=-10 * SC * p))
+            fb = render_shot(B, f, dict(scale=1.03 - 0.03 * p, dy=10 * SC * (1 - p)))
+            fld = _scr_noise(k + 2, t, 0.9, 0.10) * 0.35 + 0.5 + 0.15 * (_XF / W - 0.5)
+            th = lerp(1.0, 0.0, ease_io(p))
+            w = smoothstep(th - 0.18, th + 0.18, fld)
+            edge = np.exp(-((fld - th) / 0.08) ** 2)
+            fr = _mix(fa, fb, w)
+            soft = cv2.GaussianBlur(fr, (0, 0), 8 * SC)
+            fr = _mix(fr, soft, np.clip(edge * 0.9, 0, 1))
+            return 1 - (1 - fr) * (1 - (edge * 0.18)[..., None] * np.float32([1.0, 0.92, 0.78]))
+
+        if typ == "bloom":
+            # clarão: a cena se desfaz em luz dourada e a próxima nasce dela
             if p < m:
                 q = p / m
-                fr = render_shot(A, f, dict(rot=28 * q ** 2.2, scale=1 + 0.2 * q ** 2))
-                fr = spin_blur(fr, 30 * q ** 1.5)
-                amt = q
+                fr = render_shot(A, f, dict(scale=1 + 0.05 * q ** 2))
+                g = q ** 1.6
             else:
                 q = (p - m) / (1 - m)
-                e = 1 - ease_out(q, 3)
-                fr = render_shot(B, f, dict(rot=-28 * e, scale=1 + 0.2 * e))
-                fr = spin_blur(fr, 30 * e ** 1.2)
-                amt = e
-            return chroma(fr, 14 * SC * amt)
+                fr = render_shot(B, f, dict(scale=1 + 0.05 * (1 - ease_out(q, 2))))
+                g = (1 - ease_out(q, 2))
+            sm = cv2.resize(fr, (W // 4, H // 4), interpolation=cv2.INTER_AREA)
+            bl = cv2.resize(cv2.GaussianBlur(sm, (0, 0), 6), (W, H), interpolation=cv2.INTER_LINEAR)
+            fr = _mix(fr, bl, np.full((H, W), 0.6 * g, np.float32))
+            fr = 1 - (1 - np.clip(fr, 0, 1)) ** (1 + 3.5 * g)
+            return fr + (1 - fr) * 0.5 * g * np.float32([1.0, 0.9, 0.7])
+
         if typ == "punch":
             q = p
             tx = shake(q, k)
             tx["scale"] = 1 + 0.12 * (1 - ease_out(q, 3))
             fr = render_shot(B, f, tx)
             return chroma(fr, 10 * SC * (1 - q))
-        return fx
+        return None
     return None
 
 

@@ -35,25 +35,18 @@ partículas caindo e intensidade que respira e pulsa nas batidas.
 | 15.56–35.78 | 10 Sermão (geral/close), 13 oração na luz, 1, 6 (geral/close), 3, 5 (geral/close), 13 close, 12 close, 11 close, 2 close, 8 close | (instrumental) |
 | 35.78–40.40 | 4 nuvens → 7 halo → 9 ascensão final | golden brown finer temptress through |
 
-Transições (sempre misturando as duas cenas, nunca corte seco):
-- **zoom-through** — a cena acelera para dentro e a próxima chega desacelerando, com zoom blur e aberração cromática
-- **dissolve por luminância** — as luzes da cena nova surgem primeiro, com brilho dourado
-- **slide** — as duas cenas deslizam juntas com motion blur proporcional à velocidade
-- **flash** — superexposição suave + tremor de impacto ao aterrissar
-- **spin** — giro com desfoque rotacional · **punch** — zoom de impacto com tremor
+Transições (o impacto cai na batida; tipo por corte em `SHOTS`):
+- **burn** — queima de filme: a cena nova queima a antiga com uma frente incandescente
+- **iris** — íris dourada: um círculo de luz se abre a partir do rosto de Jesus
+- **cloud** — passagem de nuvens: um banco de nuvens atravessa a tela e a cena troca por trás
+- **flare** — raio de luz: faixa dourada diagonal com brilho de lente anamórfico
+- **smoke** — fumaça: dissolve orgânico com bordas de fumaça
+- **bloom** — clarão: a cena se desfaz em luz e a próxima nasce dela · **punch** — zoom de impacto (closes)
 
-Legendas no estilo editorial: palavras de destaque em itálico serifado (Cormorant Garamond) em
-ouro metálico com reflexo de luz; versos em caixa-alta espaçada (Cinzel) cor marfim; sombra elíptica
-macia atrás do bloco. Cada frase tem uma animação própria de entrada / saída:
-
-| frase | entrada | saída |
-|---|---|---|
-| golden brown / texture like sun | revelação macia com desfoque | desfoque subindo |
-| lays me down / with my mind | sobe de uma fenda invisível | sobe e some na fenda |
-| she runs throughout / the night | letras caem em cascata | apagada da esquerda p/ direita |
-| no need / to fight | letras afastadas que se juntam (tracking) | zoom de impacto |
-| never a frown / with golden brown | acende com clarão dourado | flutua para cima |
-| golden brown / finer temptress through | cascata | desfoque + fade final |
+Legendas no estilo editorial (destaque em itálico ouro metálico, versos em caixa-alta marfim).
+Animação **pó de ouro**: partículas douradas convergem e formam cada letra, que acende do desfoque
+para o nítido (faísca nas palavras de destaque) um pouco antes da voz; na saída as letras se desfazem
+em pó que sobe, da esquerda para a direita.
 
 Jesus "vivo" (`alive_field`): respiração no peito, cabeça inclinando devagar em torno do pescoço
 (o rosto se move como um bloco rígido, sem deformar), balanço leve do corpo e onda descendo pela
