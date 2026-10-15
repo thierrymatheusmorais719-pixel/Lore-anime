@@ -218,7 +218,7 @@ S = lambda **k: k  # noqa: E731
 # (as mais fortes viram cortes; as demais, pulsos de zoom e luz). Nos versos, a batida mais
 # próxima do início da frase cantada.
 SHOTS = [
-    # --- versos
+    # --- versos (corte na batida mais próxima do início de cada frase)
     S(img=4, t0=0.00, t1=3.855, a=(0.50, 0.40, 1.00), b=(0.52, 0.32, 0.62), cut="intro",
       clouds="intro", rays=(0.53, 0.20, 0.30), particles=45, par=0.06),
     S(img=11, t0=3.855, t1=6.56, a=(0.50, 0.50, 0.95), b=(0.44, 0.52, 0.78), cut="bloom",
@@ -231,39 +231,29 @@ SHOTS = [
       rays=(0.48, 0.10, 0.22), particles=40, par=0.07, lat=-0.010),
     S(img=7, t0=13.502, t1=15.447, a=(0.50, 0.35, 0.90), b=(0.50, 0.28, 0.70), cut="iris",
       rays=(0.50, 0.24, 0.32), particles=50, par=0.05),
-    # --- instrumental (cada corte numa batida forte)
-    S(img=10, t0=15.447, t1=17.345, a=(0.50, 0.50, 0.95), b=(0.47, 0.45, 0.80), cut="burn",
+    # --- instrumental (cada foto uma vez, ~2 s; os planos abertos avançam devagar até o close)
+    S(img=10, t0=15.447, t1=18.303, a=(0.50, 0.50, 0.95), b=(0.49, 0.35, 0.54), cut="burn",
       particles=40, par=0.06, lat=0.010),
-    S(img=10, t0=17.345, t1=18.303, a=(0.49, 0.34, 0.52), b=(0.49, 0.32, 0.46), cut="punch",
-      particles=30, par=0.04),
-    S(img=13, t0=18.303, t1=20.55, a=(0.50, 0.45, 1.00), b=(0.50, 0.40, 0.84), cut="bloom",
+    S(img=13, t0=18.303, t1=20.55, a=(0.50, 0.45, 1.00), b=(0.52, 0.38, 0.72), cut="bloom",
       beam=True, particles=40, par=0.06, lat=-0.010),
     S(img=1, t0=20.55, t1=22.5, a=(0.53, 0.38, 1.00), b=(0.55, 0.33, 0.80), cut="cloud",
       particles=45, par=0.07, lat=0.012),
-    S(img=6, t0=22.5, t1=23.783, a=(0.50, 0.43, 1.00), b=(0.52, 0.40, 0.90), cut="flare",
+    S(img=6, t0=22.5, t1=24.735, a=(0.50, 0.43, 1.00), b=(0.46, 0.40, 0.62), cut="flare",
       particles=30, par=0.06, lat=-0.012),
-    S(img=6, t0=23.783, t1=24.735, a=(0.45, 0.41, 0.62), b=(0.45, 0.40, 0.58), cut="punch", par=0.03),
-    S(img=3, t0=24.735, t1=25.71, a=(0.50, 0.42, 1.00), b=(0.50, 0.38, 0.88), cut="iris",
+    S(img=3, t0=24.735, t1=26.662, a=(0.50, 0.42, 1.00), b=(0.49, 0.38, 0.76), cut="iris",
       rays=(0.52, 0.12, 0.24), particles=40, par=0.06, lat=0.010),
-    S(img=5, t0=25.71, t1=26.662, a=(0.50, 0.38, 1.00), b=(0.53, 0.36, 0.90), cut="smoke",
+    S(img=5, t0=26.662, t1=28.909, a=(0.50, 0.38, 1.00), b=(0.46, 0.39, 0.62), cut="smoke",
       rays=(0.75, 0.0, 0.24), particles=40, par=0.06),
-    S(img=13, t0=26.662, t1=27.951, a=(0.53, 0.38, 0.62), b=(0.55, 0.35, 0.54), cut="burn",
-      beam=True, particles=35, par=0.04),
-    S(img=5, t0=27.951, t1=28.909, a=(0.45, 0.40, 0.58), b=(0.45, 0.39, 0.54), cut="punch", par=0.03),
-    S(img=12, t0=28.909, t1=30.824, a=(0.60, 0.24, 0.66), b=(0.62, 0.22, 0.58), cut="flare",
+    S(img=12, t0=28.909, t1=30.824, a=(0.60, 0.24, 0.66), b=(0.62, 0.22, 0.58), cut="burn",
       rays=(0.66, 0.10, 0.22), particles=35, par=0.04),
-    S(img=11, t0=30.824, t1=31.782, a=(0.45, 0.55, 0.55), b=(0.43, 0.53, 0.50), cut="cloud",
+    S(img=11, t0=30.824, t1=33.03, a=(0.47, 0.54, 0.62), b=(0.43, 0.52, 0.50), cut="cloud",
       rays=(0.85, 0.30, 0.22), particles=40, par=0.04),
-    S(img=2, t0=31.782, t1=33.03, a=(0.44, 0.34, 0.68), b=(0.41, 0.31, 0.58), cut="iris",
+    S(img=2, t0=33.03, t1=35.927, a=(0.46, 0.36, 0.74), b=(0.41, 0.31, 0.58), cut="iris",
       particles=35, par=0.04, lat=-0.008, pcol=(0.85, 0.95, 1.0)),
-    S(img=8, t0=33.03, t1=34.963, a=(0.50, 0.25, 0.66), b=(0.50, 0.23, 0.55), cut="burn",
-      rays=(0.48, 0.10, 0.22), particles=40, par=0.04, lat=-0.008),
-    S(img=12, t0=34.963, t1=35.927, a=(0.55, 0.30, 0.95), b=(0.57, 0.28, 0.86), cut="smoke",
-      rays=(0.66, 0.10, 0.22), particles=40, par=0.05),
     # --- volta da letra
     S(img=4, t0=35.927, t1=37.576, a=(0.50, 0.42, 1.00), b=(0.51, 0.38, 0.86), cut="bloom",
       clouds="warm", rays=(0.53, 0.25, 0.36), particles=60, par=0.07),
-    S(img=7, t0=37.576, t1=38.83, a=(0.50, 0.29, 0.72), b=(0.50, 0.28, 0.66), cut="iris",
+    S(img=7, t0=37.576, t1=38.83, a=(0.50, 0.29, 0.72), b=(0.50, 0.28, 0.66), cut="flare",
       rays=(0.50, 0.24, 0.32), particles=40, par=0.03),
     S(img=9, t0=38.83, t1=40.40, a=(0.50, 0.37, 0.76), b=(0.50, 0.41, 1.00), cut="bloom",
       clouds="cool", rays=(0.50, 0.36, 0.45), particles=70, par=0.04, fade=1.4),
@@ -280,6 +270,8 @@ PULSES = [
     (32.119, 0.67), (32.7, 0.64), (33.379, 0.7), (33.698, 0.62), (34.017, 0.91), (35.289, 0.75),
     (35.619, 0.75), (36.304, 0.63), (36.891, 0.9), (37.256, 0.52), (37.878, 0.88), (38.412, 0.67),
     (39.491, 1.15), (39.811, 0.82),
+    # antigos cortes (agora pulsos fortes)
+    (17.345, 0.95), (23.783, 0.95), (25.71, 0.9), (27.951, 0.95), (31.782, 0.9), (34.963, 0.95),
 ]
 for k, s in enumerate(SHOTS):
     s["f0"], s["f1"] = int(round(s["t0"] * FPS)), int(round(s["t1"] * FPS))
@@ -1180,8 +1172,8 @@ def render_shot(shot, f, tx=None):
 
 # ---------------------------------------------------------------- transições
 # janela (quadros de 30 fps antes, depois do corte); o corte (impacto) cai na batida
-TWIN = {"burn": (9, 10), "iris": (6, 10), "cloud": (12, 12), "flare": (8, 8), "smoke": (12, 12),
-        "bloom": (6, 9), "punch": (0, 6)}
+TWIN = {"burn": (18, 20), "iris": (14, 22), "cloud": (21, 21), "flare": (17, 17), "smoke": (22, 22),
+        "bloom": (13, 20), "punch": (0, 8)}
 LAST_FACE = [None]  # posição do rosto de Jesus na tela no último plano renderizado
 
 
@@ -1222,6 +1214,8 @@ def transition_frame(f):
         B = SHOTS[k]
         typ = B["cut"]
         pre, post = (v * R30 for v in TWIN.get(typ, (0, 0)))
+        pre = min(pre, 0.45 * (SHOTS[k - 1]["f1"] - SHOTS[k - 1]["f0"]))
+        post = min(post, 0.45 * (B["f1"] - B["f0"]))
         c = B["f0"]
         if not (c - pre <= f < c + post):
             continue
@@ -1271,7 +1265,7 @@ def transition_frame(f):
             xn = _XF / W + 0.18 * n + 0.06 * np.sin(_YF / H * 6 + k)
             w = (xn > pos).astype(np.float32)
             w = cv2.GaussianBlur(w, (0, 0), 25 * SC)
-            fr = _mix(fb, fa, w)
+            fr = _mix(fa, fb, w)  # atrás da frente de nuvens (lado direito) já é a cena nova
             dens = np.clip(1.3 - np.abs(xn - pos) * 3.0 + 0.35 * n, 0, 1) ** 1.2
             shade = 0.82 + 0.18 * (_scr_noise(k + 9, t, 5.0, 0.06) * 0.5 + 0.5) - 0.08 * (_YF / H)
             col = np.dstack([shade, shade * 0.96, shade * 0.9]).astype(np.float32)

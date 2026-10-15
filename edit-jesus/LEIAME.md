@@ -28,12 +28,14 @@ partículas caindo e intensidade que respira e pulsa nas batidas.
 | tempo | imagem | letra |
 |---|---|---|
 | 0.00–3.85 | 4 Ascensão + GOD dourado | golden brown texture like sun |
-| 4.00–6.57 | 11 Jesus olhando Jerusalém | lays me down with my mind |
-| 6.57–9.46 | 2 Sobre as águas (noite) | she runs throughout the night |
-| 9.46–11.38 | 12 Tentação no deserto | no need to fight |
-| 11.38–15.56 | 8 Sepulcro → 7 Ressurreição | never a frown with golden brown |
-| 15.56–35.78 | 10 Sermão (geral/close), 13 oração na luz, 1, 6 (geral/close), 3, 5 (geral/close), 13 close, 12 close, 11 close, 2 close, 8 close | (instrumental) |
-| 35.78–40.40 | 4 nuvens → 7 halo → 9 ascensão final | golden brown finer temptress through |
+| 3.85–6.56 | 11 Jesus olhando Jerusalém | lays me down with my mind |
+| 6.56–9.32 | 2 Sobre as águas (noite) | she runs throughout the night |
+| 9.32–11.24 | 12 Tentação no deserto | no need to fight |
+| 11.24–15.45 | 8 Sepulcro → 7 Ressurreição | never a frown with golden brown |
+| 15.45–35.93 | 10, 13, 1, 6, 3, 5, 12, 11, 2 (uma vez cada, ~2 s, aberto → close) | (instrumental) |
+| 35.93–40.40 | 4 nuvens → 7 halo → 9 ascensão final | golden brown finer temptress through |
+
+Nenhuma foto troca para ela mesma; cada transição dura ~1,1–1,5 s (limitada a 45% do plano vizinho).
 
 Transições (o impacto cai na batida; tipo por corte em `SHOTS`):
 - **burn** — queima de filme: a cena nova queima a antiga com uma frente incandescente
