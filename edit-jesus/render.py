@@ -88,6 +88,13 @@ def make_cloud_texture(w, h, seed, top, soft, tint):
 
 
 # ---------------------------------------------------------------- assets
+# auréolas que o recorte automático deixou de fora: entram na figura (disco com borda suave),
+# senão o parallax as descola da cabeça. (cx, cy, raio) normalizados pela largura/altura
+HALO_ADD = {2: [(0.355, 0.22, 0.075)], 7: [(0.50, 0.255, 0.07)], 10: [(0.49, 0.215, 0.045)],
+            12: [(0.655, 0.17, 0.085)], 13: [(0.55, 0.25, 0.21)]}
+PAR_GAIN, LAT_GAIN = 0.6, 0.5  # parallax mais contido: revela menos fundo preenchido
+
+
 def load_image(i):
     """Carrega a imagem HD (Real-ESRGAN) + máscara + fundo inpaint, em dois níveis de resolução."""
     hd_path = os.path.join(ROOT, "imagens_hd", f"{i}.png")
@@ -99,6 +106,11 @@ def load_image(i):
     img = img[:, :, ::-1].copy()
     h, w = img.shape[:2]
     m = cv2.imread(os.path.join(ROOT, "mascaras", f"{i}.png"), cv2.IMREAD_GRAYSCALE)
+    hh_, ww_ = m.shape
+    yy_, xx_ = np.mgrid[0:hh_, 0:ww_].astype(np.float32)
+    for hx, hy, hr in HALO_ADD.get(i, []):
+        d_ = np.sqrt((xx_ - hx * ww_) ** 2 + (yy_ - hy * hh_) ** 2) / (hr * ww_)
+        m = np.maximum(m, ((1 - smoothstep(0.85, 1.08, d_)) * 255).astype(np.uint8))
     mk = cv2.resize(m, (w, h), interpolation=cv2.INTER_CUBIC).astype(np.float32) / 255
     mk = np.clip((mk - 0.08) / 0.8, 0, 1)
     # fundo sem a figura: inpaint na resolução original, revelado só nas bordas do parallax
@@ -217,12 +229,12 @@ SHOTS = [
       rays=(0.66, 0.10, 0.22), particles=40, par=0.07, lat=0.010),
     S(img=8, t0=11.238, t1=13.502, a=(0.50, 0.36, 1.00), b=(0.50, 0.30, 0.84), cut="dissolve",
       rays=(0.48, 0.10, 0.22), particles=40, par=0.07, lat=-0.010),
-    S(img=7, t0=13.502, t1=15.447, a=(0.50, 0.40, 0.86), b=(0.50, 0.30, 0.58), cut="zoom",
+    S(img=7, t0=13.502, t1=15.447, a=(0.50, 0.35, 0.90), b=(0.50, 0.28, 0.70), cut="zoom",
       rays=(0.50, 0.24, 0.32), particles=50, par=0.05),
     # --- instrumental (cada corte numa batida forte)
     S(img=10, t0=15.447, t1=17.345, a=(0.50, 0.50, 0.95), b=(0.47, 0.45, 0.80), cut="flash",
       particles=40, par=0.06, lat=0.010),
-    S(img=10, t0=17.345, t1=18.303, a=(0.49, 0.36, 0.50), b=(0.49, 0.34, 0.44), cut="punch",
+    S(img=10, t0=17.345, t1=18.303, a=(0.49, 0.34, 0.52), b=(0.49, 0.32, 0.46), cut="punch",
       particles=30, par=0.04),
     S(img=13, t0=18.303, t1=20.55, a=(0.50, 0.45, 1.00), b=(0.50, 0.40, 0.84), cut="zoom",
       beam=True, particles=40, par=0.06, lat=-0.010),
@@ -238,7 +250,7 @@ SHOTS = [
     S(img=13, t0=26.662, t1=27.951, a=(0.53, 0.38, 0.62), b=(0.55, 0.35, 0.54), cut="flash",
       beam=True, particles=35, par=0.04),
     S(img=5, t0=27.951, t1=28.909, a=(0.45, 0.40, 0.58), b=(0.45, 0.39, 0.54), cut="punch", par=0.03),
-    S(img=12, t0=28.909, t1=30.824, a=(0.60, 0.26, 0.62), b=(0.63, 0.23, 0.52), cut="zoom",
+    S(img=12, t0=28.909, t1=30.824, a=(0.60, 0.24, 0.66), b=(0.62, 0.22, 0.58), cut="zoom",
       rays=(0.66, 0.10, 0.22), particles=35, par=0.04),
     S(img=11, t0=30.824, t1=31.782, a=(0.45, 0.55, 0.55), b=(0.43, 0.53, 0.50), cut="slide", wdir=1,
       rays=(0.85, 0.30, 0.22), particles=40, par=0.04),
@@ -249,9 +261,9 @@ SHOTS = [
     S(img=12, t0=34.963, t1=35.927, a=(0.55, 0.30, 0.95), b=(0.57, 0.28, 0.86), cut="zoom",
       rays=(0.66, 0.10, 0.22), particles=40, par=0.05),
     # --- volta da letra
-    S(img=4, t0=35.927, t1=37.576, a=(0.50, 0.46, 1.00), b=(0.51, 0.40, 0.84), cut="flash",
+    S(img=4, t0=35.927, t1=37.576, a=(0.50, 0.42, 1.00), b=(0.51, 0.38, 0.86), cut="flash",
       clouds="warm", rays=(0.53, 0.25, 0.36), particles=60, par=0.07),
-    S(img=7, t0=37.576, t1=38.83, a=(0.50, 0.30, 0.62), b=(0.50, 0.29, 0.54), cut="zoom",
+    S(img=7, t0=37.576, t1=38.83, a=(0.50, 0.29, 0.72), b=(0.50, 0.28, 0.66), cut="zoom",
       rays=(0.50, 0.24, 0.32), particles=40, par=0.03),
     S(img=9, t0=38.83, t1=40.40, a=(0.50, 0.37, 0.76), b=(0.50, 0.41, 1.00), cut="flash",
       clouds="cool", rays=(0.50, 0.36, 0.45), particles=70, par=0.04, fade=1.4),
@@ -621,6 +633,24 @@ def warp_level(src, M, key):
     return cv2.warpAffine(arr, Ml, (W, H), flags=interp, borderMode=cv2.BORDER_REFLECT)
 
 
+def warp_figure(src, Mf, dx, dy):
+    """Projeta a figura na tela já com a animação (dx, dy), lendo direto da imagem original.
+    Como a leitura é na imagem inteira, a animação nunca puxa pixels de fora da tela (sem cortes
+    retos em mãos/braços perto da borda)."""
+    scale = math.hypot(Mf[0, 0], Mf[1, 0])
+    lv = 1 if scale < 0.6 else 0
+    L = src["lv"][lv]
+    Ml = Mf.copy()
+    Ml[:, :2] /= L["f"]
+    Mi = cv2.invertAffineTransform(Ml)
+    X, Y = _FX - dx, _FY - dy
+    sx = (Mi[0, 0] * X + Mi[0, 1] * Y + Mi[0, 2]).astype(np.float32)
+    sy = (Mi[1, 0] * X + Mi[1, 1] * Y + Mi[1, 2]).astype(np.float32)
+    fg = cv2.remap(L["img"], sx, sy, cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT)
+    mk = cv2.remap(L["mask"], sx, sy, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
+    return fg, mk
+
+
 def radial_blur(img, k, cx, cy, n=10):
     if k <= 1e-3:
         return img
@@ -704,6 +734,9 @@ _QY, _QX = np.mgrid[0:H // 4, 0:W // 4].astype(np.float32) * 4
 # outros rostos na cena que também não podem deformar (Pedro, anjos, o tentador) e ganho da onda
 EXTRA_RIGID = {2: [(0.55, 0.30, 0.07)], 7: [(0.22, 0.66, 0.05), (0.80, 0.68, 0.05)], 12: [(0.20, 0.20, 0.06)]}
 WAVE_GAIN = {10: 0.4}
+# pontos presos ao cenário (mão apoiada na parede): a figura se curva ao redor deles e o ponto
+# acompanha o fundo, compensando até o parallax — a mão não escorrega
+PINS = {8: [(0.09, 0.24, 0.045)]}
 # braços articulados: (ombro, cotovelo, mão) normalizados na imagem, espessura (fração da largura),
 # amplitude no ombro e no cotovelo (graus), período (s) e fase
 ARMS = {
@@ -761,7 +794,7 @@ def arm_field(shot, src, Mf, t, X, Y):
 _FY, _FX = _YF, _XF
 
 
-def alive_field(shot, src, Mf, t):
+def alive_field(shot, src, Mf, t, M=None):
     """Campo de deslocamento (tela) que dá vida à figura: respiração, balanço do corpo,
     cabeça inclinando devagar (rígida, o rosto não deforma) e roupa/cabelo ondulando."""
     fxn, fyn, frn = FACE[shot["img"]]
@@ -831,17 +864,17 @@ def alive_field(shot, src, Mf, t):
     wc = wc * free
     dx += 0.055 * R * wc * np.sin(wave)
     dy += 0.018 * R * wc * np.cos(wave * 0.8)
+
+    # 6) pontos presos: anula a animação perto do ponto e o leva para onde o fundo está
+    for pxn, pyn, prn in PINS.get(shot["img"], []):
+        fpx, fpy = apply_pt(Mf, pxn * src["w"], pyn * src["h"])
+        bpx, bpy = apply_pt(M, pxn * src["w"], pyn * src["h"]) if M is not None else (fpx, fpy)
+        rr = prn * src["w"] * math.hypot(Mf[0, 0], Mf[1, 0])
+        dd = np.sqrt((X - bpx) ** 2 + (Y - bpy) ** 2)  # o remap é inverso: centra no destino
+        hold = 1 - smoothstep(rr, 7 * rr, dd)
+        dx = dx * (1 - hold) + (bpx - fpx) * hold
+        dy = dy * (1 - hold) + (bpy - fpy) * hold
     return dx, dy
-
-
-def animate_figure(fg, mk, shot, src, Mf, t):
-    dx, dy = alive_field(shot, src, Mf, t)
-    dx = cv2.resize(dx, (W, H), interpolation=cv2.INTER_LINEAR)
-    dy = cv2.resize(dy, (W, H), interpolation=cv2.INTER_LINEAR)
-    mx, my = _FX - dx, _FY - dy
-    fg = cv2.remap(fg, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
-    mk = cv2.remap(mk, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
-    return fg, mk
 
 
 # ---------------------------------------------------------------- ambiente vivo
@@ -1060,8 +1093,8 @@ def render_shot(shot, f, tx=None):
     x0, y0, x1, y1 = src["bbox"]
     floating = shot["img"] in (4, 9)
     pvx, pvy = apply_pt(M, (x0 + x1) / 2, (y0 + y1) / 2 if floating else y1)
-    k = 1 + shot.get("par", 0.04) * ease_io(u)
-    lat = shot.get("lat", 0.0) * (min(max(u, -0.2), 1.2) - 0.5) * W
+    k = 1 + PAR_GAIN * shot.get("par", 0.04) * ease_io(u)
+    lat = LAT_GAIN * shot.get("lat", 0.0) * (min(max(u, -0.2), 1.2) - 0.5) * W
     Pm = np.float32([[k, 0, (1 - k) * pvx + lat], [0, k, (1 - k) * pvy]])
     Mf = (Pm[:, :2] @ M).astype(np.float32)
     Mf[:, 2] += Pm[:, 2]
@@ -1070,10 +1103,12 @@ def render_shot(shot, f, tx=None):
     bg = animate_env(bg, shot, src, M, t)  # céu, água, vegetação e névoa em movimento
     if cut == "intro":
         bg = draw_god(bg, M, t)
-    fg = warp_level(src, Mf, "img").astype(np.float32) / 255
-    mk = warp_level(src, Mf, "mask").astype(np.float32) / 255
-    fg, mk = animate_figure(fg, mk, shot, src, Mf, t)  # Jesus "vivo"
-    mk = mk[..., None]
+    adx, ady = alive_field(shot, src, Mf, t, M)  # Jesus "vivo"
+    adx = cv2.resize(adx, (W, H), interpolation=cv2.INTER_LINEAR)
+    ady = cv2.resize(ady, (W, H), interpolation=cv2.INTER_LINEAR)
+    fg, mk = warp_figure(src, Mf, adx, ady)
+    fg = fg.astype(np.float32) / 255
+    mk = (mk.astype(np.float32) / 255)[..., None]
 
     rays = None
     if shot.get("rays"):

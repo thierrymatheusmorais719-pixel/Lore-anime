@@ -2,7 +2,9 @@
 
 Edit sincronizada com o trecho de "Golden Brown" do vídeo de referência, usando as 9 imagens enviadas.
 
-- `imagens/` — originais · `imagens_hd/` — upscale 4x Real-ESRGAN · `mascaras/` — recorte da figura
+- `imagens/` — originais · `imagens_hd/` — upscale 4x Real-ESRGAN
+- `mascaras/` — recorte da figura escolhido por auditoria (`escolha.json`: BiRefNet-portrait, u2net_human_seg,
+  isnet ou união); `mascaras_alt/` — todas as máscaras candidatas (inclui as antigas `*_isnet.png`)
 - `audio/golden_brown.m4a` — trilha usada (extraída do vídeo enviado)
 - `fontes/` — Cinzel (SIL Open Font License) usada nas legendas
 - `upscale.py` — Real-ESRGAN x4plus rodando em ONNX Runtime (lê o .pth sem PyTorch)
@@ -61,6 +63,9 @@ Animação das fotos (tudo procedural, calculado quadro a quadro a 120 fps):
 - **Jesus vivo** (`alive_field`): respiração, cabeça inclinando (rosto rígido), balanço do corpo,
   **cabelo** com mechas presas na raiz e pontas soltas balançando com rajadas de vento, roupa ondulando.
   Rostos secundários (Pedro, anjos, o tentador) ficam travados.
+  Pontos presos (`PINS`): a mão apoiada na parede do sepulcro fica fixa no cenário, compensando até o parallax.
+  A figura é projetada já com a animação direto da imagem HD (`warp_figure`): mãos perto da borda
+  da tela nunca ficam cortadas. Auréolas que o recorte deixou de fora entram na figura (`HALO_ADD`).
 - **Braços articulados** (`ARMS` / `arm_field`): nas fotos com braços livres (3, 4, 7, 9, 10, 12), o ombro
   gira o braço inteiro e o cotovelo gira o antebraço com leve atraso, como ossos rígidos — mãos e dedos
   se movem inteiros, sem deformar.
