@@ -52,6 +52,22 @@ def lerp(a, b, t):
     return a + (b - a) * t
 
 
+def org(x):
+    """Oscilação orgânica: senoide principal + harmônico irregular (não soa mecânica)."""
+    return 0.78 * np.sin(x) + 0.22 * np.sin(1.73 * x + 1.3)
+
+
+def pulse_env(d, length):
+    """Envelope de pulso de batida com ataque suave (35 ms) e queda quadrática: sem tranco."""
+    if d < 0 or d >= length:
+        return 0.0
+    a = 0.035
+    if d < a:
+        x = d / a
+        return x * x * (3 - 2 * x)
+    return (1 - (d - a) / (length - a)) ** 2
+
+
 def fbm(h, w, seed, base=6, octaves=6, persistence=0.55):
     rng = np.random.default_rng(seed)
     acc = np.zeros((h, w), np.float32)
@@ -112,14 +128,18 @@ def load_image(name):
     phase = cv2.resize(np.random.default_rng(len(name)).random((h // 12 + 1, w // 12 + 1)).astype(np.float32),
                        (w, h), interpolation=cv2.INTER_NEAREST)
     fx = (np.dstack([np.clip(star, 0, 1), phase]) * 255).astype(np.uint8)
+    dep = cv2.imread(os.path.join(ROOT, "depth", f"{name}.png"), cv2.IMREAD_UNCHANGED).astype(np.float32) / 65535
+    dep = cv2.GaussianBlur(cv2.resize(dep, (w, h), interpolation=cv2.INTER_LINEAR), (0, 0), 6)
     ys, xs = np.nonzero(mk > 0.5)
-    d = dict(w=w, h=h, bbox=(xs.min(), ys.min(), xs.max(), ys.max()))
+    d = dict(w=w, h=h, bbox=(xs.min(), ys.min(), xs.max(), ys.max()),
+             focus=float(np.median(dep[ys[::50], xs[::50]])))
     d["lv"] = []
     for lvl in range(2):
         f = 0.5 ** lvl
         rs = (lambda a: a) if lvl == 0 else (lambda a: cv2.resize(a, (w // 2, h // 2), interpolation=cv2.INTER_AREA))
         d["lv"].append(dict(img=rs(img), bg=rs(np.clip(bg, 0, 255).astype(np.uint8)),
-                            mask=rs((mk * 255).astype(np.uint8)), fx=rs(fx), f=f))
+                            mask=rs((mk * 255).astype(np.uint8)), fx=rs(fx),
+                            depth=rs((dep * 255).astype(np.uint8)), f=f))
     return d
 
 
@@ -158,7 +178,7 @@ SHOTS = [
     S(img=2, t0=5.76, t1=6.82, a=(0.74, 0.43, 0.42), b=(0.75, 0.42, 0.36), cut="punch",
       particles=30, pcol=(1.0, 0.88, 0.6), par=0.04),
     S(img=3, t0=6.82, t1=9.66, a=(0.46, 0.27, 1.00), b=(0.50, 0.52, 0.78), cut="cloud",
-      rays=(0.10, 0.06, 0.26), particles=45, pcol=(1.0, 0.93, 0.78), par=0.07, lat=0.012),
+      rays=(0.10, 0.06, 0.26), particles=45, pcol=(1.0, 0.93, 0.78), par=0.07, lat=0.012, dof=0.55),
     S(img=4, t0=9.66, t1=10.72, a=(0.48, 0.38, 1.00), b=(0.50, 0.40, 0.90), cut="flare",
       particles=35, par=0.05, lat=-0.010),
     S(img=4, t0=10.72, t1=12.50, a=(0.52, 0.42, 0.62), b=(0.54, 0.44, 0.54), cut="punch",
@@ -215,7 +235,7 @@ def warp_level(src, M, key):
     L = src["lv"][lv]
     Ml = M.copy()
     Ml[:, :2] /= L["f"]
-    interp = cv2.INTER_LINEAR if key in ("mask", "fx") else cv2.INTER_CUBIC
+    interp = cv2.INTER_LINEAR if key in ("mask", "fx", "depth") else cv2.INTER_CUBIC
     return cv2.warpAffine(L[key], Ml, (W, H), flags=interp, borderMode=cv2.BORDER_REFLECT)
 
 
@@ -265,7 +285,8 @@ def particles(seed, t, count, col):
         tw = 0.55 + 0.45 * math.sin(2 * math.pi * t / (2 * BEAT) + ph[j] * 3)
         rad = (0.6 + 2.6 * z[j]) * SC
         tgt = big if z[j] > 0.75 else canvas
-        cv2.circle(tgt, (int(px / 2), int(py / 2)), max(1, int(round(rad))), float(tw * (0.4 + 0.6 * z[j])), -1, cv2.LINE_AA)
+        cv2.circle(tgt, (int(px / 2 * 16), int(py / 2 * 16)), max(8, int(rad * 16)), float(tw * (0.4 + 0.6 * z[j])),
+                   -1, cv2.LINE_AA, shift=4)
     lay = cv2.GaussianBlur(canvas, (0, 0), 1.2) * 1.6 + cv2.GaussianBlur(big, (0, 0), 3.5) * 1.2
     lay = cv2.resize(lay, (W, H), interpolation=cv2.INTER_LINEAR)
     return np.clip(lay, 0, 1)[..., None] * np.array(col, np.float32)
@@ -380,8 +401,8 @@ def arm_field(shot, src, Mf, t, X, Y):
         w_fo = 1 - smoothstep(r, 1.9 * r, d2)
         w_arm = np.maximum(w_up, w_fo)
         w_el = w_fo * smoothstep(-0.05, 0.3, s2)
-        ths = math.radians(1.4 * a_sh * math.sin(2 * math.pi * t / per + ph))
-        the = math.radians(1.4 * a_el * math.sin(2 * math.pi * t / per + ph - 0.9))
+        ths = math.radians(1.4 * a_sh * org(2 * math.pi * t / per + ph))
+        the = math.radians(1.4 * a_el * org(2 * math.pi * t / per + ph - 0.9))  # cotovelo atrasado
         rx, ry = X - Sp[0], Y - Sp[1]
         dx += (math.cos(ths) * rx - math.sin(ths) * ry - rx) * w_arm
         dy += (math.sin(ths) * rx + math.cos(ths) * ry - ry) * w_arm
@@ -407,7 +428,7 @@ def alive_field(shot, src, Mf, t, u=0.5):
 
     # corpo: balanço leve em torno da base dos personagens
     px, py = apply_pt(Mf, (x0 + x1) / 2, y1)
-    tb = math.radians(SWAY.get(i, 0.4) * math.sin(2 * math.pi * t / (2 * BAR) + ph))
+    tb = math.radians(SWAY.get(i, 0.4) * org(2 * math.pi * t / (2 * BAR) + ph))
     top = apply_pt(Mf, 0, y0)[1]
     wb = np.clip((py - Y) / max(py - top, 1.0), 0, 1.2)
     rx, ry = X - px, Y - py
@@ -468,7 +489,8 @@ def alive_field(shot, src, Mf, t, u=0.5):
         jx = int(min(max(nx / 4, 0), ww - 1)); jy = int(min(max(ny / 4, 0), hh - 1))
         bx, by = float(dx[jy, jx]), float(dy[jy, jx])      # o pescoço acompanha o corpo
         # inclina para o outro personagem ao longo do plano + um aceno suave a cada compasso
-        nod = 0.5 - 0.5 * math.cos(2 * math.pi * t / BAR + pk)
+        nod = 0.5 - 0.5 * math.cos(2 * math.pi * (t - 0.12) / BAR + pk)   # atrasa um pouco do corpo (inércia)
+        nod = nod + 0.12 * org(2 * math.pi * t / 3.7 + 3 * pk)
         th = math.radians(gain * side * (HEAD_LEAN * ease_io(u) + HEAD_DEG * (nod - 0.5)))
         rx, ry = X - nx, Y - ny
         c_, s_ = math.cos(th), math.sin(th)
@@ -551,7 +573,8 @@ def env_field(shot, src, M, t):
             n1 = tex(NOISE[2], sx * 2 + t * 0.15, sy * 2 * asp)
             p1 = tau * t / BAR * 2 + sx * 3.0
             p2 = tau * t / 0.9 + sy * 12 + sx * 5
-            dx += w * A * (np.sin(p1) * (0.7 + 0.3 * n1) + 0.35 * np.sin(p2))
+            gust = 0.72 + 0.28 * org(t * 0.9 + sx * 2.0)           # rajadas que passam pelo campo
+            dx += w * A * gust * (np.sin(p1) * (0.7 + 0.3 * n1) + 0.35 * np.sin(p2))
             dy += w * A * 0.3 * np.cos(p1 * 1.1)
         elif kind == "haze":
             n1 = tex(NOISE[1], sx * 6 + t * 0.05, sy * 30 * asp - t * 0.8)
@@ -610,9 +633,7 @@ def render_shot(shot, f, tx=None):
         rot += lerp(shot["rot"][0], shot["rot"][1], ease_io(u))
     extra = 1.0
     for b, st in PULSES:
-        d = t - b
-        if 0 <= d < 0.28:
-            extra *= 1 + (0.010 + 0.022 * st) * (1 - d / 0.28) ** 2
+        extra *= 1 + (0.010 + 0.020 * st) * pulse_env(t - b, 0.30)
     if tx:
         extra *= tx.get("scale", 1.0)
         off[0] += tx.get("dx", 0.0)
@@ -634,6 +655,14 @@ def render_shot(shot, f, tx=None):
 
     bg = warp_level(src, M, "bg").astype(np.float32) / 255
     bg = animate_env(bg, shot, src, M, t)
+    # profundidade de campo: o que está atrás dos personagens fica levemente desfocado
+    # (mais quanto mais longe), e cada plano abre com uma puxada de foco do fundo para eles
+    pull = 1 - ease_out(min(max(u / 0.16, 0.0), 1.0), 2)
+    dep = warp_level(src, M, "depth").astype(np.float32) / 255
+    wdof = np.clip((src["focus"] - dep - 0.08) / 0.35, 0, 1) * shot.get("dof", 1.0) * (1 - 0.8 * pull)
+    sm_ = cv2.resize(bg, (W // 2, H // 2), interpolation=cv2.INTER_AREA)
+    bgb = cv2.resize(cv2.GaussianBlur(sm_, (0, 0), 2.2 * SC), (W, H), interpolation=cv2.INTER_LINEAR)
+    bg = _mix(bg, bgb, wdof)
     st = stars(src, M, t)
     if st is not None:
         bg = bg + st
@@ -646,6 +675,10 @@ def render_shot(shot, f, tx=None):
     fg, mk = warp_figure(src, Mf, adx, ady)
     fg = fg.astype(np.float32) / 255
     mk = (mk.astype(np.float32) / 255)[..., None]
+    if pull > 0.02:  # personagens entrando em foco
+        fsm = cv2.resize(fg, (W // 2, H // 2), interpolation=cv2.INTER_AREA)
+        fgb = cv2.resize(cv2.GaussianBlur(fsm, (0, 0), 2.0 * SC), (W, H), interpolation=cv2.INTER_LINEAR)
+        fg = fg + (fgb - fg) * (0.75 * pull)
 
     rays = None
     if shot.get("rays"):
@@ -658,8 +691,10 @@ def render_shot(shot, f, tx=None):
     if shot.get("clouds"):
         tex_ = CLOUDS[shot["clouds"]]
         for li, (layer, spd) in enumerate(zip(tex_, (32 * SC, 60 * SC))):
-            x = int((t * spd + li * 300) % W)
-            sl = layer[:, x:x + W]
+            xf = (t * spd + li * 300) % W
+            x = int(xf)
+            fr_ = np.float32(xf - x)
+            sl = layer[:, x:x + W] * (1 - fr_) + layer[:, x + 1:x + 1 + W] * fr_
             a = sl[..., 3:4] * 0.55
             frame = frame * (1 - a) + sl[..., :3] * a
     frame = frame + metal_glint(frame, u, t)
@@ -818,9 +853,7 @@ def transition_frame(f):
 def beat_env(t):
     v = 0.0
     for b, st in PULSES:
-        d = t - b
-        if 0 <= d < 0.22:
-            v = max(v, 0.055 * st * (1 - d / 0.22) ** 2)
+        v = max(v, 0.05 * st * pulse_env(t - b, 0.24))
     return v
 
 
@@ -830,6 +863,7 @@ def grade(fr, f):
     sm = cv2.resize(hi, (W // 4, H // 4), interpolation=cv2.INTER_AREA)
     bloom = cv2.resize(cv2.GaussianBlur(sm, (0, 0), 9), (W, H), interpolation=cv2.INTER_LINEAR)
     fr = 1 - (1 - fr) * (1 - bloom * 0.32)
+    fr = fr + bloom * np.float32([0.07, 0.018, 0.0])   # halação de película
     fr = fr + (smoothstep(0.4, 1.0, lum) * 0.035) * np.array([1.0, 0.45, -0.6], np.float32)
     fr = fr + (1 - smoothstep(0.0, 0.35, lum)) * 0.012 * np.array([-0.6, 0.15, 0.6], np.float32)  # sombras frias
     fr = fr + 0.06 * (fr - 0.5) * (1 - np.abs(2 * fr - 1))
@@ -839,7 +873,7 @@ def grade(fr, f):
     return fr + g * 0.009
 
 
-def render_frame(f):
+def render_core(f):
     t = f / FPS
     shot = next((s for s in SHOTS if s["f0"] <= f < s["f1"]), SHOTS[-1])
     frame = transition_frame(f)
@@ -848,6 +882,16 @@ def render_frame(f):
     for lt in LIGHTNING:  # relâmpagos da tempestade, nos acentos
         if 0 <= t - lt < 0.25:
             frame = frame + (math.exp(-(t - lt) / 0.06) * 0.30) * np.float32([0.85, 0.9, 1.0])
+    return frame
+
+
+SHUTTER = (-0.25, 0.25)  # obturador de 180°: amostras a ±1/4 de quadro geram o desfoque de movimento
+
+
+def render_frame(f):
+    t = f / FPS
+    frame = sum(render_core(f + o) for o in SHUTTER) / len(SHUTTER)
+    frame = chroma(frame, 1.6 * SC)  # aberração cromática leve de lente nas bordas
     frame = 1 - (1 - np.clip(frame, 0, 1)) * (1 - light_leak(t, 0.08))
     frame = grade(frame, f)
     frame = frame * (1 + beat_env(t))
