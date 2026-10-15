@@ -1,3 +1,6 @@
 __pycache__/
 _chunk*.raw
 refs_hd/
+*.part*.mp4
+*.parts.txt
+*.todo

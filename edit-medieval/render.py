@@ -22,7 +22,9 @@ import cv2
 import numpy as np
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-W, H, FPS = 1920, 1080, 60
+# 4K (3840x2160) por padrão; EDIT_RES=1080 renderiza em Full HD (testes rápidos)
+W, H = (1920, 1080) if os.environ.get("EDIT_RES") == "1080" else (3840, 2160)
+FPS = 60
 SC = W / 1440            # escala dos tamanhos em pixel (referência 1440 px, como na edit de Jesus)
 R30 = FPS / 30           # quadros de saída por quadro de 30 fps
 DUR = 21.05
@@ -911,18 +913,42 @@ def main():
             cv2.imwrite(os.path.join(os.path.dirname(os.path.abspath(out)), f"still_{x:05.2f}.jpg"), fr[:, :, ::-1],
                         [cv2.IMWRITE_JPEG_QUALITY, 92])
         return
-    cmd = ["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
-           "-r", str(FPS), "-i", "-", "-i", audio, "-map", "0:v", "-map", "1:a",
-           "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-tune", "film",
-           "-profile:v", "high", "-pix_fmt", "yuv420p",
-           "-af", f"afade=t=in:d=0.3,afade=t=out:st={DUR - 1.6:.2f}:d=1.6", "-c:a", "aac", "-b:a", "320k",
-           "-t", str(DUR), "-movflags", "+faststart", out]
+    # renderização em partes (--seg k/n): cada parte vira um .mp4 só de vídeo; --mux junta as partes
+    # com o áudio (música + efeitos). 4K 60 fps em H.264 High a ~30 Mb/s.
+    venc = ["-c:v", "libx264", "-preset", "medium", "-b:v", "30M", "-maxrate", "40M", "-bufsize", "60M",
+            "-tune", "film", "-profile:v", "high", "-level", "5.2", "-pix_fmt", "yuv420p"]
+    if "--mux" in sys.argv:
+        n = int(sys.argv[sys.argv.index("--mux") + 1])
+        lst = out + ".parts.txt"
+        with open(lst, "w") as fh:
+            for k in range(n):
+                fh.write(f"file '{os.path.abspath(out)}.part{k}.mp4'\n")
+        subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "concat", "-safe", "0", "-i", lst, "-i", audio,
+                        "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "320k",
+                        "-t", str(DUR), "-movflags", "+faststart", out], check=True)
+        for k in range(n):
+            os.remove(f"{out}.part{k}.mp4")
+        os.remove(lst)
+        print("ok ->", out)
+        return
+    frames = range(NFRAMES)
+    if "--seg" in sys.argv:
+        k, n = (int(v) for v in sys.argv[sys.argv.index("--seg") + 1].split("/"))
+        step = -(-NFRAMES // n)
+        frames = range(k * step, min(NFRAMES, (k + 1) * step))
+        part = f"{out}.part{k}.mp4"
+        cmd = ["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
+               "-r", str(FPS), "-i", "-", *venc, part]
+    else:
+        cmd = ["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
+               "-r", str(FPS), "-i", "-", "-i", audio, "-map", "0:v", "-map", "1:a", *venc,
+               "-c:a", "aac", "-b:a", "320k", "-t", str(DUR), "-movflags", "+faststart", out]
     ff = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-    with Pool(os.cpu_count()) as pool:
-        for i, fr in enumerate(pool.imap(render_frame, range(NFRAMES), chunksize=2)):
+    with Pool(int(os.environ.get("EDIT_PROCS", os.cpu_count()))) as pool:
+        for i, fr in enumerate(pool.imap(render_frame, frames, chunksize=2)):
             ff.stdin.write(fr.tobytes())
-            if i % 120 == 0:
-                print(f"frame {i}/{NFRAMES}", flush=True)
+            if i % 60 == 0:
+                print(f"frame {frames[0] + i}/{NFRAMES}", flush=True)
     ff.stdin.close()
     ff.wait()
     print("ok ->", out)
