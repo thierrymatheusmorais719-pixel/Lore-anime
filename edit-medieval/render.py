@@ -427,18 +427,6 @@ def alive_field(shot, src, Mf, t, u=0.5):
         R = frn * src["w"] * scl
         dist = np.sqrt((X - fx) ** 2 + (Y - fy) ** 2)
         pk = ph + k * 2.3
-        # cabeça: rotação rígida em torno do pescoço — inclina para o outro personagem ao longo
-        # do plano e faz um gesto (aceno) a cada compasso, com um toque leve a cada 2 tempos
-        nx, ny = fx, fy + 1.25 * R
-        nod = 0.5 - 0.5 * math.cos(2 * math.pi * t / BAR + pk)
-        th = math.radians(gain * side * (HEAD_LEAN * ease_io(u) + HEAD_DEG * (nod - 0.5)
-                                         + 0.8 * math.sin(2 * math.pi * t / (BAR / 4) + 2 * pk)))
-        wh = 1 - smoothstep(1.35 * R, 2.4 * R, dist)
-        rx, ry = X - nx, Y - ny
-        dx += (math.cos(th) * rx - math.sin(th) * ry - rx) * wh
-        dy += (math.sin(th) * rx + math.cos(th) * ry - ry) * wh
-        # a cabeça avança um pouco junto com o gesto
-        dx += side * 0.10 * R * gain * nod * wh
         # respiração: o peito sobe e expande (um ciclo a cada meio compasso)
         cx, cyy = fx, fy + 2.7 * R
         br = 0.5 - 0.5 * math.cos(2 * math.pi * t / (BAR / 2) + pk)
@@ -466,7 +454,32 @@ def alive_field(shot, src, Mf, t, u=0.5):
         dy += 0.016 * R * wc * np.cos(wave * 0.8)
     dx += adx
     dy += ady
-    return dx, dy
+
+    # cabeças: movimento 100% rígido. Dentro da cabeça o campo é trocado por uma rotação pura em
+    # torno do pescoço + o deslocamento que o corpo tem no pescoço — nada de onda, cabelo, tecido ou
+    # respiração passando por cima do rosto/elmo (era isso que deixava a cabeça "ondulada").
+    hh, ww = X.shape
+    out_dx, out_dy = dx.copy(), dy.copy()
+    for k, (fxn, fyn, frn, hair, gain, side) in enumerate(faces):
+        fx, fy = apply_pt(Mf, fxn * src["w"], fyn * src["h"])
+        R = frn * src["w"] * scl
+        pk = ph + k * 2.3
+        nx, ny = fx, fy + 1.25 * R
+        jx = int(min(max(nx / 4, 0), ww - 1)); jy = int(min(max(ny / 4, 0), hh - 1))
+        bx, by = float(dx[jy, jx]), float(dy[jy, jx])      # o pescoço acompanha o corpo
+        # inclina para o outro personagem ao longo do plano + um aceno suave a cada compasso
+        nod = 0.5 - 0.5 * math.cos(2 * math.pi * t / BAR + pk)
+        th = math.radians(gain * side * (HEAD_LEAN * ease_io(u) + HEAD_DEG * (nod - 0.5)))
+        rx, ry = X - nx, Y - ny
+        c_, s_ = math.cos(th), math.sin(th)
+        rdx = c_ * rx - s_ * ry - rx + bx + side * 0.08 * R * gain * nod
+        rdy = s_ * rx + c_ * ry - ry + by
+        # núcleo rígido (cabeça inteira) com transição curta só no pescoço/bordas
+        dist = np.sqrt((X - fx) ** 2 + ((Y - fy) * 0.9) ** 2)
+        w = 1 - smoothstep(1.25 * R, 1.9 * R, dist)
+        out_dx = out_dx * (1 - w) + rdx * w
+        out_dy = out_dy * (1 - w) + rdy * w
+    return out_dx, out_dy
 
 
 # ---------------------------------------------------------------- ambiente vivo
