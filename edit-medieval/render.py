@@ -359,19 +359,91 @@ FACE = {
     5: [(0.400, 0.380, 0.055, False, 1.0, +1), (0.600, 0.600, 0.040, True, 1.2, +1)],
     6: [], 7: [],
 }
-HEAD_DEG = 4.2    # amplitude do gesto de cabeça (graus), no ritmo do compasso
-HEAD_LEAN = 3.0   # inclinação progressiva em direção ao outro personagem ao longo do plano
+HEAD_MAX = 5.5    # inclinação máxima da cabeça (graus) quando a "atuação" chega a 1
 # balanço do corpo (graus) por imagem; as armaduras vazias (6, 7) ficam paradas
 SWAY = {1: 0.5, 2: 0.45, 3: 0.4, 4: 0.35, 5: 0.6, 6: 0.0, 7: 0.0}
 # braços articulados: (ombro, cotovelo, mão) normalizados, espessura (fração da largura),
-# amplitude no ombro e no cotovelo (graus), período (s) e fase. Mão e dedos se movem inteiros.
+# giro máximo no ombro e no cotovelo (graus, com sinal) quando a atuação do braço chega a 1.
+# Mão e dedos se movem inteiros.
 ARMS = {
-    1: [((0.360, 0.430), (0.425, 0.455), (0.470, 0.345), 0.030, 2.4, 4.5, BAR, 0.0)],     # ergue a rosa
-    2: [((0.200, 0.380), (0.270, 0.500), (0.350, 0.530), 0.035, 1.4, 2.6, BAR, 1.2)],     # mãos no joelho
-    3: [((0.360, 0.560), (0.345, 0.640), (0.420, 0.650), 0.030, 1.6, 2.4, BAR, 0.6)],     # mão no punho
-    4: [((0.800, 0.780), (0.680, 0.700), (0.580, 0.520), 0.060, 1.2, 2.0, BAR, 0.4)],     # manopla e mão dela
-    5: [((0.330, 0.480), (0.420, 0.600), (0.540, 0.660), 0.040, 1.2, 2.0, BAR, 0.9)],
+    1: [((0.360, 0.430), (0.425, 0.455), (0.470, 0.345), 0.030, 3.5, 6.5)],       # oferece a rosa a ela
+    2: [((0.200, 0.380), (0.270, 0.500), (0.350, 0.530), 0.035, -1.5, -3.0)],     # mãos no joelho
+    3: [((0.360, 0.560), (0.345, 0.640), (0.420, 0.650), 0.030, 1.8, 3.0)],       # mão no punho
+    4: [((0.800, 0.780), (0.680, 0.700), (0.580, 0.520), 0.060, 1.6, 2.6)],       # manopla e mão dela
+    5: [((0.330, 0.480), (0.420, 0.600), (0.540, 0.660), 0.040, 1.5, 2.4)],
 }
+
+# ---------------------------------------------------------------- atuação (movimento real)
+# Em vez de oscilar sem parar, cada cabeça e cada braço segue "alvos" de pose que mudam nas
+# batidas (tempos em segundos, valores de 0 a 1). Uma mola criticamente amortecida leva a pose
+# até o alvo: acelera, desacelera, passa um pouco do ponto e assenta — como um gesto humano —
+# e entre os gestos fica um micro-movimento de repouso (nunca congela).
+TG = np.arange(0.0, DUR + 1.5, 1 / 240)
+PERF = {
+    1: dict(heads=[[(0, 0), (0.43, 0.25), (1.14, 0.7), (2.56, 1.0), (3.27, 0.75)],
+                   [(0, -0.2), (0.8, 0.3), (1.85, 0.9), (2.9, 1.0), (3.62, 0.6)]],
+            arms=[[(0, 0), (0.35, -0.25), (0.8, 1.0), (1.85, 0.8), (2.56, 1.1), (3.27, 0.9)]]),
+    2: dict(heads=[[(3.6, 0), (4.33, 1.0), (5.39, 0.8), (6.10, 1.0)],
+                   [(3.6, 0), (4.33, -0.6), (5.39, -0.2), (5.76, 0.5), (6.45, 0.8)]],
+            arms=[[(3.6, 0), (4.69, 0.6), (5.76, 0.2), (6.45, 0.5)]]),
+    3: dict(heads=[[(6.4, 0.2), (7.19, 1.0), (8.23, 0.85), (9.30, 1.0)],
+                   [(6.4, 0), (7.52, 0.4), (8.59, 0.9), (9.30, 0.7)]],
+            arms=[[(6.4, 0), (7.52, 0.7), (8.94, 0.3)]]),
+    4: dict(heads=[[(9.3, 0), (10.02, 0.7), (10.72, 1.0), (11.78, 0.5), (12.14, 0.9)],
+                   [(9.3, 0), (10.37, 0.9), (11.42, 0.5), (12.14, 1.0)]],
+            arms=[[(9.3, 0), (10.72, 1.0), (11.78, 0.4), (12.30, 0.8)]]),
+    5: dict(heads=[[(12.2, 0), (13.20, 1.0), (14.26, 0.7), (14.95, 1.0)],
+                   [(12.2, 0), (13.55, 0.8), (14.61, 1.0)]],
+            arms=[[(12.2, 0), (13.91, 0.7), (14.95, 0.4)]]),
+}
+
+
+def spring_track(keys, freq=1.7, zeta=0.68, idle=0.05, seed=0):
+    """Pose ao longo do tempo: mola amortecida perseguindo alvos em degrau + micro-movimento."""
+    w = 2 * math.pi * freq
+    dt = TG[1] - TG[0]
+    times = [k[0] for k in keys]
+    vals = [k[1] for k in keys]
+    x, v, j = vals[0], 0.0, 0
+    out = np.empty_like(TG)
+    for n, tt in enumerate(TG):
+        while j + 1 < len(times) and times[j + 1] <= tt:
+            j += 1
+        acc = w * w * (vals[j] - x) - 2 * zeta * w * v
+        v += acc * dt
+        x += v * dt
+        out[n] = x
+    r = np.random.default_rng(seed)
+    for f in (0.11, 0.23, 0.41):
+        out += idle / 3 * np.sin(2 * math.pi * f * TG * (0.8 + 0.4 * r.random()) + r.random() * 6.28)
+    return out
+
+
+TRACKS = {i: dict(heads=[spring_track(k, 1.6, 0.66, 0.06, 10 * i + n) for n, k in enumerate(p["heads"])],
+                  arms=[spring_track(k, 1.3, 0.72, 0.05, 50 + 10 * i + n) for n, k in enumerate(p["arms"])])
+          for i, p in PERF.items()}
+
+
+def track(arr, t):
+    return float(np.interp(t, TG, arr))
+
+
+def slow_noise(t, seed):
+    """Ruído suave de baixa frequência (balanço de peso, rajadas), sem periodicidade evidente."""
+    r = np.random.default_rng(seed)
+    a = r.random(3) * 6.28
+    return (0.55 * math.sin(2 * math.pi * 0.17 * t + a[0]) + 0.3 * math.sin(2 * math.pi * 0.31 * t + a[1])
+            + 0.15 * math.sin(2 * math.pi * 0.53 * t + a[2]))
+
+
+def breath(t, period, phase):
+    """Respiração real: inspira mais rápido (40%) e solta devagar (60%)."""
+    p = (t / period + phase) % 1.0
+    if p < 0.4:
+        x = p / 0.4
+        return x * x * (3 - 2 * x)
+    x = (p - 0.4) / 0.6
+    return 1 - x * x * (3 - 2 * x)
 # pontos que não podem ondular (a rosa, o elmo)
 EXTRA_RIGID = {1: [(0.47, 0.33, 0.03)], 4: [(0.62, 0.40, 0.10)]}
 LAST_FACE = [None]
@@ -391,7 +463,8 @@ def arm_field(shot, src, Mf, t, X, Y):
     dy = np.zeros_like(Y)
     wall = np.zeros_like(X)
     scl = math.hypot(Mf[0, 0], Mf[1, 0])
-    for (S_, E, Hn, wd, a_sh, a_el, per, ph) in ARMS.get(shot["img"], []):
+    trs = TRACKS.get(shot["img"], {}).get("arms", [])
+    for n_, (S_, E, Hn, wd, a_sh, a_el) in enumerate(ARMS.get(shot["img"], [])):
         Sp = apply_pt(Mf, S_[0] * src["w"], S_[1] * src["h"])
         Ep = apply_pt(Mf, E[0] * src["w"], E[1] * src["h"])
         Hp = apply_pt(Mf, Hn[0] * src["w"], Hn[1] * src["h"])
@@ -403,8 +476,10 @@ def arm_field(shot, src, Mf, t, X, Y):
         w_fo = 1 - smoothstep(r, 1.9 * r, d2)
         w_arm = np.maximum(w_up, w_fo)
         w_el = w_fo * smoothstep(-0.05, 0.3, s2)
-        ths = math.radians(1.4 * a_sh * org(2 * math.pi * t / per + ph))
-        the = math.radians(1.4 * a_el * org(2 * math.pi * t / per + ph - 0.9))  # cotovelo atrasado
+        g = track(trs[n_], t) if n_ < len(trs) else 0.0
+        g_el = track(trs[n_], t - 0.09) if n_ < len(trs) else 0.0   # o antebraço segue o ombro com atraso
+        ths = math.radians(a_sh * g)
+        the = math.radians(a_el * g_el)
         rx, ry = X - Sp[0], Y - Sp[1]
         dx += (math.cos(ths) * rx - math.sin(ths) * ry - rx) * w_arm
         dy += (math.sin(ths) * rx + math.cos(ths) * ry - ry) * w_arm
@@ -430,7 +505,7 @@ def alive_field(shot, src, Mf, t, u=0.5):
 
     # corpo: balanço leve em torno da base dos personagens
     px, py = apply_pt(Mf, (x0 + x1) / 2, y1)
-    tb = math.radians(SWAY.get(i, 0.4) * org(2 * math.pi * t / (2 * BAR) + ph))
+    tb = math.radians(SWAY.get(i, 0.4) * 1.2 * slow_noise(t, 7 * i))   # troca de peso lenta
     top = apply_pt(Mf, 0, y0)[1]
     wb = np.clip((py - Y) / max(py - top, 1.0), 0, 1.2)
     rx, ry = X - px, Y - py
@@ -450,9 +525,9 @@ def alive_field(shot, src, Mf, t, u=0.5):
         R = frn * src["w"] * scl
         dist = np.sqrt((X - fx) ** 2 + (Y - fy) ** 2)
         pk = ph + k * 2.3
-        # respiração: o peito sobe e expande (um ciclo a cada meio compasso)
+        # respiração: ~4 s por ciclo, inspira rápido e solta devagar; o peito sobe e expande
         cx, cyy = fx, fy + 2.7 * R
-        br = 0.5 - 0.5 * math.cos(2 * math.pi * t / (BAR / 2) + pk)
+        br = breath(t, 3.7 + 0.6 * k, 0.37 * i + 0.5 * k)
         g = np.exp(-((X - cx) ** 2 + (Y - cyy) ** 2) / (2 * (2.3 * R) ** 2))
         dy += -0.12 * R * br * g
         dx += (X - cx) * 0.03 * br * g
@@ -462,7 +537,7 @@ def alive_field(shot, src, Mf, t, u=0.5):
             face_e = ((X - fx) / (1.05 * R)) ** 2 + ((Y - (fy + 0.3 * R)) / (1.5 * R)) ** 2
             w_hair = hair_reg * smoothstep(1.0, 1.7, face_e)
             s_len = np.clip((Y - (fy - 1.1 * R)) / (3.8 * R), 0, 1) ** 1.2 + 0.35 * np.clip(np.abs(X - fx) / (2 * R), 0, 1)
-            gust = 0.6 + 0.4 * math.sin(2 * math.pi * t / BAR + pk)
+            gust = 0.6 + 0.4 * slow_noise(t * 1.6, 3 * i + k)
             yh = (Y - fy) / R
             a1 = 2 * math.pi * t / 2.2 - yh / 1.3 + pk
             a2 = 2 * math.pi * t / 1.15 - yh / 0.7 + (X - fx) / (1.1 * R) + 2 * pk
@@ -470,6 +545,11 @@ def alive_field(shot, src, Mf, t, u=0.5):
             amp = 0.15 * R * w_hair * s_len * gust * free * gain
             dx += amp * (np.sin(a1) + 0.5 * np.sin(a2) + 0.22 * np.sin(a3))
             dy += amp * (0.35 * np.cos(a1) + 0.12 * np.cos(a3))
+            # follow-through: as pontas do cabelo atrasam quando a cabeça se move
+            hts = TRACKS.get(i, {}).get("heads", [])
+            if k < len(hts):
+                vel = track(hts[k], t) - track(hts[k], t - 0.22)
+                dx += -side * 1.6 * R * vel * w_hair * s_len * free
         # tecido (capas, vestidos): onda descendo longe do rosto
         wc = smoothstep(2.0 * R, 4.5 * R, dist) * np.clip((Y - fy) / (5 * R), 0, 1) * free * rigid / len(faces)
         wave = 2 * math.pi * (Y / (7 * R) + X / (21 * R)) - 2 * math.pi * t / 2.7 + pk
@@ -490,13 +570,13 @@ def alive_field(shot, src, Mf, t, u=0.5):
         nx, ny = fx, fy + 1.25 * R
         jx = int(min(max(nx / 4, 0), ww - 1)); jy = int(min(max(ny / 4, 0), hh - 1))
         bx, by = float(dx[jy, jx]), float(dy[jy, jx])      # o pescoço acompanha o corpo
-        # inclina para o outro personagem ao longo do plano + um aceno suave a cada compasso
-        nod = 0.5 - 0.5 * math.cos(2 * math.pi * (t - 0.12) / BAR + pk)   # atrasa um pouco do corpo (inércia)
-        nod = nod + 0.12 * org(2 * math.pi * t / 3.7 + 3 * pk)
-        th = math.radians(gain * side * (HEAD_LEAN * ease_io(u) + HEAD_DEG * (nod - 0.5)))
+        # atuação: a cabeça vai até a pose-alvo de cada batida (mola amortecida) e assenta
+        hts = TRACKS.get(i, {}).get("heads", [])
+        pose = track(hts[k], t) if k < len(hts) else 0.0
+        th = math.radians(gain * side * HEAD_MAX * pose)
         rx, ry = X - nx, Y - ny
         c_, s_ = math.cos(th), math.sin(th)
-        rdx = c_ * rx - s_ * ry - rx + bx + side * 0.08 * R * gain * nod
+        rdx = c_ * rx - s_ * ry - rx + bx + side * 0.09 * R * gain * pose
         rdy = s_ * rx + c_ * ry - ry + by
         # núcleo rígido (cabeça inteira) com transição curta só no pescoço/bordas
         dist = np.sqrt((X - fx) ** 2 + ((Y - fy) * 0.9) ** 2)
