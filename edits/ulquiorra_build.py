@@ -14,8 +14,8 @@ S=[
  (5.76, 31.40, 1.00,120,None, 33.10),  # raises hand
  (6.92, 33.15, 1.00,120,None, 34.20),  # cero charges
  (7.77, 18.10, 1.00,100,None, 20.07),  # cero clash on face
- (8.66, 35.20, 1.00, 40,None, 36.97),  # walks out of dust
- (9.56, 21.25, 0.80,140,None, 23.40),  # wide, purple sky (slow)
+ (8.66, 21.25, 0.80,120,None, 23.40),  # wide, looking up -> zoom in on him
+ (9.56, 20.10, 0.78,120,None, 21.20),  # his face close
  (10.89,62.40, 1.00,120,None, 64.43),  # resurreccion - big hit
  (12.23,37.10, 1.00,120,None, 42.43),  # released face
  (13.51,42.50, 1.00,120,None, 48.00),  # "4" torso
@@ -42,21 +42,17 @@ S=[
  (37.23,126.55,0.85,120,None,129.40),  # aftermath
 ]
 END=39.30
-# zoom per shot (measured on the reference): slow push-in, quick punch-in on the
-# last frames before a hit, and a settle-out zoom on shots that land on a hit
-P,C=0.08,0.04
-Z=["p.05k","o","p","p","-","pk","o","p","p","pk","o","p","pk","o","p","-","pk","o","p","pk","pk","o","p","pk","p",
-   "c","c","c","c","c","c","c","c","c"]
-def zoom(spec,k,n):
-    t=k/FPS; z=1.0
-    if spec.startswith("p"): z+= (float(spec[1:].rstrip("ko") or P) if spec[1:].rstrip("ko") else P)*t
-    if spec=="c": z+=C*t
-    if "o" in spec:
-        u=min(1,t/0.35); z+=0.10*(1-u)**3
-    if "k" in spec:
-        m=4; j=k-(n-m)
-        if j>=0: z*=1+0.18*((j+1)/m)**2
-    return z
+# zoom only on the wide shot that cuts to his face: the camera pushes in on him
+# (eases in, faster near the cut) and the next shot is the close-up
+# shot index -> (face x, face y in source px, final zoom)
+ZOOM={8:(500,190,1.9), 16:(550,230,1.7), 19:(285,170,1.5), 31:(580,280,1.5)}
+def crop_box(i,cx,k,n):
+    if i not in ZOOM: return cx,0,OUT
+    fx,fy,zm=ZOOM[i]; u=(k+1)/n; e=u*u
+    z=1+(zm-1)*e; w=OUT/z
+    mx=(cx+OUT/2)+(fx-(cx+OUT/2))*e; my=H/2+(fy-H/2)*e
+    x0=min(max(mx-w/2,0),W-w); y0=min(max(my-w/2,0),H-w)
+    return x0,y0,w
 shots=[]
 for i,(t0,s0,sp,cx,ramp,send) in enumerate(S):
     t1=S[i+1][0] if i+1<len(S) else END
@@ -70,7 +66,7 @@ for i,(t0,s0,sp,cx,ramp,send) in enumerate(S):
         else: off=sp*d
         idx.append(int(round((s0+off)*FPS)))
     assert idx[-1] < send*FPS-1, (i, idx[-1]/FPS, send)
-    shots.append((a,b,cx,idx,Z[i]))
+    shots.append((a,b,cx,idx,i))
 need={}
 for a,b,cx,idx,_ in shots:
     for f in idx: need.setdefault(f,set()).add(cx)
@@ -85,10 +81,10 @@ dec.kill()
 enc=subprocess.Popen(["ffmpeg","-v","error","-y","-f","rawvideo","-pix_fmt","rgb24","-s",f"{OUT}x{OUT}","-r",str(FPS),"-i","-",
   "-ss","0","-i",MUS,"-map","0:v","-map","1:a","-c:v","libx264","-preset","slow","-crf","16","-pix_fmt","yuv420p",
   "-c:a","aac","-b:a","192k","-shortest","-movflags","+faststart",sys.argv[1]],stdin=subprocess.PIPE)
-for a,b,cx,idx,spec in shots:
+for a,b,cx,idx,si in shots:
     n=len(idx)
     for k,fi in enumerate(idx):
-        z=zoom(spec,k,n); w=OUT/z; x0=cx+(OUT-w)/2; y0=(H-w)/2
+        x0,y0,w=crop_box(si,cx,k,n)
         im=Image.fromarray(cache[fi]).transform((OUT,OUT),Image.EXTENT,(x0,y0,x0+w,y0+w),Image.BICUBIC)
         enc.stdin.write(im.tobytes())
 enc.stdin.close(); enc.wait()
