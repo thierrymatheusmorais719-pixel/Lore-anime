@@ -359,7 +359,7 @@ FACE = {
     5: [(0.400, 0.380, 0.055, False, 1.0, +1), (0.600, 0.600, 0.040, True, 1.2, +1)],
     6: [], 7: [],
 }
-HEAD_MAX = 5.5    # inclinação máxima da cabeça (graus) quando a "atuação" chega a 1
+HEAD_MAX = 4.0    # inclinação máxima da cabeça (graus) quando a "atuação" chega a 1
 # balanço do corpo (graus) por imagem; as armaduras vazias (6, 7) ficam paradas
 SWAY = {1: 0.5, 2: 0.45, 3: 0.4, 4: 0.35, 5: 0.6, 6: 0.0, 7: 0.0}
 # braços articulados: (ombro, cotovelo, mão) normalizados, espessura (fração da largura),
@@ -457,6 +457,9 @@ def _seg(X, Y, a, b):
     return np.sqrt((X - a[0] - sc * vx) ** 2 + (Y - a[1] - sc * vy) ** 2), s_
 
 
+ARM_GAIN = 0.55  # gestos de braço contidos: o giro no ombro não pode dobrar o tronco
+
+
 def arm_field(shot, src, Mf, t, X, Y):
     """Braços como ossos rígidos: ombro gira o braço todo, cotovelo gira o antebraço com atraso."""
     dx = np.zeros_like(X)
@@ -478,8 +481,8 @@ def arm_field(shot, src, Mf, t, X, Y):
         w_el = w_fo * smoothstep(-0.05, 0.3, s2)
         g = track(trs[n_], t) if n_ < len(trs) else 0.0
         g_el = track(trs[n_], t - 0.09) if n_ < len(trs) else 0.0   # o antebraço segue o ombro com atraso
-        ths = math.radians(a_sh * g)
-        the = math.radians(a_el * g_el)
+        ths = math.radians(ARM_GAIN * a_sh * g)
+        the = math.radians(ARM_GAIN * a_el * g_el)
         rx, ry = X - Sp[0], Y - Sp[1]
         dx += (math.cos(ths) * rx - math.sin(ths) * ry - rx) * w_arm
         dy += (math.sin(ths) * rx + math.cos(ths) * ry - ry) * w_arm
@@ -503,14 +506,8 @@ def alive_field(shot, src, Mf, t, u=0.5):
     x0, y0, x1, y1 = src["bbox"]
     ph = i * 1.7
 
-    # corpo: balanço leve em torno da base dos personagens
-    px, py = apply_pt(Mf, (x0 + x1) / 2, y1)
-    tb = math.radians(SWAY.get(i, 0.4) * 1.2 * slow_noise(t, 7 * i))   # troca de peso lenta
-    top = apply_pt(Mf, 0, y0)[1]
-    wb = np.clip((py - Y) / max(py - top, 1.0), 0, 1.2)
-    rx, ry = X - px, Y - py
-    dx += (math.cos(tb) * rx - math.sin(tb) * ry - rx) * wb
-    dy += (math.sin(tb) * rx + math.cos(tb) * ry - ry) * wb
+    # (o balanço do corpo e a respiração agora são movimentos rígidos da camada inteira, em
+    #  render_shot: o corpo não entorta mais; aqui ficam só cabeças, braços e cabelo)
 
     adx, ady, armw = arm_field(shot, src, Mf, t, X, Y)
     free = 1 - armw
@@ -525,38 +522,20 @@ def alive_field(shot, src, Mf, t, u=0.5):
         R = frn * src["w"] * scl
         dist = np.sqrt((X - fx) ** 2 + (Y - fy) ** 2)
         pk = ph + k * 2.3
-        # respiração: ~4 s por ciclo, inspira rápido e solta devagar; o peito sobe e expande
-        cx, cyy = fx, fy + 2.7 * R
-        br = breath(t, 3.7 + 0.6 * k, 0.37 * i + 0.5 * k)
-        g = np.exp(-((X - cx) ** 2 + (Y - cyy) ** 2) / (2 * (2.3 * R) ** 2))
-        dy += -0.12 * R * br * g
-        dx += (X - cx) * 0.03 * br * g
-        # cabelo: mechas presas na raiz, pontas soltas balançando com rajadas de vento
+        # cabelo: balança como um bloco macio (raiz presa, pontas soltas), sem ondas finas —
+        # ondas de alta frequência faziam o cabelo e o rosto parecerem "derretendo"
         if hair:
             hair_reg = 1 - smoothstep(0.85, 1.15, ((X - fx) / (2.4 * R)) ** 2 + ((Y - (fy + 1.1 * R)) / (3.4 * R)) ** 2)
-            face_e = ((X - fx) / (1.05 * R)) ** 2 + ((Y - (fy + 0.3 * R)) / (1.5 * R)) ** 2
-            w_hair = hair_reg * smoothstep(1.0, 1.7, face_e)
-            s_len = np.clip((Y - (fy - 1.1 * R)) / (3.8 * R), 0, 1) ** 1.2 + 0.35 * np.clip(np.abs(X - fx) / (2 * R), 0, 1)
-            gust = 0.6 + 0.4 * slow_noise(t * 1.6, 3 * i + k)
-            yh = (Y - fy) / R
-            a1 = 2 * math.pi * t / 2.2 - yh / 1.3 + pk
-            a2 = 2 * math.pi * t / 1.15 - yh / 0.7 + (X - fx) / (1.1 * R) + 2 * pk
-            a3 = 2 * math.pi * t / 0.6 - yh / 0.35 + (X - fx) / (0.5 * R)
-            amp = 0.15 * R * w_hair * s_len * gust * free * gain
-            dx += amp * (np.sin(a1) + 0.5 * np.sin(a2) + 0.22 * np.sin(a3))
-            dy += amp * (0.35 * np.cos(a1) + 0.12 * np.cos(a3))
-            # follow-through: as pontas do cabelo atrasam quando a cabeça se move
-            hts = TRACKS.get(i, {}).get("heads", [])
-            if k < len(hts):
-                vel = track(hts[k], t) - track(hts[k], t - 0.22)
-                dx += -side * 1.6 * R * vel * w_hair * s_len * free
-        # tecido (capas, vestidos): onda descendo longe do rosto
-        wc = smoothstep(2.0 * R, 4.5 * R, dist) * np.clip((Y - fy) / (5 * R), 0, 1) * free * rigid / len(faces)
-        wave = 2 * math.pi * (Y / (7 * R) + X / (21 * R)) - 2 * math.pi * t / 2.7 + pk
-        dx += 0.05 * R * wc * np.sin(wave)
-        dy += 0.016 * R * wc * np.cos(wave * 0.8)
+            face_e = ((X - fx) / (1.1 * R)) ** 2 + ((Y - (fy + 0.3 * R)) / (1.6 * R)) ** 2
+            w_hair = hair_reg * smoothstep(1.2, 2.2, face_e)
+            s_len = np.clip((Y - (fy - 0.6 * R)) / (4.0 * R), 0, 1) ** 1.5
+            sway = 0.03 * R * (0.6 * slow_noise(t * 1.4, 3 * i + k) + 0.4 * slow_noise(t * 2.3, 5 * i + k))
+            dx += sway * w_hair * s_len * free * gain
+            dy += 0.3 * abs(sway) * w_hair * s_len * free
     dx += adx
     dy += ady
+    dx = cv2.GaussianBlur(dx, (0, 0), 2.5)   # campo sempre suave: sem dobras nem "água"
+    dy = cv2.GaussianBlur(dy, (0, 0), 2.5)
 
     # cabeças: movimento 100% rígido. Dentro da cabeça o campo é trocado por uma rotação pura em
     # torno do pescoço + o deslocamento que o corpo tem no pescoço — nada de onda, cabelo, tecido ou
@@ -580,7 +559,7 @@ def alive_field(shot, src, Mf, t, u=0.5):
         rdy = s_ * rx + c_ * ry - ry + by
         # núcleo rígido (cabeça inteira) com transição curta só no pescoço/bordas
         dist = np.sqrt((X - fx) ** 2 + ((Y - fy) * 0.9) ** 2)
-        w = 1 - smoothstep(1.25 * R, 1.9 * R, dist)
+        w = 1 - smoothstep(1.5 * R, 2.6 * R, dist)
         out_dx = out_dx * (1 - w) + rdx * w
         out_dy = out_dy * (1 - w) + rdy * w
     return out_dx, out_dy
@@ -734,6 +713,14 @@ def render_shot(shot, f, tx=None):
     Pm = np.float32([[k, 0, (1 - k) * pvx + lat], [0, k, (1 - k) * pvy]])
     Mf = (Pm[:, :2] @ M).astype(np.float32)
     Mf[:, 2] += Pm[:, 2]
+    i_ = shot["img"]
+    if FACE.get(i_):
+        bx_, by_ = apply_pt(Mf, (x0 + x1) / 2, y1)          # base dos personagens na tela
+        tb = math.radians(SWAY.get(i_, 0.4) * 0.6 * slow_noise(t, 7 * i_))   # troca de peso lenta
+        bs = 1 + 0.0025 * breath(t, 4.0, 0.37 * i_)           # respiração: o corpo todo sobe de leve
+        c_, s_ = math.cos(tb) * bs, math.sin(tb) * bs
+        Rm = np.float32([[c_, -s_, bx_ - c_ * bx_ + s_ * by_], [s_, c_, by_ - s_ * bx_ - c_ * by_]])
+        Mf = np.hstack([Rm[:, :2] @ Mf[:, :2], (Rm[:, :2] @ Mf[:, 2] + Rm[:, 2])[:, None]]).astype(np.float32)
 
     bg = warp_level(src, M, "bg").astype(np.float32) / 255
     bg = animate_env(bg, shot, src, M, t)
