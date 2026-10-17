@@ -1,51 +1,43 @@
 import numpy as np, subprocess, sys
 from PIL import Image
 U="/root/.claude/uploads/7dbe55ae-06c5-5975-8bab-eea8e9ad71ce/"
-SRC=U+"ece48de9-d5a08f3962dfaf4ef0e9743b9c824c33.mp4"; MUS=U+"7737a87a-d8c3c56779be64e26911ffc4aeab1b90.mp3"
+SRC=U+"ece48de9-d5a08f3962dfaf4ef0e9743b9c824c33.mp4"; MUS=U+"3c926439-1fe8189e27f442718dd8f1134576898c.mp3"
 FPS=30; W,H=960,720; OUT=720
 # (song cut time, src start, speed, crop_x[0..240], ramp(start speed) or None, src shot end)
-# cuts sit on the 808 hits / accents found in the track (136 BPM, 3-3-2 bass pattern)
+# every cut sits on a measured attack in the track: 808 note starts and lead-melody hits
+# (intro 0-2.7, track empties 2.7-4.1, comes back at 4.10, drop at 4.96, fade from 12.3)
 S=[
- (0.00,  0.40, 0.85,120,None,  5.13),  # low angle walk-in (slight slow)
- (1.51, 11.92, 1.00,150,None, 14.03),  # extreme eye close-up on first 808
- (2.41,  5.40, 1.00,110,None,  7.80),  # side face, eye opens
- (3.75, 14.20, 1.00,160,None, 18.03),  # close-up purple bg
- (4.64, 26.00, 1.00,120,2.2,  29.57),  # chest-hole tilt (velocity)
- (5.76, 31.40, 1.00,120,None, 33.10),  # raises hand
- (6.92, 33.15, 1.00,120,None, 34.20),  # cero charges
- (7.77, 18.10, 1.00,100,None, 20.07),  # cero clash on face
- (8.66, 21.25, 0.80,120,None, 23.40),  # wide, looking up -> zoom in on him
- (9.56, 20.10, 0.78,120,None, 21.20),  # his face close
- (10.89,62.40, 1.00,120,None, 64.43),  # resurreccion - big hit
- (12.23,37.10, 1.00,120,None, 42.43),  # released face
- (13.51,42.50, 1.00,120,None, 48.00),  # "4" torso
- (14.45,48.05, 1.00,120,None, 49.40),  # stare
- (15.35,52.85, 1.00,170,None, 56.70),  # blood streaks
- (15.80,56.75, 1.00,120,2.0,  61.00),  # tilt up chest -> face (velocity)
- (17.15,83.05, 1.00,120,None, 84.83),  # silhouette on the moon
- (18.03,64.62, 1.00,120,None, 66.77),  # segunda etapa eyes
- (19.38,69.10, 1.00,150,None, 70.63),  # head turn, horns
- (20.72,70.70, 1.00,120,None, 75.50),  # full segunda etapa
- (21.22,75.60, 1.00,140,None, 79.67),  # face close
- (21.61,91.95, 1.00, 60,None, 94.07),  # cero oscuras
- (22.94,79.75, 1.00,120,None, 82.83),  # eyes
- (23.70,86.40, 1.00,140,None, 88.17),  # hair turn
- (24.30,94.40, 1.00,120,None, 96.97),  # eyes close (break)
- (24.75,88.25, 0.80,140,None, 91.40),  # drop -> calm part (slow)
- (26.08,101.45,1.00,120,None,103.67),  # chest hole frontal
- (27.41,103.75,0.85,120,None,107.00),  # night
- (28.75,107.05,1.00,120,None,110.37),  # arm reaching
- (30.10,111.25,0.65,120,None,112.17),  # hands almost touch (slow)
- (31.44,112.42,0.70,120,None,113.20),  # her hand (slow)
- (32.33,114.75,0.75,120,None,119.40),  # hand / him behind (slow)
- (34.56,119.45,1.00,120,None,126.50),  # turning to ash
- (37.23,126.55,0.85,120,None,129.40),  # aftermath
+ (0.00,  0.40, 0.85,120,None,  5.13),  # low angle walk-in
+ (0.76, 11.92, 1.00,150,None, 14.03),  # extreme eye close-up
+ (1.63, 14.31, 1.00,160,None, 18.03),  # close-up purple bg
+ (2.07,  5.90, 1.00,110,None,  7.80),  # side face, eye opens
+ (2.55, 21.25, 0.80,120,None, 23.40),  # wide, looking up -> zoom in on him while the track empties
+ (4.10, 20.10, 1.00,120,None, 21.20),  # his face close, on the return
+ (4.40, 33.15, 1.00,120,None, 34.20),  # cero charges
+ (4.65, 18.10, 1.00,100,None, 20.07),  # cero clash on face
+ (4.96, 62.40, 1.00,120,None, 64.43),  # drop: resurreccion
+ (5.79, 37.10, 1.00,120,None, 42.43),  # released face
+ (6.04, 42.50, 1.00,120,None, 48.00),  # "4" torso
+ (6.61, 52.85, 1.00,170,None, 56.70),  # blood streaks
+ (6.92, 56.75, 1.00,120,3.0,  61.00),  # tilt up chest -> face (velocity)
+ (7.34, 83.05, 1.00,120,None, 84.83),  # silhouette on the moon -> zoom in
+ (7.89, 64.68, 1.00,120,None, 66.77),  # segunda etapa eyes (eye change lands on the 8.14 hit)
+ (8.36, 69.10, 1.00,150,None, 70.63),  # head turn, horns
+ (8.94, 70.70, 1.00,120,None, 75.50),  # full segunda etapa -> zoom in
+ (9.42, 75.60, 1.00,140,None, 79.67),  # face close
+ (9.67, 91.95, 1.00, 60,None, 94.07),  # cero oscuras
+ (9.96, 79.75, 1.00,120,None, 82.83),  # eyes
+ (10.37,86.90, 1.00,140,None, 88.17),  # hair turn
+ (10.74,88.25, 1.00,140,None, 91.40),  # face in shadow
+ (11.21,94.40, 1.00,120,None, 96.97),  # eyes close
+ (11.70,114.75,1.00,120,None,119.40),  # hand / him behind
+ (11.98,119.45,0.80,120,None,126.50),  # turning to ash, over the fade
 ]
-END=39.30
+END=12.95
 # zoom only on the wide shot that cuts to his face: the camera pushes in on him
 # (eases in, faster near the cut) and the next shot is the close-up
 # shot index -> (face x, face y in source px, final zoom)
-ZOOM={8:(500,190,1.9), 16:(550,230,1.7), 19:(285,170,1.5), 31:(580,280,1.5)}
+ZOOM={4:(500,190,1.9), 13:(550,230,1.7), 16:(285,170,1.5)}
 def crop_box(i,cx,k,n):
     if i not in ZOOM: return cx,0,OUT
     fx,fy,zm=ZOOM[i]; u=(k+1)/n; e=u*u
