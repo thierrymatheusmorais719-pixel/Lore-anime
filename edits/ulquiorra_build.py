@@ -1,4 +1,5 @@
 import numpy as np, subprocess, sys
+from PIL import Image
 U="/root/.claude/uploads/7dbe55ae-06c5-5975-8bab-eea8e9ad71ce/"
 SRC=U+"ece48de9-d5a08f3962dfaf4ef0e9743b9c824c33.mp4"; MUS=U+"7737a87a-d8c3c56779be64e26911ffc4aeab1b90.mp3"
 FPS=30; W,H=960,720; OUT=720
@@ -41,6 +42,21 @@ S=[
  (37.23,126.55,0.85,120,None,129.40),  # aftermath
 ]
 END=39.30
+# zoom per shot (measured on the reference): slow push-in, quick punch-in on the
+# last frames before a hit, and a settle-out zoom on shots that land on a hit
+P,C=0.08,0.04
+Z=["p.05k","o","p","p","-","pk","o","p","p","pk","o","p","pk","o","p","-","pk","o","p","pk","pk","o","p","pk","p",
+   "c","c","c","c","c","c","c","c","c"]
+def zoom(spec,k,n):
+    t=k/FPS; z=1.0
+    if spec.startswith("p"): z+= (float(spec[1:].rstrip("ko") or P) if spec[1:].rstrip("ko") else P)*t
+    if spec=="c": z+=C*t
+    if "o" in spec:
+        u=min(1,t/0.35); z+=0.10*(1-u)**3
+    if "k" in spec:
+        m=4; j=k-(n-m)
+        if j>=0: z*=1+0.18*((j+1)/m)**2
+    return z
 shots=[]
 for i,(t0,s0,sp,cx,ramp,send) in enumerate(S):
     t1=S[i+1][0] if i+1<len(S) else END
@@ -54,9 +70,9 @@ for i,(t0,s0,sp,cx,ramp,send) in enumerate(S):
         else: off=sp*d
         idx.append(int(round((s0+off)*FPS)))
     assert idx[-1] < send*FPS-1, (i, idx[-1]/FPS, send)
-    shots.append((a,b,cx,idx))
+    shots.append((a,b,cx,idx,Z[i]))
 need={}
-for a,b,cx,idx in shots:
+for a,b,cx,idx,_ in shots:
     for f in idx: need.setdefault(f,set()).add(cx)
 dec=subprocess.Popen(["ffmpeg","-v","error","-i",SRC,"-f","rawvideo","-pix_fmt","rgb24","-"],stdout=subprocess.PIPE)
 cache={}; f=0; mx=max(need)
@@ -69,8 +85,11 @@ dec.kill()
 enc=subprocess.Popen(["ffmpeg","-v","error","-y","-f","rawvideo","-pix_fmt","rgb24","-s",f"{OUT}x{OUT}","-r",str(FPS),"-i","-",
   "-ss","0","-i",MUS,"-map","0:v","-map","1:a","-c:v","libx264","-preset","slow","-crf","16","-pix_fmt","yuv420p",
   "-c:a","aac","-b:a","192k","-shortest","-movflags","+faststart",sys.argv[1]],stdin=subprocess.PIPE)
-for a,b,cx,idx in shots:
-    for fi in idx:
-        enc.stdin.write(np.ascontiguousarray(cache[fi][:,cx:cx+OUT]).tobytes())
+for a,b,cx,idx,spec in shots:
+    n=len(idx)
+    for k,fi in enumerate(idx):
+        z=zoom(spec,k,n); w=OUT/z; x0=cx+(OUT-w)/2; y0=(H-w)/2
+        im=Image.fromarray(cache[fi]).transform((OUT,OUT),Image.EXTENT,(x0,y0,x0+w,y0+w),Image.BICUBIC)
+        enc.stdin.write(im.tobytes())
 enc.stdin.close(); enc.wait()
-print("cuts at", [round(a/FPS,3) for a,_,_,_ in shots])
+print("cuts at", [round(sh[0]/FPS,3) for sh in shots])
