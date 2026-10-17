@@ -34,17 +34,31 @@ S=[
  (11.98,119.45,0.80,120,None,126.50),  # turning to ash, over the fade
 ]
 END=12.95
-# zoom only on the wide shot that cuts to his face: the camera pushes in on him
-# (eases in, faster near the cut) and the next shot is the close-up
+# zoom copied from the user's own edit: the wide shot holds still, then in the last
+# 6 frames the camera dives into his face (1x -> ~2.5x, slow-fast-settle, with zoom
+# blur) and hard-cuts to the close-up on the beat.
 # shot index -> (face x, face y in source px, final zoom)
-ZOOM={4:(500,190,1.9), 13:(550,230,1.7), 16:(285,170,1.5)}
-def crop_box(i,cx,k,n):
-    if i not in ZOOM: return cx,0,OUT
-    fx,fy,zm=ZOOM[i]; u=(k+1)/n; e=u*u
-    z=1+(zm-1)*e; w=OUT/z
-    mx=(cx+OUT/2)+(fx-(cx+OUT/2))*e; my=H/2+(fy-H/2)*e
-    x0=min(max(mx-w/2,0),W-w); y0=min(max(my-w/2,0),H-w)
-    return x0,y0,w
+ZOOM={4:(528,125,2.6), 13:(512,300,2.6), 16:(264,192,2.4)}
+DIVE=[0.0,0.054,0.29,0.62,0.88,0.98,1.0]   # measured curve (log-zoom fraction per frame)
+# last shot: slow push 1x -> 1.45x easing out, like the end of the user's edit
+PUSH={24:(12.22,15,1.45)}
+def zoom_at(i,cx,a,kf,n):
+    base=(cx+OUT/2,H/2)
+    if i in ZOOM:
+        fx,fy,zm=ZOOM[i]; j=kf-(n-len(DIVE))
+        if j<=0: return base,1.0
+        lo=int(np.floor(j)); hi=min(lo+1,len(DIVE)-1); fr=j-lo
+        p=DIVE[min(lo,len(DIVE)-1)]*(1-fr)+DIVE[hi]*fr
+        z=zm**p; e=(z-1)/(zm-1)
+        return (base[0]+(fx-base[0])*e, base[1]+(fy-base[1])*e), z
+    if i in PUSH:
+        t0,m,zm=PUSH[i]; u=(a+kf)/FPS-t0
+        if u<=0: return base,1.0
+        u=min(1,u*FPS/m); return base,1+(zm-1)*(1-(1-u)**3)
+    return base,1.0
+def render(img,c,z):
+    w=OUT/z; x0=min(max(c[0]-w/2,0),W-w); y0=min(max(c[1]-w/2,0),H-w)
+    return img.transform((OUT,OUT),Image.EXTENT,(x0,y0,x0+w,y0+w),Image.BICUBIC)
 shots=[]
 for i,(t0,s0,sp,cx,ramp,send) in enumerate(S):
     t1=S[i+1][0] if i+1<len(S) else END
@@ -76,8 +90,14 @@ enc=subprocess.Popen(["ffmpeg","-v","error","-y","-f","rawvideo","-pix_fmt","rgb
 for a,b,cx,idx,si in shots:
     n=len(idx)
     for k,fi in enumerate(idx):
-        x0,y0,w=crop_box(si,cx,k,n)
-        im=Image.fromarray(cache[fi]).transform((OUT,OUT),Image.EXTENT,(x0,y0,x0+w,y0+w),Image.BICUBIC)
-        enc.stdin.write(im.tobytes())
+        src=Image.fromarray(cache[fi])
+        c,z=zoom_at(si,cx,a,k,n); cp,zp=zoom_at(si,cx,a,k-1,n)
+        if si in ZOOM and z/zp>1.05:   # zoom blur on the fast frames only (settles sharp before the cut)
+            acc=np.zeros((OUT,OUT,3),np.float32)
+            for f in np.linspace(0,1,10):
+                cc,zz=zoom_at(si,cx,a,k-1+f,n); acc+=np.asarray(render(src,cc,zz),np.float32)
+            frame=(acc/10).astype(np.uint8)
+        else: frame=np.asarray(render(src,c,z))
+        enc.stdin.write(frame.tobytes())
 enc.stdin.close(); enc.wait()
 print("cuts at", [round(sh[0]/FPS,3) for sh in shots])
