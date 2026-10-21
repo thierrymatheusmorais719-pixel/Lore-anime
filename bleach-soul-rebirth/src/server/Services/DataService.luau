@@ -42,7 +42,9 @@ local function withRetry<T>(label: string, fn: () -> T): (boolean, T?)
 		local message = tostring(result)
 		if message:find("StudioAccessToApisNotAllowed") or message:find("403") then
 			if not memoryMode then
-				log:Warn("Sem acesso às APIs do DataStore (Studio). Usando memória — nada será salvo. Ative em Game Settings > Security > Enable Studio Access to API Services.")
+				log:Warn(
+					"Sem acesso às APIs do DataStore (Studio). Usando memória — nada será salvo. Ative em Game Settings > Security > Enable Studio Access to API Services."
+				)
 			end
 			memoryMode = true
 			return false, nil

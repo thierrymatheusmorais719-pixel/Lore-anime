@@ -3,7 +3,14 @@
 -- Painéis de tecido usam Motor6D "Cloth*" que o cliente anima com molas (ClothController).
 local OutfitBuilder = {}
 
-local function weldPart(base: BasePart, name: string, size: Vector3, offset: CFrame, color: Color3, material: Enum.Material?): Part
+local function weldPart(
+	base: BasePart,
+	name: string,
+	size: Vector3,
+	offset: CFrame,
+	color: Color3,
+	material: Enum.Material?
+): Part
 	local p = Instance.new("Part")
 	p.Name = name
 	p.Size = size
@@ -24,7 +31,14 @@ local function weldPart(base: BasePart, name: string, size: Vector3, offset: CFr
 end
 
 -- Painel articulado: Motor6D com pivô no topo, para o cliente balançar.
-local function clothPanel(base: BasePart, name: string, size: Vector3, pivot: CFrame, color: Color3, folder: Instance): Part
+local function clothPanel(
+	base: BasePart,
+	name: string,
+	size: Vector3,
+	pivot: CFrame,
+	color: Color3,
+	folder: Instance
+): Part
 	local p = Instance.new("Part")
 	p.Name = name
 	p.Size = size
@@ -76,32 +90,84 @@ function OutfitBuilder.apply(character: Model, spec: OutfitSpec): Folder?
 	local lw, ld = lower.Size.X, lower.Size.Z
 
 	weldPart(lower, "Sash", Vector3.new(lw + 0.08, 0.32, ld + 0.08), CFrame.new(0, 0.05, 0), trim).Parent = folder
-	weldPart(upper, "Collar", Vector3.new(uw * 0.55, 0.25, ud + 0.06), CFrame.new(0, uh / 2 - 0.1, 0), trim).Parent = folder
+	weldPart(upper, "Collar", Vector3.new(uw * 0.55, 0.25, ud + 0.06), CFrame.new(0, uh / 2 - 0.1, 0), trim).Parent =
+		folder
 
 	if spec.coat then
 		-- Sobretudo longo: dois painéis traseiros + mangas no ombro
 		for i = -1, 1, 2 do
-			clothPanel(upper, if i < 0 then "L" else "R", Vector3.new(uw * 0.5, 3.4, 0.1), CFrame.new(i * uw * 0.26, uh / 2 - 0.1, ud / 2 + 0.08), spec.coat, folder)
-			weldPart(upper, "Shoulder", Vector3.new(0.6, 0.3, ud + 0.12), CFrame.new(i * (uw / 2 + 0.2), uh / 2 - 0.05, 0), spec.coat).Parent = folder
+			clothPanel(
+				upper,
+				if i < 0 then "L" else "R",
+				Vector3.new(uw * 0.5, 3.4, 0.1),
+				CFrame.new(i * uw * 0.26, uh / 2 - 0.1, ud / 2 + 0.08),
+				spec.coat,
+				folder
+			)
+			weldPart(
+				upper,
+				"Shoulder",
+				Vector3.new(0.6, 0.3, ud + 0.12),
+				CFrame.new(i * (uw / 2 + 0.2), uh / 2 - 0.05, 0),
+				spec.coat
+			).Parent =
+				folder
 		end
-		weldPart(upper, "CoatTrim", Vector3.new(uw + 0.06, 0.12, ud + 0.06), CFrame.new(0, uh / 2 - 0.3, 0), trim, Enum.Material.Neon).Parent = folder
+		weldPart(
+			upper,
+			"CoatTrim",
+			Vector3.new(uw + 0.06, 0.12, ud + 0.06),
+			CFrame.new(0, uh / 2 - 0.3, 0),
+			trim,
+			Enum.Material.Neon
+		).Parent =
+			folder
 	elseif spec.cape then
-		clothPanel(upper, "Cape", Vector3.new(uw * 0.95, 3, 0.1), CFrame.new(0, uh / 2 - 0.05, ud / 2 + 0.08), Color3.fromRGB(245, 247, 252), folder)
+		clothPanel(
+			upper,
+			"Cape",
+			Vector3.new(uw * 0.95, 3, 0.1),
+			CFrame.new(0, uh / 2 - 0.05, ud / 2 + 0.08),
+			Color3.fromRGB(245, 247, 252),
+			folder
+		)
 	else
 		-- Painel curto (haori/jaqueta)
 		for i = -1, 1, 2 do
-			clothPanel(lower, if i < 0 then "L" else "R", Vector3.new(lw * 0.48, 1.5, 0.1), CFrame.new(i * lw * 0.25, 0, ld / 2 + 0.06), robe, folder)
+			clothPanel(
+				lower,
+				if i < 0 then "L" else "R",
+				Vector3.new(lw * 0.48, 1.5, 0.1),
+				CFrame.new(i * lw * 0.25, 0, ld / 2 + 0.06),
+				robe,
+				folder
+			)
 		end
 	end
 
 	if spec.hollowHole then
-		local hole = weldPart(upper, "HollowHole", Vector3.new(0.12, 0.7, 0.7), CFrame.new(0, 0.1, -ud / 2 - 0.01) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(5, 5, 8), Enum.Material.SmoothPlastic)
+		local hole = weldPart(
+			upper,
+			"HollowHole",
+			Vector3.new(0.12, 0.7, 0.7),
+			CFrame.new(0, 0.1, -ud / 2 - 0.01) * CFrame.Angles(0, math.rad(90), 0),
+			Color3.fromRGB(5, 5, 8),
+			Enum.Material.SmoothPlastic
+		)
 		hole.Shape = Enum.PartType.Cylinder
 		hole.Parent = folder
 	end
 	if spec.bone then
 		for i = -1, 1, 2 do
-			weldPart(upper, "Bone", Vector3.new(0.9, 0.35, 1.1), CFrame.new(i * (uw / 2 + 0.25), uh / 2, 0) * CFrame.Angles(0, 0, math.rad(-12 * i)), Color3.fromRGB(240, 236, 225), Enum.Material.SmoothPlastic).Parent = folder
+			weldPart(
+				upper,
+				"Bone",
+				Vector3.new(0.9, 0.35, 1.1),
+				CFrame.new(i * (uw / 2 + 0.25), uh / 2, 0) * CFrame.Angles(0, 0, math.rad(-12 * i)),
+				Color3.fromRGB(240, 236, 225),
+				Enum.Material.SmoothPlastic
+			).Parent =
+				folder
 		end
 	end
 
@@ -125,12 +191,44 @@ function OutfitBuilder.setMask(character: Model, enabled: boolean)
 	local folder = Instance.new("Folder")
 	folder.Name = "HollowMask"
 	local hs = head.Size
-	weldPart(head, "Mask", Vector3.new(hs.X * 1.08, hs.Y * 1.05, 0.2), CFrame.new(0, 0, -hs.Z / 2 - 0.08), Color3.fromRGB(248, 248, 245), Enum.Material.SmoothPlastic).Parent = folder
+	weldPart(
+		head,
+		"Mask",
+		Vector3.new(hs.X * 1.08, hs.Y * 1.05, 0.2),
+		CFrame.new(0, 0, -hs.Z / 2 - 0.08),
+		Color3.fromRGB(248, 248, 245),
+		Enum.Material.SmoothPlastic
+	).Parent =
+		folder
 	for i = -1, 1, 2 do
-		weldPart(head, "Stripe", Vector3.new(0.1, hs.Y * 0.85, 0.05), CFrame.new(i * hs.X * 0.3, 0, -hs.Z / 2 - 0.2), Color3.fromRGB(210, 20, 35), Enum.Material.Neon).Parent = folder
-		weldPart(head, "Eye", Vector3.new(0.25, 0.12, 0.05), CFrame.new(i * hs.X * 0.2, hs.Y * 0.1, -hs.Z / 2 - 0.21), Color3.fromRGB(255, 200, 40), Enum.Material.Neon).Parent = folder
+		weldPart(
+			head,
+			"Stripe",
+			Vector3.new(0.1, hs.Y * 0.85, 0.05),
+			CFrame.new(i * hs.X * 0.3, 0, -hs.Z / 2 - 0.2),
+			Color3.fromRGB(210, 20, 35),
+			Enum.Material.Neon
+		).Parent =
+			folder
+		weldPart(
+			head,
+			"Eye",
+			Vector3.new(0.25, 0.12, 0.05),
+			CFrame.new(i * hs.X * 0.2, hs.Y * 0.1, -hs.Z / 2 - 0.21),
+			Color3.fromRGB(255, 200, 40),
+			Enum.Material.Neon
+		).Parent =
+			folder
 	end
-	weldPart(head, "Teeth", Vector3.new(hs.X * 0.7, 0.1, 0.05), CFrame.new(0, -hs.Y * 0.3, -hs.Z / 2 - 0.2), Color3.fromRGB(20, 20, 20), Enum.Material.SmoothPlastic).Parent = folder
+	weldPart(
+		head,
+		"Teeth",
+		Vector3.new(hs.X * 0.7, 0.1, 0.05),
+		CFrame.new(0, -hs.Y * 0.3, -hs.Z / 2 - 0.2),
+		Color3.fromRGB(20, 20, 20),
+		Enum.Material.SmoothPlastic
+	).Parent =
+		folder
 	folder.Parent = character
 end
 

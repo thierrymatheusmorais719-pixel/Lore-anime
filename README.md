@@ -1,3 +1,5 @@
+> **Novo:** o jogo Roblox **Bleach — Soul Rebirth** está em [`bleach-soul-rebirth/`](bleach-soul-rebirth/README.md).
+
 # LORE — O Rei Mago · Cutscene em WebGL
 
 Cutscene cinematográfica de anime (≈34 s, em loop) protagonizada por **Lore, o Rei Mago**,

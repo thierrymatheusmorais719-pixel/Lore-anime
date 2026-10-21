@@ -2,7 +2,14 @@
 -- Tudo é determinístico com o `Random` recebido, para o mapa ser igual em todo servidor.
 local Build = {}
 
-function Build.part(parent: Instance, size: Vector3, cframe: CFrame, color: Color3, material: Enum.Material?, name: string?): Part
+function Build.part(
+	parent: Instance,
+	size: Vector3,
+	cframe: CFrame,
+	color: Color3,
+	material: Enum.Material?,
+	name: string?
+): Part
 	local p = Instance.new("Part")
 	p.Name = name or "Part"
 	p.Anchored = true
@@ -16,7 +23,13 @@ function Build.part(parent: Instance, size: Vector3, cframe: CFrame, color: Colo
 	return p
 end
 
-function Build.wedge(parent: Instance, size: Vector3, cframe: CFrame, color: Color3, material: Enum.Material?): WedgePart
+function Build.wedge(
+	parent: Instance,
+	size: Vector3,
+	cframe: CFrame,
+	color: Color3,
+	material: Enum.Material?
+): WedgePart
 	local p = Instance.new("WedgePart")
 	p.Anchored = true
 	p.Size = size
@@ -29,7 +42,14 @@ function Build.wedge(parent: Instance, size: Vector3, cframe: CFrame, color: Col
 	return p
 end
 
-function Build.cylinder(parent: Instance, length: number, diameter: number, cframe: CFrame, color: Color3, material: Enum.Material?): Part
+function Build.cylinder(
+	parent: Instance,
+	length: number,
+	diameter: number,
+	cframe: CFrame,
+	color: Color3,
+	material: Enum.Material?
+): Part
 	local p = Build.part(parent, Vector3.new(length, diameter, diameter), cframe, color, material, "Cylinder")
 	p.Shape = Enum.PartType.Cylinder
 	return p
@@ -86,9 +106,23 @@ function Build.house(parent: Instance, cframe: CFrame, width: number, depth: num
 		Color3.fromRGB(222, 218, 210),
 	}
 	local wallColor = palettes[rng:NextInteger(1, #palettes)]
-	Build.part(model, Vector3.new(width, height, depth), cframe * CFrame.new(0, height / 2, 0), wallColor, Enum.Material.Concrete, "Walls")
+	Build.part(
+		model,
+		Vector3.new(width, height, depth),
+		cframe * CFrame.new(0, height / 2, 0),
+		wallColor,
+		Enum.Material.Concrete,
+		"Walls"
+	)
 	-- Base
-	Build.part(model, Vector3.new(width + 1, 1, depth + 1), cframe * CFrame.new(0, 0.5, 0), Color3.fromRGB(90, 90, 95), Enum.Material.Slate, "Base")
+	Build.part(
+		model,
+		Vector3.new(width + 1, 1, depth + 1),
+		cframe * CFrame.new(0, 0.5, 0),
+		Color3.fromRGB(90, 90, 95),
+		Enum.Material.Slate,
+		"Base"
+	)
 	-- Janelas (frente e fundos); algumas acesas
 	local windowColorOn = Color3.fromRGB(255, 214, 150)
 	local windowColorOff = Color3.fromRGB(40, 46, 60)
@@ -99,7 +133,14 @@ function Build.house(parent: Instance, cframe: CFrame, width: number, depth: num
 			local y = (floor - 1) * floorHeight + 6
 			for _, side in { -1, 1 } do
 				local lit = rng:NextNumber() < 0.45
-				local window = Build.part(model, Vector3.new(3.2, 3.6, 0.3), cframe * CFrame.new(x, y, side * (depth / 2 + 0.1)), if lit then windowColorOn else windowColorOff, if lit then Enum.Material.Neon else Enum.Material.Glass, "Window")
+				local window = Build.part(
+					model,
+					Vector3.new(3.2, 3.6, 0.3),
+					cframe * CFrame.new(x, y, side * (depth / 2 + 0.1)),
+					if lit then windowColorOn else windowColorOff,
+					if lit then Enum.Material.Neon else Enum.Material.Glass,
+					"Window"
+				)
 				if lit and rng:NextNumber() < 0.3 then
 					Build.light(window, windowColorOn, 14, 0.6)
 				end
@@ -107,14 +148,29 @@ function Build.house(parent: Instance, cframe: CFrame, width: number, depth: num
 		end
 	end
 	-- Porta
-	Build.part(model, Vector3.new(3.5, 7, 0.4), cframe * CFrame.new(width * 0.2, 3.5, -depth / 2 - 0.15), Color3.fromRGB(70, 50, 40), Enum.Material.Wood, "Door")
+	Build.part(
+		model,
+		Vector3.new(3.5, 7, 0.4),
+		cframe * CFrame.new(width * 0.2, 3.5, -depth / 2 - 0.15),
+		Color3.fromRGB(70, 50, 40),
+		Enum.Material.Wood,
+		"Door"
+	)
 	-- Telhado de duas águas com beiral
 	local roofColor = if rng:NextNumber() < 0.5 then Color3.fromRGB(60, 62, 75) else Color3.fromRGB(110, 55, 45)
 	local overhang = 2
 	local roofHeight = math.min(7, depth * 0.35)
 	local half = (depth + overhang * 2) / 2
 	for _, side in { -1, 1 } do
-		Build.wedge(model, Vector3.new(width + overhang * 2, roofHeight, half), cframe * CFrame.new(0, height + roofHeight / 2, side * half / 2) * CFrame.Angles(0, if side < 0 then 0 else math.pi, 0), roofColor, Enum.Material.Slate)
+		Build.wedge(
+			model,
+			Vector3.new(width + overhang * 2, roofHeight, half),
+			cframe
+				* CFrame.new(0, height + roofHeight / 2, side * half / 2)
+				* CFrame.Angles(0, if side < 0 then 0 else math.pi, 0),
+			roofColor,
+			Enum.Material.Slate
+		)
 	end
 	model.Parent = parent
 	return model
@@ -124,9 +180,30 @@ end
 function Build.lamp(parent: Instance, position: Vector3, color: Color3?)
 	local model = Instance.new("Model")
 	model.Name = "Lamp"
-	Build.part(model, Vector3.new(0.6, 14, 0.6), CFrame.new(position + Vector3.new(0, 7, 0)), Color3.fromRGB(60, 62, 68), Enum.Material.Metal, "Pole")
-	Build.part(model, Vector3.new(3, 0.5, 0.6), CFrame.new(position + Vector3.new(1.2, 14, 0)), Color3.fromRGB(60, 62, 68), Enum.Material.Metal, "Arm")
-	local bulb = Build.part(model, Vector3.new(1.4, 0.4, 1), CFrame.new(position + Vector3.new(2.4, 13.7, 0)), color or Color3.fromRGB(255, 225, 170), Enum.Material.Neon, "Bulb")
+	Build.part(
+		model,
+		Vector3.new(0.6, 14, 0.6),
+		CFrame.new(position + Vector3.new(0, 7, 0)),
+		Color3.fromRGB(60, 62, 68),
+		Enum.Material.Metal,
+		"Pole"
+	)
+	Build.part(
+		model,
+		Vector3.new(3, 0.5, 0.6),
+		CFrame.new(position + Vector3.new(1.2, 14, 0)),
+		Color3.fromRGB(60, 62, 68),
+		Enum.Material.Metal,
+		"Arm"
+	)
+	local bulb = Build.part(
+		model,
+		Vector3.new(1.4, 0.4, 1),
+		CFrame.new(position + Vector3.new(2.4, 13.7, 0)),
+		color or Color3.fromRGB(255, 225, 170),
+		Enum.Material.Neon,
+		"Bulb"
+	)
 	Build.light(bulb, color or Color3.fromRGB(255, 220, 160), 30, 1.6, true)
 	model.Parent = parent
 	return model
@@ -140,28 +217,69 @@ function Build.tree(parent: Instance, position: Vector3, kind: string, rng: Rand
 	if kind == "dead" then
 		local trunkColor = Color3.fromRGB(225, 228, 235)
 		local h = 14 * scale
-		Build.part(model, Vector3.new(1.6, h, 1.6) * Vector3.new(scale, 1, scale), CFrame.new(position + Vector3.new(0, h / 2, 0)), trunkColor, Enum.Material.Glass, "Trunk")
+		Build.part(
+			model,
+			Vector3.new(1.6, h, 1.6) * Vector3.new(scale, 1, scale),
+			CFrame.new(position + Vector3.new(0, h / 2, 0)),
+			trunkColor,
+			Enum.Material.Glass,
+			"Trunk"
+		)
 		for i = 1, 4 do
 			local angle = i * math.pi / 2 + rng:NextNumber(-0.4, 0.4)
 			local len = rng:NextNumber(4, 7) * scale
 			local base = position + Vector3.new(0, h * rng:NextNumber(0.55, 0.9), 0)
 			local dir = Vector3.new(math.cos(angle), 0.8, math.sin(angle)).Unit
-			Build.part(model, Vector3.new(0.7, 0.7, len), CFrame.lookAt(base + dir * len / 2, base + dir * len), trunkColor, Enum.Material.Glass, "Branch")
+			Build.part(
+				model,
+				Vector3.new(0.7, 0.7, len),
+				CFrame.lookAt(base + dir * len / 2, base + dir * len),
+				trunkColor,
+				Enum.Material.Glass,
+				"Branch"
+			)
 		end
 	elseif kind == "pine" then
 		local h = 16 * scale
-		Build.part(model, Vector3.new(1.4, h * 0.4, 1.4), CFrame.new(position + Vector3.new(0, h * 0.2, 0)), Color3.fromRGB(80, 55, 40), Enum.Material.Wood, "Trunk")
+		Build.part(
+			model,
+			Vector3.new(1.4, h * 0.4, 1.4),
+			CFrame.new(position + Vector3.new(0, h * 0.2, 0)),
+			Color3.fromRGB(80, 55, 40),
+			Enum.Material.Wood,
+			"Trunk"
+		)
 		for i = 1, 3 do
 			local size = (4 - i) * 3.2 * scale
-			Build.part(model, Vector3.new(size, h * 0.25, size), CFrame.new(position + Vector3.new(0, h * (0.25 + i * 0.18), 0)) * CFrame.Angles(0, math.rad(45 * i), 0), Color3.fromRGB(40, 80, 55), Enum.Material.Grass, "Leaves")
+			Build.part(
+				model,
+				Vector3.new(size, h * 0.25, size),
+				CFrame.new(position + Vector3.new(0, h * (0.25 + i * 0.18), 0)) * CFrame.Angles(0, math.rad(45 * i), 0),
+				Color3.fromRGB(40, 80, 55),
+				Enum.Material.Grass,
+				"Leaves"
+			)
 		end
 	else
 		local h = 10 * scale
-		Build.part(model, Vector3.new(1.4, h, 1.4), CFrame.new(position + Vector3.new(0, h / 2, 0)), Color3.fromRGB(70, 45, 40), Enum.Material.Wood, "Trunk")
+		Build.part(
+			model,
+			Vector3.new(1.4, h, 1.4),
+			CFrame.new(position + Vector3.new(0, h / 2, 0)),
+			Color3.fromRGB(70, 45, 40),
+			Enum.Material.Wood,
+			"Trunk"
+		)
 		local pink = Color3.fromRGB(255, 185, 205):Lerp(Color3.fromRGB(255, 225, 235), rng:NextNumber())
 		for _ = 1, 4 do
 			local offset = Vector3.new(rng:NextNumber(-3, 3), rng:NextNumber(0, 3), rng:NextNumber(-3, 3)) * scale
-			Build.ball(model, rng:NextNumber(6, 9) * scale, CFrame.new(position + Vector3.new(0, h, 0) + offset), pink, Enum.Material.Grass)
+			Build.ball(
+				model,
+				rng:NextNumber(6, 9) * scale,
+				CFrame.new(position + Vector3.new(0, h, 0) + offset),
+				pink,
+				Enum.Material.Grass
+			)
 		end
 	end
 	model.Parent = parent

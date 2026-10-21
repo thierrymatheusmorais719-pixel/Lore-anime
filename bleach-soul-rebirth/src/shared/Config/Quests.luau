@@ -109,18 +109,57 @@ Quests.Story = {
 	},
 }
 
-Quests.StoryOrder = { "Awakening", "Purify", "Training", "Release", "Beyond", "Devourer", "Desert", "BankaiTrial", "DesertKing", "InnerHollowTrial" }
+Quests.StoryOrder = {
+	"Awakening",
+	"Purify",
+	"Training",
+	"Release",
+	"Beyond",
+	"Devourer",
+	"Desert",
+	"BankaiTrial",
+	"DesertKing",
+	"InnerHollowTrial",
+}
 
 -- Diárias: 3 sorteadas por dia (semente = dia UTC + UserId, determinística).
 Quests.DailyCount = 3
 Quests.DailyPool = {
-	DailyHollows = { name = "Patrulha Noturna", objectives = { { type = "Kill", enemy = "HollowGrunt", count = 12, label = "Derrote Hollows" } }, rewards = { xp = 400, kan = 150, shards = 5 } },
-	DailyBrutes = { name = "Caça Pesada", objectives = { { type = "Kill", enemy = "HollowBrute", count = 4, label = "Derrote Brutamontes" } }, rewards = { xp = 500, kan = 180, shards = 5 } },
-	DailyParry = { name = "Reflexos Afiados", objectives = { { type = "Parry", count = 6, label = "Apare golpes" } }, rewards = { xp = 350, kan = 120, shards = 5 } },
-	DailyAbilities = { name = "Disciplina Espiritual", objectives = { { type = "UseAbility", count = 20, label = "Use habilidades" } }, rewards = { xp = 350, kan = 120, shards = 5 } },
-	DailyPuppets = { name = "Treino Básico", objectives = { { type = "Kill", enemy = "TrainingPuppet", count = 8, label = "Derrote Bonecos" } }, rewards = { xp = 300, kan = 100, shards = 5 } },
-	DailyBoss = { name = "Caçador de Chefes", objectives = { { type = "BossAny", count = 1, label = "Derrote qualquer chefe" } }, rewards = { xp = 800, kan = 300, shards = 10 } },
-	DailyTransform = { name = "Liberação Controlada", objectives = { { type = "Transform", count = 3, label = "Libere sua forma" } }, rewards = { xp = 300, kan = 100, shards = 5 } },
+	DailyHollows = {
+		name = "Patrulha Noturna",
+		objectives = { { type = "Kill", enemy = "HollowGrunt", count = 12, label = "Derrote Hollows" } },
+		rewards = { xp = 400, kan = 150, shards = 5 },
+	},
+	DailyBrutes = {
+		name = "Caça Pesada",
+		objectives = { { type = "Kill", enemy = "HollowBrute", count = 4, label = "Derrote Brutamontes" } },
+		rewards = { xp = 500, kan = 180, shards = 5 },
+	},
+	DailyParry = {
+		name = "Reflexos Afiados",
+		objectives = { { type = "Parry", count = 6, label = "Apare golpes" } },
+		rewards = { xp = 350, kan = 120, shards = 5 },
+	},
+	DailyAbilities = {
+		name = "Disciplina Espiritual",
+		objectives = { { type = "UseAbility", count = 20, label = "Use habilidades" } },
+		rewards = { xp = 350, kan = 120, shards = 5 },
+	},
+	DailyPuppets = {
+		name = "Treino Básico",
+		objectives = { { type = "Kill", enemy = "TrainingPuppet", count = 8, label = "Derrote Bonecos" } },
+		rewards = { xp = 300, kan = 100, shards = 5 },
+	},
+	DailyBoss = {
+		name = "Caçador de Chefes",
+		objectives = { { type = "BossAny", count = 1, label = "Derrote qualquer chefe" } },
+		rewards = { xp = 800, kan = 300, shards = 10 },
+	},
+	DailyTransform = {
+		name = "Liberação Controlada",
+		objectives = { { type = "Transform", count = 3, label = "Libere sua forma" } },
+		rewards = { xp = 300, kan = 100, shards = 5 },
+	},
 }
 
 function Quests.get(id: string?)

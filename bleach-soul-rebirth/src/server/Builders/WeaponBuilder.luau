@@ -4,7 +4,14 @@ local Elements = require(game:GetService("ReplicatedStorage").Shared.Config.Elem
 
 local WeaponBuilder = {}
 
-local function newPart(model: Model, name: string, size: Vector3, cframe: CFrame, color: Color3, material: Enum.Material?): Part
+local function newPart(
+	model: Model,
+	name: string,
+	size: Vector3,
+	cframe: CFrame,
+	color: Color3,
+	material: Enum.Material?
+): Part
 	local p = Instance.new("Part")
 	p.Name = name
 	p.Size = size
@@ -54,7 +61,8 @@ function WeaponBuilder.buildModel(spec: any, elementId: string?): Model
 	local guardColor = spec.guard or Color3.fromRGB(35, 30, 28)
 	local origin = CFrame.new()
 
-	local handle = newPart(model, "Handle", Vector3.new(0.28, 0.28, 1.1), origin, Color3.fromRGB(25, 22, 30), Enum.Material.Fabric)
+	local handle =
+		newPart(model, "Handle", Vector3.new(0.28, 0.28, 1.1), origin, Color3.fromRGB(25, 22, 30), Enum.Material.Fabric)
 	model.PrimaryPart = handle
 	model:SetAttribute("Style", style)
 
@@ -64,21 +72,56 @@ function WeaponBuilder.buildModel(spec: any, elementId: string?): Model
 		if not isLight then
 			newPart(model, "Guard", Vector3.new(0.75, 0.75, 0.1), origin * CFrame.new(0, 0, -0.6), guardColor)
 		else
-			newPart(model, "Guard", Vector3.new(0.5, 0.18, 0.18), origin * CFrame.new(0, 0, -0.6), guardColor, Enum.Material.Neon)
+			newPart(
+				model,
+				"Guard",
+				Vector3.new(0.5, 0.18, 0.18),
+				origin * CFrame.new(0, 0, -0.6),
+				guardColor,
+				Enum.Material.Neon
+			)
 		end
 		-- Lâmina em dois segmentos com leve curvatura
 		local seg = length / 2
 		local material = if isLight then Enum.Material.Neon else Enum.Material.Metal
-		local blade1 = newPart(model, "Blade", Vector3.new(0.07, width, seg), origin * CFrame.new(0, 0, -0.65 - seg / 2), bladeColor, material)
-		local blade2 = newPart(model, "BladeTip", Vector3.new(0.07, width * 0.9, seg), blade1.CFrame * CFrame.new(0, 0, -seg / 2) * CFrame.Angles(math.rad(4), 0, 0) * CFrame.new(0, 0, -seg / 2), bladeColor, material)
-		local tip = newPart(model, "Point", Vector3.new(0.07, width * 0.9, 0.45), blade2.CFrame * CFrame.new(0, 0.05, -seg / 2 - 0.2) * CFrame.Angles(math.rad(12), 0, 0), bladeColor, material)
+		local blade1 = newPart(
+			model,
+			"Blade",
+			Vector3.new(0.07, width, seg),
+			origin * CFrame.new(0, 0, -0.65 - seg / 2),
+			bladeColor,
+			material
+		)
+		local blade2 = newPart(
+			model,
+			"BladeTip",
+			Vector3.new(0.07, width * 0.9, seg),
+			blade1.CFrame * CFrame.new(0, 0, -seg / 2) * CFrame.Angles(math.rad(4), 0, 0) * CFrame.new(0, 0, -seg / 2),
+			bladeColor,
+			material
+		)
+		local tip = newPart(
+			model,
+			"Point",
+			Vector3.new(0.07, width * 0.9, 0.45),
+			blade2.CFrame * CFrame.new(0, 0.05, -seg / 2 - 0.2) * CFrame.Angles(math.rad(12), 0, 0),
+			bladeColor,
+			material
+		)
 		if isLight then
 			blade1.Transparency = 0.15
 			blade2.Transparency = 0.15
 			tip.Transparency = 0.15
 		end
 		if spec.glow then
-			local edge = newPart(model, "Edge", Vector3.new(0.09, 0.05, length * 0.95), blade1.CFrame * CFrame.new(0, -width / 2, -seg / 2), glowColor, Enum.Material.Neon)
+			local edge = newPart(
+				model,
+				"Edge",
+				Vector3.new(0.09, 0.05, length * 0.95),
+				blade1.CFrame * CFrame.new(0, -width / 2, -seg / 2),
+				glowColor,
+				Enum.Material.Neon
+			)
 			edge.Transparency = 0.2
 			local light = Instance.new("PointLight")
 			light.Color = glowColor
@@ -86,29 +129,70 @@ function WeaponBuilder.buildModel(spec: any, elementId: string?): Model
 			light.Brightness = 1.2
 			light.Parent = blade1
 		end
-		local trailHost = newPart(model, "TrailHost", Vector3.new(0.05, 0.05, length), origin * CFrame.new(0, 0, -0.65 - length / 2), bladeColor)
+		local trailHost = newPart(
+			model,
+			"TrailHost",
+			Vector3.new(0.05, 0.05, length),
+			origin * CFrame.new(0, 0, -0.65 - length / 2),
+			bladeColor
+		)
 		trailHost.Transparency = 1
 		trailAttachments(trailHost, length)
 	elseif style == "Claws" then
 		for i = -1, 1 do
-			local claw = newPart(model, "Claw", Vector3.new(0.12, 0.12, length), origin * CFrame.new(i * 0.28, -0.05, -0.2 - length / 2) * CFrame.Angles(0, math.rad(i * 6), 0), bladeColor, Enum.Material.SmoothPlastic)
+			local claw = newPart(
+				model,
+				"Claw",
+				Vector3.new(0.12, 0.12, length),
+				origin * CFrame.new(i * 0.28, -0.05, -0.2 - length / 2) * CFrame.Angles(0, math.rad(i * 6), 0),
+				bladeColor,
+				Enum.Material.SmoothPlastic
+			)
 			if spec.glow then
 				claw.Material = Enum.Material.Neon
 				claw.Color = bladeColor:Lerp(glowColor, 0.5)
 			end
 		end
 		handle.Transparency = 1
-		local trailHost = newPart(model, "TrailHost", Vector3.new(0.05, 0.05, length), origin * CFrame.new(0, 0, -0.2 - length / 2), bladeColor)
+		local trailHost = newPart(
+			model,
+			"TrailHost",
+			Vector3.new(0.05, 0.05, length),
+			origin * CFrame.new(0, 0, -0.2 - length / 2),
+			bladeColor
+		)
 		trailHost.Transparency = 1
 		trailAttachments(trailHost, length)
 	elseif style == "Gauntlet" then
 		handle.Transparency = 1
-		newPart(model, "Gauntlet", Vector3.new(1.15, 0.6, 1.15), origin * CFrame.new(0, 0.15, 0), bladeColor, Enum.Material.Metal)
-		newPart(model, "Cuff", Vector3.new(1.2, 0.35, 1.2), origin * CFrame.new(0, 0.6, 0), guardColor, Enum.Material.Neon)
+		newPart(
+			model,
+			"Gauntlet",
+			Vector3.new(1.15, 0.6, 1.15),
+			origin * CFrame.new(0, 0.15, 0),
+			bladeColor,
+			Enum.Material.Metal
+		)
+		newPart(
+			model,
+			"Cuff",
+			Vector3.new(1.2, 0.35, 1.2),
+			origin * CFrame.new(0, 0.6, 0),
+			guardColor,
+			Enum.Material.Neon
+		)
 		for i = -1, 1 do
-			newPart(model, "Spike", Vector3.new(0.15, 0.15, 0.5), origin * CFrame.new(i * 0.32, 0.1, -0.7), guardColor, Enum.Material.Neon)
+			newPart(
+				model,
+				"Spike",
+				Vector3.new(0.15, 0.15, 0.5),
+				origin * CFrame.new(i * 0.32, 0.1, -0.7),
+				guardColor,
+				Enum.Material.Neon
+			)
 		end
-		local trailHost = newPart(model, "TrailHost", Vector3.new(0.05, 0.05, length), origin * CFrame.new(0, 0, -0.3), bladeColor)
+		local trailHost =
+			newPart(model, "TrailHost", Vector3.new(0.05, 0.05, length), origin * CFrame.new(0, 0, -0.3), bladeColor)
 		trailHost.Transparency = 1
 		trailAttachments(trailHost, length)
 	end
@@ -132,7 +216,9 @@ function WeaponBuilder.buildSheath(character: Model, length: number): BasePart?
 	sheath.CanQuery = false
 	sheath.CanTouch = false
 	sheath.Massless = true
-	local offset = CFrame.new(-1.15, -0.1, 0.25) * CFrame.Angles(math.rad(-160), 0, 0) * CFrame.new(0, 0, -(0.65 + length * 0.47))
+	local offset = CFrame.new(-1.15, -0.1, 0.25)
+		* CFrame.Angles(math.rad(-160), 0, 0)
+		* CFrame.new(0, 0, -(0.65 + length * 0.47))
 	sheath.CFrame = lower.CFrame * offset
 	local weld = Instance.new("Weld")
 	weld.Part0 = lower

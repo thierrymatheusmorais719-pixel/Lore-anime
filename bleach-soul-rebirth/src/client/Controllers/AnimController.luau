@@ -133,11 +133,14 @@ function AnimController.Register(model: Model)
 	end
 	table.insert(rig.connections, model.DescendantAdded:Connect(queueRescan))
 	table.insert(rig.connections, model.DescendantRemoving:Connect(queueRescan))
-	table.insert(rig.connections, model.AncestryChanged:Connect(function(_, parent)
-		if parent == nil then
-			AnimController.Unregister(model)
-		end
-	end))
+	table.insert(
+		rig.connections,
+		model.AncestryChanged:Connect(function(_, parent)
+			if parent == nil then
+				AnimController.Unregister(model)
+			end
+		end)
+	)
 	rigs[model] = rig
 	return rig
 end

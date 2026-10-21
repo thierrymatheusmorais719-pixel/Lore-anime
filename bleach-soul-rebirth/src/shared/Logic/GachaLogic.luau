@@ -3,7 +3,14 @@
 local GachaLogic = {}
 
 -- pool: lista de ids de poderes da facção; powers: Config/Powers.List; rarities: Config/Powers.Rarities
-function GachaLogic.roll(gacha: any, pool: { string }, powers: any, rarities: any, settings: any, rngFloat: () -> number): string
+function GachaLogic.roll(
+	gacha: any,
+	pool: { string },
+	powers: any,
+	rarities: any,
+	settings: any,
+	rngFloat: () -> number
+): string
 	gacha.rolls += 1
 	gacha.epicPity += 1
 	gacha.legendaryPity += 1

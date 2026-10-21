@@ -5,21 +5,112 @@ local RigBuilder = {}
 
 -- name, size, parent part, joint name, C0 (no pai), C1 (na parte)
 local PARTS = {
-	{ "LowerTorso", Vector3.new(2, 0.4, 1), "HumanoidRootPart", "Root", Vector3.new(0, -0.6, 0), Vector3.new(0, 0.2, 0) },
+	{
+		"LowerTorso",
+		Vector3.new(2, 0.4, 1),
+		"HumanoidRootPart",
+		"Root",
+		Vector3.new(0, -0.6, 0),
+		Vector3.new(0, 0.2, 0),
+	},
 	{ "UpperTorso", Vector3.new(2, 1.6, 1), "LowerTorso", "Waist", Vector3.new(0, 0.2, 0), Vector3.new(0, -0.8, 0) },
 	{ "Head", Vector3.new(1.2, 1.2, 1.2), "UpperTorso", "Neck", Vector3.new(0, 0.8, 0), Vector3.new(0, -0.6, 0) },
-	{ "RightUpperArm", Vector3.new(1, 1.2, 1), "UpperTorso", "RightShoulder", Vector3.new(1.5, 0.6, 0), Vector3.new(0, 0.4, 0) },
-	{ "RightLowerArm", Vector3.new(1, 1, 1), "RightUpperArm", "RightElbow", Vector3.new(0, -0.6, 0), Vector3.new(0, 0.5, 0) },
-	{ "RightHand", Vector3.new(1, 0.4, 1), "RightLowerArm", "RightWrist", Vector3.new(0, -0.5, 0), Vector3.new(0, 0.2, 0) },
-	{ "LeftUpperArm", Vector3.new(1, 1.2, 1), "UpperTorso", "LeftShoulder", Vector3.new(-1.5, 0.6, 0), Vector3.new(0, 0.4, 0) },
-	{ "LeftLowerArm", Vector3.new(1, 1, 1), "LeftUpperArm", "LeftElbow", Vector3.new(0, -0.6, 0), Vector3.new(0, 0.5, 0) },
-	{ "LeftHand", Vector3.new(1, 0.4, 1), "LeftLowerArm", "LeftWrist", Vector3.new(0, -0.5, 0), Vector3.new(0, 0.2, 0) },
-	{ "RightUpperLeg", Vector3.new(1, 1.2, 1), "LowerTorso", "RightHip", Vector3.new(0.5, -0.2, 0), Vector3.new(0, 0.6, 0) },
-	{ "RightLowerLeg", Vector3.new(1, 1, 1), "RightUpperLeg", "RightKnee", Vector3.new(0, -0.6, 0), Vector3.new(0, 0.5, 0) },
-	{ "RightFoot", Vector3.new(1, 0.3, 1), "RightLowerLeg", "RightAnkle", Vector3.new(0, -0.5, 0), Vector3.new(0, 0.15, 0) },
-	{ "LeftUpperLeg", Vector3.new(1, 1.2, 1), "LowerTorso", "LeftHip", Vector3.new(-0.5, -0.2, 0), Vector3.new(0, 0.6, 0) },
-	{ "LeftLowerLeg", Vector3.new(1, 1, 1), "LeftUpperLeg", "LeftKnee", Vector3.new(0, -0.6, 0), Vector3.new(0, 0.5, 0) },
-	{ "LeftFoot", Vector3.new(1, 0.3, 1), "LeftLowerLeg", "LeftAnkle", Vector3.new(0, -0.5, 0), Vector3.new(0, 0.15, 0) },
+	{
+		"RightUpperArm",
+		Vector3.new(1, 1.2, 1),
+		"UpperTorso",
+		"RightShoulder",
+		Vector3.new(1.5, 0.6, 0),
+		Vector3.new(0, 0.4, 0),
+	},
+	{
+		"RightLowerArm",
+		Vector3.new(1, 1, 1),
+		"RightUpperArm",
+		"RightElbow",
+		Vector3.new(0, -0.6, 0),
+		Vector3.new(0, 0.5, 0),
+	},
+	{
+		"RightHand",
+		Vector3.new(1, 0.4, 1),
+		"RightLowerArm",
+		"RightWrist",
+		Vector3.new(0, -0.5, 0),
+		Vector3.new(0, 0.2, 0),
+	},
+	{
+		"LeftUpperArm",
+		Vector3.new(1, 1.2, 1),
+		"UpperTorso",
+		"LeftShoulder",
+		Vector3.new(-1.5, 0.6, 0),
+		Vector3.new(0, 0.4, 0),
+	},
+	{
+		"LeftLowerArm",
+		Vector3.new(1, 1, 1),
+		"LeftUpperArm",
+		"LeftElbow",
+		Vector3.new(0, -0.6, 0),
+		Vector3.new(0, 0.5, 0),
+	},
+	{
+		"LeftHand",
+		Vector3.new(1, 0.4, 1),
+		"LeftLowerArm",
+		"LeftWrist",
+		Vector3.new(0, -0.5, 0),
+		Vector3.new(0, 0.2, 0),
+	},
+	{
+		"RightUpperLeg",
+		Vector3.new(1, 1.2, 1),
+		"LowerTorso",
+		"RightHip",
+		Vector3.new(0.5, -0.2, 0),
+		Vector3.new(0, 0.6, 0),
+	},
+	{
+		"RightLowerLeg",
+		Vector3.new(1, 1, 1),
+		"RightUpperLeg",
+		"RightKnee",
+		Vector3.new(0, -0.6, 0),
+		Vector3.new(0, 0.5, 0),
+	},
+	{
+		"RightFoot",
+		Vector3.new(1, 0.3, 1),
+		"RightLowerLeg",
+		"RightAnkle",
+		Vector3.new(0, -0.5, 0),
+		Vector3.new(0, 0.15, 0),
+	},
+	{
+		"LeftUpperLeg",
+		Vector3.new(1, 1.2, 1),
+		"LowerTorso",
+		"LeftHip",
+		Vector3.new(-0.5, -0.2, 0),
+		Vector3.new(0, 0.6, 0),
+	},
+	{
+		"LeftLowerLeg",
+		Vector3.new(1, 1, 1),
+		"LeftUpperLeg",
+		"LeftKnee",
+		Vector3.new(0, -0.6, 0),
+		Vector3.new(0, 0.5, 0),
+	},
+	{
+		"LeftFoot",
+		Vector3.new(1, 0.3, 1),
+		"LeftLowerLeg",
+		"LeftAnkle",
+		Vector3.new(0, -0.5, 0),
+		Vector3.new(0, 0.15, 0),
+	},
 }
 
 local HIP_HEIGHT = 2.5
@@ -56,7 +147,15 @@ local function part(name: string, size: Vector3, color: Color3, parent: Instance
 end
 
 -- Anexa uma peça decorativa soldada a `base` com deslocamento local.
-function RigBuilder.decorate(base: BasePart, name: string, size: Vector3, offset: CFrame, color: Color3, material: Enum.Material?, shape: Enum.PartType?): Part
+function RigBuilder.decorate(
+	base: BasePart,
+	name: string,
+	size: Vector3,
+	offset: CFrame,
+	color: Color3,
+	material: Enum.Material?,
+	shape: Enum.PartType?
+): Part
 	local p = Instance.new("Part")
 	p.Name = name
 	p.Size = size
@@ -137,33 +236,85 @@ function RigBuilder.build(name: string, look: Look, scale: number?): Model
 	if look.mask then
 		local maskColor = look.maskColor or Color3.fromRGB(240, 236, 225)
 		if look.partialMask then
-			RigBuilder.decorate(head, "MaskFragment", Vector3.new(0.7, 0.5, 0.2) * s, CFrame.new(0.3 * s, 0.25 * s, -0.6 * s), maskColor)
-			RigBuilder.decorate(head, "Jaw", Vector3.new(1.0, 0.25, 0.25) * s, CFrame.new(0, -0.45 * s, -0.55 * s), maskColor)
+			RigBuilder.decorate(
+				head,
+				"MaskFragment",
+				Vector3.new(0.7, 0.5, 0.2) * s,
+				CFrame.new(0.3 * s, 0.25 * s, -0.6 * s),
+				maskColor
+			)
+			RigBuilder.decorate(
+				head,
+				"Jaw",
+				Vector3.new(1.0, 0.25, 0.25) * s,
+				CFrame.new(0, -0.45 * s, -0.55 * s),
+				maskColor
+			)
 		else
 			RigBuilder.decorate(head, "Mask", Vector3.new(1.3, 1.25, 0.25) * s, CFrame.new(0, 0, -0.6 * s), maskColor)
 			if look.longNose then
-				RigBuilder.decorate(head, "Nose", Vector3.new(0.35, 0.35, 1.4) * s, CFrame.new(0, -0.1 * s, -1.3 * s), maskColor)
+				RigBuilder.decorate(
+					head,
+					"Nose",
+					Vector3.new(0.35, 0.35, 1.4) * s,
+					CFrame.new(0, -0.1 * s, -1.3 * s),
+					maskColor
+				)
 			end
 			if look.stripes then
 				for i = -1, 1, 2 do
-					RigBuilder.decorate(head, "Stripe", Vector3.new(0.12, 1.0, 0.05) * s, CFrame.new(0.35 * i * s, 0, -0.74 * s), look.stripes, Enum.Material.Neon)
+					RigBuilder.decorate(
+						head,
+						"Stripe",
+						Vector3.new(0.12, 1.0, 0.05) * s,
+						CFrame.new(0.35 * i * s, 0, -0.74 * s),
+						look.stripes,
+						Enum.Material.Neon
+					)
 				end
 			end
-			RigBuilder.decorate(head, "Teeth", Vector3.new(0.9, 0.15, 0.05) * s, CFrame.new(0, -0.38 * s, -0.74 * s), Color3.fromRGB(30, 30, 30))
+			RigBuilder.decorate(
+				head,
+				"Teeth",
+				Vector3.new(0.9, 0.15, 0.05) * s,
+				CFrame.new(0, -0.38 * s, -0.74 * s),
+				Color3.fromRGB(30, 30, 30)
+			)
 		end
 	end
 	for i = -1, 1, 2 do
-		RigBuilder.decorate(head, "Eye", Vector3.new(0.22, 0.14, 0.05) * s, CFrame.new(0.25 * i * s, 0.12 * s, -0.76 * s), eyeColor, eyeMaterial)
+		RigBuilder.decorate(
+			head,
+			"Eye",
+			Vector3.new(0.22, 0.14, 0.05) * s,
+			CFrame.new(0.25 * i * s, 0.12 * s, -0.76 * s),
+			eyeColor,
+			eyeMaterial
+		)
 	end
 	if look.hair then
 		RigBuilder.decorate(head, "Hair", Vector3.new(1.3, 0.45, 1.3) * s, CFrame.new(0, 0.5 * s, 0.05 * s), look.hair)
-		RigBuilder.decorate(head, "HairBack", Vector3.new(1.3, 0.9, 0.3) * s, CFrame.new(0, 0.1 * s, 0.55 * s), look.hair)
+		RigBuilder.decorate(
+			head,
+			"HairBack",
+			Vector3.new(1.3, 0.9, 0.3) * s,
+			CFrame.new(0, 0.1 * s, 0.55 * s),
+			look.hair
+		)
 	end
 	if look.mane then
 		RigBuilder.decorate(head, "Mane", Vector3.new(2.2, 2.0, 1.0) * s, CFrame.new(0, 0.1 * s, 0.55 * s), look.mane)
 	end
 	if look.hole then
-		RigBuilder.decorate(parts.UpperTorso, "HollowHole", Vector3.new(0.12, 0.7, 0.7) * s, CFrame.new(0, 0.1 * s, -0.47 * s) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(5, 5, 8), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder)
+		RigBuilder.decorate(
+			parts.UpperTorso,
+			"HollowHole",
+			Vector3.new(0.12, 0.7, 0.7) * s,
+			CFrame.new(0, 0.1 * s, -0.47 * s) * CFrame.Angles(0, math.rad(90), 0),
+			Color3.fromRGB(5, 5, 8),
+			Enum.Material.SmoothPlastic,
+			Enum.PartType.Cylinder
+		)
 	end
 
 	return model

@@ -88,7 +88,14 @@ function CombatController.Slots(): { [string]: string }
 	if not c then
 		return {}
 	end
-	return Loadout.resolve(Factions, Powers.List, c:GetAttribute("Faction"), c:GetAttribute("Power"), c:GetAttribute("Form"), c:GetAttribute("Mask")) :: any
+	return Loadout.resolve(
+		Factions,
+		Powers.List,
+		c:GetAttribute("Faction"),
+		c:GetAttribute("Power"),
+		c:GetAttribute("Form"),
+		c:GetAttribute("Mask")
+	) :: any
 end
 
 -- ============================================================
@@ -210,7 +217,11 @@ local function slashFx(model: Model, spec, animName: string)
 		if not root then
 			return
 		end
-		local vertical = animName == "Slash3" or animName == "Slash5" or animName == "Air3" or animName == "Air4" or animName == "Uppercut"
+		local vertical = animName == "Slash3"
+			or animName == "Slash5"
+			or animName == "Air3"
+			or animName == "Air4"
+			or animName == "Uppercut"
 		local frame = root.CFrame * CFrame.new(0, 0.8, -1.5)
 		if vertical then
 			frame *= CFrame.Angles(0, 0, math.rad(90))
@@ -233,13 +244,20 @@ local function performAttack(kind: string): boolean
 			spec = Combat.Counter
 			counterUntil = 0
 		elseif isAirborne(humanoid) then
-			local index = CombatRules.nextComboIndex(combo.aerial, combo.aerialLastEnd, now, #Combat.Aerial, Combat.ComboResetTime)
+			local index = CombatRules.nextComboIndex(
+				combo.aerial,
+				combo.aerialLastEnd,
+				now,
+				#Combat.Aerial,
+				Combat.ComboResetTime
+			)
 			spec = Combat.Aerial[index]
 			combo.aerial = index
 			combo.aerialLastEnd = now + spec.duration
 			Physics.hover(root, 0.35)
 		else
-			local index = CombatRules.nextComboIndex(combo.index, combo.lastEnd, now, #Combat.Light, Combat.ComboResetTime)
+			local index =
+				CombatRules.nextComboIndex(combo.index, combo.lastEnd, now, #Combat.Light, Combat.ComboResetTime)
 			spec = Combat.Light[index]
 			combo.index = index
 			combo.lastEnd = now + spec.duration
@@ -292,11 +310,17 @@ local function performDash(): boolean
 		airDashesUsed += 1
 	end
 	local move = humanoid.MoveDirection
-	local direction = if move.Magnitude > 0.1 then Physics.flat(move) else Physics.flat(workspace.CurrentCamera.CFrame.LookVector)
+	local direction = if move.Magnitude > 0.1
+		then Physics.flat(move)
+		else Physics.flat(workspace.CurrentCamera.CFrame.LookVector)
 	setLocalCooldown("Dash", Combat.Dash.cooldown)
 	busyUntil = 0
 	root.CFrame = CFrame.lookAt(root.Position, root.Position + direction)
-	Physics.impulse(root, direction * Combat.Dash.speed + Vector3.new(0, if airborne then 6 else 0, 0), Combat.Dash.duration)
+	Physics.impulse(
+		root,
+		direction * Combat.Dash.speed + Vector3.new(0, if airborne then 6 else 0, 0),
+		Combat.Dash.duration
+	)
 	AnimController.Play(model, "Dash")
 	local color = VFX.Color(VFX.ElementOf(model))
 	for i = 0, 3 do

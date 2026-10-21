@@ -506,7 +506,13 @@ function CombatService.QueryRadius(position: Vector3, radius: number, source: Ac
 end
 
 -- Inimigo mais próximo dentro de um cone à frente (para auto-mira, execuções e "aparecer atrás").
-function CombatService.FindTarget(source: Actor, direction: Vector3, range: number, maxAngle: number, filter: ((Actor) -> boolean)?): Actor?
+function CombatService.FindTarget(
+	source: Actor,
+	direction: Vector3,
+	range: number,
+	maxAngle: number,
+	filter: ((Actor) -> boolean)?
+): Actor?
 	local best, bestScore = nil, math.huge
 	local origin = source.root.Position
 	local cosLimit = math.cos(math.rad(maxAngle))
@@ -618,7 +624,8 @@ function CombatService.DealDamage(target: Actor, amount: number, attacker: Actor
 		target.lastAttacker = attacker
 		attacker.lastCombatTime = now()
 		if attacker.player then
-			target.damageBy[attacker.player] = (target.damageBy[attacker.player] or 0) + math.min(amount, target.humanoid.Health)
+			target.damageBy[attacker.player] = (target.damageBy[attacker.player] or 0)
+				+ math.min(amount, target.humanoid.Health)
 		end
 	end
 	target.lastCombatTime = now()
@@ -686,7 +693,9 @@ function CombatService.ApplyHit(attacker: Actor, target: Actor, spec: { [string]
 		return result
 	end
 
-	local multiplier = if spec.kind == "Ability" then attacker.derived.abilityMultiplier else attacker.derived.meleeMultiplier
+	local multiplier = if spec.kind == "Ability"
+		then attacker.derived.abilityMultiplier
+		else attacker.derived.meleeMultiplier
 	multiplier *= CombatService.FormMultiplier(attacker) * CombatService.BuffValue(attacker, "damage", true)
 	if spec.counter then
 		multiplier *= Combat.CounterMultiplier + attacker.derived.counterBonus
@@ -820,13 +829,25 @@ function CombatService.TryAttack(actor: Actor, kind: string, aimDir: any): boole
 			actor.counterUntil = 0
 		elseif CombatService.IsAirborne(actor) then
 			aerial = true
-			local index = CombatRules.nextComboIndex(actor.combo.aerial, actor.combo.aerialLastEnd, t, #Combat.Aerial, Combat.ComboResetTime)
+			local index = CombatRules.nextComboIndex(
+				actor.combo.aerial,
+				actor.combo.aerialLastEnd,
+				t,
+				#Combat.Aerial,
+				Combat.ComboResetTime
+			)
 			spec = Combat.Aerial[index]
 			animIndex = index
 			actor.combo.aerial = index
 			actor.combo.aerialLastEnd = t + spec.duration
 		else
-			local index = CombatRules.nextComboIndex(actor.combo.index, actor.combo.lastEnd, t, #Combat.Light, Combat.ComboResetTime)
+			local index = CombatRules.nextComboIndex(
+				actor.combo.index,
+				actor.combo.lastEnd,
+				t,
+				#Combat.Light,
+				Combat.ComboResetTime
+			)
 			spec = Combat.Light[index]
 			animIndex = index
 			actor.combo.index = index
@@ -936,7 +957,14 @@ function CombatService.TryAttack(actor: Actor, kind: string, aimDir: any): boole
 			end
 			if spec.selfLaunch then
 				if actor.player then
-					CombatService.SendImpulse(actor, { kind = "Knockback", velocity = Vector3.new(0, spec.selfLaunch, 0) + direction * 4, duration = 0.12 })
+					CombatService.SendImpulse(
+						actor,
+						{
+							kind = "Knockback",
+							velocity = Vector3.new(0, spec.selfLaunch, 0) + direction * 4,
+							duration = 0.12,
+						}
+					)
 				else
 					Physics.impulse(actor.root, Vector3.new(0, spec.selfLaunch, 0), 0.12)
 				end
@@ -1062,7 +1090,14 @@ local function tick(dt: number)
 		-- Guarda
 		local maxGuard = Combat.MaxGuard * actor.derived.guardMultiplier
 		if actor.guard < maxGuard and not actor.blocking then
-			actor.guard = CombatRules.regenGuard(actor.guard, maxGuard, t - actor.lastGuardHit, Combat.GuardRegenDelay, Combat.GuardRegenPerSecond, dt)
+			actor.guard = CombatRules.regenGuard(
+				actor.guard,
+				maxGuard,
+				t - actor.lastGuardHit,
+				Combat.GuardRegenDelay,
+				Combat.GuardRegenPerSecond,
+				dt
+			)
 		end
 		-- Reiatsu: carga, regeneração (só na forma base) e dreno de formas
 		if actor.charging then
@@ -1084,7 +1119,13 @@ local function tick(dt: number)
 			end
 		end
 		-- Embainhar após inatividade
-		if actor.drawn and actor.player and t - actor.lastCombatTime > 10 and t > actor.busyUntil and not actor.blocking then
+		if
+			actor.drawn
+			and actor.player
+			and t - actor.lastCombatTime > 10
+			and t > actor.busyUntil
+			and not actor.blocking
+		then
 			setDrawn(actor, false)
 		end
 		CombatService.ReplicateResources(actor)

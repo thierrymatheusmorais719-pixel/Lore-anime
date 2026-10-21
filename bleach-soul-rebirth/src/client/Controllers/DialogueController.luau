@@ -61,7 +61,10 @@ local function show(payload)
 			LayoutOrder = i,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextSize = 15,
-			BackgroundColor3 = if option.accent then Color3.fromRGB(50, 42, 20) elseif option.disabled then Color3.fromRGB(25, 25, 30) else T.PanelLight,
+			BackgroundColor3 = if option.accent
+				then Color3.fromRGB(50, 42, 20)
+				elseif option.disabled then Color3.fromRGB(25, 25, 30)
+				else T.PanelLight,
 			TextColor3 = if option.disabled then T.Muted elseif option.accent then T.Gold else T.Text,
 		})
 		Kit.padding(10).Parent = button
@@ -92,11 +95,50 @@ local function show(payload)
 end
 
 function DialogueController.Init()
-	gui = Kit.new("ScreenGui", { Name = "Dialogue", ResetOnSpawn = false, DisplayOrder = 20, Enabled = false, Parent = player:WaitForChild("PlayerGui") })
-	local panel = Kit.panel({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -30), Size = UDim2.fromOffset(760, 250), Parent = gui })
-	refs.name = Kit.label("", 22, { Position = UDim2.fromOffset(22, 14), Size = UDim2.fromOffset(500, 26), Font = T.FontTitle, TextColor3 = T.Gold, Parent = panel })
-	refs.title = Kit.label("", 14, { Position = UDim2.fromOffset(22, 40), Size = UDim2.fromOffset(500, 18), TextColor3 = T.Muted, Parent = panel })
-	refs.text = Kit.label("", 17, { Position = UDim2.fromOffset(22, 64), Size = UDim2.new(0.55, -22, 1, -80), TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, Font = T.Font, Parent = panel })
+	gui = Kit.new(
+		"ScreenGui",
+		{
+			Name = "Dialogue",
+			ResetOnSpawn = false,
+			DisplayOrder = 20,
+			Enabled = false,
+			Parent = player:WaitForChild("PlayerGui"),
+		}
+	)
+	local panel = Kit.panel({
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -30),
+		Size = UDim2.fromOffset(760, 250),
+		Parent = gui,
+	})
+	refs.name = Kit.label(
+		"",
+		22,
+		{
+			Position = UDim2.fromOffset(22, 14),
+			Size = UDim2.fromOffset(500, 26),
+			Font = T.FontTitle,
+			TextColor3 = T.Gold,
+			Parent = panel,
+		}
+	)
+	refs.title = Kit.label(
+		"",
+		14,
+		{ Position = UDim2.fromOffset(22, 40), Size = UDim2.fromOffset(500, 18), TextColor3 = T.Muted, Parent = panel }
+	)
+	refs.text = Kit.label(
+		"",
+		17,
+		{
+			Position = UDim2.fromOffset(22, 64),
+			Size = UDim2.new(0.55, -22, 1, -80),
+			TextWrapped = true,
+			TextYAlignment = Enum.TextYAlignment.Top,
+			Font = T.Font,
+			Parent = panel,
+		}
+	)
 	refs.options = Kit.new("ScrollingFrame", {
 		BackgroundTransparency = 1,
 		Position = UDim2.new(0.57, 0, 0, 16),
@@ -107,7 +149,11 @@ function DialogueController.Init()
 		BorderSizePixel = 0,
 		Parent = panel,
 	}, { Kit.new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }) })
-	local closeButton = Kit.button("✕", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10), Size = UDim2.fromOffset(30, 30) }, close)
+	local closeButton = Kit.button(
+		"✕",
+		{ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10), Size = UDim2.fromOffset(30, 30) },
+		close
+	)
 	closeButton.Parent = panel
 	Kit.autoScale(gui)
 end

@@ -29,7 +29,11 @@ end
 local function setLetterbox(visible: boolean)
 	for _, bar in letterbox:GetChildren() do
 		if bar:IsA("Frame") then
-			TweenService:Create(bar, TweenInfo.new(0.35, Enum.EasingStyle.Quad), { Size = UDim2.new(1, 0, if visible then 0.12 else 0, 0) }):Play()
+			TweenService:Create(
+				bar,
+				TweenInfo.new(0.35, Enum.EasingStyle.Quad),
+				{ Size = UDim2.new(1, 0, if visible then 0.12 else 0, 0) }
+			):Play()
 		end
 	end
 	local hint = letterbox:FindFirstChild("Hint") :: TextLabel?
@@ -124,7 +128,15 @@ end
 
 function CameraController.Start()
 	UserInputService.InputBegan:Connect(function(input)
-		if cinematic and (input.UserInputType == Enum.UserInputType.Keyboard or input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.Gamepad1 or input.UserInputType == Enum.UserInputType.MouseButton1) then
+		if
+			cinematic
+			and (
+				input.UserInputType == Enum.UserInputType.Keyboard
+				or input.UserInputType == Enum.UserInputType.Touch
+				or input.UserInputType == Enum.UserInputType.Gamepad1
+				or input.UserInputType == Enum.UserInputType.MouseButton1
+			)
+		then
 			if os.clock() - cinematic.start > 0.25 then
 				CameraController.EndCinematic()
 			end

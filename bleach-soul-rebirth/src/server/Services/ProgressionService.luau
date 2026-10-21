@@ -22,14 +22,22 @@ function ProgressionService.AddXp(player: Player, amount: number, source: string
 		return
 	end
 	local result = ProgressionLogic.addXp(profile, amount, Progression)
-	Registry.UIService.Notify(player, "+" .. math.floor(amount) .. " XP" .. (if source then " · " .. source else ""), "xp")
+	Registry.UIService.Notify(
+		player,
+		"+" .. math.floor(amount) .. " XP" .. (if source then " · " .. source else ""),
+		"xp"
+	)
 	if result.levelsGained > 0 then
 		Registry.UIService.Notify(player, "NÍVEL " .. result.newLevel .. "!", "level", { level = result.newLevel })
 		Registry.CharacterService.RefreshStats(player)
 		local actor = Registry.CombatService.GetByPlayer(player)
 		if actor then
 			Registry.CombatService.Heal(actor, actor.humanoid.MaxHealth)
-			Registry.CombatService.Broadcast("LevelUp", { actor = actor.model, level = result.newLevel }, actor.root.Position)
+			Registry.CombatService.Broadcast(
+				"LevelUp",
+				{ actor = actor.model, level = result.newLevel },
+				actor.root.Position
+			)
 		end
 		ProgressionService.LevelUp:Fire(player, result.newLevel)
 	end

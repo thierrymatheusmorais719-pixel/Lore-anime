@@ -45,12 +45,17 @@ function ZoneController.Apply(zoneId: string, instant: boolean?)
 	end
 	current = zoneId
 	local l = zone.lighting
-	local set = if instant then function(instance: Instance, props: { [string]: any })
-		for k, v in props do
-			(instance :: any)[k] = v
+	local set = if instant
+		then function(instance: Instance, props: { [string]: any })
+			for k, v in props do
+				(instance :: any)[k] = v
+			end
 		end
-	end else tween
-	set(Lighting, { ClockTime = l.ClockTime, Brightness = l.Brightness, Ambient = l.Ambient, OutdoorAmbient = l.OutdoorAmbient })
+		else tween
+	set(
+		Lighting,
+		{ ClockTime = l.ClockTime, Brightness = l.Brightness, Ambient = l.Ambient, OutdoorAmbient = l.OutdoorAmbient }
+	)
 	set(atmosphere, l.atmosphere)
 	set(correction, l.correction)
 	set(bloom, l.bloom)
@@ -66,17 +71,54 @@ end
 function ZoneController.Init()
 	atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
 	atmosphere.Parent = Lighting
-	correction = Lighting:FindFirstChild("BSR_Correction") :: ColorCorrectionEffect? or Instance.new("ColorCorrectionEffect")
+	correction = Lighting:FindFirstChild("BSR_Correction") :: ColorCorrectionEffect?
+		or Instance.new("ColorCorrectionEffect")
 	correction.Name = "BSR_Correction"
 	correction.Parent = Lighting
 	bloom = Lighting:FindFirstChild("BSR_Bloom") :: BloomEffect? or Instance.new("BloomEffect")
 	bloom.Name = "BSR_Bloom"
 	bloom.Parent = Lighting
 
-	titleGui = Kit.new("ScreenGui", { Name = "ZoneTitle", ResetOnSpawn = false, DisplayOrder = 8, Parent = player:WaitForChild("PlayerGui") })
-	local holder = Kit.new("Frame", { Name = "Title", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.16), Size = UDim2.fromOffset(700, 120), Parent = titleGui })
-	Kit.label("", 64, { Name = "Kanji", Size = UDim2.new(1, 0, 0, 70), TextXAlignment = Enum.TextXAlignment.Center, Font = Kit.Theme.FontTitle, TextTransparency = 1, Parent = holder })
-	Kit.label("", 26, { Name = "Name", Position = UDim2.fromOffset(0, 72), Size = UDim2.new(1, 0, 0, 30), TextXAlignment = Enum.TextXAlignment.Center, Font = Kit.Theme.FontBold, TextTransparency = 1, Parent = holder })
+	titleGui = Kit.new(
+		"ScreenGui",
+		{ Name = "ZoneTitle", ResetOnSpawn = false, DisplayOrder = 8, Parent = player:WaitForChild("PlayerGui") }
+	)
+	local holder = Kit.new(
+		"Frame",
+		{
+			Name = "Title",
+			BackgroundTransparency = 1,
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.fromScale(0.5, 0.16),
+			Size = UDim2.fromOffset(700, 120),
+			Parent = titleGui,
+		}
+	)
+	Kit.label(
+		"",
+		64,
+		{
+			Name = "Kanji",
+			Size = UDim2.new(1, 0, 0, 70),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Font = Kit.Theme.FontTitle,
+			TextTransparency = 1,
+			Parent = holder,
+		}
+	)
+	Kit.label(
+		"",
+		26,
+		{
+			Name = "Name",
+			Position = UDim2.fromOffset(0, 72),
+			Size = UDim2.new(1, 0, 0, 30),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Font = Kit.Theme.FontBold,
+			TextTransparency = 1,
+			Parent = holder,
+		}
+	)
 	Kit.autoScale(titleGui)
 	ZoneController.Apply("Karakura", true)
 end

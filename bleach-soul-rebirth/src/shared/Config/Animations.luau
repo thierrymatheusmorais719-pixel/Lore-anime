@@ -11,19 +11,54 @@ local Animations = {}
 
 local NAMES = {
 	-- Postura / locomoção com espada
-	"SwordIdle", "SwordRun", "Block", "Draw", "Sheathe", "Charge", "Dash", "AirStep",
+	"SwordIdle",
+	"SwordRun",
+	"Block",
+	"Draw",
+	"Sheathe",
+	"Charge",
+	"Dash",
+	"AirStep",
 	-- Combos
-	"Slash1", "Slash2", "Slash3", "Slash4", "Slash5",
-	"Air1", "Air2", "Air3", "Air4",
-	"HeavySlash", "Uppercut", "Counter", "Execution",
+	"Slash1",
+	"Slash2",
+	"Slash3",
+	"Slash4",
+	"Slash5",
+	"Air1",
+	"Air2",
+	"Air3",
+	"Air4",
+	"HeavySlash",
+	"Uppercut",
+	"Counter",
+	"Execution",
 	-- Reações
-	"Hit1", "Hit2", "Stagger", "Launched", "GuardBreak", "Parried", "ParrySuccess", "BlockHit",
+	"Hit1",
+	"Hit2",
+	"Stagger",
+	"Launched",
+	"GuardBreak",
+	"Parried",
+	"ParrySuccess",
+	"BlockHit",
 	-- Habilidades
-	"CastPoint", "CastSlash", "CastOverhead", "CastBurst", "CastCharge", "CastBow", "DashStrikePose", "UltimateRaise",
+	"CastPoint",
+	"CastSlash",
+	"CastOverhead",
+	"CastBurst",
+	"CastCharge",
+	"CastBow",
+	"DashStrikePose",
+	"UltimateRaise",
 	-- Transformações
-	"ReleaseTier1", "ReleaseTier2", "MaskOn", "Revert",
+	"ReleaseTier1",
+	"ReleaseTier2",
+	"MaskOn",
+	"Revert",
 	-- NPC
-	"Talk", "Wave",
+	"Talk",
+	"Wave",
 }
 
 Animations.List = {}

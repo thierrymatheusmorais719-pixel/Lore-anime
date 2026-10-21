@@ -80,8 +80,23 @@ handlers.Attack = function(d)
 			local focus = rootOf(model)
 			if focus then
 				CameraController.PlayCinematic(focus, {
-					{ duration = spec.windup * 0.85, fromAngle = 150, toAngle = 110, distance = 9, height = 1.5, fov = 45 },
-					{ duration = 0.7, fromAngle = -40, toAngle = -80, distance = 14, distanceEnd = 18, height = 3, fov = 60 },
+					{
+						duration = spec.windup * 0.85,
+						fromAngle = 150,
+						toAngle = 110,
+						distance = 9,
+						height = 1.5,
+						fov = 45,
+					},
+					{
+						duration = 0.7,
+						fromAngle = -40,
+						toAngle = -80,
+						distance = 14,
+						distanceEnd = 18,
+						height = 3,
+						fov = 60,
+					},
 				})
 			end
 		end
@@ -128,7 +143,11 @@ handlers.Hit = function(d)
 			VFX.emit("Wisp", position, color, 10)
 		end
 		SoundController.Play(if heavy then "HitHeavy" else "HitFlesh", position)
-		VFX.DamageNumber(position, d.damage, if d.counter then "Counter" elseif heavy then "Heavy" elseif isLocal(target) then "Self" else nil)
+		VFX.DamageNumber(
+			position,
+			d.damage,
+			if d.counter then "Counter" elseif heavy then "Heavy" elseif isLocal(target) then "Self" else nil
+		)
 	end
 	if isLocal(attacker) then
 		CameraController.Shake((d.shake or 0.15) * 0.8)
@@ -233,7 +252,8 @@ handlers.Cast = function(d)
 		VFX.WeaponTrail(model, color, d.windup + 0.2)
 		if d.windup >= 0.35 then
 			-- Carga visível (Cero, ultimates)
-			local charge = VFX.neon(Vector3.one * 0.5, root.CFrame * CFrame.new(0, 1, -2.5), color, 0.1, Enum.PartType.Ball)
+			local charge =
+				VFX.neon(Vector3.one * 0.5, root.CFrame * CFrame.new(0, 1, -2.5), color, 0.1, Enum.PartType.Ball)
 			VFX.tween(charge, d.windup, { Size = Vector3.one * (if d.ultimate then 6 else 3) })
 			task.delay(d.windup, function()
 				charge:Destroy()
@@ -246,8 +266,24 @@ handlers.Cast = function(d)
 		end
 		if isLocal(model) and root then
 			CameraController.PlayCinematic(root, {
-				{ duration = d.windup * 0.6, fromAngle = 160, toAngle = 200, distance = 10, height = 2, fov = 50, lookHeight = 2.5 },
-				{ duration = d.windup * 0.5, fromAngle = 30, toAngle = 10, distance = 16, distanceEnd = 24, height = 6, fov = 70 },
+				{
+					duration = d.windup * 0.6,
+					fromAngle = 160,
+					toAngle = 200,
+					distance = 10,
+					height = 2,
+					fov = 50,
+					lookHeight = 2.5,
+				},
+				{
+					duration = d.windup * 0.5,
+					fromAngle = 30,
+					toAngle = 10,
+					distance = 16,
+					distanceEnd = 24,
+					height = 6,
+					fov = 70,
+				},
 			})
 		end
 	end
@@ -296,7 +332,12 @@ handlers.DashStrike = function(d)
 	local from: Vector3, to: Vector3 = d.from, d.to
 	local path = to - from
 	if path.Magnitude > 1 then
-		local slash = VFX.neon(Vector3.new(0.3, 0.3, path.Magnitude), CFrame.lookAt((from + to) / 2, to) + Vector3.new(0, 1, 0), color, 0)
+		local slash = VFX.neon(
+			Vector3.new(0.3, 0.3, path.Magnitude),
+			CFrame.lookAt((from + to) / 2, to) + Vector3.new(0, 1, 0),
+			color,
+			0
+		)
 		VFX.tween(slash, 0.4, { Size = Vector3.new(0.05, 1.5, path.Magnitude), Transparency = 1 })
 		task.delay(0.45, function()
 			slash:Destroy()
@@ -313,7 +354,8 @@ handlers.DashStrike = function(d)
 	end
 	for h = 1, d.hits or 1 do
 		task.delay((h - 1) * 0.12 + 0.05, function()
-			local frame = CFrame.lookAt(to, to + (if path.Magnitude > 0.1 then path.Unit else Vector3.new(0, 0, -1))) * CFrame.Angles(0, 0, math.rad(rng:NextNumber(-60, 60)))
+			local frame = CFrame.lookAt(to, to + (if path.Magnitude > 0.1 then path.Unit else Vector3.new(0, 0, -1)))
+				* CFrame.Angles(0, 0, math.rad(rng:NextNumber(-60, 60)))
 			VFX.SlashArc(frame + Vector3.new(0, 1, 0), color, 6, 0.4, 0.25, h % 2 == 0)
 			SoundController.Play("Slash", to)
 		end)
@@ -347,7 +389,12 @@ handlers.Pull = function(d)
 	local links = math.clamp(math.floor((to - from).Magnitude / 2), 2, 30)
 	for i = 1, links do
 		local p = from:Lerp(to, i / links)
-		local link = VFX.neon(Vector3.new(0.5, 0.5, 1.2), CFrame.lookAt(p, to) * CFrame.Angles(0, 0, if i % 2 == 0 then math.rad(90) else 0), color, 0.1)
+		local link = VFX.neon(
+			Vector3.new(0.5, 0.5, 1.2),
+			CFrame.lookAt(p, to) * CFrame.Angles(0, 0, if i % 2 == 0 then math.rad(90) else 0),
+			color,
+			0.1
+		)
 		link.Material = Enum.Material.Metal
 		VFX.tween(link, 0.5, { Transparency = 1 })
 		task.delay(0.5, function()
@@ -367,7 +414,9 @@ handlers.Barrage = function(d)
 				break
 			end
 			local yaw = math.rad(rng:NextNumber(-d.angle / 2, d.angle / 2))
-			local frame = CFrame.lookAt(root.Position, root.Position + d.direction) * CFrame.Angles(0, yaw, math.rad(rng:NextNumber(-70, 70))) * CFrame.new(0, 0.5, -d.range * 0.35)
+			local frame = CFrame.lookAt(root.Position, root.Position + d.direction)
+				* CFrame.Angles(0, yaw, math.rad(rng:NextNumber(-70, 70)))
+				* CFrame.new(0, 0.5, -d.range * 0.35)
 			VFX.SlashArc(frame, color, d.range * 0.35, 0.35, 0.18, t % 2 == 0)
 			if t % 2 == 1 then
 				SoundController.Play("Slash", root, 0.6)
@@ -384,7 +433,16 @@ local CINEMATIC_TIER1 = {
 local CINEMATIC_TIER2 = {
 	{ duration = 0.8, fromAngle = 200, toAngle = 160, distance = 6, height = 0.5, fov = 40, lookHeight = 2.5 },
 	{ duration = 0.8, fromAngle = 90, toAngle = 40, distance = 14, height = 8, fov = 55 },
-	{ duration = 0.9, fromAngle = 0, toAngle = -20, distance = 12, distanceEnd = 20, height = 1, fov = 70, lookHeight = 3 },
+	{
+		duration = 0.9,
+		fromAngle = 0,
+		toAngle = -20,
+		distance = 12,
+		distanceEnd = 20,
+		height = 1,
+		fov = 70,
+		lookHeight = 3,
+	},
 }
 
 handlers.TransformStart = function(d)
@@ -398,7 +456,13 @@ handlers.TransformStart = function(d)
 	AnimController.Play(model, anim, { speed = poseDef.duration / (d.channel + 0.4) })
 	local color = VFX.Color(d.element)
 	SoundController.Play("Release", root)
-	VFX.Pillar(root.Position - Vector3.new(0, 3, 0), color, if d.form == "Tier2" then 6 else 3.5, if d.form == "Tier2" then 90 else 40, d.channel + 0.3)
+	VFX.Pillar(
+		root.Position - Vector3.new(0, 3, 0),
+		color,
+		if d.form == "Tier2" then 6 else 3.5,
+		if d.form == "Tier2" then 90 else 40,
+		d.channel + 0.3
+	)
 	VFX.emit("Wisp", root.Position, color, 40)
 	if isLocal(model) then
 		local getSettings = FxController.Settings

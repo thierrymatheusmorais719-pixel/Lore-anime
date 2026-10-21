@@ -303,7 +303,16 @@ end)
 
 -- ======================= Integridade das configs =======================
 test("habilidades referenciadas existem e têm kind válido", function()
-	local kinds = { Projectile = true, Beam = true, DashStrike = true, Burst = true, Rain = true, Buff = true, Pull = true, Barrage = true }
+	local kinds = {
+		Projectile = true,
+		Beam = true,
+		DashStrike = true,
+		Burst = true,
+		Rain = true,
+		Buff = true,
+		Pull = true,
+		Barrage = true,
+	}
 	for id, a in Abilities do
 		truthy(kinds[a.kind], id .. " kind inválido " .. tostring(a.kind))
 		truthy(Animations.List[a.anim], id .. " anim inexistente " .. tostring(a.anim))

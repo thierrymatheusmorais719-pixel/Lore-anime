@@ -32,9 +32,21 @@ InputController.Bindings = {
 
 -- Ações que não disparam com menu aberto
 local COMBAT = {
-	Attack = true, Heavy = true, Launcher = true, Block = true, Dash = true,
-	Z = true, X = true, C = true, V = true, Transform = true, Mask = true,
-	Charge = true, Sprint = true, Draw = true, Item = true,
+	Attack = true,
+	Heavy = true,
+	Launcher = true,
+	Block = true,
+	Dash = true,
+	Z = true,
+	X = true,
+	C = true,
+	V = true,
+	Transform = true,
+	Mask = true,
+	Charge = true,
+	Sprint = true,
+	Draw = true,
+	Item = true,
 }
 
 local lookup: { [any]: string } = {}
@@ -115,7 +127,10 @@ function InputController.Start()
 			return -- toque usa os botões da HUD
 		elseif input.UserInputType == Enum.UserInputType.Gamepad1 then
 			setMode("Gamepad")
-		elseif input.UserInputType == Enum.UserInputType.Keyboard or input.UserInputType == Enum.UserInputType.MouseButton1 then
+		elseif
+			input.UserInputType == Enum.UserInputType.Keyboard
+			or input.UserInputType == Enum.UserInputType.MouseButton1
+		then
 			setMode("Keyboard")
 		end
 		if processed or GuiService.MenuIsOpen then

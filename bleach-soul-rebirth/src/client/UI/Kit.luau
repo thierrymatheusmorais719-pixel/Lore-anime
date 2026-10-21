@@ -58,8 +58,18 @@ function Kit.padding(px: number): UIPadding
 	return Kit.new("UIPadding", { PaddingTop = u, PaddingBottom = u, PaddingLeft = u, PaddingRight = u })
 end
 
-function Kit.tween(instance: Instance, time: number, props: { [string]: any }, style: Enum.EasingStyle?, direction: Enum.EasingDirection?): Tween
-	local t = TweenService:Create(instance, TweenInfo.new(time, style or Enum.EasingStyle.Quint, direction or Enum.EasingDirection.Out), props)
+function Kit.tween(
+	instance: Instance,
+	time: number,
+	props: { [string]: any },
+	style: Enum.EasingStyle?,
+	direction: Enum.EasingDirection?
+): Tween
+	local t = TweenService:Create(
+		instance,
+		TweenInfo.new(time, style or Enum.EasingStyle.Quint, direction or Enum.EasingDirection.Out),
+		props
+	)
 	t:Play()
 	return t
 end

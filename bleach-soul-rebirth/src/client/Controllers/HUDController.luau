@@ -33,8 +33,28 @@ local refs: { [string]: any } = {}
 local slotFrames: { [string]: any } = {}
 
 local KEY_LABELS = {
-	Keyboard = { Z = "Z", X = "X", C = "C", V = "V", Heavy = "E", Launcher = "R", Dash = "Q", Transform = "G", Mask = "H" },
-	Gamepad = { Z = "◀", X = "▲", C = "▶", V = "▼", Heavy = "R1", Launcher = "X", Dash = "B", Transform = "L1", Mask = "Y" },
+	Keyboard = {
+		Z = "Z",
+		X = "X",
+		C = "C",
+		V = "V",
+		Heavy = "E",
+		Launcher = "R",
+		Dash = "Q",
+		Transform = "G",
+		Mask = "H",
+	},
+	Gamepad = {
+		Z = "◀",
+		X = "▲",
+		C = "▶",
+		V = "▼",
+		Heavy = "R1",
+		Launcher = "X",
+		Dash = "B",
+		Transform = "L1",
+		Mask = "Y",
+	},
 	Touch = { Z = "", X = "", C = "", V = "", Heavy = "", Launcher = "", Dash = "", Transform = "", Mask = "" },
 }
 
@@ -72,7 +92,11 @@ function HUDController.Notify(text: string, kind: string?, extra: any?)
 		Parent = list,
 	}, {
 		Kit.corner(6),
-		Kit.new("Frame", { BackgroundColor3 = color, BorderSizePixel = 0, Size = UDim2.new(0, 4, 1, 0) }, { Kit.corner(2) }),
+		Kit.new(
+			"Frame",
+			{ BackgroundColor3 = color, BorderSizePixel = 0, Size = UDim2.new(0, 4, 1, 0) },
+			{ Kit.corner(2) }
+		),
 	})
 	local label = Kit.label(text, if big then 22 else 15, {
 		Position = UDim2.fromOffset(12, 0),
@@ -134,17 +158,75 @@ local function buildStatus()
 		Parent = root,
 	}, { Kit.new("UICorner", { CornerRadius = UDim.new(1, 0) }), Kit.stroke(T.Accent, 2.5, 0.1) })
 	refs.badgeStroke = badge:FindFirstChildOfClass("UIStroke")
-	refs.kanji = Kit.label("霊", 30, { Size = UDim2.new(1, 0, 0.62, 0), TextXAlignment = Enum.TextXAlignment.Center, Font = T.FontTitle, Parent = badge })
-	refs.level = Kit.label("Nv 1", 14, { Position = UDim2.fromScale(0, 0.58), Size = UDim2.new(1, 0, 0.35, 0), TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = T.Gold, Parent = badge })
+	refs.kanji = Kit.label(
+		"霊",
+		30,
+		{
+			Size = UDim2.new(1, 0, 0.62, 0),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Font = T.FontTitle,
+			Parent = badge,
+		}
+	)
+	refs.level = Kit.label(
+		"Nv 1",
+		14,
+		{
+			Position = UDim2.fromScale(0, 0.58),
+			Size = UDim2.new(1, 0, 0.35, 0),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextColor3 = T.Gold,
+			Parent = badge,
+		}
+	)
 
-	refs.name = Kit.label(player.DisplayName, 16, { Position = UDim2.fromOffset(86, 4), Size = UDim2.fromOffset(200, 20), Font = T.FontTitle, TextStrokeTransparency = 0.6, Parent = root })
-	refs.form = Kit.label("", 14, { Position = UDim2.fromOffset(200, 4), Size = UDim2.fromOffset(180, 20), TextXAlignment = Enum.TextXAlignment.Right, Font = T.FontTitle, TextColor3 = T.Gold, TextStrokeTransparency = 0.5, Parent = root })
+	refs.name = Kit.label(
+		player.DisplayName,
+		16,
+		{
+			Position = UDim2.fromOffset(86, 4),
+			Size = UDim2.fromOffset(200, 20),
+			Font = T.FontTitle,
+			TextStrokeTransparency = 0.6,
+			Parent = root,
+		}
+	)
+	refs.form = Kit.label(
+		"",
+		14,
+		{
+			Position = UDim2.fromOffset(200, 4),
+			Size = UDim2.fromOffset(180, 20),
+			TextXAlignment = Enum.TextXAlignment.Right,
+			Font = T.FontTitle,
+			TextColor3 = T.Gold,
+			TextStrokeTransparency = 0.5,
+			Parent = root,
+		}
+	)
 
-	bars.health = Kit.bar({ Position = UDim2.fromOffset(86, 28), Size = UDim2.fromOffset(294, 18), Parent = root }, T.Health, 18)
-	bars.reiatsu = Kit.bar({ Position = UDim2.fromOffset(86, 52), Size = UDim2.fromOffset(260, 14), Parent = root }, T.Accent, 14)
-	bars.guard = Kit.bar({ Position = UDim2.fromOffset(86, 70), Size = UDim2.fromOffset(140, 6), Parent = root }, Color3.fromRGB(230, 230, 240), 6)
-	bars.xp = Kit.bar({ Position = UDim2.fromOffset(86, 82), Size = UDim2.fromOffset(294, 6), Parent = root }, T.Gold, 6)
-	refs.currency = Kit.label("", 13, { Position = UDim2.fromOffset(232, 66), Size = UDim2.fromOffset(148, 14), TextXAlignment = Enum.TextXAlignment.Right, TextColor3 = T.Muted, Parent = root })
+	bars.health =
+		Kit.bar({ Position = UDim2.fromOffset(86, 28), Size = UDim2.fromOffset(294, 18), Parent = root }, T.Health, 18)
+	bars.reiatsu =
+		Kit.bar({ Position = UDim2.fromOffset(86, 52), Size = UDim2.fromOffset(260, 14), Parent = root }, T.Accent, 14)
+	bars.guard = Kit.bar(
+		{ Position = UDim2.fromOffset(86, 70), Size = UDim2.fromOffset(140, 6), Parent = root },
+		Color3.fromRGB(230, 230, 240),
+		6
+	)
+	bars.xp =
+		Kit.bar({ Position = UDim2.fromOffset(86, 82), Size = UDim2.fromOffset(294, 6), Parent = root }, T.Gold, 6)
+	refs.currency = Kit.label(
+		"",
+		13,
+		{
+			Position = UDim2.fromOffset(232, 66),
+			Size = UDim2.fromOffset(148, 14),
+			TextXAlignment = Enum.TextXAlignment.Right,
+			TextColor3 = T.Muted,
+			Parent = root,
+		}
+	)
 end
 
 local function makeSlot(parent: Instance, key: string, size: number, order: number)
@@ -156,7 +238,16 @@ local function makeSlot(parent: Instance, key: string, size: number, order: numb
 		LayoutOrder = order,
 		Parent = parent,
 	}, { Kit.corner(10), Kit.stroke(Color3.new(1, 1, 1), 1.5, 0.7) })
-	local icon = Kit.label("", size * 0.48, { Size = UDim2.fromScale(1, 0.8), TextXAlignment = Enum.TextXAlignment.Center, Font = T.FontTitle, Parent = frame })
+	local icon = Kit.label(
+		"",
+		size * 0.48,
+		{
+			Size = UDim2.fromScale(1, 0.8),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Font = T.FontTitle,
+			Parent = frame,
+		}
+	)
 	local shade = Kit.new("Frame", {
 		BackgroundColor3 = Color3.new(0, 0, 0),
 		BackgroundTransparency = 0.35,
@@ -167,10 +258,51 @@ local function makeSlot(parent: Instance, key: string, size: number, order: numb
 		ZIndex = 2,
 		Parent = frame,
 	}, { Kit.corner(10) })
-	local timer = Kit.label("", size * 0.32, { Size = UDim2.fromScale(1, 1), TextXAlignment = Enum.TextXAlignment.Center, Font = T.FontTitle, ZIndex = 3, TextStrokeTransparency = 0.3, Parent = frame })
-	local keyLabel = Kit.label(key, 12, { Position = UDim2.new(0, 5, 1, -16), Size = UDim2.fromOffset(30, 14), TextColor3 = T.Muted, ZIndex = 3, Parent = frame })
-	local name = Kit.label("", 11, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 1, 3), Size = UDim2.fromOffset(size + 30, 14), TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = T.Muted, TextTruncate = Enum.TextTruncate.AtEnd, Parent = frame })
-	slotFrames[key] = { frame = frame, icon = icon, shade = shade, timer = timer, key = keyLabel, name = name, stroke = frame:FindFirstChildOfClass("UIStroke") }
+	local timer = Kit.label(
+		"",
+		size * 0.32,
+		{
+			Size = UDim2.fromScale(1, 1),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Font = T.FontTitle,
+			ZIndex = 3,
+			TextStrokeTransparency = 0.3,
+			Parent = frame,
+		}
+	)
+	local keyLabel = Kit.label(
+		key,
+		12,
+		{
+			Position = UDim2.new(0, 5, 1, -16),
+			Size = UDim2.fromOffset(30, 14),
+			TextColor3 = T.Muted,
+			ZIndex = 3,
+			Parent = frame,
+		}
+	)
+	local name = Kit.label(
+		"",
+		11,
+		{
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 1, 3),
+			Size = UDim2.fromOffset(size + 30, 14),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextColor3 = T.Muted,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			Parent = frame,
+		}
+	)
+	slotFrames[key] = {
+		frame = frame,
+		icon = icon,
+		shade = shade,
+		timer = timer,
+		key = keyLabel,
+		name = name,
+		stroke = frame:FindFirstChildOfClass("UIStroke"),
+	}
 end
 
 local function buildSkillBar()
@@ -182,7 +314,16 @@ local function buildSkillBar()
 		Size = UDim2.fromOffset(520, 70),
 		Parent = gui,
 	}, {
-		Kit.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Bottom, Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }),
+		Kit.new(
+			"UIListLayout",
+			{
+				FillDirection = Enum.FillDirection.Horizontal,
+				HorizontalAlignment = Enum.HorizontalAlignment.Center,
+				VerticalAlignment = Enum.VerticalAlignment.Bottom,
+				Padding = UDim.new(0, 10),
+				SortOrder = Enum.SortOrder.LayoutOrder,
+			}
+		),
 	})
 	refs.skillBar = bar
 	makeSlot(bar, "Dash", 46, 1)
@@ -208,50 +349,196 @@ local function buildCombo()
 		Size = UDim2.fromOffset(220, 120),
 		Parent = gui,
 	})
-	refs.comboCount = Kit.label("", 84, { Size = UDim2.new(1, 0, 0, 84), TextXAlignment = Enum.TextXAlignment.Right, Font = T.FontAnime, TextColor3 = T.Gold, TextStrokeTransparency = 0, TextTransparency = 1, TextStrokeColor3 = Color3.fromRGB(40, 10, 0), Parent = holder })
-	refs.comboText = Kit.label("HITS", 26, { Position = UDim2.fromOffset(0, 80), Size = UDim2.new(1, 0, 0, 28), TextXAlignment = Enum.TextXAlignment.Right, Font = T.FontAnime, TextTransparency = 1, TextStrokeTransparency = 0.2, Parent = holder })
+	refs.comboCount = Kit.label(
+		"",
+		84,
+		{
+			Size = UDim2.new(1, 0, 0, 84),
+			TextXAlignment = Enum.TextXAlignment.Right,
+			Font = T.FontAnime,
+			TextColor3 = T.Gold,
+			TextStrokeTransparency = 0,
+			TextTransparency = 1,
+			TextStrokeColor3 = Color3.fromRGB(40, 10, 0),
+			Parent = holder,
+		}
+	)
+	refs.comboText = Kit.label(
+		"HITS",
+		26,
+		{
+			Position = UDim2.fromOffset(0, 80),
+			Size = UDim2.new(1, 0, 0, 28),
+			TextXAlignment = Enum.TextXAlignment.Right,
+			Font = T.FontAnime,
+			TextTransparency = 1,
+			TextStrokeTransparency = 0.2,
+			Parent = holder,
+		}
+	)
 	refs.comboScale = Kit.new("UIScale", { Parent = holder })
 end
 
 local function buildCenter()
-	refs.toasts = Kit.new("Frame", {
-		Name = "Toasts",
-		BackgroundTransparency = 1,
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 92),
-		Size = UDim2.fromOffset(440, 300),
-		Parent = gui,
-	}, { Kit.new("UIListLayout", { HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }) })
+	refs.toasts = Kit.new(
+		"Frame",
+		{
+			Name = "Toasts",
+			BackgroundTransparency = 1,
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 0, 92),
+			Size = UDim2.fromOffset(440, 300),
+			Parent = gui,
+		},
+		{
+			Kit.new(
+				"UIListLayout",
+				{
+					HorizontalAlignment = Enum.HorizontalAlignment.Center,
+					Padding = UDim.new(0, 4),
+					SortOrder = Enum.SortOrder.LayoutOrder,
+				}
+			),
+		}
+	)
 
 	-- Título de liberação (Shikai/Bankai...)
-	local title = Kit.new("Frame", { Name = "ReleaseTitle", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.42), Size = UDim2.fromOffset(800, 220), Visible = false, ZIndex = 10, Parent = gui })
-	refs.releaseKanji = Kit.label("", 110, { Size = UDim2.new(1, 0, 0, 120), TextXAlignment = Enum.TextXAlignment.Center, Font = T.FontTitle, TextStrokeTransparency = 0, ZIndex = 10, Parent = title })
-	refs.releaseName = Kit.label("", 40, { Position = UDim2.fromOffset(0, 118), Size = UDim2.new(1, 0, 0, 44), TextXAlignment = Enum.TextXAlignment.Center, Font = T.FontAnime, TextStrokeTransparency = 0, ZIndex = 10, Parent = title })
-	refs.releaseCommand = Kit.label("", 20, { Position = UDim2.fromOffset(0, 166), Size = UDim2.new(1, 0, 0, 24), TextXAlignment = Enum.TextXAlignment.Center, Font = T.FontBold, TextColor3 = T.Muted, TextStrokeTransparency = 0.4, ZIndex = 10, Parent = title })
+	local title = Kit.new(
+		"Frame",
+		{
+			Name = "ReleaseTitle",
+			BackgroundTransparency = 1,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.42),
+			Size = UDim2.fromOffset(800, 220),
+			Visible = false,
+			ZIndex = 10,
+			Parent = gui,
+		}
+	)
+	refs.releaseKanji = Kit.label(
+		"",
+		110,
+		{
+			Size = UDim2.new(1, 0, 0, 120),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Font = T.FontTitle,
+			TextStrokeTransparency = 0,
+			ZIndex = 10,
+			Parent = title,
+		}
+	)
+	refs.releaseName = Kit.label(
+		"",
+		40,
+		{
+			Position = UDim2.fromOffset(0, 118),
+			Size = UDim2.new(1, 0, 0, 44),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Font = T.FontAnime,
+			TextStrokeTransparency = 0,
+			ZIndex = 10,
+			Parent = title,
+		}
+	)
+	refs.releaseCommand = Kit.label(
+		"",
+		20,
+		{
+			Position = UDim2.fromOffset(0, 166),
+			Size = UDim2.new(1, 0, 0, 24),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Font = T.FontBold,
+			TextColor3 = T.Muted,
+			TextStrokeTransparency = 0.4,
+			ZIndex = 10,
+			Parent = title,
+		}
+	)
 	refs.releaseTitle = title
 
 	-- Popup de parry
-	refs.parry = Kit.label("PARRY!", 64, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.3), Size = UDim2.fromOffset(400, 70), TextXAlignment = Enum.TextXAlignment.Center, Font = T.FontAnime, TextColor3 = Color3.fromRGB(255, 240, 180), TextStrokeTransparency = 0, TextTransparency = 1, TextStrokeColor3 = Color3.fromRGB(80, 50, 0), Parent = gui })
+	refs.parry = Kit.label(
+		"PARRY!",
+		64,
+		{
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.3),
+			Size = UDim2.fromOffset(400, 70),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Font = T.FontAnime,
+			TextColor3 = Color3.fromRGB(255, 240, 180),
+			TextStrokeTransparency = 0,
+			TextTransparency = 1,
+			TextStrokeColor3 = Color3.fromRGB(80, 50, 0),
+			Parent = gui,
+		}
+	)
 
 	-- Barra de chefe
-	local boss = Kit.new("Frame", { Name = "BossBar", BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 40), Size = UDim2.fromOffset(560, 48), Visible = false, Parent = gui })
-	refs.bossName = Kit.label("", 18, { Size = UDim2.new(1, 0, 0, 22), TextXAlignment = Enum.TextXAlignment.Center, Font = T.FontTitle, TextStrokeTransparency = 0.4, Parent = boss })
-	bars.boss = Kit.bar({ Position = UDim2.fromOffset(0, 24), Size = UDim2.new(1, 0, 0, 16), Parent = boss }, Color3.fromRGB(170, 40, 60), 16)
+	local boss = Kit.new(
+		"Frame",
+		{
+			Name = "BossBar",
+			BackgroundTransparency = 1,
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 0, 40),
+			Size = UDim2.fromOffset(560, 48),
+			Visible = false,
+			Parent = gui,
+		}
+	)
+	refs.bossName = Kit.label(
+		"",
+		18,
+		{
+			Size = UDim2.new(1, 0, 0, 22),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Font = T.FontTitle,
+			TextStrokeTransparency = 0.4,
+			Parent = boss,
+		}
+	)
+	bars.boss = Kit.bar(
+		{ Position = UDim2.fromOffset(0, 24), Size = UDim2.new(1, 0, 0, 16), Parent = boss },
+		Color3.fromRGB(170, 40, 60),
+		16
+	)
 	refs.bossBar = boss
 
 	-- Missão rastreada
-	local quest = Kit.new("Frame", { Name = "Quest", BackgroundColor3 = T.Background, BackgroundTransparency = 0.35, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -20, 0, 70), Size = UDim2.fromOffset(280, 40), AutomaticSize = Enum.AutomaticSize.Y, Parent = gui }, {
-		Kit.corner(8),
-		Kit.padding(10),
-		Kit.new("UIListLayout", { Padding = UDim.new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder }),
-	})
+	local quest = Kit.new(
+		"Frame",
+		{
+			Name = "Quest",
+			BackgroundColor3 = T.Background,
+			BackgroundTransparency = 0.35,
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, -20, 0, 70),
+			Size = UDim2.fromOffset(280, 40),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			Parent = gui,
+		},
+		{
+			Kit.corner(8),
+			Kit.padding(10),
+			Kit.new("UIListLayout", { Padding = UDim.new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder }),
+		}
+	)
 	refs.quest = quest
 end
 
 -- ============================================================
 -- Botões de toque
 -- ============================================================
-local function touchButton(parent: Instance, action: string, text: string, size: number, position: UDim2, color: Color3?)
+local function touchButton(
+	parent: Instance,
+	action: string,
+	text: string,
+	size: number,
+	position: UDim2,
+	color: Color3?
+)
 	local button = Kit.new("TextButton", {
 		Name = action,
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -267,13 +554,19 @@ local function touchButton(parent: Instance, action: string, text: string, size:
 		Parent = parent,
 	}, { Kit.new("UICorner", { CornerRadius = UDim.new(1, 0) }), Kit.stroke(Color3.new(1, 1, 1), 2, 0.5) })
 	button.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if
+			input.UserInputType == Enum.UserInputType.Touch
+			or input.UserInputType == Enum.UserInputType.MouseButton1
+		then
 			button.BackgroundTransparency = 0.1
 			InputController.Fire(action, true)
 		end
 	end)
 	button.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if
+			input.UserInputType == Enum.UserInputType.Touch
+			or input.UserInputType == Enum.UserInputType.MouseButton1
+		then
 			button.BackgroundTransparency = 0.35
 			InputController.Fire(action, false)
 		end
@@ -323,7 +616,10 @@ local function onLocalHit()
 	combo.count += 1
 	combo.last = now
 	refs.comboCount.Text = tostring(combo.count)
-	refs.comboText.Text = if combo.count >= 20 then "HITS · BRUTAL!" elseif combo.count >= 10 then "HITS · INCRÍVEL!" else "HITS"
+	refs.comboText.Text = if combo.count >= 20
+		then "HITS · BRUTAL!"
+		elseif combo.count >= 10 then "HITS · INCRÍVEL!"
+		else "HITS"
 	refs.comboCount.TextTransparency = 0
 	refs.comboText.TextTransparency = 0
 	refs.comboScale.Scale = 1.35
@@ -377,19 +673,29 @@ local function updateQuest(profile)
 		return
 	end
 	frame.Visible = true
-	Kit.label(quest.name, 16, { Size = UDim2.new(1, 0, 0, 20), Font = T.FontTitle, TextColor3 = T.Gold, LayoutOrder = 0, Parent = frame })
+	Kit.label(
+		quest.name,
+		16,
+		{ Size = UDim2.new(1, 0, 0, 20), Font = T.FontTitle, TextColor3 = T.Gold, LayoutOrder = 0, Parent = frame }
+	)
 	for i, objective in quest.objectives do
 		local current = entry.progress[i] or 0
 		local target = objective.count or 1
 		local done = current >= target
-		Kit.label((if done then "✔ " else "• ") .. objective.label .. (if target > 1 then string.format(" (%d/%d)", current, target) else ""), 14, {
-			Size = UDim2.new(1, 0, 0, 18),
-			TextColor3 = if done then T.Success else T.Text,
-			TextWrapped = true,
-			AutomaticSize = Enum.AutomaticSize.Y,
-			LayoutOrder = i,
-			Parent = frame,
-		})
+		Kit.label(
+			(if done then "✔ " else "• ")
+				.. objective.label
+				.. (if target > 1 then string.format(" (%d/%d)", current, target) else ""),
+			14,
+			{
+				Size = UDim2.new(1, 0, 0, 18),
+				TextColor3 = if done then T.Success else T.Text,
+				TextWrapped = true,
+				AutomaticSize = Enum.AutomaticSize.Y,
+				LayoutOrder = i,
+				Parent = frame,
+			}
+		)
 	end
 end
 
@@ -419,7 +725,8 @@ local function showReleaseTitle(d)
 	local color = (Elements[d.element] or Elements.Reiatsu).primary
 	refs.releaseKanji.Text = d.formKanji or ""
 	refs.releaseKanji.TextColor3 = color
-	refs.releaseName.Text = string.upper(d.formName or "") .. (if d.releaseName and d.releaseName ~= d.formName then " · " .. d.releaseName else "")
+	refs.releaseName.Text = string.upper(d.formName or "")
+		.. (if d.releaseName and d.releaseName ~= d.formName then " · " .. d.releaseName else "")
 	refs.releaseCommand.Text = if d.command then "\u{201C}" .. d.command .. "\u{201D}" else ""
 	title.Visible = true
 	for _, label in { refs.releaseKanji, refs.releaseName, refs.releaseCommand } do
@@ -427,7 +734,12 @@ local function showReleaseTitle(d)
 		label.TextStrokeTransparency = 1
 	end
 	refs.releaseKanji.Position = UDim2.fromOffset(0, -30)
-	Kit.tween(refs.releaseKanji, 0.4, { TextTransparency = 0, TextStrokeTransparency = 0, Position = UDim2.fromOffset(0, 0) }, Enum.EasingStyle.Back)
+	Kit.tween(
+		refs.releaseKanji,
+		0.4,
+		{ TextTransparency = 0, TextStrokeTransparency = 0, Position = UDim2.fromOffset(0, 0) },
+		Enum.EasingStyle.Back
+	)
 	task.delay(0.2, function()
 		Kit.tween(refs.releaseName, 0.3, { TextTransparency = 0, TextStrokeTransparency = 0 })
 		Kit.tween(refs.releaseCommand, 0.3, { TextTransparency = 0, TextStrokeTransparency = 0.4 })
@@ -489,16 +801,34 @@ local function attachPlate(model: Model)
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Font = T.FontTitle,
 		TextStrokeTransparency = 0.4,
-		TextColor3 = if isNpc then Color3.fromRGB(255, 230, 160) elseif model:GetAttribute("Boss") then Color3.fromRGB(255, 120, 120) else T.Text,
+		TextColor3 = if isNpc
+			then Color3.fromRGB(255, 230, 160)
+			elseif model:GetAttribute("Boss") then Color3.fromRGB(255, 120, 120)
+			else T.Text,
 		Parent = billboard,
 	})
 	local entry: { gui: BillboardGui, bar: any?, humanoid: Humanoid? } = { gui = billboard, bar = nil, humanoid = nil }
 	if isNpc then
-		Kit.label(tostring(model:GetAttribute("Title") or ""), 12, { Position = UDim2.fromOffset(0, 18), Size = UDim2.new(1, 0, 0, 14), TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = T.Muted, TextStrokeTransparency = 0.5, Parent = billboard })
+		Kit.label(
+			tostring(model:GetAttribute("Title") or ""),
+			12,
+			{
+				Position = UDim2.fromOffset(0, 18),
+				Size = UDim2.new(1, 0, 0, 14),
+				TextXAlignment = Enum.TextXAlignment.Center,
+				TextColor3 = T.Muted,
+				TextStrokeTransparency = 0.5,
+				Parent = billboard,
+			}
+		)
 	else
 		local humanoid = model:FindFirstChildOfClass("Humanoid")
 		entry.humanoid = humanoid
-		entry.bar = Kit.bar({ Position = UDim2.fromOffset(30, 20), Size = UDim2.new(1, -60, 0, 8), Parent = billboard }, T.Health, 8)
+		entry.bar = Kit.bar(
+			{ Position = UDim2.fromOffset(30, 20), Size = UDim2.new(1, -60, 0, 8), Parent = billboard },
+			T.Health,
+			8
+		)
 	end
 	plates[model] = entry
 	model.AncestryChanged:Connect(function(_, parent)
@@ -510,7 +840,17 @@ local function attachPlate(model: Model)
 end
 
 function HUDController.Init()
-	gui = Kit.new("ScreenGui", { Name = "HUD", ResetOnSpawn = false, IgnoreGuiInset = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, DisplayOrder = 10, Parent = player:WaitForChild("PlayerGui") })
+	gui = Kit.new(
+		"ScreenGui",
+		{
+			Name = "HUD",
+			ResetOnSpawn = false,
+			IgnoreGuiInset = false,
+			ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+			DisplayOrder = 10,
+			Parent = player:WaitForChild("PlayerGui"),
+		}
+	)
 	Kit.autoScale(gui)
 	buildStatus()
 	buildSkillBar()
@@ -581,7 +921,11 @@ function HUDController.Start()
 		local character = player.Character
 		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 		if character and humanoid then
-			bars.health.set(humanoid.Health, humanoid.MaxHealth, string.format("%d / %d", math.ceil(humanoid.Health), humanoid.MaxHealth))
+			bars.health.set(
+				humanoid.Health,
+				humanoid.MaxHealth,
+				string.format("%d / %d", math.ceil(humanoid.Health), humanoid.MaxHealth)
+			)
 			local r, maxR = character:GetAttribute("Reiatsu") or 0, character:GetAttribute("MaxReiatsu") or 100
 			bars.reiatsu.set(r, maxR, string.format("霊 %d", r))
 			bars.guard.set(character:GetAttribute("Guard") or 100, 100, "")
@@ -597,13 +941,24 @@ function HUDController.Start()
 			refs.form.Text = formText
 		end
 		-- Recargas
-		local slotsMap = { Dash = "Dash", Heavy = "Heavy", Launcher = "Launcher", Transform = "Transform", Z = "Slot:Z", X = "Slot:X", C = "Slot:C", V = "Slot:V" }
+		local slotsMap = {
+			Dash = "Dash",
+			Heavy = "Heavy",
+			Launcher = "Launcher",
+			Transform = "Transform",
+			Z = "Slot:Z",
+			X = "Slot:X",
+			C = "Slot:C",
+			V = "Slot:V",
+		}
 		for key, cdKey in slotsMap do
 			local slot = slotFrames[key]
 			local remaining, total = CombatController.CooldownRemaining(cdKey)
 			if remaining > 0 then
 				slot.shade.Size = UDim2.fromScale(1, math.clamp(remaining / math.max(total, 0.01), 0, 1))
-				slot.timer.Text = if remaining >= 1 then tostring(math.ceil(remaining)) else string.format("%.1f", remaining)
+				slot.timer.Text = if remaining >= 1
+					then tostring(math.ceil(remaining))
+					else string.format("%.1f", remaining)
 			else
 				slot.shade.Size = UDim2.fromScale(1, 0)
 				slot.timer.Text = ""
@@ -625,7 +980,11 @@ function HUDController.Start()
 				local br = boss:FindFirstChild("HumanoidRootPart") :: BasePart?
 				if bh and br and bh.Health > 0 and (br.Position - root.Position).Magnitude < 120 then
 					shown = true
-					refs.bossName.Text = string.format("%s  —  Fase %d", boss:GetAttribute("DisplayName") or boss.Name, boss:GetAttribute("Phase") or 1)
+					refs.bossName.Text = string.format(
+						"%s  —  Fase %d",
+						boss:GetAttribute("DisplayName") or boss.Name,
+						boss:GetAttribute("Phase") or 1
+					)
 					bars.boss.set(bh.Health, bh.MaxHealth, string.format("%d / %d", math.ceil(bh.Health), bh.MaxHealth))
 					break
 				end

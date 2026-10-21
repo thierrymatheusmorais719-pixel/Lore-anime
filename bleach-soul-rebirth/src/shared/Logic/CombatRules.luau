@@ -49,7 +49,13 @@ function CombatRules.resolveDefense(
 end
 
 -- Próximo índice da sequência de combo.
-function CombatRules.nextComboIndex(current: number, lastEnd: number, now: number, maxHits: number, resetTime: number): number
+function CombatRules.nextComboIndex(
+	current: number,
+	lastEnd: number,
+	now: number,
+	maxHits: number,
+	resetTime: number
+): number
 	if current <= 0 or current >= maxHits or now - lastEnd > resetTime then
 		return 1
 	end
@@ -64,7 +70,14 @@ function CombatRules.applyStun(currentUntil: number, now: number, duration: numb
 end
 
 -- Regeneração de guarda após atraso desde o último bloqueio.
-function CombatRules.regenGuard(guard: number, maxGuard: number, sinceLastHit: number, delay: number, rate: number, dt: number): number
+function CombatRules.regenGuard(
+	guard: number,
+	maxGuard: number,
+	sinceLastHit: number,
+	delay: number,
+	rate: number,
+	dt: number
+): number
 	if sinceLastHit < delay then
 		return guard
 	end

@@ -189,7 +189,11 @@ function EnemyBrain:Step()
 	end
 
 	-- Alvo
-	if not self.target or not CombatService.IsAlive(self.target) or horizontalDistance(self.target.root.Position, self.spawn) > def.leashRange then
+	if
+		not self.target
+		or not CombatService.IsAlive(self.target)
+		or horizontalDistance(self.target.root.Position, self.spawn) > def.leashRange
+	then
 		self.target = self:FindTarget()
 	end
 	local target = self.target
@@ -230,9 +234,18 @@ function EnemyBrain:Step()
 		local direction = Physics.flat(target.root.Position - actor.root.Position)
 		local kind = "Light"
 		-- Chefes e inimigos agressivos misturam ataques pesados contra quem bloqueia
-		if target.blocking and rng:NextNumber() < 0.5 * def.aggression and CombatService.CooldownReady(actor, "Heavy") then
+		if
+			target.blocking
+			and rng:NextNumber() < 0.5 * def.aggression
+			and CombatService.CooldownReady(actor, "Heavy")
+		then
 			kind = "Heavy"
-		elseif def.boss and self.comboLeft == 1 and rng:NextNumber() < 0.3 and CombatService.CooldownReady(actor, "Launcher") then
+		elseif
+			def.boss
+			and self.comboLeft == 1
+			and rng:NextNumber() < 0.3
+			and CombatService.CooldownReady(actor, "Launcher")
+		then
 			kind = "Launcher"
 		end
 		if CombatService.TryAttack(actor, kind, direction) then
@@ -276,11 +289,6 @@ function EnemyBrain:EnterPhase(index: number)
 	actor.stunUntil = 0
 	CombatService.SetBlocking(actor, false)
 	CombatService.SetBusy(actor, 1.5)
-	if phase.scaleMultiplier then
-		pcall(function()
-			actor.model:ScaleTo(actor.model:GetScale() * phase.scaleMultiplier)
-		end)
-	end
 	CombatService.Broadcast("BossPhase", {
 		actor = actor.model,
 		phase = index,

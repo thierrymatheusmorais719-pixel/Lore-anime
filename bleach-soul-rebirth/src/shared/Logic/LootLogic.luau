@@ -6,7 +6,12 @@ export type Rng = { int: (number, number) -> number, float: () -> number }
 
 export type Drop = { id: string, qty: number }
 
-function LootLogic.roll(tableDef: any, pityState: { [string]: number }, tableId: string, rng: Rng): ({ Drop }, number, number)
+function LootLogic.roll(
+	tableDef: any,
+	pityState: { [string]: number },
+	tableId: string,
+	rng: Rng
+): ({ Drop }, number, number)
 	local drops: { Drop } = {}
 	for _, entry in (tableDef.guaranteed or {}) :: any do
 		table.insert(drops, { id = entry.id, qty = rng.int(entry.qty[1], entry.qty[2]) })

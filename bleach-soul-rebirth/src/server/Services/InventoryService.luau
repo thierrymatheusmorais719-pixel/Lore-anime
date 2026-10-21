@@ -46,7 +46,12 @@ function InventoryService.GrantLoot(player: Player, tableId: string)
 		local added = InventoryLogic.add(profile.inventory, Items.List, drop.id, drop.qty)
 		if added > 0 then
 			local item = Items.List[drop.id]
-			Registry.UIService.Notify(player, "+" .. added .. " " .. item.name, "loot", { item = drop.id, rarity = item.rarity })
+			Registry.UIService.Notify(
+				player,
+				"+" .. added .. " " .. item.name,
+				"loot",
+				{ item = drop.id, rarity = item.rarity }
+			)
 		end
 	end
 	Registry.ProgressionService.AddCurrency(player, kan, shards)
@@ -136,7 +141,12 @@ local function craft(player: Player, payload: any): (boolean, any)
 	end
 	local ok, err = InventoryLogic.craft(profile, Items.List, Items.Recipes, itemId)
 	if ok then
-		Registry.UIService.Notify(player, "Forjado: " .. Items.List[itemId].name, "loot", { item = itemId, rarity = Items.List[itemId].rarity })
+		Registry.UIService.Notify(
+			player,
+			"Forjado: " .. Items.List[itemId].name,
+			"loot",
+			{ item = itemId, rarity = Items.List[itemId].rarity }
+		)
 		Registry.DataService.Sync(player)
 	end
 	return ok, err

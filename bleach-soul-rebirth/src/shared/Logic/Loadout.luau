@@ -6,7 +6,14 @@ export type Slots = { Z: string?, X: string?, C: string?, V: string? }
 
 Loadout.SlotOrder = { "Z", "X", "C", "V" }
 
-function Loadout.resolve(factions: any, powers: any, faction: string?, powerId: string?, form: string?, mask: boolean?): Slots
+function Loadout.resolve(
+	factions: any,
+	powers: any,
+	faction: string?,
+	powerId: string?,
+	form: string?,
+	mask: boolean?
+): Slots
 	local slots: { [string]: string } = {}
 	local f = faction and factions[faction]
 	if not f or type(f) ~= "table" or not f.base then

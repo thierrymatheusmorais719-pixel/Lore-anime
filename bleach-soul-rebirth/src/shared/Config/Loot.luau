@@ -4,12 +4,18 @@ local Loot = {
 	HollowGrunt = {
 		kan = { 6, 12 },
 		guaranteed = { { id = "HollowFragment", qty = { 1, 2 } } },
-		chance = { { id = "SoulCandy", qty = { 1, 1 }, chance = 0.08 }, { id = "ReishiCrystal", qty = { 1, 1 }, chance = 0.05 } },
+		chance = {
+			{ id = "SoulCandy", qty = { 1, 1 }, chance = 0.08 },
+			{ id = "ReishiCrystal", qty = { 1, 1 }, chance = 0.05 },
+		},
 	},
 	HollowBrute = {
 		kan = { 15, 25 },
 		guaranteed = { { id = "HollowFragment", qty = { 2, 4 } } },
-		chance = { { id = "ReishiCrystal", qty = { 1, 1 }, chance = 0.2 }, { id = "ReiatsuPill", qty = { 1, 1 }, chance = 0.1 } },
+		chance = {
+			{ id = "ReishiCrystal", qty = { 1, 1 }, chance = 0.2 },
+			{ id = "ReiatsuPill", qty = { 1, 1 }, chance = 0.1 },
+		},
 		pity = { id = "ReishiCrystal", after = 6 },
 	},
 	TrainingPuppet = {
@@ -20,7 +26,10 @@ local Loot = {
 	Arrancar = {
 		kan = { 30, 50 },
 		guaranteed = { { id = "ReishiCrystal", qty = { 1, 2 } } },
-		chance = { { id = "SpiritCore", qty = { 1, 1 }, chance = 0.06 }, { id = "SoulCandy", qty = { 1, 1 }, chance = 0.15 } },
+		chance = {
+			{ id = "SpiritCore", qty = { 1, 1 }, chance = 0.06 },
+			{ id = "SoulCandy", qty = { 1, 1 }, chance = 0.15 },
+		},
 		pity = { id = "SpiritCore", after = 15 },
 	},
 	MenosShade = {

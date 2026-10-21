@@ -24,7 +24,12 @@ function ProgressionLogic.addXp(profile: any, amount: number, progression: any):
 	return { levelsGained = gained, newLevel = profile.level, xp = profile.xp }
 end
 
-function ProgressionLogic.allocate(profile: any, attribute: string, amount: number, progression: any): (boolean, string?)
+function ProgressionLogic.allocate(
+	profile: any,
+	attribute: string,
+	amount: number,
+	progression: any
+): (boolean, string?)
 	if progression.Attributes[attribute] == nil then
 		return false, "Atributo inválido"
 	end

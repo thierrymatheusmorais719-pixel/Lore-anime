@@ -51,7 +51,11 @@ function WorldService.Teleport(player: Player, pointId: string): (boolean, strin
 		profile.discovered[pointId] = true
 		Registry.DataService.Sync(player)
 	end
-	Registry.CombatService.Broadcast("Travel", { actor = character, from = character:GetPivot().Position }, character:GetPivot().Position)
+	Registry.CombatService.Broadcast(
+		"Travel",
+		{ actor = character, from = character:GetPivot().Position },
+		character:GetPivot().Position
+	)
 	character:PivotTo(cframe * CFrame.new(math.random(-3, 3), 0, math.random(-3, 3)))
 	return true, nil
 end
@@ -85,11 +89,32 @@ local function buildPortal(parent: Instance, portal)
 	local color = portal.color
 	if portal.id:find("Senkaimon") then
 		for _, x in { -7, 7 } do
-			Build.part(model, Vector3.new(2, 18, 2), CFrame.new(base + Vector3.new(x, 9, 0)), Color3.fromRGB(110, 60, 45), Enum.Material.Wood, "Pillar")
+			Build.part(
+				model,
+				Vector3.new(2, 18, 2),
+				CFrame.new(base + Vector3.new(x, 9, 0)),
+				Color3.fromRGB(110, 60, 45),
+				Enum.Material.Wood,
+				"Pillar"
+			)
 		end
-		Build.part(model, Vector3.new(20, 2, 3), CFrame.new(base + Vector3.new(0, 18, 0)), Color3.fromRGB(45, 48, 60), Enum.Material.Slate, "Lintel")
+		Build.part(
+			model,
+			Vector3.new(20, 2, 3),
+			CFrame.new(base + Vector3.new(0, 18, 0)),
+			Color3.fromRGB(45, 48, 60),
+			Enum.Material.Slate,
+			"Lintel"
+		)
 	end
-	local disc = Build.cylinder(model, 0.6, 12, CFrame.new(base + Vector3.new(0, 8, 0)) * CFrame.Angles(0, math.rad(90), 0), color, Enum.Material.Neon)
+	local disc = Build.cylinder(
+		model,
+		0.6,
+		12,
+		CFrame.new(base + Vector3.new(0, 8, 0)) * CFrame.Angles(0, math.rad(90), 0),
+		color,
+		Enum.Material.Neon
+	)
 	disc.Name = "Gate"
 	disc.Transparency = 0.25
 	disc.CanCollide = false
@@ -104,7 +129,14 @@ local function buildPortal(parent: Instance, portal)
 	emitter.LightEmission = 1
 	emitter.Parent = disc
 
-	local trigger = Build.part(model, Vector3.new(10, 14, 6), CFrame.new(base + Vector3.new(0, 7, 0)), color, Enum.Material.SmoothPlastic, "Trigger")
+	local trigger = Build.part(
+		model,
+		Vector3.new(10, 14, 6),
+		CFrame.new(base + Vector3.new(0, 7, 0)),
+		color,
+		Enum.Material.SmoothPlastic,
+		"Trigger"
+	)
 	trigger.Transparency = 1
 	trigger.CanCollide = false
 	trigger.CanQuery = false
@@ -157,8 +189,22 @@ local function buildTravelPoint(parent: Instance, id: string, point)
 	local position = Zones.worldPosition(point.zone, point.position)
 	local model = Instance.new("Model")
 	model.Name = "TravelPoint_" .. id
-	Build.cylinder(model, 1, 8, CFrame.new(position + Vector3.new(0, -2.5, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(70, 70, 80), Enum.Material.Slate)
-	local pillar = Build.part(model, Vector3.new(1.2, 7, 1.2), CFrame.new(position + Vector3.new(0, 1.5, 0)) * CFrame.Angles(0, math.rad(45), 0), Color3.fromRGB(150, 210, 255), Enum.Material.Neon, "Beacon")
+	Build.cylinder(
+		model,
+		1,
+		8,
+		CFrame.new(position + Vector3.new(0, -2.5, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Color3.fromRGB(70, 70, 80),
+		Enum.Material.Slate
+	)
+	local pillar = Build.part(
+		model,
+		Vector3.new(1.2, 7, 1.2),
+		CFrame.new(position + Vector3.new(0, 1.5, 0)) * CFrame.Angles(0, math.rad(45), 0),
+		Color3.fromRGB(150, 210, 255),
+		Enum.Material.Neon,
+		"Beacon"
+	)
 	Build.light(pillar, Color3.fromRGB(150, 210, 255), 16, 1)
 	model:SetAttribute("TravelPoint", id)
 	model.Parent = parent
@@ -178,7 +224,12 @@ local function buildNpc(parent: Instance, npcId: string, npc)
 	local center = Zones.List[npc.zone].center
 	local faceDir = (center - position) * Vector3.new(1, 0, 1)
 	local target = if faceDir.Magnitude > 1 then position + faceDir else position + Vector3.new(0, 0, -1)
-	model:PivotTo(CFrame.lookAt(position + Vector3.new(0, RigBuilder.HipHeight + 1.1, 0), target + Vector3.new(0, RigBuilder.HipHeight + 1.1, 0)))
+	model:PivotTo(
+		CFrame.lookAt(
+			position + Vector3.new(0, RigBuilder.HipHeight + 1.1, 0),
+			target + Vector3.new(0, RigBuilder.HipHeight + 1.1, 0)
+		)
+	)
 	model.PrimaryPart.Anchored = true
 	OutfitBuilder.apply(model, { trim = npc.look.haori, robe = npc.look.haori, cape = false })
 	model:SetAttribute("NPC", true)

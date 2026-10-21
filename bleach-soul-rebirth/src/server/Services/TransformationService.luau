@@ -79,7 +79,13 @@ function TransformationService.RequestRelease(actor)
 	if actor.form == "Base" then
 		nextForm = if isUnlocked(actor, "Tier1") then "Tier1" else nil
 		if not nextForm then
-			notify(actor, faction.forms.Tier1.name .. " ainda não foi despertado (missão \"O Nome da Sua Alma\", nível " .. faction.forms.Tier1.requiredLevel .. ").")
+			notify(
+				actor,
+				faction.forms.Tier1.name
+					.. ' ainda não foi despertado (missão "O Nome da Sua Alma", nível '
+					.. faction.forms.Tier1.requiredLevel
+					.. ")."
+			)
 			return
 		end
 	elseif actor.form == "Tier1" then
@@ -97,7 +103,8 @@ function TransformationService.RequestRelease(actor)
 
 	local formDef = faction.forms[nextForm]
 	local power = actor.power and Powers.get(actor.power)
-	local tierDef = power and power.faction == actor.faction and power[if nextForm == "Tier1" then "tier1" else "tier2"] or nil
+	local tierDef = power and power.faction == actor.faction and power[if nextForm == "Tier1" then "tier1" else "tier2"]
+		or nil
 	local t = CombatService.now()
 	local channelTime = formDef.channel
 	actor.token += 1
@@ -154,7 +161,7 @@ function TransformationService.RequestMask(actor)
 	end
 	local profile = profileOf(actor)
 	if profile and (not profile.unlocks.Mask or profile.level < maskDef.requiredLevel) then
-		notify(actor, "A Máscara Hollow exige a missão \"A Voz Interior\" (nível " .. maskDef.requiredLevel .. ").")
+		notify(actor, 'A Máscara Hollow exige a missão "A Voz Interior" (nível ' .. maskDef.requiredLevel .. ").")
 		return
 	end
 	if not CombatService.CanAct(actor, false) or not CombatService.CooldownReady(actor, "Mask") then
@@ -190,7 +197,11 @@ function TransformationService.SetMask(actor, enabled: boolean)
 	end
 	if enabled then
 		actor.extra.maskUntil = CombatService.now() + Factions.Mask.duration
-		CombatService.Broadcast("MaskOn", { actor = actor.model, duration = Factions.Mask.duration }, actor.root.Position)
+		CombatService.Broadcast(
+			"MaskOn",
+			{ actor = actor.model, duration = Factions.Mask.duration },
+			actor.root.Position
+		)
 	else
 		actor.extra.maskUntil = nil
 		CombatService.SetCooldown(actor, "Mask", Factions.Mask.cooldown)

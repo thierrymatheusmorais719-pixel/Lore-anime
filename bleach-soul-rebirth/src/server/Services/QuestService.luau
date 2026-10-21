@@ -66,8 +66,14 @@ local function grantRewards(player: Player, profile: any, rewards: any, title: s
 	if rewards.unlock then
 		profile.unlocks[rewards.unlock] = true
 		local faction = Factions.get(profile.faction)
-		local label = rewards.unlock == "Mask" and Factions.Mask.name or (faction and faction.forms[rewards.unlock].name or rewards.unlock)
-		Registry.UIService.Notify(player, "DESPERTAR: " .. label .. " desbloqueado! (" .. (rewards.unlock == "Mask" and "H" or "G") .. ")", "awaken", { unlock = rewards.unlock })
+		local label = rewards.unlock == "Mask" and Factions.Mask.name
+			or (faction and faction.forms[rewards.unlock].name or rewards.unlock)
+		Registry.UIService.Notify(
+			player,
+			"DESPERTAR: " .. label .. " desbloqueado! (" .. (rewards.unlock == "Mask" and "H" or "G") .. ")",
+			"awaken",
+			{ unlock = rewards.unlock }
+		)
 	end
 	if rewards.skillPoints then
 		profile.skillPoints += rewards.skillPoints
@@ -222,15 +228,32 @@ local function buildDialogue(player: Player, npcId: string, text: string?)
 		for _, questId in QuestService.Available(profile) do
 			local quest = Quests.Story[questId]
 			if quest.giver == "Mentor" then
-				table.insert(options, { id = "accept:" .. questId, text = "Aceitar: " .. quest.name, accent = true, desc = quest.desc })
+				table.insert(
+					options,
+					{ id = "accept:" .. questId, text = "Aceitar: " .. quest.name, accent = true, desc = quest.desc }
+				)
 			end
 		end
 		-- Missões bloqueadas por nível: informar
 		for _, questId in Quests.StoryOrder do
 			local quest = Quests.Story[questId]
 			local prev = predecessor[questId]
-			if quest.level and profile.level < quest.level and not profile.quests.completed[questId] and not profile.quests.active[questId] and (prev == nil or profile.quests.completed[prev]) and (quest.faction == nil or quest.faction == profile.faction) then
-				table.insert(options, { id = "locked:" .. questId, text = quest.name .. " (nível " .. quest.level .. ")", disabled = true })
+			if
+				quest.level
+				and profile.level < quest.level
+				and not profile.quests.completed[questId]
+				and not profile.quests.active[questId]
+				and (prev == nil or profile.quests.completed[prev])
+				and (quest.faction == nil or quest.faction == profile.faction)
+			then
+				table.insert(
+					options,
+					{
+						id = "locked:" .. questId,
+						text = quest.name .. " (nível " .. quest.level .. ")",
+						disabled = true,
+					}
+				)
 			end
 		end
 	end

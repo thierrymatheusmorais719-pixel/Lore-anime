@@ -198,7 +198,13 @@ Powers.List = {
 		tier2 = {
 			name = "Vollständig: Eisvogel",
 			abilities = { Z = "TimeFracture", V = "EternalMoment" },
-			weapon = { style = "LightBlade", length = 5.8, blade = Color3.fromRGB(215, 195, 255), glow = true, dual = true },
+			weapon = {
+				style = "LightBlade",
+				length = 5.8,
+				blade = Color3.fromRGB(215, 195, 255),
+				glow = true,
+				dual = true,
+			},
 			coat = Color3.fromRGB(70, 55, 120),
 		},
 	},
@@ -254,7 +260,13 @@ Powers.List = {
 		tier2 = {
 			name = "Esmeralda: Fullbring Completo",
 			abilities = { Z = "GreenMeteor", V = "EmeraldEnd" },
-			weapon = { style = "Gauntlet", length = 2.4, blade = Color3.fromRGB(120, 255, 180), glow = true, dual = true },
+			weapon = {
+				style = "Gauntlet",
+				length = 2.4,
+				blade = Color3.fromRGB(120, 255, 180),
+				glow = true,
+				dual = true,
+			},
 			coat = Color3.fromRGB(15, 50, 35),
 		},
 	},

@@ -321,7 +321,11 @@ function Handlers.DashStrike(actor, def, dir: Vector3, _point: Vector3, element:
 		if def.leap then
 			targets = CombatService.QueryRadius(destination, def.width, actor)
 		else
-			targets = CombatService.QueryBox(CFrame.lookAt(center, center + direction), Vector3.new(def.width, 8, length + 4), actor)
+			targets = CombatService.QueryBox(
+				CFrame.lookAt(center, center + direction),
+				Vector3.new(def.width, 8, length + 4),
+				actor
+			)
 		end
 		for _, t in targets do
 			spec.sourcePos = if def.leap then destination else start
@@ -354,7 +358,9 @@ function Handlers.Burst(actor, def, dir: Vector3, point: Vector3, element: strin
 	end
 	local spec = hitSpecFor(def, element, { unparryable = true })
 	for tick = 1, ticks do
-		if not CombatService.IsAlive(actor) or (actor.token ~= token and not def.superArmor and def.target ~= "Aim") then
+		if
+			not CombatService.IsAlive(actor) or (actor.token ~= token and not def.superArmor and def.target ~= "Aim")
+		then
 			break
 		end
 		if def.target ~= "Aim" then
@@ -382,7 +388,8 @@ function Handlers.Rain(actor, def, _dir: Vector3, point: Vector3, element: strin
 		interval = def.interval,
 		ultimate = def.ultimate == true,
 	}, point)
-	local spec = hitSpecFor(def, element, { projectile = true, unparryable = true, sourcePos = point + Vector3.new(0, 30, 0) })
+	local spec =
+		hitSpecFor(def, element, { projectile = true, unparryable = true, sourcePos = point + Vector3.new(0, 30, 0) })
 	task.wait(0.25)
 	for tick = 1, def.ticks do
 		if not CombatService.IsAlive(actor) then
@@ -418,7 +425,8 @@ end
 function Handlers.Pull(actor, def, dir: Vector3, _point: Vector3, element: string)
 	local origin = actor.root.Position
 	local center = origin + dir * (def.range / 2)
-	local candidates = CombatService.QueryBox(CFrame.lookAt(center, center + dir), Vector3.new(def.width * 2, 8, def.range), actor)
+	local candidates =
+		CombatService.QueryBox(CFrame.lookAt(center, center + dir), Vector3.new(def.width * 2, 8, def.range), actor)
 	local target, best = nil, math.huge
 	for _, c in candidates do
 		local d = (c.root.Position - origin).Magnitude

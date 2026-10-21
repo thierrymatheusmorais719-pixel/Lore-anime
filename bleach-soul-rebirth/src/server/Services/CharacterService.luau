@@ -155,7 +155,11 @@ local function setupCharacter(player: Player, character: Model)
 		return
 	end
 	if humanoid.RigType ~= Enum.HumanoidRigType.R15 then
-		log:Warn("O avatar de", player.Name, "é R6. Configure Game Settings > Avatar > R15 para animações completas.")
+		log:Warn(
+			"O avatar de",
+			player.Name,
+			"é R6. Configure Game Settings > Avatar > R15 para animações completas."
+		)
 	end
 	-- Aguarda o rig montar (mãos e torso) antes de prender armas.
 	character:WaitForChild("RightHand", 5)

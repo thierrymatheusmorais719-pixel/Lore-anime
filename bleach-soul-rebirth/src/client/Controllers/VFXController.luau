@@ -60,8 +60,18 @@ function VFX.ElementOf(model: Model?): string
 	return faction and faction.element or "Reiatsu"
 end
 
-local function tween(instance: Instance, time: number, props: { [string]: any }, style: Enum.EasingStyle?, direction: Enum.EasingDirection?)
-	local t = TweenService:Create(instance, TweenInfo.new(time, style or Enum.EasingStyle.Quad, direction or Enum.EasingDirection.Out), props)
+local function tween(
+	instance: Instance,
+	time: number,
+	props: { [string]: any },
+	style: Enum.EasingStyle?,
+	direction: Enum.EasingDirection?
+)
+	local t = TweenService:Create(
+		instance,
+		TweenInfo.new(time, style or Enum.EasingStyle.Quad, direction or Enum.EasingDirection.Out),
+		props
+	)
 	t:Play()
 	return t
 end
@@ -143,7 +153,13 @@ end
 
 function VFX.Shockwave(position: Vector3, color: Color3, radius: number, duration: number?, thickness: number?)
 	local d = duration or 0.4
-	local ring = neon(Vector3.new(thickness or 0.4, 1, 1), CFrame.new(position) * CFrame.Angles(0, 0, math.rad(90)), color, 0.2, Enum.PartType.Cylinder)
+	local ring = neon(
+		Vector3.new(thickness or 0.4, 1, 1),
+		CFrame.new(position) * CFrame.Angles(0, 0, math.rad(90)),
+		color,
+		0.2,
+		Enum.PartType.Cylinder
+	)
 	tween(ring, d, { Size = Vector3.new(0.1, radius * 2, radius * 2), Transparency = 1 }, Enum.EasingStyle.Quint)
 	Debris:AddItem(ring, d + 0.05)
 	if quality ~= "Low" then
@@ -153,7 +169,13 @@ end
 
 function VFX.Pillar(position: Vector3, color: Color3, radius: number, height: number, duration: number?)
 	local d = duration or 0.6
-	local pillar = neon(Vector3.new(height, radius * 0.3, radius * 0.3), CFrame.new(position + Vector3.new(0, height / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)), color, 0.15, Enum.PartType.Cylinder)
+	local pillar = neon(
+		Vector3.new(height, radius * 0.3, radius * 0.3),
+		CFrame.new(position + Vector3.new(0, height / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		color,
+		0.15,
+		Enum.PartType.Cylinder
+	)
 	tween(pillar, d * 0.3, { Size = Vector3.new(height, radius * 2, radius * 2) }, Enum.EasingStyle.Back)
 	task.delay(d * 0.3, function()
 		tween(pillar, d * 0.7, { Size = Vector3.new(height * 1.1, 0.2, 0.2), Transparency = 1 })
@@ -162,7 +184,14 @@ function VFX.Pillar(position: Vector3, color: Color3, radius: number, height: nu
 end
 
 -- Corte no ar: arco de lâminas finas no plano do golpe (meia-lua).
-function VFX.SlashArc(cframe: CFrame, color: Color3, radius: number, thickness: number?, duration: number?, reverse: boolean?)
+function VFX.SlashArc(
+	cframe: CFrame,
+	color: Color3,
+	radius: number,
+	thickness: number?,
+	duration: number?,
+	reverse: boolean?
+)
 	local d = duration or 0.22
 	local segments = if quality == "Low" then 5 else 9
 	local arc = math.rad(150)
@@ -201,7 +230,8 @@ function VFX.DamageNumber(position: Vector3, amount: number, kind: string?)
 	local gui = damagePool:Get() :: BillboardGui
 	local label = gui:FindFirstChild("Label") :: TextLabel
 	local holder = gui.Adornee :: BasePart
-	holder.CFrame = CFrame.new(position + Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(0, 1), rng:NextNumber(-1, 1)))
+	holder.CFrame =
+		CFrame.new(position + Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(0, 1), rng:NextNumber(-1, 1)))
 	local text = if amount >= 10 then tostring(math.floor(amount + 0.5)) else string.format("%.1f", amount)
 	local color = Color3.fromRGB(255, 255, 255)
 	local size = 28
@@ -245,7 +275,12 @@ function VFX.Afterimage(model: Model, color: Color3, duration: number?)
 	local d = duration or 0.35
 	local ghost = Instance.new("Model")
 	for _, part in model:GetDescendants() do
-		if part:IsA("BasePart") and part.Transparency < 0.9 and part.Name ~= "HumanoidRootPart" and part.Size.Magnitude < 8 then
+		if
+			part:IsA("BasePart")
+			and part.Transparency < 0.9
+			and part.Name ~= "HumanoidRootPart"
+			and part.Size.Magnitude < 8
+		then
 			local p = neon(part.Size, part.CFrame, color, 0.45)
 			p.Material = Enum.Material.ForceField
 			p.Parent = ghost
@@ -272,8 +307,10 @@ function VFX.WeaponTrail(model: Model, color: Color3, duration: number)
 					t.MinLength = 0
 					t.LightEmission = 1
 					t.FaceCamera = false
-					t.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1) })
-					t.WidthScale = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0.3) })
+					t.Transparency =
+						NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1) })
+					t.WidthScale =
+						NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0.3) })
 					t.Parent = host
 					trail = t
 				end
@@ -310,7 +347,14 @@ function VFX.SpeedLines(duration: number)
 		line.Size = UDim2.fromOffset(rng:NextInteger(80, 180), 2)
 		line.Rotation = math.deg(angle)
 		line.Parent = speedLines
-		tween(line, duration, { BackgroundTransparency = 1, Position = UDim2.fromScale(0.5 + math.cos(angle) * (r + 0.15), 0.5 + math.sin(angle) * (r + 0.15)) })
+		tween(
+			line,
+			duration,
+			{
+				BackgroundTransparency = 1,
+				Position = UDim2.fromScale(0.5 + math.cos(angle) * (r + 0.15), 0.5 + math.sin(angle) * (r + 0.15)),
+			}
+		)
 		Debris:AddItem(line, duration + 0.05)
 	end
 end
@@ -376,7 +420,10 @@ function VFX.UpdateAura(model: Model)
 	e.Speed = NumberRange.new(3, 8)
 	e.SpreadAngle = Vector2.new(25, 25)
 	e.Acceleration = Vector3.new(0, 10, 0)
-	e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, if key == "Tier2" then 1.6 else 1), NumberSequenceKeypoint.new(1, 0) })
+	e.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, if key == "Tier2" then 1.6 else 1),
+		NumberSequenceKeypoint.new(1, 0),
+	})
 	e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) })
 	e.EmissionDirection = Enum.NormalId.Top
 	e.Shape = Enum.ParticleEmitterShape.Box
@@ -391,7 +438,15 @@ function VFX.UpdateAura(model: Model)
 end
 
 -- ===================== PROJÉTEIS / FEIXES =====================
-type ProjectileVisual = { model: Model, origin: Vector3, direction: Vector3, speed: number, range: number, start: number, spin: number }
+type ProjectileVisual = {
+	model: Model,
+	origin: Vector3,
+	direction: Vector3,
+	speed: number,
+	range: number,
+	start: number,
+	spin: number,
+}
 local projectiles: { [number]: ProjectileVisual } = {}
 
 local function buildProjectile(shape: string, size: number, color: Color3, secondary: Color3): Model
@@ -404,13 +459,23 @@ local function buildProjectile(shape: string, size: number, color: Color3, secon
 		for i = 1, segments do
 			local a = -arc / 2 + arc * (i - 0.5) / segments
 			local taper = 1 - math.abs((i - 0.5) / segments - 0.5) * 1.5
-			local p = neon(Vector3.new(radius * arc / segments * 1.2, 0.5 * s * taper, 0.6 * s * taper), CFrame.Angles(0, 0, a) * CFrame.new(0, radius, 0) * CFrame.Angles(math.pi / 2, 0, 0), if i % 2 == 0 then color else secondary:Lerp(color, 0.5), 0.05)
+			local p = neon(
+				Vector3.new(radius * arc / segments * 1.2, 0.5 * s * taper, 0.6 * s * taper),
+				CFrame.Angles(0, 0, a) * CFrame.new(0, radius, 0) * CFrame.Angles(math.pi / 2, 0, 0),
+				if i % 2 == 0 then color else secondary:Lerp(color, 0.5),
+				0.05
+			)
 			p.Parent = model
 		end
 	elseif shape == "Arrow" then
 		local shaft = neon(Vector3.new(0.25 * s, 0.25 * s, 5 * s), CFrame.identity, color, 0)
 		shaft.Parent = model
-		local head = neon(Vector3.new(0.6 * s, 0.6 * s, 1.2 * s), CFrame.new(0, 0, -2.8 * s) * CFrame.Angles(0, 0, math.rad(45)), secondary, 0)
+		local head = neon(
+			Vector3.new(0.6 * s, 0.6 * s, 1.2 * s),
+			CFrame.new(0, 0, -2.8 * s) * CFrame.Angles(0, 0, math.rad(45)),
+			secondary,
+			0
+		)
 		head.Parent = model
 	elseif shape == "Bolt" then
 		local core = neon(Vector3.new(0.4 * s, 0.4 * s, 4 * s), CFrame.identity, Color3.new(1, 1, 1), 0)
@@ -489,7 +554,13 @@ function VFX.Beam(data: { [string]: any })
 	local center = origin + dir * (length / 2)
 	local frame = CFrame.lookAt(center, center + dir) * CFrame.Angles(0, math.rad(90), 0)
 	local outer = neon(Vector3.new(length, radius * 0.4, radius * 0.4), frame, color, 0.25, Enum.PartType.Cylinder)
-	local inner = neon(Vector3.new(length, radius * 0.2, radius * 0.2), frame, if data.shape == "Cero" then secondary:Lerp(Color3.new(1, 1, 1), 0.3) else Color3.new(1, 1, 1), 0, Enum.PartType.Cylinder)
+	local inner = neon(
+		Vector3.new(length, radius * 0.2, radius * 0.2),
+		frame,
+		if data.shape == "Cero" then secondary:Lerp(Color3.new(1, 1, 1), 0.3) else Color3.new(1, 1, 1),
+		0,
+		Enum.PartType.Cylinder
+	)
 	tween(outer, 0.08, { Size = Vector3.new(length, radius * 2, radius * 2) }, Enum.EasingStyle.Back)
 	tween(inner, 0.08, { Size = Vector3.new(length, radius, radius) }, Enum.EasingStyle.Back)
 	VFX.Flash(origin, color, radius * 3, 0.3)
@@ -500,9 +571,14 @@ function VFX.Beam(data: { [string]: any })
 			local last = origin
 			local steps = 8
 			for s = 1, steps do
-				local target = origin + dir * (length * s / steps) + Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(-1, 1), rng:NextNumber(-1, 1)) * radius * 0.8
+				local target = origin
+					+ dir * (length * s / steps)
+					+ Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(-1, 1), rng:NextNumber(-1, 1))
+						* radius
+						* 0.8
 				local mid = (last + target) / 2
-				local seg = neon(Vector3.new(0.25, 0.25, (target - last).Magnitude), CFrame.lookAt(mid, target), color, 0)
+				local seg =
+					neon(Vector3.new(0.25, 0.25, (target - last).Magnitude), CFrame.lookAt(mid, target), color, 0)
 				tween(seg, duration * 0.6, { Transparency = 1 })
 				Debris:AddItem(seg, duration)
 				last = target
@@ -525,7 +601,13 @@ function VFX.Burst(data: { [string]: any }, follow: BasePart?)
 	local radius: number = data.radius
 	if data.delay and data.delay > 0 then
 		-- Marcação no chão antes do impacto
-		local marker = neon(Vector3.new(0.2, radius * 2, radius * 2), CFrame.new(center + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.rad(90)), color, 0.75, Enum.PartType.Cylinder)
+		local marker = neon(
+			Vector3.new(0.2, radius * 2, radius * 2),
+			CFrame.new(center + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+			color,
+			0.75,
+			Enum.PartType.Cylinder
+		)
 		tween(marker, data.delay, { Transparency = 0.45 })
 		Debris:AddItem(marker, data.delay + 0.05)
 		task.wait(data.delay)
@@ -549,7 +631,13 @@ function VFX.Rain(data: { [string]: any })
 	local color = VFX.Color(data.element)
 	local center: Vector3 = data.center
 	local radius: number = data.radius
-	local marker = neon(Vector3.new(0.2, radius * 2, radius * 2), CFrame.new(center + Vector3.new(0, 0.25, 0)) * CFrame.Angles(0, 0, math.rad(90)), color, 0.6, Enum.PartType.Cylinder)
+	local marker = neon(
+		Vector3.new(0.2, radius * 2, radius * 2),
+		CFrame.new(center + Vector3.new(0, 0.25, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		color,
+		0.6,
+		Enum.PartType.Cylinder
+	)
 	Debris:AddItem(marker, 0.25 + data.ticks * data.interval + 0.3)
 	task.wait(0.15)
 	local perTick = if quality == "Low" then 2 else if data.ultimate then 7 else 4
