@@ -21,6 +21,8 @@ from multiprocessing import Pool
 import cv2
 import numpy as np
 
+import legendas
+
 ROOT = os.path.dirname(os.path.abspath(__file__))
 # 4K (3840x2160) por padrão; EDIT_RES=1080 renderiza em Full HD (testes rápidos)
 W, H = (1920, 1080) if os.environ.get("EDIT_RES") == "1080" else (3840, 2160)
@@ -174,9 +176,11 @@ del _r
 S = lambda **k: k  # noqa: E731
 SHOTS = [
     S(img=1, t0=0.00, t1=3.98, a=(0.60, 0.30, 1.00), b=(0.45, 0.39, 0.62), cut="fade",
-      particles=55, pcol=(1.0, 0.86, 0.55), par=0.07, lat=0.012, petals=(0.47, 0.33)),
+      particles=55, pcol=(1.0, 0.86, 0.55), par=0.07, lat=0.012, petals=(0.47, 0.33),
+      rays=(0.83, 0.22, 0.16), rcol=(0.72, 0.84, 1.0)),
     S(img=2, t0=3.98, t1=5.76, a=(0.55, 0.26, 1.00), b=(0.48, 0.38, 0.92), cut="iris",
-      particles=60, pcol=(1.0, 0.88, 0.6), par=0.07, lat=-0.012),
+      particles=60, pcol=(1.0, 0.88, 0.6), par=0.07, lat=-0.012,
+      rays=(0.71, 0.10, 0.18), rcol=(0.72, 0.84, 1.0)),
     S(img=2, t0=5.76, t1=6.82, a=(0.74, 0.43, 0.42), b=(0.75, 0.42, 0.36), cut="punch",
       particles=30, pcol=(1.0, 0.88, 0.6), par=0.04),
     S(img=3, t0=6.82, t1=9.66, a=(0.46, 0.27, 1.00), b=(0.50, 0.52, 0.78), cut="cloud",
@@ -257,7 +261,7 @@ def warp_figure(src, Mf, dx, dy):
     return fg, mk
 
 
-def god_rays(ox, oy, t, seed, strength):
+def god_rays(ox, oy, t, seed, strength, col=(1.0, 0.86, 0.6)):
     ang = np.arctan2(_YY - oy / 2, _XX - ox / 2)
     r = np.sqrt((_XX - ox / 2) ** 2 + (_YY - oy / 2) ** 2) / (H / 2)
     u = (ang / (2 * math.pi) + 0.5) * 720 + t * 6 + seed * 37
@@ -268,7 +272,7 @@ def god_rays(ox, oy, t, seed, strength):
     glow = np.exp(-r * 4.0) * 0.7
     v = (rays * 0.9 + glow) * strength * (0.9 + 0.1 * math.sin(2 * math.pi * t / (BAR / 2) + seed))
     v = cv2.resize(v, (W, H), interpolation=cv2.INTER_LINEAR)
-    return v[..., None] * np.array([1.0, 0.86, 0.6], np.float32)
+    return v[..., None] * np.array(col, np.float32)
 
 
 def particles(seed, t, count, col):
@@ -447,6 +451,7 @@ def breath(t, period, phase):
 # pontos que não podem ondular (a rosa, o elmo)
 EXTRA_RIGID = {1: [(0.47, 0.33, 0.03)], 4: [(0.62, 0.40, 0.10)]}
 LAST_FACE = [None]
+TEXT = legendas.Text(W, H)
 
 
 def _seg(X, Y, a, b):
@@ -753,7 +758,7 @@ def render_shot(shot, f, tx=None):
     if shot.get("rays"):
         rx, ry, rs = shot["rays"]
         ox, oy = apply_pt(M, rx * src["w"], ry * src["h"])
-        rays = np.clip(god_rays(ox, oy, t, sd, rs), 0, 1)
+        rays = np.clip(god_rays(ox, oy, t, sd, rs, shot.get("rcol", (1.0, 0.86, 0.6))), 0, 1)
         bg = 1 - (1 - bg) * (1 - rays)
     frame = bg * (1 - mk) + fg * mk
 
@@ -771,6 +776,14 @@ def render_shot(shot, f, tx=None):
         frame = 1 - (1 - frame) * (1 - rays * 0.25)
     if shot.get("rain"):
         frame = frame + rain_layer(t)
+        fl = sum(math.exp(-(t - lt) / 0.07) for lt in LIGHTNING if 0 <= t - lt < 0.35)
+        if fl > 0.01:
+            fl = min(fl, 1.3)
+            msm = cv2.resize(mk[..., 0], (W // 4, H // 4), interpolation=cv2.INTER_AREA)
+            rim = np.clip(msm - cv2.GaussianBlur(msm, (0, 0), 3), 0, 1) * 3       # borda dos personagens
+            rim = cv2.resize(rim, (W, H), interpolation=cv2.INTER_LINEAR)[..., None]
+            frame = frame + fl * ((1 - mk) * 0.22 + mk * 0.04) * np.float32([0.82, 0.88, 1.0])
+            frame = frame + fl * rim * 0.45 * np.float32([0.85, 0.92, 1.0])
     if shot.get("particles"):
         p = particles(sd, t, shot["particles"], shot.get("pcol", (1.0, 0.85, 0.55)))
         frame = 1 - (1 - frame) * (1 - p * 0.7)
@@ -933,6 +946,9 @@ def grade(fr, f):
     bloom = cv2.resize(cv2.GaussianBlur(sm, (0, 0), 9), (W, H), interpolation=cv2.INTER_LINEAR)
     fr = 1 - (1 - fr) * (1 - bloom * 0.32)
     fr = fr + bloom * np.float32([0.07, 0.018, 0.0])   # halação de película
+    hs = cv2.resize(np.clip((lum - 0.80) / 0.2, 0, 1), (W // 4, H // 4), interpolation=cv2.INTER_AREA)
+    streak = cv2.blur(cv2.blur(hs, (W // 10 | 1, 1)), (W // 10 | 1, 3))           # traço horizontal
+    fr = fr + cv2.resize(streak, (W, H), interpolation=cv2.INTER_LINEAR)[..., None] * np.float32([0.35, 0.5, 0.95]) * 0.9
     fr = fr + (smoothstep(0.4, 1.0, lum) * 0.035) * np.array([1.0, 0.45, -0.6], np.float32)
     fr = fr + (1 - smoothstep(0.0, 0.35, lum)) * 0.012 * np.array([-0.6, 0.15, 0.6], np.float32)  # sombras frias
     fr = fr + 0.06 * (fr - 0.5) * (1 - np.abs(2 * fr - 1))
@@ -948,9 +964,9 @@ def render_core(f):
     frame = transition_frame(f)
     if frame is None:
         frame = render_shot(shot, f)
-    for lt in LIGHTNING:  # relâmpagos da tempestade, nos acentos
+    for lt in LIGHTNING:  # resto do clarão na tela (o relâmpago em si ilumina a cena em render_shot)
         if 0 <= t - lt < 0.25:
-            frame = frame + (math.exp(-(t - lt) / 0.06) * 0.30) * np.float32([0.85, 0.9, 1.0])
+            frame = frame + (math.exp(-(t - lt) / 0.05) * 0.08) * np.float32([0.85, 0.9, 1.0])
     return frame
 
 
@@ -965,6 +981,7 @@ def render_frame(f):
     frame = grade(frame, f)
     frame = frame * (1 + beat_env(t))
     frame = frame * ease_io(min(1.0, t / 1.0)) * ease_io(min(1.0, (DUR - t) / 1.6))  # entrada e saída do preto
+    frame = TEXT.draw(np.ascontiguousarray(frame, dtype=np.float32), t)
     return (np.clip(np.nan_to_num(frame), 0, 1) * 255 + 0.5).astype(np.uint8)
 
 

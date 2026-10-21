@@ -251,6 +251,32 @@ place(metal_clank(2.0, 300), 15.62, -27, rev=(2.2, 0.45, 12))        # a armadur
 place(riser_swell(), 18.18 - 0.9, -18, rev=(2.4, 0.4, 13))           # clarão final
 place(chime_gliss(3.0, 660), 20.0, -25, rev=(2.6, 0.5, 14))          # brilho no fim
 
+
+# legendas em ouro: impacto grave no título, pó dourado (brilho suave) em cada frase
+def title_boom(d=3.0):
+    t = t_arr(d)
+    sub = np.sin(2 * np.pi * np.cumsum(38 + 40 * np.exp(-t * 6)) / SR) * np.exp(-t * 1.6)
+    air = swept_noise(d, 3000, 300, 0.6, 21) * np.exp(-t * 3) * 0.25
+    return norm(sub + air)
+
+
+def dust_shimmer(d=1.6, seed=0):
+    r = np.random.default_rng(seed)
+    t = t_arr(d)
+    y = np.zeros_like(t)
+    for _ in range(26):
+        t0 = r.random() * d * 0.55
+        f = r.uniform(3000, 7500)
+        tt = np.clip(t - t0, 0, None)
+        y += (t >= t0) * np.sin(2 * np.pi * f * tt) * np.exp(-tt * 9) * r.uniform(0.3, 1.0)
+    return norm(y * env_adsr(len(t), 0.2, 0.9))
+
+
+place(title_boom(), 1.14, -14, rev=(2.8, 0.45, 15))                  # "O ÚLTIMO JURAMENTO"
+for k_, t_ in enumerate((1.14, 4.33, 7.19, 10.02, 12.85, 15.66, 18.89)):
+    place(dust_shimmer(1.6, 30 + k_), t_ - 0.25, -27, rev=(2.0, 0.4, 40 + k_))
+place(title_boom(3.5), 18.89, -18, rev=(3.0, 0.5, 16))               # "PARA SEMPRE"
+
 SFX_GAIN_DB = 7.0  # efeitos ~6-10 dB abaixo da música: presentes sem cobrir a trilha
 sfx = mix[:N] * 10 ** (SFX_GAIN_DB / 20)
 
