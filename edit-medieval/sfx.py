@@ -272,10 +272,12 @@ def dust_shimmer(d=1.6, seed=0):
     return norm(y * env_adsr(len(t), 0.2, 0.9))
 
 
-place(title_boom(), 1.14, -14, rev=(2.8, 0.45, 15))                  # "O ÚLTIMO JURAMENTO"
-for k_, t_ in enumerate((1.14, 4.33, 7.19, 10.02, 12.85, 15.66, 18.89)):
-    place(dust_shimmer(1.6, 30 + k_), t_ - 0.25, -27, rev=(2.0, 0.4, 40 + k_))
-place(title_boom(3.5), 18.89, -18, rev=(3.0, 0.5, 16))               # "PARA SEMPRE"
+CAPTION_SFX = False  # sons das legendas desligados junto com elas
+if CAPTION_SFX:
+    place(title_boom(), 1.14, -14, rev=(2.8, 0.45, 15))                  # "O ÚLTIMO JURAMENTO"
+    for k_, t_ in enumerate((1.14, 4.33, 7.19, 10.02, 12.85, 15.66, 18.89)):
+        place(dust_shimmer(1.6, 30 + k_), t_ - 0.25, -27, rev=(2.0, 0.4, 40 + k_))
+    place(title_boom(3.5), 18.89, -18, rev=(3.0, 0.5, 16))               # "PARA SEMPRE"
 
 SFX_GAIN_DB = 7.0  # efeitos ~6-10 dB abaixo da música: presentes sem cobrir a trilha
 sfx = mix[:N] * 10 ** (SFX_GAIN_DB / 20)

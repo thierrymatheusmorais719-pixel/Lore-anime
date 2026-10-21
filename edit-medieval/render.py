@@ -451,7 +451,8 @@ def breath(t, period, phase):
 # pontos que não podem ondular (a rosa, o elmo)
 EXTRA_RIGID = {1: [(0.47, 0.33, 0.03)], 4: [(0.62, 0.40, 0.10)]}
 LAST_FACE = [None]
-TEXT = legendas.Text(W, H)
+CAPTIONS = False  # legendas em ouro (legendas.py) desligadas a pedido; True para voltar
+TEXT = legendas.Text(W, H) if CAPTIONS else None
 
 
 def _seg(X, Y, a, b):
@@ -981,7 +982,8 @@ def render_frame(f):
     frame = grade(frame, f)
     frame = frame * (1 + beat_env(t))
     frame = frame * ease_io(min(1.0, t / 1.0)) * ease_io(min(1.0, (DUR - t) / 1.6))  # entrada e saída do preto
-    frame = TEXT.draw(np.ascontiguousarray(frame, dtype=np.float32), t)
+    if CAPTIONS:
+        frame = TEXT.draw(np.ascontiguousarray(frame, dtype=np.float32), t)
     return (np.clip(np.nan_to_num(frame), 0, 1) * 255 + 0.5).astype(np.uint8)
 
 
