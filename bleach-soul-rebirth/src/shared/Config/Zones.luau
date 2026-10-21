@@ -73,7 +73,7 @@ Zones.List = {
 }
 
 Zones.TravelPoints = {
-	KarakuraPlaza = { name = "Praça de Karakura", zone = "Karakura", position = Vector3.new(0, 4, 0) },
+	KarakuraPlaza = { name = "Praça de Karakura", zone = "Karakura", position = Vector3.new(0, 4, -42) },
 	KarakuraRiver = { name = "Margem do Rio", zone = "Karakura", position = Vector3.new(-150, 4, 150) },
 	TrainingGate = { name = "Entrada do Treino", zone = "Training", position = Vector3.new(0, 4, -150) },
 	Seireitei = { name = "Portão do Seireitei", zone = "SoulSociety", position = Vector3.new(0, 4, -170) },

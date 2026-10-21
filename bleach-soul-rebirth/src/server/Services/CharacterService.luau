@@ -262,8 +262,36 @@ local function equipPower(player: Player, payload: any): (boolean, any)
 	return true, nil
 end
 
+local VALID_SETTINGS = {
+	shake = "number",
+	music = "number",
+	vfx = { Low = true, Medium = true, High = true },
+	cinematics = { Full = true, Off = true },
+	autoFace = "boolean",
+}
+
+local function saveSettings(player: Player, payload: any): (boolean, any)
+	local profile = Registry.DataService.Get(player)
+	if not profile or type(payload) ~= "table" then
+		return false, "Pedido inválido"
+	end
+	for key, value in payload do
+		local rule = VALID_SETTINGS[key]
+		if rule == "number" and type(value) == "number" then
+			profile.settings[key] = math.clamp(value, 0, 2)
+		elseif rule == "boolean" and type(value) == "boolean" then
+			profile.settings[key] = value
+		elseif type(rule) == "table" and type(value) == "string" and rule[value] then
+			profile.settings[key] = value
+		end
+	end
+	Registry.DataService.Sync(player)
+	return true, nil
+end
+
 function CharacterService.Init()
 	CombatService = Registry.CombatService
+	Registry.UIService.Register("SaveSettings", saveSettings)
 	Registry.UIService.Register("ChooseFaction", chooseFaction)
 	Registry.UIService.Register("EquipPower", equipPower)
 end

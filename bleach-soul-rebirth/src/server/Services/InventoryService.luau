@@ -59,6 +59,17 @@ function InventoryService.GrantLoot(player: Player, tableId: string)
 	Registry.DataService.Sync(player)
 end
 
+-- Loja e forja exigem estar perto do Velho Sōma.
+local function nearMerchant(player: Player): boolean
+	local npcs = workspace:FindFirstChild("NPCs")
+	local merchant = npcs and npcs:FindFirstChild("Soma") :: Model?
+	local character = player.Character
+	if not merchant or not merchant.PrimaryPart or not character or not character.PrimaryPart then
+		return false
+	end
+	return (merchant.PrimaryPart.Position - character.PrimaryPart.Position).Magnitude < 25
+end
+
 local function equip(player: Player, payload: any): (boolean, any)
 	local profile = Registry.DataService.Get(player)
 	local uid = type(payload) == "table" and tonumber(payload.uid)
@@ -120,6 +131,9 @@ local function craft(player: Player, payload: any): (boolean, any)
 	if not profile or type(itemId) ~= "string" then
 		return false, "Pedido inválido"
 	end
+	if not nearMerchant(player) then
+		return false, "Fale com o Velho Sōma para forjar"
+	end
 	local ok, err = InventoryLogic.craft(profile, Items.List, Items.Recipes, itemId)
 	if ok then
 		Registry.UIService.Notify(player, "Forjado: " .. Items.List[itemId].name, "loot", { item = itemId, rarity = Items.List[itemId].rarity })
@@ -134,6 +148,9 @@ local function buy(player: Player, payload: any): (boolean, any)
 	local qty = type(payload) == "table" and math.clamp(math.floor(tonumber(payload.qty) or 1), 1, 20) or 1
 	if not profile or type(itemId) ~= "string" or not table.find(Items.Shop, itemId) then
 		return false, "Item não vendido aqui"
+	end
+	if not nearMerchant(player) then
+		return false, "Fale com o Velho Sōma para comprar"
 	end
 	local def = Items.List[itemId]
 	local cost = def.price * qty
