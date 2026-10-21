@@ -72,7 +72,7 @@ local function grantRewards(player: Player, profile: any, rewards: any, title: s
 	if rewards.skillPoints then
 		profile.skillPoints += rewards.skillPoints
 	end
-	for _, item in rewards.items or {} do
+	for _, item in (rewards.items or {}) :: any do
 		Registry.InventoryService.Give(player, item.id, item.qty)
 	end
 	Registry.ProgressionService.AddCurrency(player, rewards.kan or 0, rewards.shards or 0)

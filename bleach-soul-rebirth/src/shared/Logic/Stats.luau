@@ -24,7 +24,7 @@ export type Derived = {
 -- progression: Config/Progression ; skillTree: nós da facção ; items: Config/Items.List
 function Stats.compute(profile: any, progression: any, skillTree: any?, items: any, rarityMultiplier: number?): Derived
 	local attrs: { [string]: number } = { Strength = 0, Spirit = 0, Vitality = 0, Agility = 0 }
-	for name, value in profile.stats or {} do
+	for name, value in (profile.stats or {}) :: any do
 		if attrs[name] ~= nil then
 			attrs[name] += value
 		end
@@ -32,7 +32,7 @@ function Stats.compute(profile: any, progression: any, skillTree: any?, items: a
 
 	-- Bônus de equipamentos
 	local inventory = profile.inventory and profile.inventory.items or {}
-	for _, uid in profile.equipped or {} do
+	for _, uid in (profile.equipped or {}) :: any do
 		for _, entry in inventory do
 			if entry.uid == uid then
 				local def = items[entry.id]
@@ -51,7 +51,7 @@ function Stats.compute(profile: any, progression: any, skillTree: any?, items: a
 	-- Efeitos da árvore
 	local effects: { [string]: number } = {}
 	if skillTree then
-		for nodeId, owned in profile.skills or {} do
+		for nodeId, owned in (profile.skills or {}) :: any do
 			local node = skillTree[nodeId]
 			if owned and node then
 				for key, value in node.effects do

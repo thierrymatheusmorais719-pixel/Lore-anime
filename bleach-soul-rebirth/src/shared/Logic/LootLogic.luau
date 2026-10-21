@@ -8,13 +8,13 @@ export type Drop = { id: string, qty: number }
 
 function LootLogic.roll(tableDef: any, pityState: { [string]: number }, tableId: string, rng: Rng): ({ Drop }, number, number)
 	local drops: { Drop } = {}
-	for _, entry in tableDef.guaranteed or {} do
+	for _, entry in (tableDef.guaranteed or {}) :: any do
 		table.insert(drops, { id = entry.id, qty = rng.int(entry.qty[1], entry.qty[2]) })
 	end
 
 	local pity = tableDef.pity
 	local gotPityItem = false
-	for _, entry in tableDef.chance or {} do
+	for _, entry in (tableDef.chance or {}) :: any do
 		if rng.float() < entry.chance then
 			table.insert(drops, { id = entry.id, qty = rng.int(entry.qty[1], entry.qty[2]) })
 			if pity and entry.id == pity.id then
