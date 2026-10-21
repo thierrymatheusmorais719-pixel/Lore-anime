@@ -155,3 +155,80 @@ class Text:
                 a = 1 - s
             r = max(1, int(it["px"] * 0.018 * (0.5 + rng.random())))
             cv2.circle(canvas, (int(x / 2 * 16), int(y / 2 * 16)), r * 8, float(a), -1, cv2.LINE_AA, shift=4)
+
+
+# ---------------------------------------------------------------- legendas da música (referência)
+F_TYPE = "/usr/share/fonts/truetype/freefont/FreeMonoBold.ttf"   # máquina de escrever, como na referência
+
+
+class TypeCaptions:
+    """Legendas da música no estilo da referência: palavras de máquina de escrever, em creme,
+    que se completam palavra a palavra no centro da tela.
+
+    O texto vem de `legendas_musica.txt` (uma entrada por linha: `tempo | texto`). Cada entrada fica
+    na tela até a próxima (ou até `tempo | -`). Palavras entre *asteriscos* ficam em marrom dourado.
+    """
+
+    def __init__(self, W, H, path=os.path.join(ROOT, "legendas_musica.txt")):
+        self.W, self.H = W, H
+        self.px = int(0.046 * H)
+        self.font = ImageFont.truetype(F_TYPE, self.px * 2)
+        self.entries = []
+        if os.path.exists(path):
+            for ln in open(path, encoding="utf-8"):
+                ln = ln.strip()
+                if not ln or ln.startswith("#") or "|" not in ln:
+                    continue
+                tt, txt = ln.split("|", 1)
+                self.entries.append((float(tt), txt.strip()))
+        self.entries.sort()
+        self._cache = {}
+
+    def _sprite(self, txt):
+        if txt in self._cache:
+            return self._cache[txt]
+        words = txt.split(" ")
+        ss = 2
+        clean = " ".join(w.strip("*") for w in words)
+        wtot = int(self.font.getlength(clean)) + 8 * ss
+        hh = int(self.px * 1.6) * ss
+        im = Image.new("L", (wtot, hh), 0)
+        hl = Image.new("L", (wtot, hh), 0)
+        d, dh = ImageDraw.Draw(im), ImageDraw.Draw(hl)
+        x = 4 * ss
+        for k, w in enumerate(words):
+            ww = w.strip("*") + (" " if k < len(words) - 1 else "")
+            (dh if w.startswith("*") else d).text((x, int(0.2 * self.px * ss)), ww, font=self.font, fill=255)
+            x += self.font.getlength(ww)
+        m = np.asarray(im.resize((wtot // ss, hh // ss), Image.LANCZOS), np.float32) / 255
+        mh = np.asarray(hl.resize((wtot // ss, hh // ss), Image.LANCZOS), np.float32) / 255
+        self._cache[txt] = (m, mh)
+        return m, mh
+
+    def draw(self, frame, t):
+        if not self.entries:
+            return frame
+        cur = None
+        for k, (t0, txt) in enumerate(self.entries):
+            t1 = self.entries[k + 1][0] if k + 1 < len(self.entries) else t0 + 3.0
+            if t0 <= t < t1 + 0.25 and txt != "-":
+                cur = (t0, t1, txt)
+        if cur is None:
+            return frame
+        t0, t1, txt = cur
+        a = min(1.0, (t - t0) / 0.06) * (1.0 if t < t1 else max(0.0, 1 - (t - t1) / 0.25))
+        a *= 0.94 + 0.06 * math.sin(t * 47.0) * math.sin(t * 13.0)          # leve tremido de projetor
+        m, mh = self._sprite(txt)
+        h, w = m.shape
+        x0 = int((self.W - w) / 2)
+        y0 = int(0.56 * self.H - h / 2)
+        reg = frame[y0:y0 + h, x0:x0 + w]
+        sh = cv2.GaussianBlur(np.maximum(m, mh), (0, 0), 0.08 * self.px)[..., None]
+        reg *= 1 - 0.45 * sh * a                                             # sombra para leitura
+        glow = cv2.GaussianBlur(m + mh, (0, 0), 0.18 * self.px)[..., None]
+        reg += glow * np.float32([0.9, 0.82, 0.7]) * 0.18 * a
+        cream = np.float32([0.93, 0.90, 0.84])
+        brown = np.float32([0.62, 0.42, 0.22])
+        reg[:] = reg * (1 - m[..., None] * a) + cream * m[..., None] * a
+        reg[:] = reg * (1 - mh[..., None] * a) + brown * mh[..., None] * a
+        return frame

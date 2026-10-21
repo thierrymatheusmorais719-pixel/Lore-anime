@@ -1,0 +1,16 @@
+# Legendas da música — uma entrada por linha:  tempo (s) | texto
+# Cada entrada fica na tela até a próxima; "tempo | -" apaga. *palavra* sai em marrom dourado.
+# Tempos tirados do vídeo de referência (palavras entrando uma a uma no trecho cantado).
+# Escreva o texto depois do "|" e tire o "#" do começo da linha.
+# 12.50 |
+# 13.75 |
+# 15.25 |
+# 16.25 |
+# 17.50 |
+# 19.00 |
+# 19.65 | -
+# 20.75 |
+# 21.75 |
+# 23.25 |
+# 24.50 |
+# 26.80 | -

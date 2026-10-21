@@ -29,10 +29,10 @@ W, H = (1920, 1080) if os.environ.get("EDIT_RES") == "1080" else (3840, 2160)
 FPS = 60
 SC = W / 1440            # escala dos tamanhos em pixel (referência 1440 px, como na edit de Jesus)
 R30 = FPS / 30           # quadros de saída por quadro de 30 fps
-DUR = 21.05
+DUR = 28.0
 NFRAMES = int(round(DUR * FPS))
-BEAT = 0.3548            # colcheia da música (≈84,6 BPM); compasso = 8 colcheias
-BAR = 8 * BEAT
+BEAT = 0.3367            # colcheia da música (Golden Brown, da referência)
+BAR = 6 * BEAT           # ~2 s: o tempo forte da música volta a cada ~2 s
 
 cv2.setNumThreads(1)
 
@@ -175,40 +175,42 @@ del _r
 # par: quanto os personagens aproximam além do fundo · lat: travelling lateral (parallax)
 S = lambda **k: k  # noqa: E731
 SHOTS = [
-    S(img=1, t0=0.00, t1=3.98, a=(0.60, 0.30, 1.00), b=(0.45, 0.39, 0.62), cut="fade",
+    # introdução instrumental: varanda e luar (planos longos)
+    S(img=1, t0=0.00, t1=5.97, a=(0.60, 0.30, 1.00), b=(0.45, 0.39, 0.62), cut="fade",
       particles=55, pcol=(1.0, 0.86, 0.55), par=0.07, lat=0.012, petals=(0.47, 0.33),
       rays=(0.83, 0.22, 0.16), rcol=(0.72, 0.84, 1.0)),
-    S(img=2, t0=3.98, t1=5.76, a=(0.55, 0.26, 1.00), b=(0.48, 0.38, 0.92), cut="iris",
+    S(img=2, t0=5.97, t1=9.96, a=(0.55, 0.26, 1.00), b=(0.48, 0.38, 0.92), cut="iris",
       particles=60, pcol=(1.0, 0.88, 0.6), par=0.07, lat=-0.012,
       rays=(0.71, 0.10, 0.18), rcol=(0.72, 0.84, 1.0)),
-    S(img=2, t0=5.76, t1=6.82, a=(0.74, 0.43, 0.42), b=(0.75, 0.42, 0.36), cut="punch",
+    S(img=2, t0=9.96, t1=11.96, a=(0.74, 0.43, 0.42), b=(0.75, 0.42, 0.36), cut="punch",
       particles=30, pcol=(1.0, 0.88, 0.6), par=0.04),
-    S(img=3, t0=6.82, t1=9.66, a=(0.46, 0.27, 1.00), b=(0.50, 0.52, 0.78), cut="cloud",
+    # parte cantada: um corte a cada tempo forte (~2 s)
+    S(img=3, t0=11.96, t1=15.94, a=(0.46, 0.27, 1.00), b=(0.50, 0.52, 0.78), cut="cloud",
       rays=(0.10, 0.06, 0.26), particles=45, pcol=(1.0, 0.93, 0.78), par=0.07, lat=0.012, dof=0.55),
-    S(img=4, t0=9.66, t1=10.72, a=(0.48, 0.38, 1.00), b=(0.50, 0.40, 0.90), cut="flare",
+    S(img=4, t0=15.94, t1=17.94, a=(0.48, 0.38, 1.00), b=(0.50, 0.40, 0.90), cut="flare",
       particles=35, par=0.05, lat=-0.010),
-    S(img=4, t0=10.72, t1=12.50, a=(0.52, 0.42, 0.62), b=(0.54, 0.44, 0.54), cut="punch",
+    S(img=4, t0=17.94, t1=19.95, a=(0.52, 0.42, 0.62), b=(0.54, 0.44, 0.54), cut="punch",
       particles=30, par=0.04),
-    S(img=5, t0=12.50, t1=13.55, a=(0.55, 0.52, 1.00), b=(0.50, 0.50, 0.94), cut="burn",
+    S(img=5, t0=19.95, t1=21.93, a=(0.55, 0.52, 1.00), b=(0.50, 0.50, 0.94), cut="burn",
       clouds="storm", rays=(0.66, 0.46, 0.20), particles=30, pcol=(0.85, 0.92, 1.0), par=0.07,
       lat=0.012, rain=True),
-    S(img=5, t0=13.55, t1=15.34, a=(0.58, 0.58, 0.56), b=(0.55, 0.55, 0.66), cut="punch",
+    S(img=5, t0=21.93, t1=23.94, a=(0.58, 0.58, 0.56), b=(0.55, 0.55, 0.66), cut="punch",
       clouds="storm", rays=(0.66, 0.46, 0.20), particles=25, pcol=(0.85, 0.92, 1.0), par=0.05,
       rain=True),
-    S(img=6, t0=15.34, t1=18.18, a=(0.45, 0.48, 0.80), b=(0.52, 0.50, 0.96), cut="smoke",
+    S(img=6, t0=23.94, t1=25.94, a=(0.45, 0.48, 0.80), b=(0.52, 0.50, 0.96), cut="smoke",
       particles=50, pcol=(1.0, 0.95, 0.8), par=0.05, lat=-0.012, rot=(2.0, -1.5)),
-    S(img=7, t0=18.18, t1=21.05, a=(0.45, 0.62, 1.00), b=(0.58, 0.34, 0.86), cut="bloom",
+    S(img=7, t0=25.94, t1=28.0, a=(0.45, 0.62, 1.00), b=(0.58, 0.34, 0.86), cut="bloom",
       clouds="warm", rays=(0.06, 0.04, 0.34), particles=80, pcol=(1.0, 0.82, 0.5), par=0.06,
       lat=0.010),
 ]
 # batidas (tempo, força) medidas na música: pulso de zoom + pulso de luz proporcionais à força
-PULSES = [(1.14, 1.0), (1.51, 0.7), (2.21, 1.0), (2.54, 0.55), (2.90, 0.9), (3.62, 0.7),
-          (3.98, 0.9), (4.33, 0.95), (5.03, 0.75), (5.39, 0.75), (5.76, 0.9), (6.12, 0.85),
-          (6.48, 1.1), (7.19, 0.65), (7.52, 0.7), (8.23, 0.8), (8.59, 0.65), (9.30, 0.9),
-          (9.65, 0.7), (10.02, 0.85), (10.37, 0.9), (10.72, 0.9), (11.42, 0.7), (12.14, 0.6),
-          (12.48, 0.55), (13.55, 0.8), (14.61, 0.55), (15.66, 0.65), (16.70, 0.45), (18.52, 0.6),
-          (18.89, 0.8), (19.23, 0.55), (19.95, 0.6)]
-LIGHTNING = [12.52, 12.70, 13.55, 13.66, 14.95]
+PULSES = [(1.32, 0.4), (1.65, 0.64), (1.97, 1.12), (3.31, 0.6), (3.65, 0.43), (3.97, 0.87),
+          (4.96, 0.56), (5.31, 0.54), (5.64, 0.9), (5.99, 0.92), (6.97, 0.4), (7.63, 0.56),
+          (7.98, 0.4), (8.63, 0.41), (8.95, 0.4), (9.3, 0.58), (9.64, 0.72), (9.96, 0.77),
+          (11.62, 0.55), (11.96, 0.65), (12.93, 0.4), (13.28, 0.4), (13.93, 0.5), (15.62, 0.42),
+          (15.94, 0.62), (17.28, 0.4), (17.94, 0.58), (18.62, 0.4), (19.95, 0.69), (21.27, 0.4),
+          (21.62, 0.69), (21.93, 1.2), (23.6, 0.7), (23.94, 0.54), (25.61, 0.59), (25.95, 1.19)]
+LIGHTNING = [19.97, 20.15, 21.93, 22.04, 23.28]
 for k, s in enumerate(SHOTS):
     s["f0"], s["f1"] = int(round(s["t0"] * FPS)), int(round(s["t1"] * FPS))
     s["seed"] = 100 + k
@@ -402,6 +404,14 @@ PERF = {
 }
 
 
+_OLDWIN = {1: (0.0, 3.98), 2: (3.98, 6.82), 3: (6.82, 9.66), 4: (9.66, 12.5), 5: (12.5, 15.34)}
+_NEWWIN = {1: (0.0, 5.97), 2: (5.97, 11.96), 3: (11.96, 15.94), 4: (15.94, 19.95), 5: (19.95, 23.94)}
+for _i, _p in PERF.items():
+    (_a, _b), (_c, _d) = _OLDWIN[_i], _NEWWIN[_i]
+    for _kind in ("heads", "arms"):
+        _p[_kind] = [[(_c + (tt - _a) * (_d - _c) / (_b - _a), v) for tt, v in keys] for keys in _p[_kind]]
+
+
 def spring_track(keys, freq=1.7, zeta=0.68, idle=0.05, seed=0):
     """Pose ao longo do tempo: mola amortecida perseguindo alvos em degrau + micro-movimento."""
     w = 2 * math.pi * freq
@@ -453,6 +463,7 @@ EXTRA_RIGID = {1: [(0.47, 0.33, 0.03)], 4: [(0.62, 0.40, 0.10)]}
 LAST_FACE = [None]
 CAPTIONS = False  # legendas em ouro (legendas.py) desligadas a pedido; True para voltar
 TEXT = legendas.Text(W, H) if CAPTIONS else None
+SONG = legendas.TypeCaptions(W, H)   # legendas da música (legendas_musica.txt)
 
 
 def _seg(X, Y, a, b):
@@ -984,6 +995,7 @@ def render_frame(f):
     frame = frame * ease_io(min(1.0, t / 1.0)) * ease_io(min(1.0, (DUR - t) / 1.6))  # entrada e saída do preto
     if CAPTIONS:
         frame = TEXT.draw(np.ascontiguousarray(frame, dtype=np.float32), t)
+    frame = SONG.draw(np.ascontiguousarray(frame, dtype=np.float32), t)   # legendas da música
     return (np.clip(np.nan_to_num(frame), 0, 1) * 255 + 0.5).astype(np.uint8)
 
 

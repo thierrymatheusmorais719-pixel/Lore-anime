@@ -16,7 +16,7 @@ from scipy.signal import butter, fftconvolve, sosfilt, stft, istft
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SR = 48000
-DUR = 21.05
+DUR = 28.0
 N = int(DUR * SR)
 rng = np.random.default_rng(42)
 
@@ -223,33 +223,33 @@ def fade_bed(x, fi=0.6, fo=0.8):
     return x * e
 
 
-# ambientes por cena (tempos = cortes do render.py)
-place(fade_bed(crickets(6.9), 1.2, 0.5), 0.0, -30, 0.25)            # noite na varanda
-place(fade_bed(wind(7.0, lo=120, hi=900), 1.0, 0.6), 0.0, -34, -0.3)
-place(fade_bed(wind(3.2, seed=21), 0.4, 0.6), 6.7, -27, -0.2)        # vento no castelo
-place(fade_bed(rain(3.1)), 12.45, -25, 0.0)                           # chuva na tempestade
-place(fade_bed(wind(3.1, seed=29, lo=200, hi=2000)), 12.45, -28, 0.3)
-place(fade_bed(wind(3.0, seed=31, lo=180, hi=1600), 0.6, 0.8), 15.25, -29, 0.0)  # vento na relva
-place(fade_bed(crickets(3.0), 0.8, 1.4), 18.1, -34, -0.25)          # entardecer
+# ambientes por cena (tempos = cortes do render.py, montagem com a música da referência)
+place(fade_bed(crickets(10.2), 1.5, 0.6), 0.0, -30, 0.25)           # noite na varanda e ao luar
+place(fade_bed(wind(10.2, lo=120, hi=900), 1.2, 0.8), 0.0, -34, -0.3)
+place(fade_bed(wind(4.2, seed=21), 0.4, 0.6), 11.85, -27, -0.2)       # vento no castelo
+place(fade_bed(rain(4.2)), 19.90, -25, 0.0)                           # chuva na tempestade
+place(fade_bed(wind(4.2, seed=29, lo=200, hi=2000)), 19.90, -28, 0.3)
+place(fade_bed(wind(2.3, seed=31, lo=180, hi=1600), 0.5, 0.6), 23.80, -29, 0.0)  # vento na relva
+place(fade_bed(crickets(2.3), 0.6, 1.2), 25.85, -34, -0.25)          # entardecer
 
 # transições (o impacto de cada efeito cai no corte)
-place(chime_gliss(), 3.98 - 0.20, -17, rev=(2.2, 0.45, 3))           # íris dourada
-place(whoosh(0.5, 400, 3000, 1), 3.98 - 0.30, -24, -0.4)
-place(impact(), 5.76 - 0.01, -15, rev=(1.4, 0.25, 4))                # zoom na dama
-place(whoosh(0.35, 2500, 500, 2), 5.76 - 0.33, -22, 0.3)
-place(whoosh(1.0, 200, 2500, 3), 6.82 - 0.45, -18, -0.6)             # passagem de nuvens
-place(shing(), 9.66 - 0.25, -19, rev=(1.8, 0.35, 5))                 # raio de luz
-place(impact(), 10.72 - 0.01, -15, rev=(1.4, 0.25, 6))               # zoom no elmo
-place(metal_clank(1.6, 410), 10.74, -22, rev=(1.6, 0.3, 7))
-place(fire_burn(), 12.50 - 0.35, -20, 0.2)                           # queima de filme
-place(thunder(4.0, True, 5), 12.52, -15, rev=(2.5, 0.35, 8))          # relâmpagos
-place(impact(), 13.55 - 0.01, -16, rev=(1.4, 0.25, 9))               # zoom na tempestade
-place(thunder(3.5, True, 6), 13.57, -16, rev=(2.5, 0.35, 10))
-place(thunder(3.0, False, 7), 14.95, -20, rev=(2.5, 0.35, 11))
-place(soft_smoke(), 15.34 - 0.55, -21, 0.0)                          # fumaça
-place(metal_clank(2.0, 300), 15.62, -27, rev=(2.2, 0.45, 12))        # a armadura vazia
-place(riser_swell(), 18.18 - 0.9, -18, rev=(2.4, 0.4, 13))           # clarão final
-place(chime_gliss(3.0, 660), 20.0, -25, rev=(2.6, 0.5, 14))          # brilho no fim
+place(chime_gliss(), 5.97 - 0.20, -17, rev=(2.2, 0.45, 3))           # íris dourada
+place(whoosh(0.5, 400, 3000, 1), 5.97 - 0.30, -24, -0.4)
+place(impact(), 9.96 - 0.01, -15, rev=(1.4, 0.25, 4))                # zoom na dama
+place(whoosh(0.35, 2500, 500, 2), 9.96 - 0.33, -22, 0.3)
+place(whoosh(1.0, 200, 2500, 3), 11.96 - 0.45, -18, -0.6)            # passagem de nuvens
+place(shing(), 15.94 - 0.25, -19, rev=(1.8, 0.35, 5))                # raio de luz
+place(impact(), 17.94 - 0.01, -15, rev=(1.4, 0.25, 6))               # zoom no elmo
+place(metal_clank(1.6, 410), 17.96, -22, rev=(1.6, 0.3, 7))
+place(fire_burn(), 19.95 - 0.35, -20, 0.2)                           # queima de filme
+place(thunder(4.0, True, 5), 19.97, -15, rev=(2.5, 0.35, 8))          # relâmpagos
+place(impact(), 21.93 - 0.01, -16, rev=(1.4, 0.25, 9))               # zoom na tempestade
+place(thunder(3.5, True, 6), 21.95, -16, rev=(2.5, 0.35, 10))
+place(thunder(3.0, False, 7), 23.28, -20, rev=(2.5, 0.35, 11))
+place(soft_smoke(), 23.94 - 0.55, -21, 0.0)                          # fumaça
+place(metal_clank(2.0, 300), 24.20, -27, rev=(2.2, 0.45, 12))        # a armadura vazia
+place(riser_swell(), 25.94 - 0.9, -18, rev=(2.4, 0.4, 13))           # clarão final
+place(chime_gliss(3.0, 660), 26.6, -25, rev=(2.6, 0.5, 14))          # brilho no fim
 
 
 # legendas em ouro: impacto grave no título, pó dourado (brilho suave) em cada frase
