@@ -1,4 +1,4 @@
-import { Outlet, ScrollRestoration, createBrowserRouter } from 'react-router-dom';
+import { Outlet, ScrollRestoration, createBrowserRouter, createMemoryRouter } from 'react-router-dom';
 import { CartDrawer } from './components/CartDrawer';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
@@ -34,8 +34,7 @@ function Layout() {
   );
 }
 
-export const router = createBrowserRouter(
-  [
+const routes = [
     {
       element: <Layout />,
       children: [
@@ -52,6 +51,10 @@ export const router = createBrowserRouter(
         { path: '*', element: <NotFound /> },
       ],
     },
-  ],
-  { basename: import.meta.env.BASE_URL.replace(/\/$/, '') || '/' },
-);
+];
+
+// VITE_ROUTER=memory: para ambientes embutidos (iframes/sandboxes) sem controle da URL.
+export const router =
+  import.meta.env.VITE_ROUTER === 'memory'
+    ? createMemoryRouter(routes)
+    : createBrowserRouter(routes, { basename: import.meta.env.BASE_URL.replace(/\/$/, '') || '/' });
