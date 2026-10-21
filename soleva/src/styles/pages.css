@@ -2294,3 +2294,10 @@
     font-size: 0.88rem;
   }
 }
+
+.hero-shoe.has-photo {
+  width: 92%;
+  margin: 0 auto;
+  animation: heroIn 1.2s var(--ease) both;
+  filter: none;
+}

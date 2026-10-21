@@ -973,3 +973,36 @@ code {
     transform: translateX(-50%);
   }
 }
+
+/* ---------- Fotos reais ---------- */
+
+img.photo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* Fundo branco de estúdio se funde ao cinza dos cards. */
+  mix-blend-mode: multiply;
+}
+.card-art.photo {
+  height: auto;
+  max-height: 100%;
+}
+.card-art-main.photo {
+  transform: none;
+}
+@media (hover: hover) {
+  .card:hover .card-art-main.photo:only-child {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+.dark img.photo,
+.rare-art img.photo,
+.drop-art img.photo {
+  mix-blend-mode: normal;
+  border-radius: 12px;
+}
+.hero-shoe img.photo {
+  mix-blend-mode: normal;
+  border-radius: 20px;
+}

@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { BRANDS, CATEGORIES, COLLECTIONS, PRODUCTS, getBrand, getProductBySlug } from '../data/catalog';
 import { Icon } from '../components/Icon';
 import { ProductCard } from '../components/ProductCard';
-import { SneakerArt } from '../components/SneakerArt';
 import { Countdown, ProductMedia, Reveal, SectionHeader } from '../components/ui';
 import { useDocumentTitle } from '../hooks';
 import { formatDate, formatPrice } from '../lib/format';
@@ -101,8 +100,8 @@ function Hero() {
           <span className="hero-index display" aria-hidden="true">
             0{i + 1}
           </span>
-          <div className="hero-shoe">
-            <SneakerArt palette={p.palette} silhouette={p.silhouette} brandMark={brand.name.split(' ')[0].toUpperCase()} title={`${brand.name} ${p.name} ${p.model}`} />
+          <div className={`hero-shoe ${p.images?.length ? 'has-photo' : ''}`}>
+            <ProductMedia product={p} />
           </div>
           <dl className="hero-specs">
             {copy.specs.map(([k, v]) => (

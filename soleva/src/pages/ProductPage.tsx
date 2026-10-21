@@ -19,6 +19,8 @@ import type { Product, Review, ShippingOption } from '../types';
 
 const VIEWS: SneakerView[] = ['lateral', 'medial', 'heel', 'toe', 'sole'];
 
+const viewLabel = (product: Product, i: number) => (product.images?.length ? `Foto ${i + 1}` : VIEW_LABELS[VIEWS[i]]);
+
 export function ProductPage() {
   const { slug = '' } = useParams();
   const product = getProductBySlug(slug);
@@ -340,7 +342,8 @@ function ProductView({ product }: { product: Product }) {
 function Gallery({ product }: { product: Product }) {
   const [active, setActive] = useState(0);
   const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
-  const views = VIEWS;
+  // Com fotos reais, a galeria mostra as fotos; sem fotos, as vistas do render.
+  const views = product.images?.length ? product.images.map((_, i) => VIEWS[i] ?? 'lateral') : VIEWS;
 
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowRight') setActive((a) => (a + 1) % views.length);
@@ -351,7 +354,7 @@ function Gallery({ product }: { product: Product }) {
     <div className="gallery" onKeyDown={onKey}>
       <div className="gallery-thumbs" role="tablist" aria-label="Imagens do produto">
         {views.map((v, i) => (
-          <button key={v} role="tab" aria-selected={active === i} className={active === i ? 'on' : ''} onClick={() => setActive(i)} aria-label={VIEW_LABELS[v]}>
+          <button key={i} role="tab" aria-selected={active === i} className={active === i ? 'on' : ''} onClick={() => setActive(i)} aria-label={viewLabel(product, i)}>
             <ProductMedia product={product} view={v} index={i} />
           </button>
         ))}
@@ -365,13 +368,13 @@ function Gallery({ product }: { product: Product }) {
         onMouseLeave={() => setZoom(null)}
         tabIndex={0}
         role="tabpanel"
-        aria-label={`${VIEW_LABELS[views[active]]} — use as setas para navegar`}
+        aria-label={`${viewLabel(product, active)} — use as setas para navegar`}
       >
         <div className="gallery-stage" style={zoom ? { transformOrigin: `${zoom.x}% ${zoom.y}%` } : undefined} key={active}>
           <ProductMedia product={product} view={views[active]} index={active} />
         </div>
         <span className="gallery-count mono">
-          {String(active + 1).padStart(2, '0')} / {String(views.length).padStart(2, '0')} — {VIEW_LABELS[views[active]]}
+          {String(active + 1).padStart(2, '0')} / {String(views.length).padStart(2, '0')} — {viewLabel(product, active)}
         </span>
         <div className="gallery-arrows">
           <button className="icon-btn" onClick={() => setActive((a) => (a - 1 + views.length) % views.length)} aria-label="Imagem anterior">
@@ -384,7 +387,7 @@ function Gallery({ product }: { product: Product }) {
       </div>
       <div className="gallery-mobile" aria-hidden="true">
         {views.map((v, i) => (
-          <div key={v} className="gallery-slide">
+          <div key={i} className="gallery-slide">
             <ProductMedia product={product} view={v} index={i} />
           </div>
         ))}

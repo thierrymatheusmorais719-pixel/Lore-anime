@@ -55,9 +55,9 @@ src/
   styles/        tokens e CSS por camada (base, layout, componentes, páginas)
 ```
 
-**Imagens.** Os produtos usam `SneakerArt`, um render vetorial parametrizado por silhueta e paleta
-(lateral, medial, calcanhar, biqueira e solado). Para usar fotos reais, preencha `images` no produto:
-`ProductMedia` passa a exibir as fotos automaticamente.
+**Fotos.** Coloque as fotos em `src/assets/produtos/<slug-do-produto>/` (1.jpg, 2.jpg…). A loja as
+encontra sozinha no build; a lista de pastas está em `src/assets/produtos/LEIA-ME.md`. Produtos sem
+fotos usam `SneakerArt`, um desenho vetorial por silhueta e paleta.
 
 **Regras de compra.** Não é possível adicionar ao carrinho sem um tamanho com estoque; quantidade
 limitada pelo estoque e a 5 por item; edições limitadas a 1 par por cliente; itens esgotados são

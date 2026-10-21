@@ -27,7 +27,9 @@ export function ProductCard({ product, variant = 'default', rank, quickAdd = tru
       <div className="card-media">
         <Link to={href} className="card-media-link" aria-label={`${brand?.name} ${product.name} ${product.model}`}>
           <ProductMedia product={product} className="card-art card-art-main" />
-          <ProductMedia product={product} view="medial" index={1} className="card-art card-art-alt" />
+          {(!product.images || product.images.length > 1) && (
+            <ProductMedia product={product} view="medial" index={1} className="card-art card-art-alt" />
+          )}
         </Link>
         <Badges product={product} />
         {rank !== undefined && <span className="card-rank">{String(rank).padStart(2, '0')}</span>}
