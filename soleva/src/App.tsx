@@ -1,4 +1,4 @@
-import { Outlet, ScrollRestoration, createBrowserRouter, createMemoryRouter } from 'react-router-dom';
+import { Outlet, ScrollRestoration, createBrowserRouter, createMemoryRouter, useLocation } from 'react-router-dom';
 import { CartDrawer } from './components/CartDrawer';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
@@ -16,6 +16,7 @@ import { Shop } from './pages/Shop';
 import { ShopProvider } from './store/ShopProvider';
 
 function Layout() {
+  const { pathname } = useLocation();
   return (
     <ShopProvider>
       <a href="#main" className="skip-link">
@@ -23,7 +24,10 @@ function Layout() {
       </a>
       <Header />
       <main id="main">
-        <Outlet />
+        {/* A chave pelo caminho reinicia a animação de entrada a cada troca de página. */}
+        <div className="page-enter" key={pathname}>
+          <Outlet />
+        </div>
       </main>
       <Footer />
       <CartDrawer />

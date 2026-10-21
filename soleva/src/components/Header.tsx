@@ -27,12 +27,22 @@ export function Header() {
   const { totals, favorites, setCartOpen, setSearchOpen } = useShop();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
   const location = useLocation();
   useLockBody(menuOpen);
 
   useEffect(() => setMenuOpen(false), [location.pathname, location.search]);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    let last = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 8);
+      // Esconde ao rolar para baixo e volta ao rolar para cima.
+      if (Math.abs(y - last) > 6) {
+        setHidden(y > last && y > 320);
+        last = y;
+      }
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -53,7 +63,7 @@ export function Header() {
           <span>Autenticidade garantida em todos os pares</span>
         </div>
       </div>
-      <header className={`header ${scrolled ? 'scrolled' : ''}`}>
+      <header className={`header ${scrolled ? 'scrolled' : ''} ${hidden && !menuOpen ? 'hide' : ''}`}>
         <div className="container header-inner">
           <button className="icon-btn menu-btn" onClick={() => setMenuOpen(true)} aria-label="Abrir menu" aria-expanded={menuOpen}>
             <Icon name="menu" />
@@ -79,7 +89,7 @@ export function Header() {
               <Icon name="heart" />
               {favorites.length > 0 && <span className="count">{favorites.length}</span>}
             </Link>
-            <button className="icon-btn" onClick={() => setCartOpen(true)} aria-label={`Carrinho (${totals.itemCount} itens)`}>
+            <button className="icon-btn cart-icon" data-cart-icon onClick={() => setCartOpen(true)} aria-label={`Carrinho (${totals.itemCount} itens)`}>
               <Icon name="bag" />
               {totals.itemCount > 0 && <span className="count count-accent">{totals.itemCount}</span>}
             </button>

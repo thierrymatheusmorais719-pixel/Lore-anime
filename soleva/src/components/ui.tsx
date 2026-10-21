@@ -94,12 +94,36 @@ export function Badges({ product, max = 2 }: { product: Product; max?: number })
   );
 }
 
-export function SectionHeader({ eyebrow, title, action, dark }: { eyebrow?: string; title: ReactNode; action?: { label: string; to: string }; dark?: boolean }) {
+/** Título que surge palavra por palavra quando a seção entra na tela (via `.reveal.in`). */
+export function SplitTitle({ lines }: { lines: string | string[] }) {
+  let i = 0;
+  const list = Array.isArray(lines) ? lines : [lines];
+  return (
+    <>
+      {list.map((line, li) => (
+        <span className="split-line" key={li}>
+          {line.split(' ').map((w, wi) => (
+            <span className="split-word" key={wi}>
+              <span className="split-inner" style={{ ['--i' as string]: i++ }}>
+                {w}
+              </span>
+              {wi < line.split(' ').length - 1 ? ' ' : ''}
+            </span>
+          ))}
+        </span>
+      ))}
+    </>
+  );
+}
+
+export function SectionHeader({ eyebrow, title, action, dark }: { eyebrow?: string; title: string | string[]; action?: { label: string; to: string }; dark?: boolean }) {
   return (
     <div className={`section-head ${dark ? 'on-dark' : ''}`}>
       <div>
         {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-        <h2 className="display h2">{title}</h2>
+        <h2 className="display h2" aria-label={Array.isArray(title) ? title.join(' ') : title}>
+          <SplitTitle lines={title} />
+        </h2>
       </div>
       {action && (
         <Link to={action.to} className="link">

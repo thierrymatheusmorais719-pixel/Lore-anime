@@ -1,0 +1,351 @@
+/* =========================================================
+   MOVIMENTO — animações e microinterações
+   ========================================================= */
+
+:root {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* ---------- Transição entre páginas ---------- */
+
+.page-enter {
+  animation: pageIn 0.7s var(--ease-out) both;
+}
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+/* ---------- Header que some ao rolar para baixo ---------- */
+
+.header {
+  transition: transform 0.45s var(--ease-out), border-color 0.3s, background 0.3s;
+}
+.header.hide {
+  transform: translateY(-100%);
+}
+
+/* ---------- Sacola: pulo ao receber um item ---------- */
+
+.cart-icon.bump {
+  animation: bagBump 0.6s var(--ease-out);
+}
+@keyframes bagBump {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.35) rotate(-8deg);
+  }
+  60% {
+    transform: scale(0.92) rotate(4deg);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ---------- Títulos: máscara linha a linha / palavra a palavra ---------- */
+
+.mask-line,
+.split-line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.06em;
+  margin-bottom: -0.06em;
+}
+.mask-inner {
+  display: inline-block;
+  animation: maskUp 1.1s var(--ease-out) both;
+  animation-delay: var(--d, 0s);
+}
+@keyframes maskUp {
+  from {
+    transform: translateY(105%) skewY(6deg);
+  }
+}
+.split-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.06em;
+  margin-bottom: -0.06em;
+}
+.split-inner {
+  display: inline-block;
+  transform: translateY(105%) skewY(6deg);
+  transition: transform 1s var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 70ms + 0.1s);
+}
+.reveal.in .split-inner,
+.split-static .split-inner {
+  transform: none;
+}
+
+/* Elementos de revelação ganham um leve desfoque de entrada. */
+.reveal {
+  transform: translateY(36px);
+  filter: blur(4px);
+  transition: opacity 1s var(--ease-out), transform 1s var(--ease-out), filter 1s var(--ease-out);
+  transition-delay: var(--d, 0s);
+}
+.reveal.in {
+  filter: none;
+}
+
+/* ---------- Hero: troca de destaque ---------- */
+
+.hero-visual {
+  perspective: 1400px;
+}
+.hero-shoe {
+  grid-area: 1 / 1;
+}
+.hero-shoe:not(.has-photo) {
+  transform-style: preserve-3d;
+  transform: translate3d(calc(var(--mx) * -22px), calc(var(--my) * -14px), 0) rotateY(calc(var(--mx) * 14deg))
+    rotateX(calc(var(--my) * -10deg));
+}
+.hero-shoe.entering img.cutout {
+  animation: shoeEnter 1.3s var(--ease-out) both, float 6s ease-in-out 1.3s infinite;
+}
+@keyframes shoeEnter {
+  0% {
+    opacity: 0;
+    transform: translate3d(38%, -6%, 0) rotate(8deg) scale(0.82);
+    filter: blur(14px) drop-shadow(0 60px 50px rgba(0, 0, 0, 0.7));
+  }
+  60% {
+    opacity: 1;
+    filter: blur(0) drop-shadow(0 60px 50px rgba(0, 0, 0, 0.7));
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-12deg);
+  }
+}
+.hero-shoe.leaving {
+  pointer-events: none;
+  z-index: 1;
+}
+.hero-shoe.leaving img.cutout {
+  animation: shoeLeave 0.55s cubic-bezier(0.55, 0, 0.8, 0.3) both;
+}
+@keyframes shoeLeave {
+  from {
+    opacity: 1;
+    transform: rotate(-12deg);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(-70%, -18%, 0) rotate(-38deg) scale(0.65);
+    filter: blur(16px);
+  }
+}
+.hero-halo {
+  animation: haloIn 1.4s var(--ease-out) both;
+}
+@keyframes haloIn {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+.hero-floor {
+  animation: floorIn 1.2s var(--ease-out) both, floorPulse 6s ease-in-out 1.3s infinite;
+}
+@keyframes floorIn {
+  from {
+    opacity: 0;
+    transform: scaleX(0.3);
+  }
+}
+.hero-price {
+  animation: priceIn 0.9s var(--ease-out) 0.45s both;
+}
+@keyframes priceIn {
+  from {
+    opacity: 0;
+    transform: rotate(-14deg) translateY(-24px) scale(0.7);
+  }
+}
+.hero-index {
+  animation: indexIn 1.2s var(--ease-out) both;
+}
+@keyframes indexIn {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+}
+.hero-specs > div {
+  animation: chipIn 0.7s var(--ease-out) both;
+}
+.hero-specs > div:nth-child(1) {
+  animation-delay: 0.55s;
+}
+.hero-specs > div:nth-child(2) {
+  animation-delay: 0.65s;
+}
+.hero-specs > div:nth-child(3) {
+  animation-delay: 0.75s;
+}
+.hero-specs {
+  animation: none;
+}
+@keyframes chipIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+.hero-anim {
+  animation-name: fadeUp;
+}
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+}
+.hero-dot-thumb img {
+  transition: transform 0.5s var(--ease-out);
+}
+.hero-dot:hover .hero-dot-thumb img,
+.hero-dot.active .hero-dot-thumb img {
+  transform: rotate(-8deg) scale(1.12);
+}
+
+/* ---------- Cards: inclinação 3D e reflexo ---------- */
+
+@media (hover: hover) {
+  .card-media {
+    --rx: 0deg;
+    --ry: 0deg;
+    transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
+    transition: transform 0.5s var(--ease-out), box-shadow 0.5s var(--ease-out);
+    will-change: transform;
+  }
+  .card:hover .card-media {
+    transition: transform 0.12s linear, box-shadow 0.5s var(--ease-out);
+    box-shadow: 0 30px 50px -28px rgba(0, 0, 0, 0.35);
+  }
+  .card-media > .card-media-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(420px circle at var(--gx, 50%) var(--gy, 50%), rgba(255, 255, 255, 0.35), transparent 45%);
+    mix-blend-mode: soft-light;
+    transition: opacity 0.4s;
+  }
+  .card:hover .card-media > .card-media-link::after {
+    opacity: 1;
+  }
+}
+
+/* ---------- Botões: brilho que atravessa ---------- */
+
+.btn-primary,
+.btn-accent {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn-primary::after,
+.btn-accent::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 40%;
+  z-index: -1;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.7s var(--ease-out);
+}
+.btn-primary:hover:not([disabled])::after,
+.btn-accent:hover:not([disabled])::after {
+  left: 120%;
+}
+
+/* ---------- Parallax ao rolar (navegadores com scroll-driven animations) ---------- */
+
+@supports (animation-timeline: view()) {
+  .cat-art,
+  .collection-shoe,
+  .rare-art > *,
+  .promo-art > *,
+  .drop-art > img {
+    animation: drift linear both;
+    animation-timeline: view();
+    animation-range: cover 0% cover 100%;
+  }
+  .collection-shoe.s1 {
+    animation-name: driftReverse;
+  }
+  .section-head .eyebrow::before {
+    animation: growLine linear both;
+    animation-timeline: view();
+    animation-range: entry 10% cover 40%;
+  }
+}
+@keyframes drift {
+  from {
+    translate: 0 50px;
+  }
+  to {
+    translate: 0 -50px;
+  }
+}
+@keyframes driftReverse {
+  from {
+    translate: 0 -30px;
+  }
+  to {
+    translate: 0 40px;
+  }
+}
+@keyframes growLine {
+  from {
+    width: 0;
+  }
+  to {
+    width: 18px;
+  }
+}
+
+/* ---------- Badges de lançamento pulsando de leve ---------- */
+
+.badge-accent {
+  animation: badgeGlow 2.6s ease-in-out infinite;
+}
+@keyframes badgeGlow {
+  50% {
+    box-shadow: 0 0 0 5px rgba(200, 255, 46, 0.25);
+  }
+}
+
+/* ---------- Acessibilidade ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .split-inner,
+  .mask-inner {
+    transform: none !important;
+  }
+  .reveal {
+    filter: none;
+  }
+  .card-media {
+    transform: none !important;
+  }
+  .header.hide {
+    transform: none;
+  }
+}

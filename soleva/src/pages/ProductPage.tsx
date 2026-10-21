@@ -76,9 +76,10 @@ function ProductView({ product }: { product: Product }) {
     return false;
   };
 
+  const galleryImage = () => document.querySelector('.gallery-stage img, .gallery-stage svg, .gallery-slide img');
   const onAdd = () => {
     if (!requireSize()) return;
-    addToCart(product, size!, qty);
+    addToCart(product, size!, qty, { from: galleryImage() });
   };
   const onBuy = () => {
     if (!requireSize()) return;

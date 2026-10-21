@@ -57,9 +57,23 @@ export function Home() {
 
 function Hero() {
   const slides = useMemo(() => HERO_SLUGS.map((s) => getProductBySlug(s)!).filter(Boolean), []);
-  const [i, setI] = useState(0);
+  const [i, setIndex] = useState(0);
+  const [leaving, setLeaving] = useState<number | null>(null);
   const [paused, setPaused] = useState(false);
   const ref = useRef<HTMLElement>(null);
+
+  // Troca de destaque: o tênis atual sai voando enquanto o próximo entra.
+  const setI = (next: number | ((x: number) => number)) =>
+    setIndex((cur) => {
+      const n = typeof next === 'function' ? next(cur) : next;
+      if (n !== cur) setLeaving(cur);
+      return n;
+    });
+  useEffect(() => {
+    if (leaving === null) return;
+    const t = window.setTimeout(() => setLeaving(null), 900);
+    return () => window.clearTimeout(t);
+  }, [leaving, i]);
 
   useEffect(() => {
     if (paused) return;
@@ -103,8 +117,12 @@ function Hero() {
             {copy.kicker}
           </span>
           <h1 className="display hero-title">
-            <span className="hero-anim" style={{ ['--d' as string]: '.05s' }}>{copy.line1}</span>
-            <span className="hero-anim outline" style={{ ['--d' as string]: '.12s' }}>{copy.line2}</span>
+            <span className="mask-line">
+              <span className="mask-inner" style={{ ['--d' as string]: '.05s' }}>{copy.line1}</span>
+            </span>
+            <span className="mask-line">
+              <span className="mask-inner outline" style={{ ['--d' as string]: '.16s' }}>{copy.line2}</span>
+            </span>
           </h1>
           <p className="lead hero-anim" style={{ ['--d' as string]: '.2s' }}>
             {p.description.split('. ')[0]}.
@@ -119,23 +137,28 @@ function Hero() {
           </div>
         </div>
 
-        <div className="hero-visual" key={`v-${p.id}`}>
-          <div className="hero-halo" />
-          <span className="hero-index display" aria-hidden="true">
+        <div className="hero-visual">
+          <div className="hero-halo" key={`h-${p.id}`} />
+          <span className="hero-index display" aria-hidden="true" key={`i-${p.id}`}>
             0{i + 1}
           </span>
-          <div className="hero-price">
+          <div className="hero-price" key={`p-${p.id}`}>
             <span className="mono">{brand.name}</span>
             <strong>{formatPrice(p.price)}</strong>
             <span className="mono">
               {inst.count}x de {formatPrice(inst.value)}
             </span>
           </div>
-          <div className={`hero-shoe ${p.images?.length && !p.cutout ? 'has-photo' : ''}`}>
+          {leaving !== null && leaving !== i && (
+            <div className="hero-shoe leaving" key={`out-${slides[leaving].id}`} aria-hidden="true">
+              <ProductMedia product={slides[leaving]} />
+            </div>
+          )}
+          <div className={`hero-shoe entering ${p.images?.length && !p.cutout ? 'has-photo' : ''}`} key={`in-${p.id}`}>
             <ProductMedia product={p} />
           </div>
-          <div className="hero-floor" aria-hidden="true" />
-          <dl className="hero-specs">
+          <div className="hero-floor" aria-hidden="true" key={`f-${p.id}`} />
+          <dl className="hero-specs" key={`s-${p.id}`}>
             {copy.specs.map(([k, v]) => (
               <div key={k}>
                 <dt className="mono">{k}</dt>
@@ -419,7 +442,7 @@ function Rares() {
     <section className="section rares dark grain">
       <div className="container">
         <Reveal>
-          <SectionHeader dark eyebrow="Numerados · Autenticados · Raros" title={<>Raros & edições<br />limitadas</>} action={{ label: 'Ver todos os raros', to: '/raros' }} />
+          <SectionHeader dark eyebrow="Numerados · Autenticados · Raros" title={['Raros & edições', 'limitadas']} action={{ label: 'Ver todos os raros', to: '/raros' }} />
         </Reveal>
         <div className="grid-4">
           {items.map((p, i) => (

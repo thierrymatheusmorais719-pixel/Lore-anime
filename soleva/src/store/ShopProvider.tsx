@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
 import { getProduct } from '../data/catalog';
+import { flyToCart } from '../lib/flyToCart';
 import { computeTotals, validateCoupon, type Totals } from '../lib/pricing';
 import { readJSON, writeJSON } from '../lib/storage';
 import type { CartItem, Coupon, Product } from '../types';
@@ -20,7 +21,7 @@ interface ShopContext {
   items: CartItem[];
   coupon: Coupon | null;
   totals: Totals;
-  addToCart: (product: Product, size: string, quantity?: number) => void;
+  addToCart: (product: Product, size: string, quantity?: number, opts?: { from?: Element | null }) => void;
   removeFromCart: (productId: string, size: string) => void;
   setQuantity: (product: Product, size: string, quantity: number) => void;
   changeSize: (product: Product, from: string, to: string) => void;
@@ -93,9 +94,12 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       items: cart.items,
       coupon,
       totals,
-      addToCart: (product, size, quantity = 1) => {
+      addToCart: (product, size, quantity = 1, opts) => {
         dispatch({ type: 'add', product, size, quantity });
-        setCartOpen(true);
+        // Com origem conhecida, o tênis voa até a sacola antes de abrir o carrinho.
+        const delay = flyToCart(opts?.from);
+        if (delay) window.setTimeout(() => setCartOpen(true), delay - 80);
+        else setCartOpen(true);
       },
       removeFromCart: (productId, size) => dispatch({ type: 'remove', productId, size }),
       setQuantity: (product, size, quantity) => dispatch({ type: 'setQty', product, size, quantity }),

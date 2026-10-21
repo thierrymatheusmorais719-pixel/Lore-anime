@@ -14,6 +14,22 @@ interface Props {
   quickAdd?: boolean;
 }
 
+// Inclinação 3D e reflexo de luz seguindo o mouse.
+function tilt(e: React.MouseEvent<HTMLDivElement>) {
+  const el = e.currentTarget;
+  const r = el.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width;
+  const y = (e.clientY - r.top) / r.height;
+  el.style.setProperty('--ry', `${(x - 0.5) * 10}deg`);
+  el.style.setProperty('--rx', `${(0.5 - y) * 8}deg`);
+  el.style.setProperty('--gx', `${x * 100}%`);
+  el.style.setProperty('--gy', `${y * 100}%`);
+}
+function resetTilt(e: React.MouseEvent<HTMLDivElement>) {
+  e.currentTarget.style.setProperty('--rx', '0deg');
+  e.currentTarget.style.setProperty('--ry', '0deg');
+}
+
 export function ProductCard({ product, variant = 'default', rank, quickAdd = true }: Props) {
   const { isFavorite, toggleFavorite, addToCart } = useShop();
   const brand = getBrand(product.brandId);
@@ -24,7 +40,7 @@ export function ProductCard({ product, variant = 'default', rank, quickAdd = tru
 
   return (
     <article className={`card card-${variant}`}>
-      <div className="card-media">
+      <div className="card-media" onMouseMove={tilt} onMouseLeave={resetTilt}>
         <Link to={href} className="card-media-link" aria-label={`${brand?.name} ${product.name} ${product.model}`}>
           <ProductMedia product={product} className="card-art card-art-main" />
           {product.cutout ? (
@@ -50,7 +66,11 @@ export function ProductCard({ product, variant = 'default', rank, quickAdd = tru
             <span className="mono">Adicionar rápido</span>
             <div className="card-quick-sizes">
               {sizes.slice(0, 8).map((s) => (
-                <button key={s} onClick={() => addToCart(product, s)} aria-label={`Adicionar tamanho ${s} ao carrinho`}>
+                <button
+                  key={s}
+                  onClick={(e) => addToCart(product, s, 1, { from: e.currentTarget.closest('.card')?.querySelector('.card-art-main') })}
+                  aria-label={`Adicionar tamanho ${s} ao carrinho`}
+                >
                   {s}
                 </button>
               ))}
