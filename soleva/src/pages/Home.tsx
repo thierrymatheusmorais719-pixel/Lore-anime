@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { BRANDS, CATEGORIES, COLLECTIONS, PRODUCTS, getBrand, getProductBySlug } from '../data/catalog';
 import { Icon } from '../components/Icon';
 import { ProductCard } from '../components/ProductCard';
+import { Showcase } from '../components/Showcase';
+import { useIntroDone } from '../components/Intro';
 import { Countdown, ProductMedia, Reveal, SectionHeader } from '../components/ui';
 import { useDocumentTitle } from '../hooks';
 import { formatDate, formatPrice, installments, plural } from '../lib/format';
@@ -35,12 +37,15 @@ const HERO_COPY: Record<string, { kicker: string; line1: string; line2: string; 
 
 export function Home() {
   useDocumentTitle('');
+  // Remonta o hero quando a abertura termina, para as animações tocarem à vista.
+  const introDone = useIntroDone();
   return (
     <>
-      <Hero />
+      <Hero key={introDone ? 'ready' : 'waiting'} />
       <BrandMarquee />
       <Launches />
       <Categories />
+      <Showcase />
       <BestSellers />
       <NextDrop />
       <Collections />
@@ -151,11 +156,11 @@ function Hero() {
           </div>
           {leaving !== null && leaving !== i && (
             <div className="hero-shoe leaving" key={`out-${slides[leaving].id}`} aria-hidden="true">
-              <ProductMedia product={slides[leaving]} />
+              <ProductMedia product={slides[leaving]} sizes="(max-width: 900px) 100vw, 60vw" />
             </div>
           )}
           <div className={`hero-shoe entering ${p.images?.length && !p.cutout ? 'has-photo' : ''}`} key={`in-${p.id}`}>
-            <ProductMedia product={p} />
+            <ProductMedia product={p} sizes="(max-width: 900px) 100vw, 60vw" />
           </div>
           <div className="hero-floor" aria-hidden="true" key={`f-${p.id}`} />
           <dl className="hero-specs" key={`s-${p.id}`}>
@@ -281,7 +286,7 @@ function Categories() {
                 </div>
                 {t.hero && (
                   <div className="cat-art">
-                    <ProductMedia product={t.hero} />
+                    <ProductMedia product={t.hero} sizes="(max-width: 900px) 70vw, 45vw" />
                   </div>
                 )}
                 <span className="cat-go" aria-hidden="true">
@@ -348,7 +353,7 @@ function NextDrop() {
             <span className="drop-tag mono">
               {brand.name} — {formatPrice(next.price)}
             </span>
-            <ProductMedia product={next} />
+            <ProductMedia product={next} sizes="(max-width: 900px) 100vw, 50vw" />
           </div>
         </Reveal>
       </div>
@@ -487,7 +492,7 @@ function PromoBanner() {
             </Link>
           </div>
           <div className="promo-art">
-            <ProductMedia product={p} />
+            <ProductMedia product={p} sizes="(max-width: 800px) 100vw, 50vw" />
           </div>
         </Reveal>
       </div>

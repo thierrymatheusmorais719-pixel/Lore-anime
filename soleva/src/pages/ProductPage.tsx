@@ -358,7 +358,7 @@ function Gallery({ product }: { product: Product }) {
   const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
   const slides = gallerySlides(product);
   const n = slides.length;
-  const media = (sl: Slide) => <ProductMedia product={product} view={sl.view} index={sl.index} prefer={sl.prefer} />;
+  const media = (sl: Slide, sizes = '(max-width: 960px) 100vw, 55vw') => <ProductMedia product={product} view={sl.view} index={sl.index} prefer={sl.prefer} sizes={sizes} />;
 
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowRight') setActive((a) => (a + 1) % n);
@@ -370,7 +370,7 @@ function Gallery({ product }: { product: Product }) {
       <div className="gallery-thumbs" role="tablist" aria-label="Imagens do produto">
         {slides.map((sl, i) => (
           <button key={i} role="tab" aria-selected={active === i} className={active === i ? 'on' : ''} onClick={() => setActive(i)} aria-label={sl.label}>
-            {media(sl)}
+            {media(sl, '84px')}
           </button>
         ))}
       </div>

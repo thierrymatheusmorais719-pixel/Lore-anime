@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { getBrand } from '../data/catalog';
+import { smallVersion } from '../data/photos';
 import { useCountdown, useEscape, useLockBody, useReveal } from '../hooks';
 import { formatPrice, installments } from '../lib/format';
 import { productBadges } from '../lib/product';
@@ -28,20 +29,38 @@ export function ProductMedia({
   index = 0,
   className,
   prefer = 'auto',
+  sizes = '(max-width: 700px) 50vw, 25vw',
 }: {
   product: Product;
   view?: SneakerView;
   index?: number;
   className?: string;
   prefer?: 'auto' | 'photo';
+  /** Largura em que a imagem aparece, para o navegador escolher a versão leve ou a completa. */
+  sizes?: string;
 }) {
+  const srcSet = (url: string) => {
+    const sm = smallVersion(url);
+    return sm ? `${sm} 640w, ${url} 1600w` : undefined;
+  };
   const photo = product.images?.[index] ?? product.images?.[0];
   const brand = getBrand(product.brandId)?.name.toUpperCase() ?? '';
   const alt = `${brand} ${product.name} ${product.model} — ${VIEW_LABELS[view]}`;
   if (product.cutout && prefer === 'auto' && index === 0) {
-    return <img src={product.cutout} alt={`${brand} ${product.name} ${product.model}`} className={`cutout ${className ?? ''}`} loading="lazy" decoding="async" />;
+    return (
+      <img
+        src={product.cutout}
+        srcSet={srcSet(product.cutout)}
+        sizes={sizes}
+        alt={`${brand} ${product.name} ${product.model}`}
+        className={`cutout ${className ?? ''}`}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+      />
+    );
   }
-  if (photo) return <img src={photo} alt={product.images?.[index] ? alt : alt.replace(VIEW_LABELS[view], 'foto')} className={`photo ${className ?? ''}`} loading="lazy" decoding="async" />;
+  if (photo) return <img src={photo} srcSet={srcSet(photo)} sizes={sizes} draggable={false} alt={product.images?.[index] ? alt : alt.replace(VIEW_LABELS[view], 'foto')} className={`photo ${className ?? ''}`} loading="lazy" decoding="async" />;
   return <SneakerArt palette={product.palette} silhouette={product.silhouette} view={view} brandMark={brand.split(' ')[0]} className={className} title={alt} />;
 }
 

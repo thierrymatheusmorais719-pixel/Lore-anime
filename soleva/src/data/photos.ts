@@ -13,10 +13,22 @@ const files = import.meta.glob<string>('../assets/produtos/*/*.{jpg,jpeg,png,web
 });
 
 const bySlug: Record<string, { name: string; url: string }[]> = {};
+const small: Record<string, string> = {};
+const smallByPath: Record<string, string> = {};
 for (const [path, url] of Object.entries(files)) {
+  // Variantes reduzidas (`1@640.webp`) servem miniaturas e telas pequenas.
+  const sm = path.match(/^(.*)@640\.(\w+)$/);
+  if (sm) {
+    smallByPath[`${sm[1]}.${sm[2]}`] = url;
+    continue;
+  }
   const [, slug, name] = path.match(/produtos\/([^/]+)\/([^/]+)$/) ?? [];
   if (slug) (bySlug[slug] ??= []).push({ name, url });
 }
+for (const [path, url] of Object.entries(files)) if (smallByPath[path]) small[url] = smallByPath[path];
+
+/** URL da versão de 640px de uma imagem, quando existir. */
+export const smallVersion = (url: string) => small[url];
 
 const isCutout = (name: string) => /^recorte\./i.test(name);
 

@@ -2,6 +2,7 @@ import { Outlet, ScrollRestoration, createBrowserRouter, createMemoryRouter, use
 import { CartDrawer } from './components/CartDrawer';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
+import { IntroProvider } from './components/Intro';
 import { SearchOverlay } from './components/SearchOverlay';
 import { Toasts } from './components/Toasts';
 import { CartPage } from './pages/CartPage';
@@ -19,6 +20,7 @@ function Layout() {
   const { pathname } = useLocation();
   return (
     <ShopProvider>
+      <IntroProvider>
       <a href="#main" className="skip-link">
         Pular para o conteúdo
       </a>
@@ -34,6 +36,7 @@ function Layout() {
       <SearchOverlay />
       <Toasts />
       <ScrollRestoration getKey={(location) => location.pathname} />
+      </IntroProvider>
     </ShopProvider>
   );
 }
