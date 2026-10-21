@@ -24,6 +24,7 @@ local AnimController = require(Controllers.AnimController)
 local VFX = require(Controllers.VFXController)
 local SoundController = require(Controllers.SoundController)
 local CameraController = require(Controllers.CameraController)
+local SpectacleFx = require(Controllers.SpectacleFx)
 
 local CombatController = {}
 CombatController.CooldownsChanged = Signal.new()
@@ -329,6 +330,20 @@ local function performDash(): boolean
 		end)
 	end
 	VFX.SpeedLines(0.25)
+	-- Rastro de shunpo: faixa de luz do ponto de partida ao destino previsto
+	local startPos = root.Position
+	local endPos = startPos + direction * Combat.Dash.speed * Combat.Dash.duration
+	local streak = VFX.neon(
+		Vector3.new(0.15, 1.6, (endPos - startPos).Magnitude),
+		CFrame.lookAt((startPos + endPos) / 2, endPos),
+		color,
+		0.3
+	)
+	VFX.tween(streak, 0.35, { Size = Vector3.new(0.02, 0.1, (endPos - startPos).Magnitude), Transparency = 1 })
+	task.delay(0.4, function()
+		streak:Destroy()
+	end)
+	SpectacleFx.BlurPulse(6, 0.15)
 	VFX.Shockwave(root.Position - Vector3.new(0, 2.6, 0), color, 6, 0.3, 0.2)
 	CameraController.Kick(12)
 	SoundController.Play("Dash", root)

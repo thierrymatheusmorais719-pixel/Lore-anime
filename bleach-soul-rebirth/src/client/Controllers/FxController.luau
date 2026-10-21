@@ -15,6 +15,8 @@ local VFX = require(Controllers.VFXController)
 local SoundController = require(Controllers.SoundController)
 local CameraController = require(Controllers.CameraController)
 local CombatController = require(Controllers.CombatController)
+local SpectacleFx = require(Controllers.SpectacleFx)
+local BossCinematicController = require(Controllers.BossCinematicController)
 
 local FxController = {}
 FxController.LocalHit = Signal.new() -- (damage, result) golpe do jogador local acertou
@@ -26,6 +28,17 @@ FxController.Settings = nil :: (() -> any)?
 
 local player = Players.LocalPlayer
 local rng = Random.new()
+local lastCrater = 0
+
+-- Cratera com limite global (evita spam de peças em lutas grandes)
+local function crater(position: Vector3, radius: number, glow: Color3?)
+	local now = os.clock()
+	if now - lastCrater < 0.25 then
+		return
+	end
+	lastCrater = now
+	SpectacleFx.Crater(position, radius, glow)
+end
 
 local function isLocal(model: Instance?): boolean
 	return model ~= nil and model == player.Character
@@ -141,6 +154,13 @@ handlers.Hit = function(d)
 		if heavy then
 			VFX.Shockwave(position, color, 7, 0.3, 0.3)
 			VFX.emit("Wisp", position, color, 10)
+			SpectacleFx.HitLines(position, Color3.new(1, 1, 1), 10, 4)
+			if nearLocal(position, 80) then
+				-- Execuções e finalizadores marcam o chão
+				crater(position, if (d.hitstop or 0) >= 0.15 then 9 else 5)
+			end
+		elseif isLocal(attacker) or isLocal(target) then
+			SpectacleFx.HitLines(position, color:Lerp(Color3.new(1, 1, 1), 0.6), 6, 2.2)
 		end
 		SoundController.Play(if heavy then "HitHeavy" else "HitFlesh", position)
 		VFX.DamageNumber(
@@ -153,8 +173,10 @@ handlers.Hit = function(d)
 		CameraController.Shake((d.shake or 0.15) * 0.8)
 		if heavy then
 			CameraController.Kick(6)
+			SpectacleFx.ImpactFrame(if (d.hitstop or 0) >= 0.15 then 1.3 elseif d.counter then 1 else 0.6)
+			SpectacleFx.BlurPulse(10, 0.2)
 		end
-		FxController.LocalHit:Fire(d.damage, d.result)
+		FxController.LocalHit:Fire(d.damage, d.result, heavy)
 	elseif isLocal(target) then
 		CameraController.Shake((d.shake or 0.15) + 0.1)
 		FxController.LocalHurt:Fire(d.damage)
@@ -179,6 +201,8 @@ handlers.Parry = function(d)
 	SoundController.Play("Parry", position)
 	if isLocal(d.defender) then
 		CombatController.OnParrySuccess()
+		SpectacleFx.ImpactFrame(0.7)
+		SpectacleFx.HitLines(position, Color3.fromRGB(255, 230, 150), 12, 4)
 		VFX.ScreenFlash(Color3.new(1, 1, 1), 0.2, 0.35)
 		CameraController.Shake(0.3)
 		FxController.LocalParry:Fire()
@@ -263,6 +287,13 @@ handlers.Cast = function(d)
 	if d.ultimate then
 		if root and (isLocal(model) or nearLocal(root.Position, 60)) then
 			VFX.ScreenFlash(color, 0.4, 0.3)
+			SpectacleFx.DarkenWorld(color, d.windup + 1.2)
+			local def = require(ReplicatedStorage.Shared.Config.Abilities)[d.ability]
+			SpectacleFx.WorldKanji(root, def and def.kanji or "卍", color, d.windup + 0.8, 22)
+			SpectacleFx.Helix(root, color, d.windup, 5, 45)
+			task.delay(d.windup, function()
+				SpectacleFx.ImpactFrame(1.1)
+			end)
 		end
 		if isLocal(model) and root then
 			CameraController.PlayCinematic(root, {
@@ -315,6 +346,13 @@ handlers.Burst = function(d)
 	task.spawn(VFX.Burst, d, if d.follow then rootOf(d.actor) else nil)
 	task.delay(d.delay or 0, function()
 		SoundController.Play(if d.ultimate then "Ultimate" else "Boom", d.center)
+		if d.ultimate or (d.radius >= 12 and nearLocal(d.center, 120)) then
+			crater(
+				d.center + Vector3.new(0, 3, 0),
+				math.min(16, d.radius * 0.5),
+				if d.ultimate then VFX.Color(d.element) else nil
+			)
+		end
 		if nearLocal(d.center, d.radius * 2.5) then
 			CameraController.Shake(if d.ultimate then 0.7 else 0.25)
 		end
@@ -362,6 +400,7 @@ handlers.DashStrike = function(d)
 	end
 	if d.leap then
 		VFX.Shockwave(to - Vector3.new(0, 2.5, 0), color, 12, 0.4)
+		crater(to, 7)
 	end
 	SoundController.Play("Dash", from)
 end
@@ -464,6 +503,15 @@ handlers.TransformStart = function(d)
 		d.channel + 0.3
 	)
 	VFX.emit("Wisp", root.Position, color, 40)
+	if nearLocal(root.Position, 150) then
+		local tier2 = d.form == "Tier2"
+		SpectacleFx.Helix(root, color, d.channel, if tier2 then 5 else 3.5, if tier2 then 60 else 30)
+		SpectacleFx.WorldKanji(root, d.formKanji or "解", color, d.channel + 0.9, if tier2 then 28 else 16)
+		if tier2 then
+			SpectacleFx.DarkenWorld(color, d.channel + 0.6)
+			SpectacleFx.LiftRocks(root, 16, d.channel)
+		end
+	end
 	if isLocal(model) then
 		local getSettings = FxController.Settings
 		local settings = if getSettings then getSettings() else nil
@@ -486,6 +534,11 @@ handlers.TransformComplete = function(d)
 	VFX.Flash(root.Position, color, if d.form == "Tier2" then 26 else 14, 0.5)
 	VFX.Sparks(root.Position, color, 40)
 	SoundController.Play(if d.form == "Tier2" then "Ultimate" else "Boom", root)
+	SpectacleFx.Crater(root.Position, if d.form == "Tier2" then 14 else 8, color)
+	if nearLocal(root.Position, 90) then
+		SpectacleFx.ImpactFrame(if d.form == "Tier2" then 1.3 else 0.8)
+		SpectacleFx.BlurPulse(if d.form == "Tier2" then 20 else 12, 0.4)
+	end
 	if nearLocal(root.Position, 70) then
 		CameraController.Shake(if d.form == "Tier2" then 0.8 else 0.45)
 		VFX.ScreenFlash(color, 0.5, if isLocal(d.actor) then 0.55 else 0.25)
@@ -528,6 +581,8 @@ handlers.MaskOn = function(d)
 		SoundController.Play("Boom", root)
 		if isLocal(d.actor) then
 			VFX.ScreenFlash(red, 0.4, 0.4)
+			SpectacleFx.ImpactFrame(0.8)
+			SpectacleFx.HitLines(root.Position + Vector3.new(0, 2, 0), red, 12, 5)
 			CameraController.Shake(0.4)
 		end
 	end
@@ -548,7 +603,42 @@ handlers.Death = function(d)
 	AnimController.StopAll(model, 0, 0.1)
 	AnimController.Play(model, "Launched")
 	local color = if d.team == "Enemies" then Color3.fromRGB(40, 30, 50) else Color3.fromRGB(200, 220, 255)
-	task.delay(0.6, function()
+	local deathRoot = rootOf(model)
+	local isBoss = model:GetAttribute("Boss") == true
+	if isBoss and deathRoot and nearLocal(deathRoot.Position, 150) then
+		BossCinematicController.Defeat(model)
+	end
+	-- Absorção de reishi: partículas do inimigo voam até o jogador local
+	local myRoot = rootOf(player.Character)
+	if d.team == "Enemies" and deathRoot and myRoot and (myRoot.Position - deathRoot.Position).Magnitude < 60 then
+		local reishi = VFX.Color(VFX.ElementOf(player.Character))
+		local count = if isBoss then 24 elseif VFX.Quality() == "Low" then 3 else 8
+		for i = 1, count do
+			task.delay(0.5 + i * 0.03, function()
+				local start = deathRoot.Position
+					+ Vector3.new(rng:NextNumber(-2, 2), rng:NextNumber(-1, 3), rng:NextNumber(-2, 2))
+				local orb = VFX.neon(Vector3.one * 0.5, CFrame.new(start), reishi, 0, Enum.PartType.Ball)
+				local mid = start + Vector3.new(rng:NextNumber(-6, 6), rng:NextNumber(4, 9), rng:NextNumber(-6, 6))
+				VFX.tween(orb, 0.35, { CFrame = CFrame.new(mid) }, Enum.EasingStyle.Sine)
+				task.delay(0.35, function()
+					local target = rootOf(player.Character)
+					if target then
+						VFX.tween(
+							orb,
+							0.3,
+							{ CFrame = target.CFrame, Size = Vector3.one * 0.15 },
+							Enum.EasingStyle.Quad,
+							Enum.EasingDirection.In
+						)
+					end
+					task.delay(0.32, function()
+						orb:Destroy()
+					end)
+				end)
+			end)
+		end
+	end
+	task.delay(if isBoss then 1.8 else 0.6, function()
 		for _, part in model:GetDescendants() do
 			if part:IsA("BasePart") and part.Transparency < 1 then
 				VFX.tween(part, 1.2, { Transparency = 1 })

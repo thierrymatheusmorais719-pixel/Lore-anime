@@ -498,6 +498,26 @@ local function buildProjectile(shape: string, size: number, color: Color3, secon
 		light.Brightness = 2
 		light.Parent = first
 	end
+	-- Rastro de luz atrás do projétil
+	if first and quality ~= "Low" then
+		local a0 = Instance.new("Attachment")
+		a0.Position = Vector3.new(0, 0.9 * s, 0)
+		a0.Parent = first
+		local a1 = Instance.new("Attachment")
+		a1.Position = Vector3.new(0, -0.9 * s, 0)
+		a1.Parent = first
+		local trail = Instance.new("Trail")
+		trail.Attachment0 = a0
+		trail.Attachment1 = a1
+		trail.Color = ColorSequence.new(Color3.new(1, 1, 1), color)
+		trail.LightEmission = 1
+		trail.Lifetime = 0.25
+		trail.Transparency =
+			NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) })
+		trail.WidthScale = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0) })
+		trail.FaceCamera = true
+		trail.Parent = first
+	end
 	-- Guarda offsets relativos para mover como corpo rígido
 	for _, p in model:GetChildren() do
 		if p:IsA("BasePart") then

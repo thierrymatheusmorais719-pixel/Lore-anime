@@ -307,28 +307,43 @@ local function buildCombo()
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -40, 0.42, 0),
-		Size = UDim2.fromOffset(220, 120),
+		Size = UDim2.fromOffset(260, 190),
 		Parent = gui,
 	})
-	refs.comboCount = Kit.label("", 84, {
-		Size = UDim2.new(1, 0, 0, 84),
+	-- Letra de estilo (D → SSS)
+	refs.rank = Kit.label("", 110, {
+		Size = UDim2.new(1, 0, 0, 110),
 		TextXAlignment = Enum.TextXAlignment.Right,
 		Font = T.FontAnime,
 		TextColor3 = T.Gold,
 		TextStrokeTransparency = 0,
 		TextTransparency = 1,
-		TextStrokeColor3 = Color3.fromRGB(40, 10, 0),
+		TextStrokeColor3 = Color3.fromRGB(20, 5, 0),
+		Rotation = -6,
 		Parent = holder,
 	})
-	refs.comboText = Kit.label("HITS", 26, {
-		Position = UDim2.fromOffset(0, 80),
-		Size = UDim2.new(1, 0, 0, 28),
+	refs.rankWord = Kit.label("", 22, {
+		Position = UDim2.fromOffset(0, 104),
+		Size = UDim2.new(1, 0, 0, 24),
 		TextXAlignment = Enum.TextXAlignment.Right,
 		Font = T.FontAnime,
 		TextTransparency = 1,
 		TextStrokeTransparency = 0.2,
 		Parent = holder,
 	})
+	refs.comboCount = Kit.label("", 30, {
+		Position = UDim2.fromOffset(0, 128),
+		Size = UDim2.new(1, 0, 0, 32),
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Font = T.FontAnime,
+		TextColor3 = T.Text,
+		TextStrokeTransparency = 0,
+		TextTransparency = 1,
+		Parent = holder,
+	})
+	refs.rankGauge =
+		Kit.bar({ Position = UDim2.new(0, 60, 0, 166), Size = UDim2.new(1, -60, 0, 6), Parent = holder }, T.Gold, 6)
+	refs.rankGauge.frame.Visible = false
 	refs.comboScale = Kit.new("UIScale", { Parent = holder })
 end
 
@@ -522,24 +537,81 @@ end
 -- ============================================================
 -- Atualizações
 -- ============================================================
-local combo = { count = 0, last = 0 }
+local combo = { count = 0, last = 0, style = 0, rank = "" }
 
-local function onLocalHit()
+-- Ranks de estilo: pontos sobem com acertos (pesados/contra valem mais) e caem ao apanhar.
+local RANKS = {
+	{ letter = "SSS", word = "SOUL REBIRTH!!", min = 90, color = Color3.fromRGB(255, 80, 80) },
+	{ letter = "SS", word = "SENSACIONAL!", min = 60, color = Color3.fromRGB(255, 120, 60) },
+	{ letter = "S", word = "SUPREMO!", min = 40, color = Color3.fromRGB(255, 200, 60) },
+	{ letter = "A", word = "ARRASADOR", min = 25, color = Color3.fromRGB(190, 120, 255) },
+	{ letter = "B", word = "BRUTAL", min = 14, color = Color3.fromRGB(110, 180, 255) },
+	{ letter = "C", word = "COMBO", min = 6, color = Color3.fromRGB(120, 230, 170) },
+	{ letter = "D", word = "DECENTE", min = 1, color = Color3.fromRGB(200, 200, 210) },
+}
+local RANK_DECAY = 2.6
+
+local function rankFor(points: number)
+	for i, r in RANKS do
+		if points >= r.min then
+			return r, RANKS[i - 1]
+		end
+	end
+	return nil, RANKS[#RANKS]
+end
+
+local function refreshRank(pop: boolean)
+	local r, nextRank = rankFor(combo.style)
+	if not r then
+		return
+	end
+	refs.rank.Text = r.letter
+	refs.rank.TextColor3 = r.color
+	refs.rankWord.Text = r.word
+	refs.rankWord.TextColor3 = r.color
+	refs.comboCount.Text = combo.count .. " HITS"
+	for _, label in { refs.rank, refs.rankWord, refs.comboCount } do
+		label.TextTransparency = 0
+	end
+	refs.rankGauge.frame.Visible = true
+	local floor = r.min
+	local ceiling = if nextRank and nextRank ~= r then nextRank.min else r.min + 30
+	refs.rankGauge.color(r.color)
+	refs.rankGauge.set(combo.style - floor, math.max(1, ceiling - floor), "")
+	if r.letter ~= combo.rank then
+		combo.rank = r.letter
+		refs.comboScale.Scale = 1.6
+		Kit.tween(refs.comboScale, 0.3, { Scale = 1 }, Enum.EasingStyle.Back)
+		if #r.letter >= 1 and r.min >= 40 then
+			SoundController.Play("LevelUp")
+		end
+	elseif pop then
+		refs.comboScale.Scale = 1.12
+		Kit.tween(refs.comboScale, 0.12, { Scale = 1 }, Enum.EasingStyle.Back)
+	end
+end
+
+local function onLocalHit(_damage: number?, result: string?, heavy: boolean?)
 	local now = os.clock()
-	if now - combo.last > 2 then
+	if now - combo.last > RANK_DECAY then
 		combo.count = 0
+		combo.style = 0
+		combo.rank = ""
 	end
 	combo.count += 1
 	combo.last = now
-	refs.comboCount.Text = tostring(combo.count)
-	refs.comboText.Text = if combo.count >= 20
-		then "HITS · BRUTAL!"
-		elseif combo.count >= 10 then "HITS · INCRÍVEL!"
-		else "HITS"
-	refs.comboCount.TextTransparency = 0
-	refs.comboText.TextTransparency = 0
-	refs.comboScale.Scale = 1.35
-	Kit.tween(refs.comboScale, 0.18, { Scale = 1 }, Enum.EasingStyle.Back)
+	combo.style += if heavy then 3 elseif result == "Blocked" then 0.5 else 1
+	refreshRank(true)
+end
+
+local function onLocalHurt()
+	if combo.style > 0 then
+		combo.style = math.floor(combo.style * 0.5)
+		if combo.style < 1 then
+			combo.count = 0
+		end
+		refreshRank(false)
+	end
 end
 
 function HUDController.RefreshSlots()
@@ -776,6 +848,14 @@ end
 function HUDController.Start()
 	DataController.Changed:Connect(onProfile)
 	FxController.LocalHit:Connect(onLocalHit)
+	FxController.LocalHurt:Connect(onLocalHurt)
+	FxController.LocalParry:Connect(function()
+		combo.style += 4
+		combo.last = os.clock()
+		if combo.count > 0 then
+			refreshRank(true)
+		end
+	end)
 	FxController.ReleaseTitle:Connect(showReleaseTitle)
 	FxController.BossPhase:Connect(function(d)
 		showBanner(d.title or "Nova fase!")
@@ -874,10 +954,14 @@ function HUDController.Start()
 			end
 		end
 		-- Combo some após 2s sem acertos
-		if combo.count > 0 and os.clock() - combo.last > 2 then
+		if combo.count > 0 and os.clock() - combo.last > RANK_DECAY then
 			combo.count = 0
-			Kit.tween(refs.comboCount, 0.3, { TextTransparency = 1 })
-			Kit.tween(refs.comboText, 0.3, { TextTransparency = 1 })
+			combo.style = 0
+			combo.rank = ""
+			for _, label in { refs.rank, refs.rankWord, refs.comboCount } do
+				Kit.tween(label, 0.3, { TextTransparency = 1 })
+			end
+			refs.rankGauge.frame.Visible = false
 		end
 		-- Chefe próximo
 		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
