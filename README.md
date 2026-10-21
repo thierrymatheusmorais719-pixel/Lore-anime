@@ -92,3 +92,10 @@ vendor/three/           Three.js r160 (MIT) + addons usados
 | ![Após o golpe: círculo rúnico e destroços](docs/apos-golpe.png) | ![Plano final](docs/final.png) |
 
 *(Capturas geradas por renderização de software em um teste automatizado; numa GPU real a imagem é mais nítida e roda em tempo real.)*
+
+---
+
+## SOLEVA — loja de sneakers
+
+Este repositório também contém **SOLEVA**, um e-commerce de tênis em React + TypeScript.
+Veja [`soleva/README.md`](soleva/README.md).
