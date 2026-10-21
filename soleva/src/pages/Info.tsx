@@ -74,7 +74,7 @@ const PAGES: Record<string, { title: string; body: React.ReactNode }> = {
   },
   termos: {
     title: 'Termos de uso',
-    body: <p>SOLEVA é um projeto de demonstração. Marcas, produtos, preços, avaliações e estoques são fictícios. Nenhuma compra realizada aqui gera cobrança ou envio.</p>,
+    body: <p>SOLEVA é um projeto de demonstração. Preços, avaliações e estoques são ilustrativos, e as marcas citadas pertencem aos seus donos. Nenhuma compra realizada aqui gera cobrança ou envio.</p>,
   },
 };
 

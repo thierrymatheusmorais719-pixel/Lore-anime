@@ -8,7 +8,7 @@ import { useShop } from '../store/ShopProvider';
 import { Icon } from './Icon';
 import { ProductMedia } from './ui';
 
-const POPULAR_TERMS = ['Aero 01', 'Apex High', 'Court 74', 'Polar X', 'Vulc Pro', 'Edição limitada'];
+const POPULAR_TERMS = ['Air Force 1', 'Jordan 4', 'Dunk Low', 'Jordan 1', 'Campus 00s', 'Edição limitada'];
 
 export function SearchOverlay() {
   const { searchOpen, setSearchOpen, history, pushHistory, clearHistory } = useShop();

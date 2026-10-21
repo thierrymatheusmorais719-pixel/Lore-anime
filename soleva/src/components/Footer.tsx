@@ -50,7 +50,7 @@ export function Footer() {
         </div>
         <div className="footer-word" aria-hidden="true">SOLEVA</div>
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} SOLEVA. Projeto de demonstração — marcas e produtos fictícios.</span>
+          <span>© {new Date().getFullYear()} SOLEVA. Projeto de demonstração. Marcas citadas pertencem aos seus donos.</span>
           <div>
             <Link to="/ajuda/privacidade">Privacidade</Link>
             <Link to="/ajuda/termos">Termos de uso</Link>

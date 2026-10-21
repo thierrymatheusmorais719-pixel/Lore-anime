@@ -3,3 +3,5 @@ dist
 .env
 .env.local
 *.tsbuildinfo
+# Fotos dos produtos ficam fora do Git enquanto o repositório for público.
+src/assets/produtos/*/

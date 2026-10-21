@@ -90,7 +90,7 @@ export function Shop({ preset }: { preset?: 'raros' }) {
   const subtitle =
     preset === 'raros'
       ? 'Edições numeradas, reedições de arquivo e colaborações. Todos com certificado de autenticidade.'
-      : collection?.description ?? category?.blurb ?? 'Lançamentos, clássicos e raridades de sete marcas, com curadoria SOLEVA.';
+      : collection?.description ?? category?.blurb ?? 'Nike, Jordan e adidas: lançamentos, clássicos e raridades com curadoria SOLEVA.';
   useDocumentTitle(filters.q ? `Busca: ${filters.q}` : title);
 
   // Carregamento progressivo ao chegar perto do fim da lista.

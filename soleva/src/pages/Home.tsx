@@ -5,31 +5,31 @@ import { Icon } from '../components/Icon';
 import { ProductCard } from '../components/ProductCard';
 import { Countdown, ProductMedia, Reveal, SectionHeader } from '../components/ui';
 import { useDocumentTitle } from '../hooks';
-import { formatDate, formatPrice } from '../lib/format';
+import { formatDate, formatPrice, plural } from '../lib/format';
 import { isNew, isUpcoming, releaseTimestamp, totalStock } from '../lib/product';
 import { isValidEmail } from '../lib/validation';
 import { subscribe } from '../services/newsletter';
 import type { Product } from '../types';
 
-const HERO_SLUGS = ['soleva-aero-01-phantom', 'orbit-apex-high-royal', 'northline-polar-x-limited'];
+const HERO_SLUGS = ['nike-air-force-1-07-triple-black', 'jordan-4-retro-black-cat', 'nike-dunk-low-panda'];
 const HERO_COPY: Record<string, { kicker: string; line1: string; line2: string; specs: [string, string][] }> = {
-  'soleva-aero-01-phantom': {
-    kicker: 'Drop 001 · Disponível agora',
-    line1: 'Aero 01',
-    line2: 'Phantom',
-    specs: [['Peso', '286 g'], ['Drop', '8 mm'], ['Espuma', 'SVX supercrítica']],
+  'nike-air-force-1-07-triple-black': {
+    kicker: 'O mais vendido da casa',
+    line1: 'Air Force 1',
+    line2: 'Triple Black',
+    specs: [['Cabedal', 'Couro liso'], ['Amortecimento', 'Nike Air'], ['Desde', '1982']],
   },
-  'orbit-apex-high-royal': {
-    kicker: 'Arquivo 01 · Reedição',
-    line1: 'Apex High',
-    line2: 'Royal',
-    specs: [['Cano', 'Alto'], ['Couro', 'Semi-brilho'], ['Ano', '1985']],
+  'jordan-4-retro-black-cat': {
+    kicker: 'Edição limitada · 250 pares',
+    line1: 'Jordan 4',
+    line2: 'Black Cat',
+    specs: [['Cabedal', 'Nubuck'], ['Air', 'Visível'], ['Pares', '250']],
   },
-  'northline-polar-x-limited': {
-    kicker: 'Edição numerada · 600 pares',
-    line1: 'Polar X',
-    line2: 'Aurora',
-    specs: [['Placa', 'Carbono'], ['Peso', '198 g'], ['Espuma', 'PEBA']],
+  'nike-dunk-low-panda': {
+    kicker: 'Lançamento · Disponível agora',
+    line1: 'Dunk Low',
+    line2: 'Panda',
+    specs: [['Cabedal', 'Couro'], ['Perfil', 'Baixo'], ['Desde', '1985']],
   },
 };
 
@@ -215,7 +215,7 @@ function Categories() {
             <Reveal key={t.id} delay={idx * 0.06} className={`cat-tile cat-${idx}`}>
               <Link to={`/loja/${t.id}`} className={idx === 0 ? 'dark' : ''}>
                 <div className="cat-text">
-                  <span className="mono">{String(idx + 1).padStart(2, '0')} — {t.count} modelos</span>
+                  <span className="mono">{String(idx + 1).padStart(2, '0')} — {plural(t.count, 'modelo', 'modelos')}</span>
                   <h3 className="display">{t.name}</h3>
                   <p>{t.blurb}</p>
                 </div>
@@ -320,7 +320,7 @@ function Collections() {
                   ))}
                 </div>
                 <div className="collection-copy">
-                  <span className="mono">{c.kicker} · {c.items.length} pares</span>
+                  <span className="mono">{c.kicker} · {plural(c.items.length, 'par', 'pares')}</span>
                   <h3 className="display">{c.name}</h3>
                   <p>{c.description}</p>
                   <span className="link">
@@ -364,7 +364,7 @@ export function RareCard({ product }: { product: Product }) {
         ) : left === 0 ? (
           <span className="mono">Esgotado</span>
         ) : (
-          <span className="mono accent">Restam {left} pares</span>
+          <span className="mono accent">{left === 1 ? 'Resta 1 par' : `Restam ${left} pares`}</span>
         )}
       </div>
       {!upcoming && (
@@ -406,7 +406,7 @@ function Rares() {
 /* ---------------- Promo ---------------- */
 
 function PromoBanner() {
-  const p = getProductBySlug('halden-trail-92-moss')!;
+  const p = getProductBySlug('nike-air-force-1-07-white-black')!;
   return (
     <section className="section section-tight">
       <div className="container">
@@ -419,7 +419,7 @@ function PromoBanner() {
               em seleção
             </h2>
             <p>
-              Clássicos de arquivo e runners com preço reduzido. E mais <strong>R$ 150 off</strong> acima de R$ 1.200 com
+              Air Force 1 e Runfalcon com preço reduzido. E mais <strong>R$ 150 off</strong> acima de R$ 1.200 com
               o cupom <code>SOLEVA150</code>.
             </p>
             <Link to="/loja?filtro=promocao" className="btn btn-primary">
@@ -479,7 +479,7 @@ function Brands() {
                   <strong className={`brand-word brand-${b.id}`}>{b.name}</strong>
                   <p>{b.tagline}</p>
                   <span className="mono brand-count">
-                    {count} modelos <Icon name="arrowRight" size={14} />
+                    {plural(count, 'modelo', 'modelos')} <Icon name="arrowRight" size={14} />
                   </span>
                 </Link>
               </Reveal>

@@ -13,10 +13,10 @@ const inStock = (p = PRODUCTS.find((x) => !x.limited)!) => {
 
 describe('filtros', () => {
   it('filtra por marca, categoria e faixa de preço', () => {
-    const f = { ...emptyFilters(), brands: ['orbit'], priceMax: 1200 };
+    const f = { ...emptyFilters(), brands: ['nike'], priceMax: 900 };
     const out = applyFilters(PRODUCTS, f);
     expect(out.length).toBeGreaterThan(0);
-    expect(out.every((p) => p.brandId === 'orbit' && p.price <= 1200)).toBe(true);
+    expect(out.every((p) => p.brandId === 'nike' && p.price <= 900)).toBe(true);
   });
 
   it('filtra por tamanho disponível em estoque', () => {
@@ -32,19 +32,19 @@ describe('filtros', () => {
   });
 
   it('serializa e lê os filtros da URL sem perdas', () => {
-    const f = { ...emptyFilters(), q: 'aero', brands: ['soleva', 'kuro'], colors: ['preto' as const], priceMin: 500, sort: 'novidades' as const };
+    const f = { ...emptyFilters(), q: 'jordan', brands: ['nike', 'adidas'], colors: ['preto' as const], priceMin: 500, sort: 'novidades' as const };
     expect(parseFilters(serializeFilters(f))).toEqual(f);
   });
 });
 
 describe('busca', () => {
   it('encontra por marca e modelo, ignorando acentos', () => {
-    expect(searchProducts(PRODUCTS, 'kuro').every((p) => p.brandId === 'kuro')).toBe(true);
-    expect(searchProducts(PRODUCTS, 'atlantico').length).toBeGreaterThan(0);
+    expect(searchProducts(PRODUCTS, 'adidas').every((p) => p.brandId === 'adidas')).toBe(true);
+    expect(searchProducts(PRODUCTS, 'campus').length).toBeGreaterThan(0);
     expect(searchProducts(PRODUCTS, 'zzzz')).toHaveLength(0);
   });
   it('sugere marcas', () => {
-    expect(suggest(PRODUCTS, 'orb')[0]).toMatchObject({ kind: 'brand', label: 'Orbit Athletic' });
+    expect(suggest(PRODUCTS, 'jord')[0]).toMatchObject({ kind: 'brand', label: 'Jordan' });
   });
 });
 
@@ -83,7 +83,7 @@ describe('carrinho', () => {
 });
 
 describe('totais e cupons', () => {
-  const { p, size } = inStock(PRODUCTS.find((x) => x.slug === 'mesa-vulc-pro-noite'));
+  const { p, size } = inStock(PRODUCTS.find((x) => x.slug === 'adidas-runfalcon-3-black-white'));
   const items = [{ productId: p.id, size, quantity: 1 }];
 
   it('cobra frete abaixo do mínimo e aplica cupom percentual', () => {

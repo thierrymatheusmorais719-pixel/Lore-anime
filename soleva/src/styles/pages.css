@@ -699,42 +699,21 @@
   line-height: 1.05;
   letter-spacing: -0.01em;
 }
-.brand-soleva {
+.brand-nike {
   font-stretch: 125%;
   font-weight: 900;
-}
-.brand-kuro {
-  font-weight: 300;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-size: 1.25rem;
-}
-.brand-vantra {
-  font-family: Georgia, 'Times New Roman', serif;
   font-style: italic;
-  font-weight: 400;
+  text-transform: uppercase;
 }
-.brand-halden {
+.brand-jordan {
   font-stretch: 75%;
   font-weight: 800;
   text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
-.brand-northline {
-  font-weight: 650;
-  font-stretch: 110%;
-  letter-spacing: 0.02em;
-}
-.brand-orbit {
-  font-stretch: 125%;
+.brand-adidas {
   font-weight: 800;
-  font-style: italic;
-  text-transform: uppercase;
-}
-.brand-mesa {
-  font-stretch: 62%;
-  font-weight: 900;
-  text-transform: uppercase;
-  font-size: 1.7rem;
+  letter-spacing: -0.02em;
 }
 .brand-card p {
   margin: 0;
@@ -2295,9 +2274,138 @@
   }
 }
 
+
+
+/* ---------- Fotos nas seções da home ---------- */
+
+.hero-title {
+  font-size: clamp(2.4rem, 4.6vw, 4.8rem);
+}
 .hero-shoe.has-photo {
-  width: 92%;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   animation: heroIn 1.2s var(--ease) both;
   filter: none;
+}
+.hero-shoe.has-photo img.photo {
+  aspect-ratio: 1 / 0.86;
+  border-radius: 20px;
+}
+.cat-art:has(img.photo) {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 58%;
+  transform: none;
+  overflow: hidden;
+}
+.cat-0 .cat-art:has(img.photo) {
+  width: 100%;
+  right: 0;
+  bottom: 0;
+  height: 68%;
+}
+.cat-tile > a:hover .cat-art:has(img.photo) {
+  transform: none;
+}
+.cat-art img.photo {
+  transition: transform 0.9s var(--ease);
+}
+.cat-tile > a:hover .cat-art img.photo {
+  transform: scale(1.05);
+}
+.drop-art:has(img.photo) {
+  padding: 0;
+  overflow: hidden;
+}
+.drop-art > img.photo {
+  transform: none;
+  filter: none;
+  position: absolute;
+  inset: 0;
+}
+.drop-art:has(img.photo) .drop-tag {
+  z-index: 1;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.85);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.promo-art:has(img.photo) {
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  min-height: 320px;
+}
+.promo-art > img.photo {
+  position: absolute;
+  inset: 0;
+  transform: none;
+  filter: none;
+}
+.rare-art:has(img.photo) {
+  margin: 12px 0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.rare-art > img.photo,
+.rare:hover .rare-art > img.photo {
+  transform: none;
+}
+.rare:hover .rare-art > img.photo {
+  transform: scale(1.05);
+}
+.collections:has(img.photo) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.collections:has(img.photo) .collection-0 {
+  grid-row: auto;
+}
+.collection-art:has(img.photo) {
+  flex: none;
+  min-height: 0;
+  aspect-ratio: 1 / 0.82;
+  overflow: hidden;
+}
+.collection .collection-art:has(img.photo) .collection-shoe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  transform: none;
+  opacity: 1;
+}
+.collection-art:has(img.photo) .collection-shoe:not(:first-child) {
+  display: none;
+}
+.collection > a:hover .collection-art:has(img.photo) .collection-shoe {
+  transform: none;
+}
+.collection-art .collection-shoe img.photo {
+  transition: transform 0.9s var(--ease);
+}
+.collection > a:hover .collection-shoe img.photo {
+  transform: scale(1.05);
+}
+@media (max-width: 900px) {
+  .collections:has(img.photo) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.gallery-stage:has(img.photo) {
+  width: 100%;
+  height: 100%;
+}
+.gallery-slide:has(img.photo) {
+  padding: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .cat-0 .cat-art:has(img.photo) {
+    height: 52%;
+  }
+  .cat-tile:not(.cat-0) .cat-art:has(img.photo) {
+    height: 50%;
+  }
 }
