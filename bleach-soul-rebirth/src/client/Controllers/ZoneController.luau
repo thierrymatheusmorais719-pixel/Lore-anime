@@ -83,42 +83,31 @@ function ZoneController.Init()
 		"ScreenGui",
 		{ Name = "ZoneTitle", ResetOnSpawn = false, DisplayOrder = 8, Parent = player:WaitForChild("PlayerGui") }
 	)
-	local holder = Kit.new(
-		"Frame",
-		{
-			Name = "Title",
-			BackgroundTransparency = 1,
-			AnchorPoint = Vector2.new(0.5, 0),
-			Position = UDim2.fromScale(0.5, 0.16),
-			Size = UDim2.fromOffset(700, 120),
-			Parent = titleGui,
-		}
-	)
-	Kit.label(
-		"",
-		64,
-		{
-			Name = "Kanji",
-			Size = UDim2.new(1, 0, 0, 70),
-			TextXAlignment = Enum.TextXAlignment.Center,
-			Font = Kit.Theme.FontTitle,
-			TextTransparency = 1,
-			Parent = holder,
-		}
-	)
-	Kit.label(
-		"",
-		26,
-		{
-			Name = "Name",
-			Position = UDim2.fromOffset(0, 72),
-			Size = UDim2.new(1, 0, 0, 30),
-			TextXAlignment = Enum.TextXAlignment.Center,
-			Font = Kit.Theme.FontBold,
-			TextTransparency = 1,
-			Parent = holder,
-		}
-	)
+	local holder = Kit.new("Frame", {
+		Name = "Title",
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.fromScale(0.5, 0.16),
+		Size = UDim2.fromOffset(700, 120),
+		Parent = titleGui,
+	})
+	Kit.label("", 64, {
+		Name = "Kanji",
+		Size = UDim2.new(1, 0, 0, 70),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Font = Kit.Theme.FontTitle,
+		TextTransparency = 1,
+		Parent = holder,
+	})
+	Kit.label("", 26, {
+		Name = "Name",
+		Position = UDim2.fromOffset(0, 72),
+		Size = UDim2.new(1, 0, 0, 30),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Font = Kit.Theme.FontBold,
+		TextTransparency = 1,
+		Parent = holder,
+	})
 	Kit.autoScale(titleGui)
 	ZoneController.Apply("Karakura", true)
 end

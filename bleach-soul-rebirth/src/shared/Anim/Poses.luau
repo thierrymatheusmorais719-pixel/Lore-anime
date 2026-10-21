@@ -165,38 +165,28 @@ Poses.Block = {
 	keyframes = {
 		{
 			t = 0,
-			pose = pose(
-				merge(
-					STANCE_LEGS,
-					{
-						RS = J(85, 35, 15),
-						RE = J(70),
-						RW = J(-20),
-						LS = J(80, -35, -10),
-						LE = J(85),
-						Waist = J(-6, -10),
-						Neck = J(-8),
-					}
-				)
-			),
+			pose = pose(merge(STANCE_LEGS, {
+				RS = J(85, 35, 15),
+				RE = J(70),
+				RW = J(-20),
+				LS = J(80, -35, -10),
+				LE = J(85),
+				Waist = J(-6, -10),
+				Neck = J(-8),
+			})),
 			ease = "out",
 		},
 		{
 			t = 1,
-			pose = pose(
-				merge(
-					STANCE_LEGS,
-					{
-						RS = J(85, 35, 15),
-						RE = J(70),
-						RW = J(-20),
-						LS = J(80, -35, -10),
-						LE = J(85),
-						Waist = J(-6, -10),
-						Neck = J(-8),
-					}
-				)
-			),
+			pose = pose(merge(STANCE_LEGS, {
+				RS = J(85, 35, 15),
+				RE = J(70),
+				RW = J(-20),
+				LS = J(80, -35, -10),
+				LE = J(85),
+				Waist = J(-6, -10),
+				Neck = J(-8),
+			})),
 			ease = "linear",
 		},
 	},
@@ -611,36 +601,26 @@ do
 			{ t = w * 0.85, pose = kamae, ease = "linear" },
 			{
 				t = w,
-				pose = pose(
-					merge(
-						LUNGE_LEGS,
-						{
-							RS = J(70, -120, 20),
-							RE = J(0),
-							RW = J(-90),
-							LS = J(-30, 0, -40),
-							Waist = J(-20, -40),
-							Neck = J(0, 20),
-							Root = JP(0, -1, -1.2, -15),
-						}
-					)
-				),
+				pose = pose(merge(LUNGE_LEGS, {
+					RS = J(70, -120, 20),
+					RE = J(0),
+					RW = J(-90),
+					LS = J(-30, 0, -40),
+					Waist = J(-20, -40),
+					Neck = J(0, 20),
+					Root = JP(0, -1, -1.2, -15),
+				})),
 				ease = "expo",
 			},
 			{
 				t = w + 0.35,
-				pose = pose(
-					merge(
-						LUNGE_LEGS,
-						{
-							RS = J(70, -125, 20),
-							RW = J(-90),
-							LS = J(-30, 0, -40),
-							Waist = J(-20, -40),
-							Root = JP(0, -1, -1.2, -15),
-						}
-					)
-				),
+				pose = pose(merge(LUNGE_LEGS, {
+					RS = J(70, -125, 20),
+					RW = J(-90),
+					LS = J(-30, 0, -40),
+					Waist = J(-20, -40),
+					Root = JP(0, -1, -1.2, -15),
+				})),
 				ease = "linear",
 			},
 			{
@@ -668,78 +648,60 @@ local function reaction(duration: number, hit: { [string]: CFrame }, priority: n
 	}
 end
 
-Poses.Hit1 = reaction(
-	0.45,
-	{
-		Waist = J(18, 10),
-		Neck = J(20),
-		RS = J(20, 0, 25),
-		LS = J(20, 0, -25),
-		RE = J(30),
-		LE = J(30),
-		Root = JP(0, 0, 0.3),
-	}
-)
+Poses.Hit1 = reaction(0.45, {
+	Waist = J(18, 10),
+	Neck = J(20),
+	RS = J(20, 0, 25),
+	LS = J(20, 0, -25),
+	RE = J(30),
+	LE = J(30),
+	Root = JP(0, 0, 0.3),
+})
 Poses.Hit2 = reaction(
 	0.45,
 	{ Waist = J(12, -22, 8), Neck = J(10, -20), RS = J(-10, 0, 35), LS = J(30, 0, -15), Root = JP(0, 0, 0.3) }
 )
-Poses.Stagger = reaction(
-	0.8,
-	{
-		Waist = J(30),
-		Neck = J(25),
-		RS = J(40, 0, 60),
-		LS = J(40, 0, -60),
-		RE = J(30),
-		LE = J(30),
-		RH = J(-20),
-		LH = J(30),
-		LK = J(-30),
-		Root = JP(0, -0.3, 0.6, 10),
-	}
-)
-Poses.Launched = reaction(
-	1.1,
-	{
-		Waist = J(35),
-		Neck = J(30),
-		RS = J(60, 0, 70),
-		LS = J(60, 0, -70),
-		RH = J(40),
-		RK = J(-70),
-		LH = J(20),
-		LK = J(-50),
-		Root = JP(0, 0, 0, 25),
-	},
-	3
-)
-Poses.GuardBreak = reaction(
-	1.0,
-	{
-		Waist = J(25),
-		Neck = J(25),
-		RS = J(160, -20, 30),
-		LS = J(150, 20, -30),
-		RE = J(20),
-		LE = J(20),
-		Root = JP(0, -0.2, 0.5),
-	},
-	4
-)
-Poses.Parried = reaction(
-	0.85,
-	{
-		Waist = J(20, 20),
-		Neck = J(15),
-		RS = J(165, -40, 30),
-		RE = J(10),
-		RW = J(-60),
-		LS = J(20, 0, -40),
-		Root = JP(0, 0, 0.5),
-	},
-	4
-)
+Poses.Stagger = reaction(0.8, {
+	Waist = J(30),
+	Neck = J(25),
+	RS = J(40, 0, 60),
+	LS = J(40, 0, -60),
+	RE = J(30),
+	LE = J(30),
+	RH = J(-20),
+	LH = J(30),
+	LK = J(-30),
+	Root = JP(0, -0.3, 0.6, 10),
+})
+Poses.Launched = reaction(1.1, {
+	Waist = J(35),
+	Neck = J(30),
+	RS = J(60, 0, 70),
+	LS = J(60, 0, -70),
+	RH = J(40),
+	RK = J(-70),
+	LH = J(20),
+	LK = J(-50),
+	Root = JP(0, 0, 0, 25),
+}, 3)
+Poses.GuardBreak = reaction(1.0, {
+	Waist = J(25),
+	Neck = J(25),
+	RS = J(160, -20, 30),
+	LS = J(150, 20, -30),
+	RE = J(20),
+	LE = J(20),
+	Root = JP(0, -0.2, 0.5),
+}, 4)
+Poses.Parried = reaction(0.85, {
+	Waist = J(20, 20),
+	Neck = J(15),
+	RS = J(165, -40, 30),
+	RE = J(10),
+	RW = J(-60),
+	LS = J(20, 0, -40),
+	Root = JP(0, 0, 0.5),
+}, 4)
 Poses.ParrySuccess = {
 	duration = 0.4,
 	priority = 4,
@@ -792,18 +754,15 @@ Poses.CastOverhead = cast(
 )
 Poses.CastBurst = cast(
 	0.3,
-	merge(
-		STANCE_LEGS,
-		{
-			RS = J(70, 50, 0),
-			LS = J(70, -50, 0),
-			RE = J(80),
-			LE = J(80),
-			Waist = J(-15),
-			Neck = J(-20),
-			Root = JP(0, -0.6, 0),
-		}
-	),
+	merge(STANCE_LEGS, {
+		RS = J(70, 50, 0),
+		LS = J(70, -50, 0),
+		RE = J(80),
+		LE = J(80),
+		Waist = J(-15),
+		Neck = J(-20),
+		Root = JP(0, -0.6, 0),
+	}),
 	{ RS = J(10, 0, 110), LS = J(10, 0, -110), RE = J(5), LE = J(5), Waist = J(15), Neck = J(25), Root = JP(0, 0.1, 0) }
 )
 Poses.CastCharge = cast(
@@ -826,17 +785,14 @@ Poses.CastBow = cast(
 Poses.DashStrikePose = cast(
 	0.1,
 	{ Waist = J(-30), RS = J(-30, 0, 15), RW = J(-80), RH = J(40), RK = J(-60) },
-	merge(
-		LUNGE_LEGS,
-		{
-			RS = J(60, -110, 15),
-			RE = J(0),
-			RW = J(-90),
-			LS = J(-30, 0, -35),
-			Waist = J(-20, -35),
-			Root = JP(0, -0.9, -0.4, -10),
-		}
-	),
+	merge(LUNGE_LEGS, {
+		RS = J(60, -110, 15),
+		RE = J(0),
+		RW = J(-90),
+		LS = J(-30, 0, -35),
+		Waist = J(-20, -35),
+		Root = JP(0, -0.9, -0.4, -10),
+	}),
 	0.3
 )
 Poses.UltimateRaise = cast(
@@ -858,55 +814,40 @@ Poses.ReleaseTier1 = {
 	keyframes = {
 		{
 			t = 0,
-			pose = pose(
-				merge(
-					STANCE_LEGS,
-					{
-						RS = J(80, 25, 0),
-						RE = J(35),
-						RW = J(0),
-						LS = J(85, -15, 0),
-						LE = J(75),
-						Waist = J(0, -10),
-						Neck = J(-10),
-					}
-				)
-			),
+			pose = pose(merge(STANCE_LEGS, {
+				RS = J(80, 25, 0),
+				RE = J(35),
+				RW = J(0),
+				LS = J(85, -15, 0),
+				LE = J(75),
+				Waist = J(0, -10),
+				Neck = J(-10),
+			})),
 			ease = "out",
 		},
 		{
 			t = 0.7,
-			pose = pose(
-				merge(
-					STANCE_LEGS,
-					{
-						RS = J(85, 25, 0),
-						RE = J(30),
-						RW = J(0),
-						LS = J(90, -10, 0),
-						LE = J(70),
-						Waist = J(0, -10),
-						Neck = J(-15),
-					}
-				)
-			),
+			pose = pose(merge(STANCE_LEGS, {
+				RS = J(85, 25, 0),
+				RE = J(30),
+				RW = J(0),
+				LS = J(90, -10, 0),
+				LE = J(70),
+				Waist = J(0, -10),
+				Neck = J(-15),
+			})),
 			ease = "linear",
 		},
 		{
 			t = 0.9,
-			pose = pose(
-				merge(
-					LUNGE_LEGS,
-					{
-						RS = J(75, -90, 10),
-						RE = J(0),
-						RW = J(-85),
-						LS = J(10, 0, -45),
-						Waist = J(-10, -40),
-						Neck = J(0, 20),
-					}
-				)
-			),
+			pose = pose(merge(LUNGE_LEGS, {
+				RS = J(75, -90, 10),
+				RE = J(0),
+				RW = J(-85),
+				LS = J(10, 0, -45),
+				Waist = J(-10, -40),
+				Neck = J(0, 20),
+			})),
 			ease = "expo",
 		},
 		{ t = 1.3, pose = pose(merge(STANCE_LEGS, { RS = J(30, 18, 12), RE = J(25) })), ease = "inout" },

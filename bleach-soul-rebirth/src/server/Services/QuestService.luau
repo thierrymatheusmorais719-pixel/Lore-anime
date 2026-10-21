@@ -246,14 +246,11 @@ local function buildDialogue(player: Player, npcId: string, text: string?)
 				and (prev == nil or profile.quests.completed[prev])
 				and (quest.faction == nil or quest.faction == profile.faction)
 			then
-				table.insert(
-					options,
-					{
-						id = "locked:" .. questId,
-						text = quest.name .. " (nível " .. quest.level .. ")",
-						disabled = true,
-					}
-				)
+				table.insert(options, {
+					id = "locked:" .. questId,
+					text = quest.name .. " (nível " .. quest.level .. ")",
+					disabled = true,
+				})
 			end
 		end
 	end

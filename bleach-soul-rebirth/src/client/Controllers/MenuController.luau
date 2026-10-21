@@ -90,22 +90,24 @@ local function section(title: string, order: number)
 	return Kit.label(
 		title,
 		18,
-		{ Size = UDim2.new(1, 0, 0, 26), Font = T.FontTitle, TextColor3 = T.Gold, LayoutOrder = order, Parent = content }
+		{
+			Size = UDim2.new(1, 0, 0, 26),
+			Font = T.FontTitle,
+			TextColor3 = T.Gold,
+			LayoutOrder = order,
+			Parent = content,
+		}
 	)
 end
 
 local function row(order: number, height: number?): Frame
-	return Kit.new(
-		"Frame",
-		{
-			BackgroundColor3 = T.PanelLight,
-			BackgroundTransparency = 0.3,
-			Size = UDim2.new(1, 0, 0, height or 48),
-			LayoutOrder = order,
-			Parent = content,
-		},
-		{ Kit.corner(8) }
-	)
+	return Kit.new("Frame", {
+		BackgroundColor3 = T.PanelLight,
+		BackgroundTransparency = 0.3,
+		Size = UDim2.new(1, 0, 0, height or 48),
+		LayoutOrder = order,
+		Parent = content,
+	}, { Kit.corner(8) })
 end
 
 local function rarityColor(rarity: string?): Color3
@@ -135,45 +137,33 @@ function Render.Status(profile)
 	for i, attr in Progression.AttributeOrder do
 		local def = Progression.Attributes[attr]
 		local r = row(10 + i, 56)
-		Kit.label(
-			def.kanji,
-			26,
-			{
-				Position = UDim2.fromOffset(12, 0),
-				Size = UDim2.fromOffset(36, 56),
-				Font = T.FontTitle,
-				TextColor3 = T.Accent,
-				Parent = r,
-			}
-		)
+		Kit.label(def.kanji, 26, {
+			Position = UDim2.fromOffset(12, 0),
+			Size = UDim2.fromOffset(36, 56),
+			Font = T.FontTitle,
+			TextColor3 = T.Accent,
+			Parent = r,
+		})
 		Kit.label(
 			string.format("%s  %d", def.name, profile.stats[attr] or 0),
 			17,
 			{ Position = UDim2.fromOffset(56, 6), Size = UDim2.new(1, -230, 0, 22), Font = T.FontTitle, Parent = r }
 		)
-		Kit.label(
-			def.desc,
-			13,
-			{
-				Position = UDim2.fromOffset(56, 28),
-				Size = UDim2.new(1, -230, 0, 20),
-				TextColor3 = T.Muted,
-				TextTruncate = Enum.TextTruncate.AtEnd,
-				Parent = r,
-			}
-		)
+		Kit.label(def.desc, 13, {
+			Position = UDim2.fromOffset(56, 28),
+			Size = UDim2.new(1, -230, 0, 20),
+			TextColor3 = T.Muted,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			Parent = r,
+		})
 		for j, amount in { 1, 5 } do
-			local b = Kit.button(
-				"+" .. amount,
-				{
-					AnchorPoint = Vector2.new(1, 0.5),
-					Position = UDim2.new(1, -12 - (2 - j) * 70, 0.5, 0),
-					Size = UDim2.fromOffset(60, 34),
-				},
-				function()
-					request("AllocateStat", { attribute = attr, amount = amount })
-				end
-			)
+			local b = Kit.button("+" .. amount, {
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -12 - (2 - j) * 70, 0.5, 0),
+				Size = UDim2.fromOffset(60, 34),
+			}, function()
+				request("AllocateStat", { attribute = attr, amount = amount })
+			end)
 			b.Parent = r
 			b.Active = profile.statPoints >= amount
 			b.TextTransparency = if profile.statPoints >= amount then 0 else 0.6
@@ -268,63 +258,47 @@ function Render.Skills(profile)
 			end
 		end
 		local available = not owned and reqsMet and profile.level >= node.level and profile.skillPoints >= node.cost
-		local cell = Kit.new(
-			"TextButton",
-			{
-				AutoButtonColor = false,
-				BackgroundColor3 = if owned
-					then Color3.fromRGB(40, 60, 45)
-					elseif available then Color3.fromRGB(55, 50, 25)
-					else T.PanelLight,
-				BackgroundTransparency = 0.1,
-				Text = "",
-				Position = UDim2.new((node.x - 1) / columns, 4, 0, (node.y - 1) * 96 + 4),
-				Size = UDim2.new(1 / columns, -8, 0, 88),
-				Parent = grid,
-			},
-			{
-				Kit.corner(8),
-				Kit.stroke(
-					if owned then T.Success elseif available then T.Gold else Color3.new(1, 1, 1),
-					1.5,
-					if owned or available then 0.2 else 0.8
-				),
-			}
-		)
-		Kit.label(
-			node.name,
-			13,
-			{
-				Position = UDim2.fromOffset(8, 6),
-				Size = UDim2.new(1, -16, 0, 16),
-				Font = T.FontTitle,
-				TextTruncate = Enum.TextTruncate.AtEnd,
-				Parent = cell,
-			}
-		)
-		Kit.label(
-			node.desc,
-			11,
-			{
-				Position = UDim2.fromOffset(8, 24),
-				Size = UDim2.new(1, -16, 0, 42),
-				TextWrapped = true,
-				TextYAlignment = Enum.TextYAlignment.Top,
-				TextColor3 = T.Muted,
-				Font = T.Font,
-				Parent = cell,
-			}
-		)
-		Kit.label(
-			if owned then "✔ Aprendido" else string.format("Nv %d · %d pt", node.level, node.cost),
-			11,
-			{
-				Position = UDim2.new(0, 8, 1, -18),
-				Size = UDim2.new(1, -16, 0, 14),
-				TextColor3 = if owned then T.Success else T.Gold,
-				Parent = cell,
-			}
-		)
+		local cell = Kit.new("TextButton", {
+			AutoButtonColor = false,
+			BackgroundColor3 = if owned
+				then Color3.fromRGB(40, 60, 45)
+				elseif available then Color3.fromRGB(55, 50, 25)
+				else T.PanelLight,
+			BackgroundTransparency = 0.1,
+			Text = "",
+			Position = UDim2.new((node.x - 1) / columns, 4, 0, (node.y - 1) * 96 + 4),
+			Size = UDim2.new(1 / columns, -8, 0, 88),
+			Parent = grid,
+		}, {
+			Kit.corner(8),
+			Kit.stroke(
+				if owned then T.Success elseif available then T.Gold else Color3.new(1, 1, 1),
+				1.5,
+				if owned or available then 0.2 else 0.8
+			),
+		})
+		Kit.label(node.name, 13, {
+			Position = UDim2.fromOffset(8, 6),
+			Size = UDim2.new(1, -16, 0, 16),
+			Font = T.FontTitle,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			Parent = cell,
+		})
+		Kit.label(node.desc, 11, {
+			Position = UDim2.fromOffset(8, 24),
+			Size = UDim2.new(1, -16, 0, 42),
+			TextWrapped = true,
+			TextYAlignment = Enum.TextYAlignment.Top,
+			TextColor3 = T.Muted,
+			Font = T.Font,
+			Parent = cell,
+		})
+		Kit.label(if owned then "✔ Aprendido" else string.format("Nv %d · %d pt", node.level, node.cost), 11, {
+			Position = UDim2.new(0, 8, 1, -18),
+			Size = UDim2.new(1, -16, 0, 14),
+			TextColor3 = if owned then T.Success else T.Gold,
+			Parent = cell,
+		})
 		cell.Activated:Connect(function()
 			if not owned then
 				request("UnlockSkill", { node = id }, node.name .. " aprendido!")
@@ -375,17 +349,13 @@ function Render.Inventory(profile)
 				{ BackgroundColor3 = color, BorderSizePixel = 0, Size = UDim2.new(0, 4, 1, 0), Parent = r },
 				{ Kit.corner(2) }
 			)
-			Kit.label(
-				def.kanji or "?",
-				24,
-				{
-					Position = UDim2.fromOffset(12, 0),
-					Size = UDim2.fromOffset(34, 54),
-					Font = T.FontTitle,
-					TextColor3 = color,
-					Parent = r,
-				}
-			)
+			Kit.label(def.kanji or "?", 24, {
+				Position = UDim2.fromOffset(12, 0),
+				Size = UDim2.fromOffset(34, 54),
+				Font = T.FontTitle,
+				TextColor3 = color,
+				Parent = r,
+			})
 			local statsText = ""
 			if def.stats then
 				local parts = {}
@@ -409,29 +379,21 @@ function Render.Inventory(profile)
 					Parent = r,
 				}
 			)
-			Kit.label(
-				def.desc .. statsText,
-				12,
-				{
-					Position = UDim2.fromOffset(52, 28),
-					Size = UDim2.new(1, -300, 0, 18),
-					TextColor3 = T.Muted,
-					TextTruncate = Enum.TextTruncate.AtEnd,
-					Parent = r,
-				}
-			)
+			Kit.label(def.desc .. statsText, 12, {
+				Position = UDim2.fromOffset(52, 28),
+				Size = UDim2.new(1, -300, 0, 18),
+				TextColor3 = T.Muted,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+				Parent = r,
+			})
 			local x = -12
 			local function action(text: string, fn: () -> ())
-				local b = Kit.button(
-					text,
-					{
-						AnchorPoint = Vector2.new(1, 0.5),
-						Position = UDim2.new(1, x, 0.5, 0),
-						Size = UDim2.fromOffset(96, 32),
-						TextSize = 14,
-					},
-					fn
-				)
+				local b = Kit.button(text, {
+					AnchorPoint = Vector2.new(1, 0.5),
+					Position = UDim2.new(1, x, 0.5, 0),
+					Size = UDim2.fromOffset(96, 32),
+					TextSize = 14,
+				}, fn)
 				b.Parent = r
 				x -= 104
 			end
@@ -465,28 +427,20 @@ function Render.Quests(profile)
 			local r = row(order, 30 + #quest.objectives * 20 + 26)
 			order += 1
 			local tracked = profile.quests.tracked == id
-			Kit.label(
-				(if tracked then "◆ " else "") .. quest.name,
-				16,
-				{
-					Position = UDim2.fromOffset(12, 6),
-					Size = UDim2.new(1, -150, 0, 20),
-					Font = T.FontTitle,
-					TextColor3 = if tracked then T.Gold else T.Text,
-					Parent = r,
-				}
-			)
-			Kit.label(
-				quest.desc,
-				12,
-				{
-					Position = UDim2.fromOffset(12, 26),
-					Size = UDim2.new(1, -150, 0, 18),
-					TextColor3 = T.Muted,
-					TextTruncate = Enum.TextTruncate.AtEnd,
-					Parent = r,
-				}
-			)
+			Kit.label((if tracked then "◆ " else "") .. quest.name, 16, {
+				Position = UDim2.fromOffset(12, 6),
+				Size = UDim2.new(1, -150, 0, 20),
+				Font = T.FontTitle,
+				TextColor3 = if tracked then T.Gold else T.Text,
+				Parent = r,
+			})
+			Kit.label(quest.desc, 12, {
+				Position = UDim2.fromOffset(12, 26),
+				Size = UDim2.new(1, -150, 0, 18),
+				TextColor3 = T.Muted,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+				Parent = r,
+			})
 			for i, objective in quest.objectives do
 				local current, target = entry.progress[i] or 0, objective.count or 1
 				Kit.label(
@@ -507,18 +461,14 @@ function Render.Quests(profile)
 				)
 			end
 			if not tracked then
-				local b = Kit.button(
-					"Rastrear",
-					{
-						AnchorPoint = Vector2.new(1, 0),
-						Position = UDim2.new(1, -12, 0, 8),
-						Size = UDim2.fromOffset(110, 30),
-						TextSize = 14,
-					},
-					function()
-						request("TrackQuest", { quest = id })
-					end
-				)
+				local b = Kit.button("Rastrear", {
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.new(1, -12, 0, 8),
+					Size = UDim2.fromOffset(110, 30),
+					TextSize = 14,
+				}, function()
+					request("TrackQuest", { quest = id })
+				end)
 				b.Parent = r
 			end
 		end
@@ -539,17 +489,13 @@ function Render.Quests(profile)
 		if quest then
 			local done = daily.claimed[id] == true
 			local r = row(50 + i, 52)
-			Kit.label(
-				(if done then "✔ " else "") .. quest.name,
-				15,
-				{
-					Position = UDim2.fromOffset(12, 6),
-					Size = UDim2.new(1, -24, 0, 20),
-					Font = T.FontTitle,
-					TextColor3 = if done then T.Success else T.Text,
-					Parent = r,
-				}
-			)
+			Kit.label((if done then "✔ " else "") .. quest.name, 15, {
+				Position = UDim2.fromOffset(12, 6),
+				Size = UDim2.new(1, -24, 0, 20),
+				Font = T.FontTitle,
+				TextColor3 = if done then T.Success else T.Text,
+				Parent = r,
+			})
 			local objective = quest.objectives[1]
 			Kit.label(
 				string.format(
@@ -578,18 +524,14 @@ function Render.Quests(profile)
 			table.insert(done, Quests.Story[id].name)
 		end
 	end
-	Kit.label(
-		if #done > 0 then table.concat(done, " · ") else "—",
-		13,
-		{
-			Size = UDim2.new(1, 0, 0, 40),
-			TextWrapped = true,
-			TextYAlignment = Enum.TextYAlignment.Top,
-			TextColor3 = T.Muted,
-			LayoutOrder = 81,
-			Parent = content,
-		}
-	)
+	Kit.label(if #done > 0 then table.concat(done, " · ") else "—", 13, {
+		Size = UDim2.new(1, 0, 0, 40),
+		TextWrapped = true,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		TextColor3 = T.Muted,
+		LayoutOrder = 81,
+		Parent = content,
+	})
 end
 
 function Render.Powers(profile)
@@ -647,17 +589,13 @@ function Render.Powers(profile)
 			{ BackgroundColor3 = color, BorderSizePixel = 0, Size = UDim2.new(0, 4, 1, 0), Parent = r },
 			{ Kit.corner(2) }
 		)
-		Kit.label(
-			element.kanji,
-			34,
-			{
-				Position = UDim2.fromOffset(12, 0),
-				Size = UDim2.fromOffset(44, 92),
-				Font = T.FontTitle,
-				TextColor3 = element.primary,
-				Parent = r,
-			}
-		)
+		Kit.label(element.kanji, 34, {
+			Position = UDim2.fromOffset(12, 0),
+			Size = UDim2.fromOffset(44, 92),
+			Font = T.FontTitle,
+			TextColor3 = element.primary,
+			Parent = r,
+		})
 		Kit.label(
 			string.format(
 				"%s  ·  %s%s",
@@ -685,29 +623,21 @@ function Render.Powers(profile)
 			Abilities[t1.abilities.X].name,
 			Abilities[t2.abilities.V].name
 		)
-		Kit.label(
-			lines,
-			12,
-			{
-				Position = UDim2.fromOffset(62, 28),
-				Size = UDim2.new(1, -250, 0, 34),
-				TextWrapped = true,
-				TextYAlignment = Enum.TextYAlignment.Top,
-				TextColor3 = T.Muted,
-				Parent = r,
-			}
-		)
-		Kit.label(
-			"“" .. power.releaseCommand .. "”",
-			12,
-			{
-				Position = UDim2.fromOffset(62, 66),
-				Size = UDim2.new(1, -250, 0, 18),
-				TextColor3 = element.primary,
-				Font = T.Font,
-				Parent = r,
-			}
-		)
+		Kit.label(lines, 12, {
+			Position = UDim2.fromOffset(62, 28),
+			Size = UDim2.new(1, -250, 0, 34),
+			TextWrapped = true,
+			TextYAlignment = Enum.TextYAlignment.Top,
+			TextColor3 = T.Muted,
+			Parent = r,
+		})
+		Kit.label("“" .. power.releaseCommand .. "”", 12, {
+			Position = UDim2.fromOffset(62, 66),
+			Size = UDim2.new(1, -250, 0, 18),
+			TextColor3 = element.primary,
+			Font = T.Font,
+			Parent = r,
+		})
 		local b
 		if equipped then
 			b = Kit.button("Equipado", { Active = false, TextTransparency = 0.5 })
@@ -752,32 +682,24 @@ function Render.Travel(profile)
 				local discovered = profile.discovered[id] == true
 				local r = row(order, 44)
 				order += 1
-				Kit.label(
-					if discovered then point.name else "??? (não descoberto)",
-					14,
-					{
-						Position = UDim2.fromOffset(14, 0),
-						Size = UDim2.new(1, -150, 1, 0),
-						TextColor3 = if discovered then T.Text else T.Muted,
-						Parent = r,
-					}
-				)
+				Kit.label(if discovered then point.name else "??? (não descoberto)", 14, {
+					Position = UDim2.fromOffset(14, 0),
+					Size = UDim2.new(1, -150, 1, 0),
+					TextColor3 = if discovered then T.Text else T.Muted,
+					Parent = r,
+				})
 				if discovered then
-					local b = Kit.button(
-						"Viajar",
-						{
-							AnchorPoint = Vector2.new(1, 0.5),
-							Position = UDim2.new(1, -10, 0.5, 0),
-							Size = UDim2.fromOffset(110, 32),
-							TextSize = 14,
-						},
-						function()
-							local ok = request("Travel", { point = id })
-							if ok then
-								MenuController.Close()
-							end
+					local b = Kit.button("Viajar", {
+						AnchorPoint = Vector2.new(1, 0.5),
+						Position = UDim2.new(1, -10, 0.5, 0),
+						Size = UDim2.fromOffset(110, 32),
+						TextSize = 14,
+					}, function()
+						local ok = request("Travel", { point = id })
+						if ok then
+							MenuController.Close()
 						end
-					)
+					end)
 					b.Parent = r
 				end
 			end
@@ -790,17 +712,13 @@ function Render.Shop(profile)
 	for i, id in Items.Shop do
 		local def = Items.List[id]
 		local r = row(10 + i, 50)
-		Kit.label(
-			def.kanji,
-			22,
-			{
-				Position = UDim2.fromOffset(12, 0),
-				Size = UDim2.fromOffset(30, 50),
-				Font = T.FontTitle,
-				TextColor3 = rarityColor(def.rarity),
-				Parent = r,
-			}
-		)
+		Kit.label(def.kanji, 22, {
+			Position = UDim2.fromOffset(12, 0),
+			Size = UDim2.fromOffset(30, 50),
+			Font = T.FontTitle,
+			TextColor3 = rarityColor(def.rarity),
+			Parent = r,
+		})
 		Kit.label(
 			def.name .. "  ·  " .. def.price .. " Kan",
 			15,
@@ -812,18 +730,14 @@ function Render.Shop(profile)
 			{ Position = UDim2.fromOffset(48, 26), Size = UDim2.new(1, -300, 0, 18), TextColor3 = T.Muted, Parent = r }
 		)
 		for j, qty in { 1, 5 } do
-			local b = Kit.button(
-				"Comprar ×" .. qty,
-				{
-					AnchorPoint = Vector2.new(1, 0.5),
-					Position = UDim2.new(1, -10 - (2 - j) * 128, 0.5, 0),
-					Size = UDim2.fromOffset(120, 32),
-					TextSize = 14,
-				},
-				function()
-					request("Buy", { item = id, qty = qty }, "Comprado: " .. def.name)
-				end
-			)
+			local b = Kit.button("Comprar ×" .. qty, {
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -10 - (2 - j) * 128, 0.5, 0),
+				Size = UDim2.fromOffset(120, 32),
+				TextSize = 14,
+			}, function()
+				request("Buy", { item = id, qty = qty }, "Comprado: " .. def.name)
+			end)
 			b.Parent = r
 		end
 	end
@@ -843,48 +757,40 @@ function Render.Forge(profile)
 		local def = Items.List[id]
 		local r = row(10 + i, 62)
 		local color = rarityColor(def.rarity)
-		Kit.label(
-			def.kanji,
-			24,
-			{
-				Position = UDim2.fromOffset(12, 0),
-				Size = UDim2.fromOffset(32, 62),
-				Font = T.FontTitle,
-				TextColor3 = color,
-				Parent = r,
-			}
-		)
-		Kit.label(
-			string.format("%s  ·  Nv %d  ·  %d Kan", def.name, recipe.level, recipe.kan),
-			15,
-			{
-				Position = UDim2.fromOffset(50, 6),
-				Size = UDim2.new(1, -200, 0, 20),
-				Font = T.FontTitle,
-				TextColor3 = color,
-				Parent = r,
-			}
-		)
+		Kit.label(def.kanji, 24, {
+			Position = UDim2.fromOffset(12, 0),
+			Size = UDim2.fromOffset(32, 62),
+			Font = T.FontTitle,
+			TextColor3 = color,
+			Parent = r,
+		})
+		Kit.label(string.format("%s  ·  Nv %d  ·  %d Kan", def.name, recipe.level, recipe.kan), 15, {
+			Position = UDim2.fromOffset(50, 6),
+			Size = UDim2.new(1, -200, 0, 20),
+			Font = T.FontTitle,
+			TextColor3 = color,
+			Parent = r,
+		})
 		local parts = {}
 		for materialId, qty in recipe.materials do
 			local have = InventoryLogic.count(profile.inventory, materialId)
 			table.insert(parts, string.format("%s %d/%d", Items.List[materialId].name, have, qty))
 		end
 		table.sort(parts)
-		Kit.label(
-			table.concat(parts, "  ·  "),
-			12,
-			{
-				Position = UDim2.fromOffset(50, 30),
-				Size = UDim2.new(1, -200, 0, 24),
-				TextWrapped = true,
-				TextColor3 = T.Muted,
-				Parent = r,
-			}
-		)
+		Kit.label(table.concat(parts, "  ·  "), 12, {
+			Position = UDim2.fromOffset(50, 30),
+			Size = UDim2.new(1, -200, 0, 24),
+			TextWrapped = true,
+			TextColor3 = T.Muted,
+			Parent = r,
+		})
 		local b = Kit.button(
 			"Forjar",
-			{ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.fromOffset(120, 34) },
+			{
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -10, 0.5, 0),
+				Size = UDim2.fromOffset(120, 34),
+			},
 			function()
 				request("Craft", { item = id })
 			end
@@ -1027,27 +933,21 @@ function MenuController.Toggle()
 end
 
 function MenuController.Init()
-	gui = Kit.new(
-		"ScreenGui",
-		{
-			Name = "Menu",
-			ResetOnSpawn = false,
-			DisplayOrder = 25,
-			Enabled = false,
-			Parent = player:WaitForChild("PlayerGui"),
-		}
-	)
-	Kit.new(
-		"TextButton",
-		{
-			BackgroundColor3 = Color3.new(0, 0, 0),
-			BackgroundTransparency = 0.5,
-			Size = UDim2.fromScale(1, 1),
-			Text = "",
-			AutoButtonColor = false,
-			Parent = gui,
-		}
-	).Activated
+	gui = Kit.new("ScreenGui", {
+		Name = "Menu",
+		ResetOnSpawn = false,
+		DisplayOrder = 25,
+		Enabled = false,
+		Parent = player:WaitForChild("PlayerGui"),
+	})
+	Kit.new("TextButton", {
+		BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundTransparency = 0.5,
+		Size = UDim2.fromScale(1, 1),
+		Text = "",
+		AutoButtonColor = false,
+		Parent = gui,
+	}).Activated
 		:Connect(MenuController.Close)
 	panel = Kit.panel({
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -1060,17 +960,13 @@ function MenuController.Init()
 		24,
 		{ Position = UDim2.fromOffset(190, 14), Size = UDim2.new(1, -260, 0, 30), Font = T.FontTitle, Parent = panel }
 	)
-	status = Kit.label(
-		"",
-		14,
-		{
-			AnchorPoint = Vector2.new(0, 1),
-			Position = UDim2.new(0, 190, 1, -10),
-			Size = UDim2.new(1, -210, 0, 20),
-			TextTransparency = 1,
-			Parent = panel,
-		}
-	)
+	status = Kit.label("", 14, {
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 190, 1, -10),
+		Size = UDim2.new(1, -210, 0, 20),
+		TextTransparency = 1,
+		Parent = panel,
+	})
 	local closeButton = Kit.button(
 		"✕",
 		{ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 12), Size = UDim2.fromOffset(34, 34) },
@@ -1078,18 +974,14 @@ function MenuController.Init()
 	)
 	closeButton.Parent = panel
 
-	local tabs = Kit.new(
-		"Frame",
-		{
-			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(14, 14),
-			Size = UDim2.new(0, 160, 1, -28),
-			Parent = panel,
-		},
-		{
-			Kit.new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
-		}
-	)
+	local tabs = Kit.new("Frame", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(14, 14),
+		Size = UDim2.new(0, 160, 1, -28),
+		Parent = panel,
+	}, {
+		Kit.new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+	})
 	for i, tab in TABS do
 		if tab.studio and not RunService:IsStudio() then
 			continue
@@ -1108,23 +1000,19 @@ function MenuController.Init()
 		tabButtons[tab.id] = b
 	end
 
-	content = Kit.new(
-		"ScrollingFrame",
-		{
-			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(190, 54),
-			Size = UDim2.new(1, -210, 1, -94),
-			CanvasSize = UDim2.new(),
-			AutomaticCanvasSize = Enum.AutomaticSize.Y,
-			ScrollBarThickness = 5,
-			BorderSizePixel = 0,
-			Parent = panel,
-		},
-		{
-			Kit.new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }),
-			Kit.new("UIPadding", { PaddingRight = UDim.new(0, 10) }),
-		}
-	)
+	content = Kit.new("ScrollingFrame", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(190, 54),
+		Size = UDim2.new(1, -210, 1, -94),
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		ScrollBarThickness = 5,
+		BorderSizePixel = 0,
+		Parent = panel,
+	}, {
+		Kit.new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }),
+		Kit.new("UIPadding", { PaddingRight = UDim.new(0, 10) }),
+	})
 	Kit.autoScale(gui)
 
 	-- Botão de menu sempre visível (essencial no celular)

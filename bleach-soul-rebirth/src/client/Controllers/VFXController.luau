@@ -347,14 +347,10 @@ function VFX.SpeedLines(duration: number)
 		line.Size = UDim2.fromOffset(rng:NextInteger(80, 180), 2)
 		line.Rotation = math.deg(angle)
 		line.Parent = speedLines
-		tween(
-			line,
-			duration,
-			{
-				BackgroundTransparency = 1,
-				Position = UDim2.fromScale(0.5 + math.cos(angle) * (r + 0.15), 0.5 + math.sin(angle) * (r + 0.15)),
-			}
-		)
+		tween(line, duration, {
+			BackgroundTransparency = 1,
+			Position = UDim2.fromScale(0.5 + math.cos(angle) * (r + 0.15), 0.5 + math.sin(angle) * (r + 0.15)),
+		})
 		Debris:AddItem(line, duration + 0.05)
 	end
 end

@@ -95,50 +95,39 @@ local function show(payload)
 end
 
 function DialogueController.Init()
-	gui = Kit.new(
-		"ScreenGui",
-		{
-			Name = "Dialogue",
-			ResetOnSpawn = false,
-			DisplayOrder = 20,
-			Enabled = false,
-			Parent = player:WaitForChild("PlayerGui"),
-		}
-	)
+	gui = Kit.new("ScreenGui", {
+		Name = "Dialogue",
+		ResetOnSpawn = false,
+		DisplayOrder = 20,
+		Enabled = false,
+		Parent = player:WaitForChild("PlayerGui"),
+	})
 	local panel = Kit.panel({
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -30),
 		Size = UDim2.fromOffset(760, 250),
 		Parent = gui,
 	})
-	refs.name = Kit.label(
-		"",
-		22,
-		{
-			Position = UDim2.fromOffset(22, 14),
-			Size = UDim2.fromOffset(500, 26),
-			Font = T.FontTitle,
-			TextColor3 = T.Gold,
-			Parent = panel,
-		}
-	)
+	refs.name = Kit.label("", 22, {
+		Position = UDim2.fromOffset(22, 14),
+		Size = UDim2.fromOffset(500, 26),
+		Font = T.FontTitle,
+		TextColor3 = T.Gold,
+		Parent = panel,
+	})
 	refs.title = Kit.label(
 		"",
 		14,
 		{ Position = UDim2.fromOffset(22, 40), Size = UDim2.fromOffset(500, 18), TextColor3 = T.Muted, Parent = panel }
 	)
-	refs.text = Kit.label(
-		"",
-		17,
-		{
-			Position = UDim2.fromOffset(22, 64),
-			Size = UDim2.new(0.55, -22, 1, -80),
-			TextWrapped = true,
-			TextYAlignment = Enum.TextYAlignment.Top,
-			Font = T.Font,
-			Parent = panel,
-		}
-	)
+	refs.text = Kit.label("", 17, {
+		Position = UDim2.fromOffset(22, 64),
+		Size = UDim2.new(0.55, -22, 1, -80),
+		TextWrapped = true,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Font = T.Font,
+		Parent = panel,
+	})
 	refs.options = Kit.new("ScrollingFrame", {
 		BackgroundTransparency = 1,
 		Position = UDim2.new(0.57, 0, 0, 16),

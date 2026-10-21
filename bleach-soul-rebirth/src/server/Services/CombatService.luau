@@ -957,14 +957,11 @@ function CombatService.TryAttack(actor: Actor, kind: string, aimDir: any): boole
 			end
 			if spec.selfLaunch then
 				if actor.player then
-					CombatService.SendImpulse(
-						actor,
-						{
-							kind = "Knockback",
-							velocity = Vector3.new(0, spec.selfLaunch, 0) + direction * 4,
-							duration = 0.12,
-						}
-					)
+					CombatService.SendImpulse(actor, {
+						kind = "Knockback",
+						velocity = Vector3.new(0, spec.selfLaunch, 0) + direction * 4,
+						duration = 0.12,
+					})
 				else
 					Physics.impulse(actor.root, Vector3.new(0, spec.selfLaunch, 0), 0.12)
 				end
