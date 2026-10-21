@@ -45,6 +45,8 @@ export interface Product {
   palette: Palette;
   /** URLs de fotos reais. Quando vazio, a galeria usa o render vetorial do produto. */
   images?: string[];
+  /** Foto do tênis sem fundo (PNG/WebP com transparência). */
+  cutout?: string;
   price: number;
   compareAtPrice?: number;
   releaseDate: string;

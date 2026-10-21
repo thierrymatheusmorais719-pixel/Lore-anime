@@ -27,8 +27,12 @@ export function ProductCard({ product, variant = 'default', rank, quickAdd = tru
       <div className="card-media">
         <Link to={href} className="card-media-link" aria-label={`${brand?.name} ${product.name} ${product.model}`}>
           <ProductMedia product={product} className="card-art card-art-main" />
-          {(!product.images || product.images.length > 1) && (
-            <ProductMedia product={product} view="medial" index={1} className="card-art card-art-alt" />
+          {product.cutout ? (
+            <ProductMedia product={product} prefer="photo" className="card-art card-art-alt card-photo-reveal" />
+          ) : (
+            (!product.images || product.images.length > 1) && (
+              <ProductMedia product={product} view="medial" index={1} className="card-art card-art-alt" />
+            )
           )}
         </Link>
         <Badges product={product} />

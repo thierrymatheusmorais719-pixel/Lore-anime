@@ -18,10 +18,29 @@ export function Reveal({ children, delay = 0, className = '', as: Tag = 'div' }:
 }
 
 /** Imagem do produto: foto real quando houver, senão o render vetorial. */
-export function ProductMedia({ product, view = 'lateral', index = 0, className }: { product: Product; view?: SneakerView; index?: number; className?: string }) {
+/**
+ * Imagem do produto. Ordem de preferência: recorte sem fundo (vitrines), foto
+ * real e, por fim, o render vetorial. `prefer="photo"` força a foto original.
+ */
+export function ProductMedia({
+  product,
+  view = 'lateral',
+  index = 0,
+  className,
+  prefer = 'auto',
+}: {
+  product: Product;
+  view?: SneakerView;
+  index?: number;
+  className?: string;
+  prefer?: 'auto' | 'photo';
+}) {
   const photo = product.images?.[index] ?? product.images?.[0];
   const brand = getBrand(product.brandId)?.name.toUpperCase() ?? '';
   const alt = `${brand} ${product.name} ${product.model} — ${VIEW_LABELS[view]}`;
+  if (product.cutout && prefer === 'auto' && index === 0) {
+    return <img src={product.cutout} alt={`${brand} ${product.name} ${product.model}`} className={`cutout ${className ?? ''}`} loading="lazy" decoding="async" />;
+  }
   if (photo) return <img src={photo} alt={product.images?.[index] ? alt : alt.replace(VIEW_LABELS[view], 'foto')} className={`photo ${className ?? ''}`} loading="lazy" decoding="async" />;
   return <SneakerArt palette={product.palette} silhouette={product.silhouette} view={view} brandMark={brand.split(' ')[0]} className={className} title={alt} />;
 }

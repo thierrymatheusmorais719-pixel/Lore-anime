@@ -5,7 +5,7 @@ import { Icon } from './Icon';
 
 export function Footer() {
   return (
-    <footer className="footer dark">
+    <footer className="footer dark grain">
       <div className="container">
         <div className="footer-top">
           <div className="footer-brand">

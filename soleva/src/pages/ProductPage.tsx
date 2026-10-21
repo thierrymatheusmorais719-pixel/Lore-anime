@@ -19,7 +19,6 @@ import type { Product, Review, ShippingOption } from '../types';
 
 const VIEWS: SneakerView[] = ['lateral', 'medial', 'heel', 'toe', 'sole'];
 
-const viewLabel = (product: Product, i: number) => (product.images?.length ? `Foto ${i + 1}` : VIEW_LABELS[VIEWS[i]]);
 
 export function ProductPage() {
   const { slug = '' } = useParams();
@@ -339,23 +338,38 @@ function ProductView({ product }: { product: Product }) {
   );
 }
 
+type Slide = { label: string; view: SneakerView; index: number; prefer: 'auto' | 'photo' };
+
+function gallerySlides(product: Product): Slide[] {
+  const photos = product.images ?? [];
+  if (product.cutout) {
+    return [
+      { label: 'Destaque', view: 'lateral', index: 0, prefer: 'auto' },
+      ...photos.map((_, i): Slide => ({ label: `Foto ${i + 1}`, view: 'lateral', index: i, prefer: 'photo' })),
+    ];
+  }
+  if (photos.length) return photos.map((_, i) => ({ label: `Foto ${i + 1}`, view: 'lateral', index: i, prefer: 'photo' }));
+  return VIEWS.map((v, i) => ({ label: VIEW_LABELS[v], view: v, index: i, prefer: 'auto' }));
+}
+
 function Gallery({ product }: { product: Product }) {
   const [active, setActive] = useState(0);
   const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
-  // Com fotos reais, a galeria mostra as fotos; sem fotos, as vistas do render.
-  const views = product.images?.length ? product.images.map((_, i) => VIEWS[i] ?? 'lateral') : VIEWS;
+  const slides = gallerySlides(product);
+  const n = slides.length;
+  const media = (sl: Slide) => <ProductMedia product={product} view={sl.view} index={sl.index} prefer={sl.prefer} />;
 
   const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowRight') setActive((a) => (a + 1) % views.length);
-    if (e.key === 'ArrowLeft') setActive((a) => (a - 1 + views.length) % views.length);
+    if (e.key === 'ArrowRight') setActive((a) => (a + 1) % n);
+    if (e.key === 'ArrowLeft') setActive((a) => (a - 1 + n) % n);
   };
 
   return (
     <div className="gallery" onKeyDown={onKey}>
       <div className="gallery-thumbs" role="tablist" aria-label="Imagens do produto">
-        {views.map((v, i) => (
-          <button key={i} role="tab" aria-selected={active === i} className={active === i ? 'on' : ''} onClick={() => setActive(i)} aria-label={viewLabel(product, i)}>
-            <ProductMedia product={product} view={v} index={i} />
+        {slides.map((sl, i) => (
+          <button key={i} role="tab" aria-selected={active === i} className={active === i ? 'on' : ''} onClick={() => setActive(i)} aria-label={sl.label}>
+            {media(sl)}
           </button>
         ))}
       </div>
@@ -368,27 +382,27 @@ function Gallery({ product }: { product: Product }) {
         onMouseLeave={() => setZoom(null)}
         tabIndex={0}
         role="tabpanel"
-        aria-label={`${viewLabel(product, active)} — use as setas para navegar`}
+        aria-label={`${slides[active].label} — use as setas para navegar`}
       >
         <div className="gallery-stage" style={zoom ? { transformOrigin: `${zoom.x}% ${zoom.y}%` } : undefined} key={active}>
-          <ProductMedia product={product} view={views[active]} index={active} />
+          {media(slides[active])}
         </div>
         <span className="gallery-count mono">
-          {String(active + 1).padStart(2, '0')} / {String(views.length).padStart(2, '0')} — {viewLabel(product, active)}
+          {String(active + 1).padStart(2, '0')} / {String(n).padStart(2, '0')} — {slides[active].label}
         </span>
         <div className="gallery-arrows">
-          <button className="icon-btn" onClick={() => setActive((a) => (a - 1 + views.length) % views.length)} aria-label="Imagem anterior">
+          <button className="icon-btn" onClick={() => setActive((a) => (a - 1 + n) % n)} aria-label="Imagem anterior">
             <Icon name="arrowLeft" />
           </button>
-          <button className="icon-btn" onClick={() => setActive((a) => (a + 1) % views.length)} aria-label="Próxima imagem">
+          <button className="icon-btn" onClick={() => setActive((a) => (a + 1) % n)} aria-label="Próxima imagem">
             <Icon name="arrowRight" />
           </button>
         </div>
       </div>
       <div className="gallery-mobile" aria-hidden="true">
-        {views.map((v, i) => (
+        {slides.map((sl, i) => (
           <div key={i} className="gallery-slide">
-            <ProductMedia product={product} view={v} index={i} />
+            {media(sl)}
           </div>
         ))}
       </div>

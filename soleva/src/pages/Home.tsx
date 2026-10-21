@@ -5,7 +5,7 @@ import { Icon } from '../components/Icon';
 import { ProductCard } from '../components/ProductCard';
 import { Countdown, ProductMedia, Reveal, SectionHeader } from '../components/ui';
 import { useDocumentTitle } from '../hooks';
-import { formatDate, formatPrice, plural } from '../lib/format';
+import { formatDate, formatPrice, installments, plural } from '../lib/format';
 import { isNew, isUpcoming, releaseTimestamp, totalStock } from '../lib/product';
 import { isValidEmail } from '../lib/validation';
 import { subscribe } from '../services/newsletter';
@@ -59,6 +59,7 @@ function Hero() {
   const slides = useMemo(() => HERO_SLUGS.map((s) => getProductBySlug(s)!).filter(Boolean), []);
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
+  const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (paused) return;
@@ -66,13 +67,36 @@ function Hero() {
     return () => window.clearTimeout(t);
   }, [i, paused, slides.length]);
 
+  // Parallax leve do tênis e do brilho seguindo o mouse.
+  const onMove = (e: React.MouseEvent) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--mx', (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3));
+    el.style.setProperty('--my', (((e.clientY - r.top) / r.height) * 2 - 1).toFixed(3));
+    el.style.setProperty('--px', `${e.clientX - r.left}px`);
+    el.style.setProperty('--py', `${e.clientY - r.top}px`);
+  };
+
   const p = slides[i];
   const copy = HERO_COPY[p.slug];
   const brand = getBrand(p.brandId)!;
+  const inst = installments(p.price);
 
   return (
-    <section className="hero dark" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} aria-roledescription="carrossel" aria-label="Destaques">
+    <section
+      ref={ref}
+      className="hero dark"
+      onMouseMove={onMove}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      aria-roledescription="carrossel"
+      aria-label="Destaques"
+    >
       <div className="hero-grid-bg" aria-hidden="true" />
+      <div className="hero-word display" key={`w-${p.id}`} aria-hidden="true">
+        {copy.line2}
+      </div>
       <div className="container hero-inner">
         <div className="hero-copy" key={p.id}>
           <span className="eyebrow hero-anim" style={{ ['--d' as string]: '0s' }}>
@@ -87,7 +111,7 @@ function Hero() {
           </p>
           <div className="hero-cta hero-anim" style={{ ['--d' as string]: '.28s' }}>
             <Link to={`/produto/${p.slug}`} className="btn btn-primary">
-              Comprar — {formatPrice(p.price)} <Icon name="arrowRight" size={18} className="arrow" />
+              Comprar agora <Icon name="arrowRight" size={18} className="arrow" />
             </Link>
             <Link to={`/loja?marca=${brand.id}`} className="btn btn-outline">
               Ver {brand.name}
@@ -96,13 +120,21 @@ function Hero() {
         </div>
 
         <div className="hero-visual" key={`v-${p.id}`}>
-          <div className="hero-halo" style={{ background: `radial-gradient(closest-side, ${p.palette.accent}33, transparent)` }} />
+          <div className="hero-halo" />
           <span className="hero-index display" aria-hidden="true">
             0{i + 1}
           </span>
-          <div className={`hero-shoe ${p.images?.length ? 'has-photo' : ''}`}>
+          <div className="hero-price">
+            <span className="mono">{brand.name}</span>
+            <strong>{formatPrice(p.price)}</strong>
+            <span className="mono">
+              {inst.count}x de {formatPrice(inst.value)}
+            </span>
+          </div>
+          <div className={`hero-shoe ${p.images?.length && !p.cutout ? 'has-photo' : ''}`}>
             <ProductMedia product={p} />
           </div>
+          <div className="hero-floor" aria-hidden="true" />
           <dl className="hero-specs">
             {copy.specs.map(([k, v]) => (
               <div key={k}>
@@ -117,9 +149,14 @@ function Hero() {
       <div className="container hero-nav">
         {slides.map((s, idx) => (
           <button key={s.id} className={`hero-dot ${idx === i ? 'active' : ''} ${paused ? 'paused' : ''}`} onClick={() => setI(idx)} aria-label={`Destaque ${idx + 1}: ${s.name} ${s.model}`} aria-current={idx === i}>
-            <span className="mono">0{idx + 1}</span>
-            <span className="hero-dot-label">
-              {s.name} “{s.model}”
+            <span className="hero-dot-thumb" aria-hidden="true">
+              <ProductMedia product={s} />
+            </span>
+            <span className="hero-dot-text">
+              <span className="mono">0{idx + 1}</span>
+              <span className="hero-dot-label">
+                {s.name} “{s.model}”
+              </span>
             </span>
             <span className="hero-dot-bar">
               <span />
@@ -270,7 +307,7 @@ function NextDrop() {
   return (
     <section className="section section-tight">
       <div className="container">
-        <Reveal className="drop dark">
+        <Reveal className="drop dark grain">
           <div className="drop-copy">
             <span className="eyebrow">Próximo drop · {formatDate(next.releaseDate, { day: '2-digit', month: 'long' })}, 10h</span>
             <h2 className="display h2">
@@ -379,7 +416,7 @@ export function RareCard({ product }: { product: Product }) {
 function Rares() {
   const items = useMemo(() => PRODUCTS.filter((p) => p.limited).sort((a, b) => b.price - a.price).slice(0, 4), []);
   return (
-    <section className="section rares dark">
+    <section className="section rares dark grain">
       <div className="container">
         <Reveal>
           <SectionHeader dark eyebrow="Numerados · Autenticados · Raros" title={<>Raros & edições<br />limitadas</>} action={{ label: 'Ver todos os raros', to: '/raros' }} />
@@ -514,7 +551,7 @@ function Newsletter() {
   };
 
   return (
-    <section className="newsletter dark">
+    <section className="newsletter dark grain">
       <div className="container newsletter-inner">
         <div>
           <span className="eyebrow">SOLEVA Insider</span>

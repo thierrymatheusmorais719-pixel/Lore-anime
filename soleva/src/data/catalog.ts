@@ -1,4 +1,4 @@
-import { photosFor } from './photos';
+import { cutoutFor, photosFor } from './photos';
 import type { Brand, CategoryId, ColorId, Palette, Product, Silhouette } from '../types';
 
 export const SIZES = ['34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45'];
@@ -301,6 +301,7 @@ export const PRODUCTS: Product[] = seeds.map((s, i) => {
     silhouette: s.silhouette,
     palette: s.palette,
     images: photosFor(s.slug),
+    cutout: cutoutFor(s.slug),
     price: s.price,
     compareAtPrice: s.compareAtPrice,
     releaseDate: s.releaseDate,
