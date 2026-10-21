@@ -1,6 +1,7 @@
 import { Outlet, ScrollRestoration, createBrowserRouter, createMemoryRouter, useLocation } from 'react-router-dom';
 import { CartDrawer } from './components/CartDrawer';
 import { Footer } from './components/Footer';
+import { CursorBubble } from './components/CursorBubble';
 import { Header } from './components/Header';
 import { IntroProvider } from './components/Intro';
 import { SearchOverlay } from './components/SearchOverlay';
@@ -35,6 +36,7 @@ function Layout() {
       <CartDrawer />
       <SearchOverlay />
       <Toasts />
+      <CursorBubble />
       <ScrollRestoration getKey={(location) => location.pathname} />
       </IntroProvider>
     </ShopProvider>

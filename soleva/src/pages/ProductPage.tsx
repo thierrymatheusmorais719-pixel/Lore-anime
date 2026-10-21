@@ -358,6 +358,11 @@ function Gallery({ product }: { product: Product }) {
   const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
   const slides = gallerySlides(product);
   const n = slides.length;
+  // O destaque recortado gira em 3D ao ser arrastado; as fotos têm zoom.
+  const isCutout = Boolean(product.cutout) && slides[active].prefer === 'auto' && slides[active].index === 0;
+  const [spin, setSpin] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const drag = useRef<{ x: number; start: number } | null>(null);
   const media = (sl: Slide, sizes = '(max-width: 960px) 100vw, 55vw') => <ProductMedia product={product} view={sl.view} index={sl.index} prefer={sl.prefer} sizes={sizes} />;
 
   const onKey = (e: React.KeyboardEvent) => {
@@ -375,19 +380,45 @@ function Gallery({ product }: { product: Product }) {
         ))}
       </div>
       <div
-        className={`gallery-main ${zoom ? 'zooming' : ''}`}
+        className={`gallery-main ${zoom && !isCutout ? 'zooming' : ''} ${isCutout ? 'spinnable' : ''} ${dragging ? 'dragging' : ''}`}
+        data-cursor={isCutout ? 'Arraste' : 'Zoom'}
         onMouseMove={(e) => {
+          if (isCutout) return;
           const r = e.currentTarget.getBoundingClientRect();
           setZoom({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
         }}
         onMouseLeave={() => setZoom(null)}
+        onPointerDown={(e) => {
+          if (!isCutout) return;
+          drag.current = { x: e.clientX, start: spin };
+          setDragging(true);
+          e.currentTarget.setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (!drag.current) return;
+          setSpin(Math.max(-40, Math.min(40, drag.current.start + (e.clientX - drag.current.x) * 0.25)));
+        }}
+        onPointerUp={() => {
+          drag.current = null;
+          setDragging(false);
+          setSpin(0);
+        }}
         tabIndex={0}
         role="tabpanel"
         aria-label={`${slides[active].label} — use as setas para navegar`}
       >
-        <div className="gallery-stage" style={zoom ? { transformOrigin: `${zoom.x}% ${zoom.y}%` } : undefined} key={active}>
+        <div
+          className="gallery-stage"
+          style={zoom && !isCutout ? { transformOrigin: `${zoom.x}% ${zoom.y}%` } : isCutout ? { ['--spin' as string]: `${spin}deg` } : undefined}
+          key={active}
+        >
           {media(slides[active])}
         </div>
+        {isCutout && (
+          <span className="spin-hint mono">
+            <Icon name="rotate" size={14} /> Arraste para girar
+          </span>
+        )}
         <span className="gallery-count mono">
           {String(active + 1).padStart(2, '0')} / {String(n).padStart(2, '0')} — {slides[active].label}
         </span>

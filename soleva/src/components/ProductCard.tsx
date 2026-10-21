@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getBrand } from '../data/catalog';
 import { formatDate } from '../lib/format';
@@ -5,6 +6,7 @@ import { availableSizes, isUpcoming } from '../lib/product';
 import { useShop } from '../store/ShopProvider';
 import type { Product } from '../types';
 import { Icon } from './Icon';
+import { QuickView } from './QuickView';
 import { Badges, Price, ProductMedia, Stars } from './ui';
 
 interface Props {
@@ -37,11 +39,12 @@ export function ProductCard({ product, variant = 'default', rank, quickAdd = tru
   const sizes = availableSizes(product);
   const fav = isFavorite(product.id);
   const href = `/produto/${product.slug}`;
+  const [quick, setQuick] = useState(false);
 
   return (
     <article className={`card card-${variant}`}>
       <div className="card-media" onMouseMove={tilt} onMouseLeave={resetTilt}>
-        <Link to={href} className="card-media-link" aria-label={`${brand?.name} ${product.name} ${product.model}`}>
+        <Link to={href} className="card-media-link" data-cursor="Ver" aria-label={`${brand?.name} ${product.name} ${product.model}`}>
           <ProductMedia product={product} className="card-art card-art-main" />
           {product.cutout ? (
             <ProductMedia product={product} prefer="photo" className="card-art card-art-alt card-photo-reveal" />
@@ -60,6 +63,9 @@ export function ProductCard({ product, variant = 'default', rank, quickAdd = tru
           aria-label={fav ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
         >
           <Icon name="heart" size={18} filled={fav} />
+        </button>
+        <button className="card-eye" onClick={() => setQuick(true)} aria-label={`Visualização rápida de ${product.name} ${product.model}`}>
+          <Icon name="eye" size={18} />
         </button>
         {quickAdd && !upcoming && sizes.length > 0 && (
           <div className="card-quick" aria-label="Adicionar rápido">
@@ -98,6 +104,7 @@ export function ProductCard({ product, variant = 'default', rank, quickAdd = tru
         <p className="card-colorway">{product.colorway}</p>
         <Price product={product} />
       </Link>
+      {quick && <QuickView product={product} open={quick} onClose={() => setQuick(false)} />}
     </article>
   );
 }
