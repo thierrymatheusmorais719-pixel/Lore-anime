@@ -27,8 +27,8 @@ sincronizada à música (≈85 BPM), com efeitos sonoros, no mesmo estilo 2.5D d
   só os efeitos): sinos na íris dourada, vento nas nuvens, "shing" no raio de luz, impacto e metal
   nos zooms, fogo na queima, sopro na fumaça, crescendo com sino no clarão, trovões nos relâmpagos,
   e ambientes por cena (grilos à noite, vento no castelo e na relva, chuva na tempestade).
-- `legendas.py`: título "O Último Juramento" e frases poéticas em ouro nas batidas (Cinzel e
-  Cormorant Garamond em `fontes/`, licença OFL); cada letra nasce de pó dourado e se desfaz em pó.
+- `legendas.py`: título e frases poéticas em ouro (Cinzel e Cormorant Garamond em `fontes/`, OFL).
+  **Desligadas** no vídeo final (`CAPTIONS = False` em `render.py`, `CAPTION_SFX = False` em `sfx.py`).
 - Luz: raios de luar nas cenas noturnas, relâmpagos que iluminam a cena (céu clareia, contorno nos
   personagens) e traço anamórfico de lente nas luzes fortes.
 - Corpo rígido: personagens se movem como peça inteira (sem entortar); cabeças e braços com gestos
