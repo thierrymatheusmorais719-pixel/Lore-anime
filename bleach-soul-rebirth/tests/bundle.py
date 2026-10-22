@@ -8,7 +8,11 @@ src = os.path.join(here, "..", "src", "shared")
 run = open(os.path.join(here, "run.luau"), encoding="utf-8").read()
 names = sorted(set(re.findall(r'MODULE\("([^"]+)"\)', run)))
 
-out = [open(os.path.join(here, "stubs.luau"), encoding="utf-8").read()]
+stubs = open(os.path.join(here, "stubs.luau"), encoding="utf-8").read()
+# CFrame completo (12 componentes, Lerp/slerp) para os módulos de animação
+cframe = open(os.path.join(here, "..", "tools", "cframe_stub.luau"), encoding="utf-8").read().split("-- @@FIM_CFRAME@@")[0]
+stubs = re.sub(r"local CFrame = \{.*?\n\}\n", "", stubs, flags=re.S)
+out = [stubs, cframe]
 out.append("local __modules, __cache = {}, {}")
 out.append("local function MODULE(name)\n\tif __cache[name] == nil then __cache[name] = __modules[name]() end\n\treturn __cache[name]\nend")
 for name in names:

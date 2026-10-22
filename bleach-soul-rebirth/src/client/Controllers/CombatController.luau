@@ -14,7 +14,6 @@ local Powers = require(Shared.Config.Powers)
 local CombatRules = require(Shared.Logic.CombatRules)
 local Loadout = require(Shared.Logic.Loadout)
 local Physics = require(Shared.Physics)
-local Poses = require(Shared.Anim.Poses)
 local Net = require(Shared.Net)
 local Signal = require(Shared.Util.Signal)
 
@@ -206,14 +205,13 @@ local function isAirborne(humanoid: Humanoid): boolean
 	return humanoid.FloorMaterial == Enum.Material.Air
 end
 
+-- Toca o golpe com efeitos presos aos marcadores do clip: "Swing" → som do corte,
+-- "Hit" → arco de luz no quadro do impacto (fica em sincronia mesmo com hit-stop).
 local function slashFx(model: Model, spec, animName: string)
 	local element = VFX.ElementOf(model)
 	local color = VFX.Color(element)
 	VFX.WeaponTrail(model, color, spec.windup + 0.15)
-	task.delay(spec.windup * 0.6, function()
-		SoundController.Play(spec.sound or "Slash", model.PrimaryPart)
-	end)
-	task.delay(spec.windup, function()
+	local function arc()
 		local root = model.PrimaryPart
 		if not root then
 			return
@@ -229,7 +227,38 @@ local function slashFx(model: Model, spec, animName: string)
 		end
 		local reverse = animName == "Slash2" or animName == "Air2" or animName == "Counter"
 		VFX.SlashArc(frame, color, if spec.heavy then 7 else 5.5, if spec.heavy then 0.6 else 0.35, 0.22, reverse)
-	end)
+	end
+	local soundPlayed, arcPlayed = false, false
+	local track = AnimController.Play(model, animName, {
+		onMarker = function(marker: string)
+			if marker == "Swing" and not soundPlayed then
+				soundPlayed = true
+				SoundController.Play(spec.sound or "Slash", model.PrimaryPart)
+			elseif marker == "Hit" and not arcPlayed then
+				arcPlayed = true
+				arc()
+			end
+		end,
+	})
+	-- Reserva (clip sem marcadores, ex.: animação publicada): tempos do Config/Combat
+	if
+		not track
+		or not AnimController.MarkerTime(animName, "Hit")
+		or not AnimController.MarkerTime(animName, "Swing")
+	then
+		task.delay(spec.windup * 0.6, function()
+			if not soundPlayed then
+				soundPlayed = true
+				SoundController.Play(spec.sound or "Slash", model.PrimaryPart)
+			end
+		end)
+		task.delay(spec.windup, function()
+			if not arcPlayed then
+				arcPlayed = true
+				arc()
+			end
+		end)
+	end
 end
 CombatController.SlashFx = slashFx
 
@@ -285,7 +314,6 @@ local function performAttack(kind: string): boolean
 	local maybeExecution = target ~= nil and target:GetAttribute("Stunned") == true
 	if not maybeExecution then
 		predicted[animName] = now
-		AnimController.Play(model, animName)
 		slashFx(model, spec, animName)
 	end
 	if spec.lunge and not isAirborne(humanoid) then
@@ -573,8 +601,7 @@ function CombatController.Start()
 end
 
 CombatController.PoseDuration = function(name: string): number
-	local def = Poses[name]
-	return def and def.duration or 0.5
+	return AnimController.Length(name) or 0.5
 end
 
 return CombatController

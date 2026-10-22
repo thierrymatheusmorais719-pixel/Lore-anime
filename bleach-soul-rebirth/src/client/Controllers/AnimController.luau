@@ -9,9 +9,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 local Poses = require(Shared.Anim.Poses)
+local Clips = require(Shared.Anim.Clips)
 local Animations = require(Shared.Config.Animations)
+local Signal = require(Shared.Util.Signal)
 
 local AnimController = {}
+-- (modelo, animação, marcador) — efeitos/sons sincronizados ao quadro da animação, não a timers
+AnimController.MarkerReached = Signal.new()
 
 local IDENTITY = CFrame.identity
 local MAX_DISTANCE = 220
@@ -30,6 +34,7 @@ type Track = {
 	loop: boolean,
 	order: number,
 	assetTrack: AnimationTrack?,
+	onMarker: ((string) -> ())?,
 }
 
 type Rig = {
@@ -53,6 +58,7 @@ type Rig = {
 	land: number,
 	lookTarget: BasePart?,
 	lookTimer: number,
+	loco: { [string]: { time: number, weight: number } },
 }
 
 -- Rigidez da mola de cada junta: braços rápidos, tronco médio, cabeça lenta (atraso natural).
@@ -92,7 +98,70 @@ local EASE = {
 	end,
 }
 
+local ClipSampler = require(Shared.Anim.ClipSampler)
+local sampleKeys = ClipSampler.sample
+
+local PRIORITY = { Core = 0, Idle = 1, Movement = 2, Action = 3, Action2 = 3, Action3 = 4, Action4 = 4 }
+local clipDefs: { [string]: any } = {}
+
+-- Definição tocável: clip compilado (preferido) ou pose procedural antiga como reserva.
+local function definition(name: string): any?
+	local cached = clipDefs[name]
+	if cached then
+		return cached
+	end
+	local clip = Clips[name]
+	local legacy = Poses[name]
+	if clip then
+		local joints = {}
+		for joint in clip.tracks do
+			table.insert(joints, joint)
+		end
+		local def = {
+			duration = clip.duration,
+			loop = clip.loop,
+			clip = clip,
+			markers = clip.markers,
+			priority = if type(legacy) == "table" and legacy.priority
+				then legacy.priority
+				else (PRIORITY[clip.priority] or 3),
+			fadeIn = if type(legacy) == "table" then legacy.fadeIn else nil,
+			fadeOut = if type(legacy) == "table" then legacy.fadeOut else nil,
+			joints = joints,
+		}
+		clipDefs[name] = def
+		return def
+	end
+	if type(legacy) == "table" and legacy.keyframes then
+		return legacy
+	end
+	return nil
+end
+
+-- Tempo de um marcador ("Hit", "Release"...) dentro da animação, se existir.
+function AnimController.MarkerTime(name: string, marker: string): number?
+	local def = definition(name)
+	if def and def.clip then
+		for _, m in def.markers do
+			if m.name == marker then
+				return m.time
+			end
+		end
+	elseif def and def.markers then
+		return def.markers[marker]
+	end
+	return nil
+end
+
+function AnimController.Length(name: string): number?
+	local def = definition(name)
+	return def and def.duration or nil
+end
+
 local function jointsOf(def): { string }
+	if def.joints then
+		return def.joints
+	end
 	local cached = jointCache[def]
 	if cached then
 		return cached
@@ -149,6 +218,7 @@ function AnimController.Register(model: Model)
 		land = 0,
 		lookTarget = nil,
 		lookTimer = 0,
+		loco = {},
 	}
 	scanMotors(rig)
 	local humanoid = rig.humanoid
@@ -233,8 +303,8 @@ function AnimController.Play(model: Model?, name: string, options: { [string]: a
 	if not model then
 		return nil
 	end
-	local def = Poses[name]
-	if type(def) ~= "table" or not def.keyframes then
+	local def = definition(name)
+	if not def then
 		return nil
 	end
 	local rig = rigs[model] or AnimController.Register(model)
@@ -265,6 +335,7 @@ function AnimController.Play(model: Model?, name: string, options: { [string]: a
 		loop = if opts.loop ~= nil then opts.loop else def.loop == true,
 		order = orderCounter,
 		assetTrack = nil,
+		onMarker = opts.onMarker,
 	}
 	local asset = assetTrackFor(rig, name)
 	if asset then
@@ -343,6 +414,11 @@ function AnimController.Freeze(model: Model?, duration: number)
 end
 
 local function sample(track: Track, joint: string): CFrame?
+	local clip = track.def.clip
+	if clip then
+		local keys = clip.tracks[joint]
+		return if keys then sampleKeys(keys, track.time) else IDENTITY
+	end
 	local keyframes = track.def.keyframes
 	local t = track.time
 	local count = #keyframes
@@ -496,6 +572,71 @@ proceduralLayer = function(rig: Rig, dt: number, _now: number): { [string]: CFra
 	return out
 end
 
+-- Locomoção de rigs sem Animate (NPCs/inimigos) com as marchas compiladas: parado, andar,
+-- correr, disparar. Cada marcha toca na taxa velocidade ÷ velocidade de chão (0,5×–2×) para os
+-- pés não deslizarem; troca com crossfade. `AnimSet` no modelo escolhe outro conjunto (ex.: "Hollow").
+local GAITS = { "Walk", "Run", "Sprint" }
+local function locomotionPose(rig: Rig, dt: number, speed: number, airborne: boolean): { [string]: CFrame }
+	local set = rig.model:GetAttribute("AnimSet") or "Npc"
+	local function get(state: string)
+		return definition(set .. state) or definition("Npc" .. state)
+	end
+	-- Escolhe a marcha cuja faixa de taxa cobre a velocidade (a mais lenta que dá conta)
+	local target = "Idle"
+	if airborne then
+		target = "Air"
+	elseif speed > 0.6 then
+		target = "Sprint"
+		for _, gait in GAITS do
+			local def = get(gait)
+			local gs = def and def.clip and def.clip.groundSpeed
+			if gs and speed <= gs * 2 then
+				target = gait
+				break
+			end
+		end
+	end
+	local fade = 1 - math.exp(-10 * dt)
+	for _, state in { "Idle", "Walk", "Run", "Sprint", "Air" } do
+		local entry = rig.loco[state]
+		if not entry then
+			entry = { time = 0, weight = 0 }
+			rig.loco[state] = entry
+		end
+		entry.weight += ((if state == target then 1 else 0) - entry.weight) * fade
+	end
+	local result: { [string]: CFrame } = {}
+	local accumulated = 0
+	for _, state in { "Idle", "Walk", "Run", "Sprint", "Air" } do
+		local entry = rig.loco[state]
+		if entry.weight > 0.01 then
+			local def = if state == "Air" then definition("AirStep") else get(state)
+			if def and def.clip then
+				local rate = 1
+				local gs = def.clip.groundSpeed
+				if gs then
+					rate = math.clamp(speed / gs, 0.5, 2)
+				end
+				if state == "Air" then
+					entry.time = def.duration
+				else
+					entry.time = (entry.time + dt * rate) % def.duration
+				end
+				local share = entry.weight / (accumulated + entry.weight)
+				accumulated += entry.weight
+				for joint, keys in def.clip.tracks do
+					if joint ~= "Weapon" and joint ~= "OffHand" then
+						local cf = sampleKeys(keys, entry.time)
+						local current = result[joint]
+						result[joint] = if current then current:Lerp(cf, share) else IDENTITY:Lerp(cf, share)
+					end
+				end
+			end
+		end
+	end
+	return result
+end
+
 local function stepRig(rig: Rig, dt: number, now: number)
 	local frozen = now < rig.frozenUntil
 	local adt = if frozen then 0 else dt
@@ -505,7 +646,20 @@ local function stepRig(rig: Rig, dt: number, now: number)
 	local tracks = rig.tracks
 	for i = #tracks, 1, -1 do
 		local t = tracks[i]
+		local previous = t.time
 		t.time += adt * t.speed
+		local markers = t.def.clip and t.def.markers
+		if markers and not t.stopping and t.time > previous then
+			for _, m in markers do
+				local mt = m.time
+				if (mt > previous and mt <= t.time) or (previous == 0 and mt == 0) then
+					AnimController.MarkerReached:Fire(rig.model, t.name, m.name)
+					if t.onMarker then
+						task.spawn(t.onMarker, m.name)
+					end
+				end
+			end
+		end
 		if not t.loop and not t.stopping and t.time >= t.def.duration then
 			t.stopping = true
 		end
@@ -532,7 +686,7 @@ local function stepRig(rig: Rig, dt: number, now: number)
 		local speed = Vector3.new(v.X, 0, v.Z).Magnitude
 		rig.phase += dt * speed * 0.42
 		local airborne = rig.humanoid.FloorMaterial == Enum.Material.Air and math.abs(v.Y) > 6
-		locomotion = Poses.locomotion(rig.phase, speed, airborne, now)
+		locomotion = locomotionPose(rig, dt, speed, airborne)
 	end
 
 	table.sort(tracks, function(a, b)

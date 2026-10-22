@@ -1,0 +1,462 @@
+{
+ "name": "Uppercut",
+ "rig": "R15",
+ "loop": false,
+ "priority": "Action",
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.25,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.62,
+      -2.93,
+      0.45
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.62,
+      -2.93,
+      -0.45
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      0,
+      -12,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      0,
+      10,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.35,
+      -0.45,
+      0.8
+     ]
+    },
+    "RightElbow": {
+     "bend": 65
+    },
+    "Weapon": {
+     "rotation": [
+      -60,
+      -15,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.25,
+      -0.75,
+      0.45
+     ]
+    },
+    "LeftElbow": {
+     "bend": 75
+    }
+   },
+   "easing": {
+    "style": "Linear",
+    "direction": "In"
+   }
+  },
+  {
+   "time": 0.09,
+   "joints": {
+    "Root": {
+     "position": [
+      0.0,
+      -0.85,
+      -0.1
+     ],
+     "rotation": [
+      0.0,
+      -10,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.6,
+      -2.93,
+      0.35
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.6,
+      -2.93,
+      -0.35
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      -15,
+      -20,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      10,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.45,
+      -0.85,
+      -0.15
+     ]
+    },
+    "RightElbow": {
+     "bend": 15
+    },
+    "Weapon": {
+     "rotation": [
+      -90,
+      0,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.3,
+      -0.5,
+      0.6
+     ]
+    },
+    "LeftElbow": {
+     "bend": 70
+    }
+   },
+   "easing": {
+    "style": "Linear",
+    "direction": "In"
+   },
+   "name": "WindUp",
+   "markers": [
+    {
+     "name": "Swing"
+    }
+   ]
+  },
+  {
+   "time": 0.15,
+   "joints": {
+    "Root": {
+     "position": [
+      0.0,
+      -0.15,
+      -0.2
+     ],
+     "rotation": [
+      0.0,
+      5,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.6,
+      -2.93,
+      0.35
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.6,
+      -2.93,
+      -0.35
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      8,
+      5,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      20,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.15,
+      0.6,
+      0.8
+     ],
+     "bendToward": [
+      0,
+      1,
+      0
+     ]
+    },
+    "RightElbow": {
+     "bend": 5
+    },
+    "Weapon": {
+     "rotation": [
+      -90,
+      0,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.45,
+      -0.6,
+      -0.3
+     ]
+    },
+    "LeftElbow": {
+     "bend": 20
+    }
+   },
+   "easing": {
+    "style": "Linear",
+    "direction": "In"
+   },
+   "name": "Hit",
+   "markers": [
+    {
+     "name": "Hit"
+    }
+   ]
+  },
+  {
+   "time": 0.27,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.2,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.6,
+      -2.93,
+      0.35
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.6,
+      -2.93,
+      -0.35
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      12,
+      8,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      25,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.1,
+      1,
+      0.25
+     ],
+     "bendToward": [
+      0,
+      1,
+      0
+     ]
+    },
+    "RightElbow": {
+     "bend": 10
+    },
+    "Weapon": {
+     "rotation": [
+      -90,
+      0,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.45,
+      -0.6,
+      -0.3
+     ]
+    },
+    "LeftElbow": {
+     "bend": 20
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "Out"
+   }
+  },
+  {
+   "time": 0.45,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.2,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.6,
+      -2.93,
+      0.35
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.6,
+      -2.93,
+      -0.35
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      12,
+      8,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      25,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.3,
+      0.4,
+      0.75
+     ]
+    },
+    "RightElbow": {
+     "bend": 40
+    },
+    "Weapon": {
+     "rotation": [
+      -45,
+      0,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.45,
+      -0.6,
+      -0.3
+     ]
+    },
+    "LeftElbow": {
+     "bend": 20
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 0.67,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.25,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.62,
+      -2.93,
+      0.45
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.62,
+      -2.93,
+      -0.45
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      0,
+      -12,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      0,
+      10,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.35,
+      -0.45,
+      0.8
+     ]
+    },
+    "RightElbow": {
+     "bend": 65
+    },
+    "Weapon": {
+     "rotation": [
+      -60,
+      -15,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.25,
+      -0.75,
+      0.45
+     ]
+    },
+    "LeftElbow": {
+     "bend": 75
+    }
+   }
+  }
+ ]
+}

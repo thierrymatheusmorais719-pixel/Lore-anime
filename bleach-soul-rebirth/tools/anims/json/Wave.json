@@ -1,0 +1,102 @@
+{
+ "name": "Wave",
+ "rig": "R15",
+ "loop": false,
+ "priority": "Action",
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "RightShoulder": {
+     "aim": [
+      0.08,
+      -1,
+      0
+     ]
+    },
+    "RightElbow": {
+     "bend": 8
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "Out"
+   }
+  },
+  {
+   "time": 0.25,
+   "joints": {
+    "RightShoulder": {
+     "aim": [
+      1,
+      0.3,
+      0.4
+     ],
+     "bendToward": [
+      0,
+      1,
+      0
+     ]
+    },
+    "RightElbow": {
+     "bend": 70
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 0.5,
+   "joints": {
+    "RightElbow": {
+     "bend": 115
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 0.75,
+   "joints": {
+    "RightElbow": {
+     "bend": 70
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 1.0,
+   "joints": {
+    "RightElbow": {
+     "bend": 115
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 1.35,
+   "joints": {
+    "RightShoulder": {
+     "aim": [
+      0.08,
+      -1,
+      0
+     ]
+    },
+    "RightElbow": {
+     "bend": 8
+    }
+   }
+  }
+ ]
+}

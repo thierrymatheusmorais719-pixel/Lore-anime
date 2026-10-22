@@ -1,0 +1,254 @@
+{
+ "Slash1": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "Slash2": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "Slash3": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "Slash4": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "Slash5": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "SwordIdle": {
+  "flags": [],
+  "waive": []
+ },
+ "SwordRun": {
+  "flags": [],
+  "waive": []
+ },
+ "Block": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "BlockHit": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "Draw": {
+  "flags": [],
+  "waive": []
+ },
+ "Sheathe": {
+  "flags": [],
+  "waive": []
+ },
+ "Charge": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "Dash": {
+  "flags": [],
+  "waive": []
+ },
+ "AirStep": {
+  "flags": [],
+  "waive": []
+ },
+ "Air1": {
+  "flags": [],
+  "waive": []
+ },
+ "Air2": {
+  "flags": [],
+  "waive": []
+ },
+ "Air3": {
+  "flags": [],
+  "waive": []
+ },
+ "Air4": {
+  "flags": [],
+  "waive": []
+ },
+ "HeavySlash": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "Uppercut": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "Counter": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [
+   "velocity"
+  ]
+ },
+ "Execution": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "Hit1": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "Hit2": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "Stagger": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "GuardBreak": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "Parried": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "ParrySuccess": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "Launched": {
+  "flags": [],
+  "waive": []
+ },
+ "CastPoint": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "CastSlash": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "CastOverhead": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "CastBurst": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "CastCharge": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "CastBow": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "DashStrikePose": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "UltimateRaise": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "ReleaseTier1": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "ReleaseTier2": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": []
+ },
+ "MaskOn": {
+  "flags": [],
+  "waive": []
+ },
+ "Revert": {
+  "flags": [],
+  "waive": []
+ },
+ "Wave": {
+  "flags": [],
+  "waive": []
+ },
+ "Talk": {
+  "flags": [],
+  "waive": []
+ },
+ "NpcIdle": {
+  "flags": [],
+  "waive": []
+ },
+ "NpcWalk": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": []
+ },
+ "NpcRun": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": []
+ },
+ "NpcSprint": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": []
+ }
+}

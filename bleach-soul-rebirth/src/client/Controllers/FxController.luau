@@ -5,7 +5,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 local Combat = require(Shared.Config.Combat)
-local Poses = require(Shared.Anim.Poses)
 local Net = require(Shared.Net)
 local Signal = require(Shared.Util.Signal)
 
@@ -82,7 +81,6 @@ handlers.Attack = function(d)
 	if isLocal(model) and CombatController.WasPredicted(d.anim) then
 		return
 	end
-	AnimController.Play(model, d.anim)
 	CombatController.SlashFx(model, spec, d.anim)
 	if d.anim == "Execution" then
 		local root = rootOf(model)
@@ -266,8 +264,8 @@ handlers.Cast = function(d)
 	if not model or not model.Parent then
 		return
 	end
-	local poseDef = Poses[d.anim]
-	local releaseAt = poseDef and poseDef.markers and poseDef.markers.Release or d.windup
+	-- O marcador "Release" do clip cai exatamente no `windup` da habilidade (quando o servidor libera)
+	local releaseAt = AnimController.MarkerTime(d.anim, "Release") or d.windup
 	local speed = if d.windup > 0 then releaseAt / d.windup else 1
 	AnimController.Play(model, d.anim, { speed = speed })
 	local color = VFX.Color(d.element)
@@ -495,8 +493,9 @@ handlers.TransformStart = function(d)
 		return
 	end
 	local anim = if d.form == "Tier2" then "ReleaseTier2" else "ReleaseTier1"
-	local poseDef = Poses[anim]
-	AnimController.Play(model, anim, { speed = poseDef.duration / (d.channel + 0.4) })
+	-- "Release" do clip coincide com o fim da canalização no servidor (forma aplicada)
+	local releaseAt = AnimController.MarkerTime(anim, "Release") or d.channel
+	AnimController.Play(model, anim, { speed = releaseAt / math.max(0.1, d.channel) })
 	local color = VFX.Color(d.element)
 	SoundController.Play("Release", root)
 	VFX.Pillar(

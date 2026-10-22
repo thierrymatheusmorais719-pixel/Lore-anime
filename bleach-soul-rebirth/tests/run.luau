@@ -460,6 +460,71 @@ test("loadout por forma e máscara", function()
 	eq(Loadout.weapon(Factions, Powers.List, "Shinigami", "Enjin", "Tier2").style, "Nodachi")
 end)
 
+-- ======================= Animações compiladas =======================
+local Clips = MODULE("Anim/Clips")
+local ClipSampler = MODULE("Anim/ClipSampler")
+local function markerTime(clip, name)
+	for _, m in clip.markers do
+		if m.name == name then
+			return m.time
+		end
+	end
+	return nil
+end
+test("impacto de cada golpe = windup do servidor", function()
+	local function check(spec, label)
+		local clip = Clips[spec.anim]
+		truthy(clip, label .. ": clip " .. spec.anim .. " não compilado")
+		local hit = markerTime(clip, "Hit")
+		truthy(hit, label .. ": sem marcador Hit")
+		truthy(math.abs(hit - spec.windup) < 0.002, string.format("%s: Hit %.3f ≠ windup %.3f", label, hit, spec.windup))
+	end
+	for i, spec in Combat.Light do
+		check(spec, "Light" .. i)
+	end
+	for i, spec in Combat.Aerial do
+		check(spec, "Aerial" .. i)
+	end
+	check(Combat.Heavy, "Heavy")
+	check(Combat.Launcher, "Launcher")
+	check(Combat.Counter, "Counter")
+	check(Combat.Execution, "Execution")
+end)
+test("toda animação usada pelo jogo existe compilada", function()
+	for id, a in Abilities do
+		local clip = Clips[a.anim]
+		truthy(clip, id .. ": " .. a.anim)
+		truthy(markerTime(clip, "Release"), a.anim .. " sem marcador Release")
+	end
+	for _, name in { "SwordIdle", "SwordRun", "Block", "BlockHit", "Draw", "Sheathe", "Charge", "Dash", "AirStep",
+		"Hit1", "Hit2", "Stagger", "Launched", "GuardBreak", "Parried", "ParrySuccess", "ReleaseTier1", "ReleaseTier2",
+		"MaskOn", "Revert", "Wave", "Talk", "NpcIdle", "NpcWalk", "NpcRun", "NpcSprint" } do
+		truthy(Clips[name], name)
+	end
+	truthy(markerTime(Clips.ReleaseTier1, "Release") and markerTime(Clips.ReleaseTier2, "Release"), "Release das formas")
+	truthy(Clips.NpcWalk.groundSpeed and Clips.NpcRun.groundSpeed and Clips.NpcSprint.groundSpeed, "velocidade de chão das marchas")
+end)
+test("amostragem reproduz as chaves e o easing do Roblox", function()
+	eq(ClipSampler.ease("Linear", "In", 0.25), 0.25)
+	eq(ClipSampler.ease("CubicV2", "In", 0.5), 0.125)
+	eq(ClipSampler.ease("CubicV2", "Out", 0.5), 0.875)
+	eq(ClipSampler.ease("CubicV2", "InOut", 0.5), 0.5)
+	eq(ClipSampler.ease("Constant", "In", 0.3), 1)
+	eq(ClipSampler.ease("Cubic", "In", 0.5), 0.875, "Cubic antigo do Roblox é invertido")
+	for name, clip in Clips do
+		for joint, keys in clip.tracks do
+			for _, k in keys do
+				local cf = ClipSampler.sample(keys, k[1])
+				local d = 0
+				for i = 1, 9 do
+					d = math.max(d, math.abs(cf.r[i] - k[2].r[i]))
+				end
+				truthy(d < 1e-4, name .. "." .. joint .. " em " .. k[1])
+			end
+		end
+	end
+end)
+
 print(string.format("\n%d testes passaram, %d falharam", passed, failed))
 if failed > 0 then
 	error("testes falharam")

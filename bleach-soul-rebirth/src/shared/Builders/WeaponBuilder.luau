@@ -242,12 +242,20 @@ function WeaponBuilder.attach(character: Model, model: Model, handName: string?)
 	local style = model:GetAttribute("Style")
 	local sheathable = style == "Katana" or style == "Nodachi" or style == "LightBlade"
 
-	local grip = Instance.new("Weld")
-	grip.Name = "GripWeld"
+	-- Empunhadura = Motor6D animável ("Weapon" na mão direita, "OffHand" na esquerda), no mesmo
+	-- referencial das juntas de prop da skill roblox-vfx-animation: C0 no ponto de empunhadura
+	-- girado -90° em X (lâmina = +Y do prop). Com Transform identidade a lâmina sai do punho para frente.
+	local isRight = (handName or "RightHand") == "RightHand"
+	local gripAttachment =
+		hand:FindFirstChild(if isRight then "RightGripAttachment" else "LeftGripAttachment") :: Attachment?
+	local gripPosition = if gripAttachment then gripAttachment.Position else Vector3.new(0, -0.158, 0)
+	local grip = Instance.new("Motor6D")
+	grip.Name = if isRight then "Weapon" else "OffHand"
 	grip.Part0 = hand
 	grip.Part1 = handle
-	grip.C0 = CFrame.new(0, -0.15, 0)
-	grip.C1 = CFrame.new(0, 0, 0.3)
+	grip.C0 = CFrame.new(gripPosition) * CFrame.Angles(math.rad(-90), 0, 0)
+	grip.C1 = CFrame.new(0, 0, 0.3) * CFrame.Angles(math.rad(-90), 0, 0)
+	grip:SetAttribute("Grip", true)
 	grip.Parent = handle
 
 	if sheathable and (handName or "RightHand") == "RightHand" then
@@ -270,7 +278,7 @@ function WeaponBuilder.setDrawn(model: Model, drawn: boolean)
 	if not handle then
 		return
 	end
-	local grip = handle:FindFirstChild("GripWeld") :: Weld?
+	local grip = (handle:FindFirstChild("Weapon") or handle:FindFirstChild("OffHand")) :: Motor6D?
 	local hip = handle:FindFirstChild("HipWeld") :: Weld?
 	if not hip then
 		return

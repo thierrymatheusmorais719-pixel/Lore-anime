@@ -1,0 +1,213 @@
+{
+ "name": "Charge",
+ "rig": "R15",
+ "loop": true,
+ "priority": "Action",
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.75,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.9,
+      -2.93,
+      0.2
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.9,
+      -2.93,
+      -0.2
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      -8,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -12,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.75,
+      -0.7,
+      0.15
+     ]
+    },
+    "RightElbow": {
+     "bend": 35
+    },
+    "Weapon": {
+     "rotation": [
+      -30,
+      0,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.75,
+      -0.7,
+      0.15
+     ]
+    },
+    "LeftElbow": {
+     "bend": 35
+    }
+   }
+  },
+  {
+   "time": 0.4,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.8,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.9,
+      -2.93,
+      0.2
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.9,
+      -2.93,
+      -0.2
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      -4,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -6,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.8,
+      -0.65,
+      0.12
+     ]
+    },
+    "RightElbow": {
+     "bend": 40
+    },
+    "Weapon": {
+     "rotation": [
+      -30,
+      0,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.8,
+      -0.65,
+      0.12
+     ]
+    },
+    "LeftElbow": {
+     "bend": 40
+    }
+   }
+  },
+  {
+   "time": 0.8,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.75,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.9,
+      -2.93,
+      0.2
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.9,
+      -2.93,
+      -0.2
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      -8,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -12,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.75,
+      -0.7,
+      0.15
+     ]
+    },
+    "RightElbow": {
+     "bend": 35
+    },
+    "Weapon": {
+     "rotation": [
+      -30,
+      0,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.75,
+      -0.7,
+      0.15
+     ]
+    },
+    "LeftElbow": {
+     "bend": 35
+    }
+   }
+  }
+ ],
+ "easing": {
+  "style": "CubicV2",
+  "direction": "InOut"
+ }
+}

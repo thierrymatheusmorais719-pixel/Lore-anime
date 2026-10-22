@@ -1,0 +1,150 @@
+{
+ "name": "SwordIdle",
+ "rig": "R15",
+ "loop": true,
+ "priority": "Idle",
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -2,
+      -12,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      0,
+      10,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.35,
+      -0.45,
+      0.8
+     ]
+    },
+    "RightElbow": {
+     "bend": 65
+    },
+    "Weapon": {
+     "rotation": [
+      -60,
+      -15,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.25,
+      -0.75,
+      0.45
+     ]
+    },
+    "LeftElbow": {
+     "bend": 75
+    }
+   }
+  },
+  {
+   "time": 1.2,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -4,
+      -12,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      0,
+      10,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.35,
+      -0.42,
+      0.8
+     ]
+    },
+    "RightElbow": {
+     "bend": 68
+    },
+    "Weapon": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.25,
+      -0.72,
+      0.45
+     ]
+    },
+    "LeftElbow": {
+     "bend": 78
+    }
+   }
+  },
+  {
+   "time": 2.4,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -2,
+      -12,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      0,
+      10,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.35,
+      -0.45,
+      0.8
+     ]
+    },
+    "RightElbow": {
+     "bend": 65
+    },
+    "Weapon": {
+     "rotation": [
+      -60,
+      -15,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.25,
+      -0.75,
+      0.45
+     ]
+    },
+    "LeftElbow": {
+     "bend": 75
+    }
+   }
+  }
+ ],
+ "easing": {
+  "style": "CubicV2",
+  "direction": "InOut"
+ }
+}

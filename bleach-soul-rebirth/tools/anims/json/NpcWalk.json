@@ -1,0 +1,341 @@
+{
+ "name": "NpcWalk",
+ "rig": "R15",
+ "loop": true,
+ "easing": {
+  "style": "Linear"
+ },
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.09,
+      0
+     ]
+    },
+    "LeftHip": {
+     "aim": [
+      0,
+      -0.92,
+      0.38
+     ]
+    },
+    "LeftKnee": {
+     "bend": 11
+    },
+    "LeftAnkle": {
+     "rotation": [
+      -11,
+      0,
+      0
+     ]
+    },
+    "RightHip": {
+     "aim": [
+      0,
+      -0.98,
+      -0.19
+     ]
+    },
+    "RightKnee": {
+     "bend": 11
+    },
+    "RightAnkle": {
+     "rotation": [
+      22,
+      0,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      0,
+      -1,
+      -0.35
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0,
+      -1,
+      0.35
+     ]
+    },
+    "LeftElbow": {
+     "bend": 15
+    },
+    "RightElbow": {
+     "bend": 15
+    }
+   }
+  },
+  {
+   "time": 0.25,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.01,
+      0
+     ]
+    },
+    "LeftHip": {
+     "aim": [
+      0,
+      -0.99,
+      0.11
+     ]
+    },
+    "LeftKnee": {
+     "bend": 12
+    },
+    "LeftAnkle": {
+     "rotation": [
+      6,
+      0,
+      0
+     ]
+    },
+    "RightHip": {
+     "aim": [
+      0,
+      -0.76,
+      0.65
+     ]
+    },
+    "RightKnee": {
+     "bend": 76
+    },
+    "RightAnkle": {
+     "rotation": [
+      36,
+      0,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      0,
+      -1,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0,
+      -1,
+      0
+     ]
+    },
+    "LeftElbow": {
+     "bend": 15
+    },
+    "RightElbow": {
+     "bend": 15
+    }
+   }
+  },
+  {
+   "time": 0.5,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.09,
+      0
+     ]
+    },
+    "LeftHip": {
+     "aim": [
+      0,
+      -0.98,
+      -0.19
+     ]
+    },
+    "LeftKnee": {
+     "bend": 11
+    },
+    "LeftAnkle": {
+     "rotation": [
+      22,
+      0,
+      0
+     ]
+    },
+    "RightHip": {
+     "aim": [
+      0,
+      -0.92,
+      0.38
+     ]
+    },
+    "RightKnee": {
+     "bend": 11
+    },
+    "RightAnkle": {
+     "rotation": [
+      -11,
+      0,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      0,
+      -1,
+      0.35
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0,
+      -1,
+      -0.35
+     ]
+    },
+    "LeftElbow": {
+     "bend": 15
+    },
+    "RightElbow": {
+     "bend": 15
+    }
+   }
+  },
+  {
+   "time": 0.75,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.01,
+      0
+     ]
+    },
+    "LeftHip": {
+     "aim": [
+      0,
+      -0.76,
+      0.65
+     ]
+    },
+    "LeftKnee": {
+     "bend": 76
+    },
+    "LeftAnkle": {
+     "rotation": [
+      36,
+      0,
+      0
+     ]
+    },
+    "RightHip": {
+     "aim": [
+      0,
+      -0.99,
+      0.11
+     ]
+    },
+    "RightKnee": {
+     "bend": 12
+    },
+    "RightAnkle": {
+     "rotation": [
+      6,
+      0,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      0,
+      -1,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0,
+      -1,
+      0
+     ]
+    },
+    "LeftElbow": {
+     "bend": 15
+    },
+    "RightElbow": {
+     "bend": 15
+    }
+   }
+  },
+  {
+   "time": 1,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.09,
+      0
+     ]
+    },
+    "LeftHip": {
+     "aim": [
+      0,
+      -0.92,
+      0.38
+     ]
+    },
+    "LeftKnee": {
+     "bend": 11
+    },
+    "LeftAnkle": {
+     "rotation": [
+      -11,
+      0,
+      0
+     ]
+    },
+    "RightHip": {
+     "aim": [
+      0,
+      -0.98,
+      -0.19
+     ]
+    },
+    "RightKnee": {
+     "bend": 11
+    },
+    "RightAnkle": {
+     "rotation": [
+      22,
+      0,
+      0
+     ]
+    },
+    "LeftShoulder": {
+     "aim": [
+      0,
+      -1,
+      -0.35
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0,
+      -1,
+      0.35
+     ]
+    },
+    "LeftElbow": {
+     "bend": 15
+    },
+    "RightElbow": {
+     "bend": 15
+    }
+   }
+  }
+ ],
+ "priority": "Movement"
+}

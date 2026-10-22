@@ -1021,14 +1021,11 @@ function MenuController.Init()
 		Size = UDim2.fromOffset(70, 480),
 		Parent = sideGui,
 	}, {
-		Kit.new(
-			"UIListLayout",
-			{
-				Padding = UDim.new(0, 8),
-				SortOrder = Enum.SortOrder.LayoutOrder,
-				VerticalAlignment = Enum.VerticalAlignment.Center,
-			}
-		),
+		Kit.new("UIListLayout", {
+			Padding = UDim.new(0, 8),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+		}),
 	})
 	local SIDE = {
 		{ tab = "Status", label = "Status", icon = "体", color = Color3.fromRGB(235, 90, 90) },
