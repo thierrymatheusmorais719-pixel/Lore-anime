@@ -1,5 +1,10 @@
 -- IA de inimigos: máquina de estados leve (8 Hz) que usa as mesmas APIs de combate dos jogadores.
 -- Ociosa/Patrulha → Perseguir → Atacar (combo) / Habilidade / Reagir (esquiva, bloqueio, parry) → Recuar.
+-- Navegação: linha reta quando o caminho está livre; PathfindingService quando há obstáculo ou o
+-- inimigo emperra. Espaçamento: no máximo ATTACKERS inimigos atacam o mesmo jogador; os outros
+-- rondam em círculo na distância de combate esperando a vez (grupos não se empilham no jogador).
+local PathfindingService = game:GetService("PathfindingService")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
@@ -13,6 +18,40 @@ local EnemyBrain = {}
 EnemyBrain.__index = EnemyBrain
 
 local rng = Random.new()
+
+local ATTACKERS = 2 -- inimigos comuns atacando o mesmo jogador ao mesmo tempo
+local PATH_REFRESH = 1.2 -- s entre recálculos de caminho
+local slots: { [any]: { [any]: number } } = {} -- alvo → { cérebro → validade do slot }
+
+local function attackSlot(brain, target, now: number): boolean
+	if brain.def.boss then
+		return true
+	end
+	local holders = slots[target]
+	if not holders then
+		holders = {}
+		slots[target] = holders
+	end
+	local count = 0
+	for other, untilTime in holders do
+		if untilTime < now or other.target ~= target then
+			holders[other] = nil
+		elseif other ~= brain then
+			count += 1
+		end
+	end
+	if holders[brain] or count < ATTACKERS then
+		holders[brain] = now + 2.5
+		return true
+	end
+	return false
+end
+
+local function releaseSlot(brain)
+	for _, holders in slots do
+		holders[brain] = nil
+	end
+end
 
 function EnemyBrain.new(actor, def, spawnPosition: Vector3)
 	local self = setmetatable({}, EnemyBrain)
@@ -30,6 +69,17 @@ function EnemyBrain.new(actor, def, spawnPosition: Vector3)
 	self.lastMoveTarget = nil
 	self.stuckSince = nil
 	self.lastPosition = spawnPosition
+	-- navegação
+	self.path = nil :: { PathWaypoint }?
+	self.pathIndex = 0
+	self.pathGoal = nil :: Vector3?
+	self.pathAt = 0
+	self.computing = false
+	self.forcePathUntil = 0
+	-- ronda
+	self.strafeSign = if rng:NextNumber() < 0.5 then 1 else -1
+	self.strafeSwitch = 0
+	self.engaged = false
 	return self
 end
 
@@ -74,22 +124,130 @@ function EnemyBrain:Face(position: Vector3)
 	end
 end
 
+local function rayParams(): RaycastParams
+	local params = RaycastParams.new()
+	local ignore: { Instance } = {}
+	for _, name in { "Enemies", "Bosses", "Effects" } do
+		local folder = workspace:FindFirstChild(name)
+		if folder then
+			table.insert(ignore, folder)
+		end
+	end
+	for _, player in Players:GetPlayers() do
+		if player.Character then
+			table.insert(ignore, player.Character)
+		end
+	end
+	params.FilterDescendantsInstances = ignore
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.IgnoreWater = true
+	return params
+end
+
+-- Linha livre na altura da cintura e dos pés até o destino?
+function EnemyBrain:ClearLine(goal: Vector3): boolean
+	local root = self.actor.root
+	local params = rayParams()
+	local hip = self.actor.humanoid.HipHeight
+	for _, height in { 0, -hip * 0.8 } do
+		local from = root.Position + Vector3.new(0, height, 0)
+		local to = Vector3.new(goal.X, from.Y, goal.Z)
+		local delta = to - from
+		if delta.Magnitude > 0.5 and workspace:Raycast(from, delta, params) then
+			return false
+		end
+	end
+	return true
+end
+
+function EnemyBrain:ComputePath(goal: Vector3)
+	if self.computing then
+		return
+	end
+	self.computing = true
+	local root = self.actor.root
+	local humanoid = self.actor.humanoid
+	task.spawn(function()
+		local path = PathfindingService:CreatePath({
+			AgentRadius = math.max(root.Size.X, root.Size.Z) * 0.5 + 0.5,
+			AgentHeight = humanoid.HipHeight + root.Size.Y,
+			AgentCanJump = true,
+			WaypointSpacing = 5,
+		})
+		local ok = pcall(function()
+			path:ComputeAsync(root.Position, goal)
+		end)
+		self.computing = false
+		self.pathAt = os.clock()
+		self.pathGoal = goal
+		if ok and path.Status == Enum.PathStatus.Success then
+			self.path = path:GetWaypoints()
+			self.pathIndex = 2
+		else
+			self.path = nil
+		end
+	end)
+end
+
+-- Vai até `position`: reto se livre, senão pelos pontos do caminho calculado.
 function EnemyBrain:MoveTo(position: Vector3)
 	local humanoid = self.actor.humanoid
-	humanoid:MoveTo(position)
-	-- Pulo simples quando preso em obstáculo
-	local now = os.clock()
 	local root = self.actor.root
+	local now = os.clock()
+
+	-- Emperrado (parede baixa, quina): pula e força caminho calculado por um tempo
 	if (root.Position - self.lastPosition).Magnitude < 0.6 and humanoid.WalkSpeed > 1 then
 		self.stuckSince = self.stuckSince or now
 		if now - self.stuckSince > 0.8 then
 			humanoid.Jump = true
 			self.stuckSince = nil
+			self.forcePathUntil = now + 3
+			self.path = nil
 		end
 	else
 		self.stuckSince = nil
 	end
 	self.lastPosition = root.Position
+
+	if now >= self.forcePathUntil and self:ClearLine(position) then
+		self.path = nil
+		humanoid:MoveTo(position)
+		return
+	end
+	local goalMoved = self.pathGoal == nil or horizontalDistance(self.pathGoal, position) > 6
+	if not self.path or goalMoved or now - self.pathAt > PATH_REFRESH * 3 then
+		if now - self.pathAt > PATH_REFRESH then
+			self:ComputePath(position)
+		end
+	end
+	local waypoints = self.path
+	if waypoints and self.pathIndex <= #waypoints then
+		local waypoint = waypoints[self.pathIndex]
+		if horizontalDistance(waypoint.Position, root.Position) < 3 then
+			self.pathIndex += 1
+			waypoint = waypoints[math.min(self.pathIndex, #waypoints)]
+		end
+		if waypoint.Action == Enum.PathWaypointAction.Jump then
+			humanoid.Jump = true
+		end
+		humanoid:MoveTo(waypoint.Position)
+	else
+		humanoid:MoveTo(position)
+	end
+end
+
+-- Ronda o alvo na distância de combate (de lado, alternando o sentido), como um predador.
+function EnemyBrain:Circle(target, radius: number)
+	local root = self.actor.root
+	local now = os.clock()
+	if now >= self.strafeSwitch then
+		self.strafeSign = -self.strafeSign
+		self.strafeSwitch = now + rng:NextNumber(1.2, 2.6)
+	end
+	local offset = Physics.flat(root.Position - target.root.Position)
+	local angle = math.atan2(offset.Z, offset.X) + self.strafeSign * 0.6
+	local goal = target.root.Position + Vector3.new(math.cos(angle), 0, math.sin(angle)) * radius
+	self:MoveTo(goal)
 end
 
 function EnemyBrain:Stop()
@@ -198,6 +356,8 @@ function EnemyBrain:Step()
 	end
 	local target = self.target
 	if not target then
+		releaseSlot(self)
+		self.engaged = false
 		local home = horizontalDistance(actor.root.Position, self.spawn)
 		if home > 6 then
 			self:MoveTo(self.spawn)
@@ -213,9 +373,21 @@ function EnemyBrain:Step()
 	end
 
 	local distance = horizontalDistance(target.root.Position, actor.root.Position)
+	local reach = def.attackRange * (actor.extra.reach or 1)
+	if not self.engaged then
+		-- Percebeu o alvo: encara e hesita um instante antes de avançar (leitura de "alerta")
+		self.engaged = true
+		self:Stop()
+		self:Face(target.root.Position)
+		self.nextDecision = now + rng:NextNumber(0.25, 0.5)
+		return
+	end
 	if now < self.nextDecision then
-		if distance > def.attackRange then
+		-- Pausa entre combos: ronda na borda do alcance em vez de ficar parado colado
+		if distance > reach + 6 then
 			self:MoveTo(target.root.Position)
+		else
+			self:Circle(target, reach + 2)
 		end
 		return
 	end
@@ -225,7 +397,14 @@ function EnemyBrain:Step()
 		return
 	end
 
-	if distance <= def.attackRange then
+	local mySlot = attackSlot(self, target, now)
+	if not mySlot then
+		-- Fila: ronda a uma distância maior, sem atacar, até um slot vagar
+		self.comboLeft = 0
+		self:Circle(target, reach + 5)
+		return
+	end
+	if distance <= reach then
 		self:Stop()
 		self:Face(target.root.Position)
 		if self.comboLeft <= 0 then

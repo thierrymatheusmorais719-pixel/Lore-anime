@@ -97,6 +97,7 @@ function EnemyService.Spawn(enemyId: string, position: Vector3, onDeath: (() -> 
 		return nil
 	end
 	actor.extra.weaponSpec = def.weapon
+	actor.extra.reach = math.max(1, scale * 0.85)
 	actor.extra.element = "Hollow"
 	actor.extra.superArmorAttacks = def.superArmorAttacks == true
 	if def.weapon then

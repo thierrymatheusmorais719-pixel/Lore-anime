@@ -797,9 +797,11 @@ end
 
 CombatService.SetDrawn = setDrawn
 
+-- Alcance cresce com o tamanho do corpo (criaturas e chefes grandes): `extra.reach` = escala do modelo.
 local function hitboxFrame(actor: Actor, direction: Vector3, offset: CFrame): CFrame
 	local position = actor.root.Position
-	return CFrame.lookAt(position, position + direction) * offset
+	local reach = actor.extra.reach or 1
+	return CFrame.lookAt(position, position + direction) * (offset.Rotation + offset.Position * reach)
 end
 
 local function validDirection(actor: Actor, aimDir: any): Vector3
@@ -923,7 +925,7 @@ function CombatService.TryAttack(actor: Actor, kind: string, aimDir: any): boole
 			return
 		end
 		local frame = hitboxFrame(actor, direction, spec.hitbox.offset)
-		local targets = CombatService.QueryBox(frame, spec.hitbox.size, actor)
+		local targets = CombatService.QueryBox(frame, spec.hitbox.size * (actor.extra.reach or 1), actor)
 		local hitSpec = {
 			kind = "Melee",
 			damage = spec.damage,
