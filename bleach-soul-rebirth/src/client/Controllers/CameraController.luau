@@ -50,10 +50,23 @@ function CameraController.EndCinematic()
 	if not cinematic then
 		return
 	end
+	local ended = cinematic
 	cinematic = nil
 	local camera = workspace.CurrentCamera
 	camera.CameraType = Enum.CameraType.Custom
 	setLetterbox(false)
+	if ended.onEnd then
+		task.spawn(ended.onEnd)
+	end
+end
+
+-- Cena com câmera roteirizada: `frame(t)` devolve (CFrame, FOV) a cada quadro durante `total` s.
+-- Qualquer tecla pula; `onEnd` roda ao terminar ou ao pular.
+function CameraController.PlayScripted(total: number, frame: (number) -> (CFrame, number), onEnd: (() -> ())?)
+	CameraController.EndCinematic()
+	cinematic = { scripted = frame, start = os.clock(), total = total, onEnd = onEnd }
+	workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
+	setLetterbox(true)
 end
 
 -- Plano orbital ao redor de `focus` (BasePart). shots: { {duration, fromAngle, toAngle, distance, height, fov} }
@@ -70,6 +83,14 @@ end
 
 local function cinematicFrame(c): CFrame?
 	local elapsed = os.clock() - c.start
+	if c.scripted then
+		if elapsed >= c.total then
+			return nil
+		end
+		local cf, fov = c.scripted(elapsed)
+		workspace.CurrentCamera.FieldOfView = fov
+		return cf
+	end
 	if elapsed >= c.total or not c.focus.Parent then
 		return nil
 	end

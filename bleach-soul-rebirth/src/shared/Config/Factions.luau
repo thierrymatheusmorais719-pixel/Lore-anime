@@ -1,5 +1,7 @@
 -- Facções jogáveis. `base` define as habilidades Z/X/C iniciais; cada poder (Powers.luau)
 -- sobrescreve espaços conforme a forma (Tier1 = Shikai/Resurrección..., Tier2 = Bankai/...).
+-- Tier2 tem cutscene (cliente: ReleaseCutscene): `channel` = até a tela branca (forma aplicada),
+-- `reveal` = revelação em preto e branco depois dela. Invulnerável nos dois trechos.
 local Factions = {}
 
 Factions.Order = { "Shinigami", "Hollow", "Quincy", "Fullbringer" }
@@ -21,7 +23,15 @@ Factions.Shinigami = {
 	outfit = { robe = Color3.fromRGB(18, 18, 22), trim = Color3.fromRGB(235, 235, 240), cape = false },
 	forms = {
 		Tier1 = { name = "Shikai", kanji = "始解", requiredLevel = 5, drainPerSecond = 1.4, channel = 0.9 },
-		Tier2 = { name = "Bankai", kanji = "卍解", requiredLevel = 15, drainPerSecond = 3.2, channel = 1.7 },
+		Tier2 = {
+			name = "Bankai",
+			kanji = "卍解",
+			requiredLevel = 15,
+			drainPerSecond = 3.2,
+			channel = 5.6,
+			reveal = 2,
+			cutscene = true,
+		},
 	},
 	maskAvailable = true,
 	mentor = "MentorShinigami",
@@ -50,7 +60,15 @@ Factions.Hollow = {
 	},
 	forms = {
 		Tier1 = { name = "Resurrección", kanji = "帰刃", requiredLevel = 5, drainPerSecond = 1.4, channel = 0.9 },
-		Tier2 = { name = "Segunda Etapa", kanji = "第二", requiredLevel = 15, drainPerSecond = 3.2, channel = 1.7 },
+		Tier2 = {
+			name = "Segunda Etapa",
+			kanji = "第二",
+			requiredLevel = 15,
+			drainPerSecond = 3.2,
+			channel = 5.6,
+			reveal = 2,
+			cutscene = true,
+		},
 	},
 	maskAvailable = false,
 	mentor = "MentorHollow",
@@ -74,7 +92,15 @@ Factions.Quincy = {
 	outfit = { robe = Color3.fromRGB(240, 242, 248), trim = Color3.fromRGB(60, 110, 200), cape = true },
 	forms = {
 		Tier1 = { name = "Licht Form", kanji = "光", requiredLevel = 5, drainPerSecond = 1.4, channel = 0.9 },
-		Tier2 = { name = "Vollständig", kanji = "完聖体", requiredLevel = 15, drainPerSecond = 3.2, channel = 1.7 },
+		Tier2 = {
+			name = "Vollständig",
+			kanji = "完聖体",
+			requiredLevel = 15,
+			drainPerSecond = 3.2,
+			channel = 5.6,
+			reveal = 2,
+			cutscene = true,
+		},
 	},
 	maskAvailable = false,
 	mentor = "MentorQuincy",
@@ -103,7 +129,9 @@ Factions.Fullbringer = {
 			kanji = "完全",
 			requiredLevel = 15,
 			drainPerSecond = 3.2,
-			channel = 1.7,
+			channel = 5.6,
+			reveal = 2,
+			cutscene = true,
 		},
 	},
 	maskAvailable = false,

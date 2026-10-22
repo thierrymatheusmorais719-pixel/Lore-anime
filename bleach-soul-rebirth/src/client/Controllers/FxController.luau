@@ -16,6 +16,7 @@ local CameraController = require(Controllers.CameraController)
 local CombatController = require(Controllers.CombatController)
 local SpectacleFx = require(Controllers.SpectacleFx)
 local ImpactFx = require(Controllers.ImpactFx)
+local ReleaseCutscene = require(Controllers.ReleaseCutscene)
 local BossCinematicController = require(Controllers.BossCinematicController)
 
 local FxController = {}
@@ -525,24 +526,39 @@ handlers.TransformStart = function(d)
 		d.channel + 0.3
 	)
 	VFX.emit("Wisp", root.Position, color, 40)
+	-- Cutscene completa da segunda liberação para quem libera (ReleaseCutscene); o título aparece
+	-- na revelação em preto e branco
+	local cutscene = false
+	if isLocal(model) then
+		local getSettings = FxController.Settings
+		local settings = if getSettings then getSettings() else nil
+		local allowed = not settings or settings.cinematics ~= "Off"
+		if allowed and d.cutscene then
+			local title = table.clone(d)
+			title.channel = d.reveal or 1
+			cutscene = ReleaseCutscene.Play(model, d, function()
+				FxController.ReleaseTitle:Fire(title)
+			end)
+		end
+		if not cutscene then
+			if allowed then
+				CameraController.PlayCinematic(root, if d.form == "Tier2" then CINEMATIC_TIER2 else CINEMATIC_TIER1)
+			end
+			FxController.ReleaseTitle:Fire(d)
+		end
+	elseif nearLocal(root.Position, 80) then
+		FxController.ReleaseTitle:Fire(d)
+	end
 	if nearLocal(root.Position, 150) then
 		local tier2 = d.form == "Tier2"
 		SpectacleFx.Helix(root, color, d.channel, if tier2 then 5 else 3.5, if tier2 then 60 else 30)
 		SpectacleFx.WorldKanji(root, d.formKanji or "解", color, d.channel + 0.9, if tier2 then 28 else 16)
 		if tier2 then
-			SpectacleFx.DarkenWorld(color, d.channel + 0.6)
+			if not cutscene then
+				SpectacleFx.DarkenWorld(color, d.channel + 0.6)
+			end
 			SpectacleFx.LiftRocks(root, 16, d.channel)
 		end
-	end
-	if isLocal(model) then
-		local getSettings = FxController.Settings
-		local settings = if getSettings then getSettings() else nil
-		if not settings or settings.cinematics ~= "Off" then
-			CameraController.PlayCinematic(root, if d.form == "Tier2" then CINEMATIC_TIER2 else CINEMATIC_TIER1)
-		end
-		FxController.ReleaseTitle:Fire(d)
-	elseif nearLocal(root.Position, 80) then
-		FxController.ReleaseTitle:Fire(d)
 	end
 end
 
@@ -550,6 +566,9 @@ handlers.TransformComplete = function(d)
 	local root = rootOf(d.actor)
 	if not root then
 		return
+	end
+	if isLocal(d.actor) then
+		ReleaseCutscene.OnComplete()
 	end
 	local color = VFX.Color(d.element)
 	-- Clarão primeiro; anel de choque e o resto em degraus de 0,03 s (o guia: nada dispara junto)
@@ -571,6 +590,9 @@ handlers.TransformComplete = function(d)
 end
 
 handlers.TransformCancel = function(d)
+	if isLocal(d.actor) then
+		ReleaseCutscene.Cancel()
+	end
 	AnimController.StopAll(d.actor, 4, 0.05)
 	local root = rootOf(d.actor)
 	if root then

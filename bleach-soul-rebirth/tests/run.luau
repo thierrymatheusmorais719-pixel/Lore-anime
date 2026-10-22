@@ -584,6 +584,16 @@ test("criaturas: golpes no tempo do servidor, marchas e versões de cada ação"
 		end
 	end
 end)
+test("segunda liberação tem cutscene com tempos coerentes", function()
+	for _, id in Factions.Order do
+		local faction = Factions[id]
+		local form = faction.forms.Tier2
+		truthy(form.cutscene and form.reveal and form.reveal > 0, id .. ": Tier2 sem cutscene/reveal")
+		truthy(form.channel >= 4, id .. ": canalização curta demais para a cena")
+		truthy(form.channel < faction.forms.Tier1.channel * 10, id .. ": canalização exagerada")
+	end
+	truthy(Clips.ReleaseTier2 and Clips.SwordIdle and Clips.CastSlash, "clips usados na cena")
+end)
 test("amostragem reproduz as chaves e o easing do Roblox", function()
 	eq(ClipSampler.ease("Linear", "In", 0.25), 0.25)
 	eq(ClipSampler.ease("CubicV2", "In", 0.5), 0.125)

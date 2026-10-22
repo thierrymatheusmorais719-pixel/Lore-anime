@@ -107,9 +107,14 @@ function TransformationService.RequestRelease(actor)
 		or nil
 	local t = CombatService.now()
 	local channelTime = formDef.channel
+	local reveal = formDef.reveal or 0
 	actor.token += 1
 	actor.busyUntil = t + channelTime
 	actor.cancelFrom = actor.busyUntil
+	if formDef.cutscene then
+		-- Cutscene de liberação: ninguém interrompe a cena (canalização + revelação)
+		actor.iframeUntil = math.max(actor.iframeUntil, t + channelTime + reveal)
+	end
 	CombatService.SetDrawn(actor, true)
 
 	local channel
@@ -125,6 +130,10 @@ function TransformationService.RequestRelease(actor)
 			CombatService.SpendReiatsu(actor, REQUIRED_REIATSU[nextForm] * 0.5)
 			applyForm(actor, nextForm)
 			actor.superArmorUntil = CombatService.now() + 0.4
+			if reveal > 0 then
+				-- Revelação: parado posando enquanto a cena termina
+				CombatService.SetBusy(actor, reveal)
+			end
 			CombatService.Broadcast("TransformComplete", {
 				actor = actor.model,
 				form = nextForm,
@@ -144,6 +153,8 @@ function TransformationService.RequestRelease(actor)
 		command = power and power.releaseCommand or nil,
 		element = power and power.element or faction.element,
 		channel = channelTime,
+		reveal = reveal,
+		cutscene = formDef.cutscene == true,
 		faction = actor.faction,
 	}, actor.root.Position)
 end
