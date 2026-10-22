@@ -80,21 +80,55 @@ local function merge(...: { [string]: CFrame }): { [string]: CFrame }
 end
 
 -- Constrói ataque: antecipação (até 70% do windup), impacto (windup), seguimento e recuperação.
+-- Mistura duas poses (união das juntas; ausentes = repouso).
+local function blend(a: { [string]: CFrame }, b: { [string]: CFrame }, t: number): { [string]: CFrame }
+	local out = {}
+	for k, v in a do
+		out[k] = v:Lerp(b[k] or CFrame.identity, t)
+	end
+	for k, v in b do
+		if not out[k] then
+			out[k] = CFrame.identity:Lerp(v, t)
+		end
+	end
+	return out
+end
+
+-- Guarda pronta (braços) para encadear golpes sem "voltar ao zero" entre eles.
+local READY = {
+	RS = J(30, 18, 12),
+	RE = J(28),
+	RW = J(-12),
+	LS = J(22, -12, -10),
+	LE = J(55),
+	Waist = J(-3, -10),
+}
+
+-- Constrói ataque profissional em 7 tempos:
+--   preparo parcial → antecipação total (segura) → IMPACTO (windup) → overshoot (segue além)
+--   → assentamento → guarda pronta (encadeia o próximo golpe)
 local function attack(spec, anticipation, strike, follow, legs)
 	local w, d = spec.windup, spec.duration
 	legs = legs or STANCE_LEGS
+	local antic = merge(legs, anticipation)
+	local hit = merge(legs, strike)
+	local over = merge(legs, follow)
+	local settle = blend(hit, over, 0.55)
+	local ready = merge(STANCE_LEGS, READY)
 	return {
-		duration = d + 0.18,
+		duration = d + 0.22,
 		priority = 3,
-		fadeIn = 0.05,
-		fadeOut = 0.18,
+		fadeIn = 0.04,
+		fadeOut = 0.2,
 		markers = { Hit = w },
 		keyframes = {
-			{ t = 0, pose = pose(merge(legs, anticipation)), ease = "out" },
-			{ t = w * 0.7, pose = pose(merge(legs, anticipation)), ease = "inout" },
-			{ t = w, pose = pose(merge(legs, strike)), ease = "expo" },
-			{ t = w + 0.1, pose = pose(merge(legs, follow)), ease = "out" },
-			{ t = d, pose = pose(merge(legs, follow)), ease = "inout" },
+			{ t = 0, pose = pose(blend(ready, antic, 0.55)), ease = "out" },
+			{ t = w * 0.55, pose = pose(antic), ease = "out" },
+			{ t = w * 0.85, pose = pose(antic), ease = "inout" },
+			{ t = w, pose = pose(hit), ease = "expo" },
+			{ t = w + 0.07, pose = pose(over), ease = "out" },
+			{ t = w + (d - w) * 0.55, pose = pose(settle), ease = "inout" },
+			{ t = d + 0.2, pose = pose(blend(settle, ready, 0.85)), ease = "inout" },
 		},
 	}
 end

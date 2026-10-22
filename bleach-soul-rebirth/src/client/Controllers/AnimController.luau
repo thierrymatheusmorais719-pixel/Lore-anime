@@ -46,9 +46,34 @@ type Rig = {
 	assetCache: { [string]: AnimationTrack },
 	stance: string?,
 	connections: { RBXScriptConnection },
+	smooth: { [string]: CFrame },
+	smoothW: { [string]: number },
+	lean: Vector3,
+	look: Vector2,
+	land: number,
+	lookTarget: BasePart?,
+	lookTimer: number,
+}
+
+-- Rigidez da mola de cada junta: braços rápidos, tronco médio, cabeça lenta (atraso natural).
+local STIFFNESS = {
+	RightShoulder = 40,
+	LeftShoulder = 36,
+	RightElbow = 44,
+	LeftElbow = 40,
+	RightWrist = 50,
+	LeftWrist = 46,
+	Waist = 24,
+	Root = 26,
+	Neck = 15,
+	RightHip = 34,
+	LeftHip = 34,
+	RightKnee = 36,
+	LeftKnee = 36,
 }
 
 local rigs: { [Model]: Rig } = {}
+local proceduralLayer: (Rig, number, number) -> { [string]: CFrame }
 local jointCache: { [any]: { string } } = {}
 local orderCounter = 0
 
@@ -117,8 +142,28 @@ function AnimController.Register(model: Model)
 		assetCache = {},
 		stance = nil,
 		connections = {},
+		smooth = {},
+		smoothW = {},
+		lean = Vector3.zero,
+		look = Vector2.zero,
+		land = 0,
+		lookTarget = nil,
+		lookTimer = 0,
 	}
 	scanMotors(rig)
+	local humanoid = rig.humanoid
+	if humanoid then
+		table.insert(
+			rig.connections,
+			humanoid.StateChanged:Connect(function(_, new)
+				if new == Enum.HumanoidStateType.Landed then
+					local root = rig.root
+					local fall = if root then math.clamp(-root.AssemblyLinearVelocity.Y / 60, 0.3, 1) else 0.5
+					rig.land = math.max(rig.land, fall)
+				end
+			end)
+		)
+	end
 	local rescanQueued = false
 	local function queueRescan(d: Instance)
 		if d:IsA("Motor6D") and not rescanQueued then
@@ -360,6 +405,97 @@ local function updateCloth(rig: Rig, dt: number)
 	end
 end
 
+local player = Players.LocalPlayer
+
+-- Alvo para onde a cabeça olha: jogador local → inimigo mais próximo à frente;
+-- inimigos → jogador local quando perto.
+local function findLookTarget(rig: Rig): BasePart?
+	local root = rig.root
+	if not root then
+		return nil
+	end
+	if rig.model == player.Character then
+		local best, bestDistance = nil, 35
+		for _, folderName in { "Enemies", "Bosses" } do
+			local folder = workspace:FindFirstChild(folderName)
+			if folder then
+				for _, m in folder:GetChildren() do
+					local head = m:FindFirstChild("Head") :: BasePart?
+					if head then
+						local offset = head.Position - root.Position
+						local d = offset.Magnitude
+						if d < bestDistance and root.CFrame.LookVector:Dot(offset.Unit) > 0.1 then
+							best, bestDistance = head, d
+						end
+					end
+				end
+			end
+		end
+		return best
+	elseif rig.model:GetAttribute("EnemyId") then
+		local character = player.Character
+		local head = character and character:FindFirstChild("Head") :: BasePart?
+		if head and (head.Position - root.Position).Magnitude < 40 then
+			return head
+		end
+	end
+	return nil
+end
+
+-- Camada procedural aditiva: inclinação ao correr/virar, cabeça olhando o alvo, amortecer queda.
+proceduralLayer = function(rig: Rig, dt: number, _now: number): { [string]: CFrame }
+	local out: { [string]: CFrame } = {}
+	local root = rig.root
+	if not root or not rig.humanoid or rig.humanoid.Health <= 0 then
+		return out
+	end
+	if rig.model:GetAttribute("NPC") then
+		return out
+	end
+	-- Inclinação (lean) suavizada
+	local localVel = root.CFrame:VectorToObjectSpace(root.AssemblyLinearVelocity)
+	local turn = root.AssemblyAngularVelocity.Y
+	local targetLean = Vector3.new(
+		math.clamp(-localVel.Z * 0.45, -8, 12), -- frente/trás (graus)
+		0,
+		math.clamp(-localVel.X * 0.35 + turn * 2.5, -12, 12) -- lateral/curva
+	)
+	rig.lean += (targetLean - rig.lean) * (1 - math.exp(-6 * dt))
+	if rig.lean.Magnitude > 0.3 then
+		out.Waist = CFrame.Angles(math.rad(-rig.lean.X * 0.7), 0, math.rad(rig.lean.Z * 0.6))
+		out.Root = CFrame.Angles(math.rad(-rig.lean.X * 0.3), 0, math.rad(rig.lean.Z * 0.4))
+	end
+	-- Cabeça olhando o alvo
+	rig.lookTimer -= dt
+	if rig.lookTimer <= 0 then
+		rig.lookTimer = 0.25
+		rig.lookTarget = findLookTarget(rig)
+	end
+	local targetLook = Vector2.zero
+	local lookTarget = rig.lookTarget
+	if lookTarget and lookTarget.Parent then
+		local rel = root.CFrame:PointToObjectSpace(lookTarget.Position)
+		local yaw = math.atan2(-rel.X, -rel.Z)
+		local pitch = math.atan2(rel.Y - 1.5, Vector2.new(rel.X, rel.Z).Magnitude)
+		targetLook = Vector2.new(math.clamp(yaw, -1.0, 1.0), math.clamp(pitch, -0.5, 0.5))
+	end
+	rig.look += (targetLook - rig.look) * (1 - math.exp(-8 * dt))
+	if rig.look.Magnitude > 0.01 then
+		out.Neck = CFrame.fromEulerAnglesYXZ(rig.look.Y, rig.look.X, 0)
+	end
+	-- Aterrissagem: agacha e recupera
+	if rig.land > 0.01 then
+		local a = rig.land
+		out.Root = (out.Root or IDENTITY) * CFrame.new(0, -0.55 * a, 0)
+		out.RightHip = CFrame.Angles(math.rad(28 * a), 0, 0)
+		out.LeftHip = CFrame.Angles(math.rad(28 * a), 0, 0)
+		out.RightKnee = CFrame.Angles(math.rad(-50 * a), 0, 0)
+		out.LeftKnee = CFrame.Angles(math.rad(-50 * a), 0, 0)
+		rig.land = math.max(0, rig.land - dt * 4.5)
+	end
+	return out
+end
+
 local function stepRig(rig: Rig, dt: number, now: number)
 	local frozen = now < rig.frozenUntil
 	local adt = if frozen then 0 else dt
@@ -399,9 +535,6 @@ local function stepRig(rig: Rig, dt: number, now: number)
 		locomotion = Poses.locomotion(rig.phase, speed, airborne, now)
 	end
 
-	if #tracks == 0 and not locomotion then
-		return
-	end
 	table.sort(tracks, function(a, b)
 		if a.priority == b.priority then
 			return a.order < b.order
@@ -409,17 +542,49 @@ local function stepRig(rig: Rig, dt: number, now: number)
 		return a.priority < b.priority
 	end)
 
+	local procedural = proceduralLayer(rig, dt, now)
+	local active = #tracks > 0 or locomotion ~= nil or next(procedural) ~= nil or next(rig.smoothW) ~= nil
+	if not active then
+		return
+	end
+
 	for name, motor in rig.motors do
-		local touched = locomotion ~= nil
-		if not touched then
-			for _, t in tracks do
-				if table.find(t.joints, name) then
-					touched = true
-					break
+		-- Alvo combinado das trilhas (camadas por prioridade)
+		local target: CFrame? = nil
+		local weight = 0
+		for _, t in tracks do
+			if t.weight > 0 and table.find(t.joints, name) then
+				local pose = sample(t, name)
+				if target == nil then
+					target = pose
+					weight = t.weight
+				else
+					target = (target :: CFrame):Lerp(pose, t.weight)
+					weight += (1 - weight) * t.weight
 				end
 			end
 		end
-		if touched then
+		-- Mola: suaviza alvo e peso (movimento secundário); congela no hit-stop
+		local k = STIFFNESS[name] or 30
+		local alpha = if frozen then 0 else 1 - math.exp(-k * dt)
+		local previous = rig.smooth[name]
+		local smoothed: CFrame? = previous
+		if target then
+			smoothed = if previous then previous:Lerp(target, alpha) else target
+		end
+		local w = (rig.smoothW[name] or 0)
+		w += (weight - w) * (if frozen then 0 else 1 - math.exp(-k * 0.8 * dt))
+		if w < 0.002 and weight == 0 then
+			rig.smoothW[name] = nil
+			rig.smooth[name] = nil
+			w = 0
+		else
+			rig.smoothW[name] = w
+			rig.smooth[name] = smoothed
+		end
+
+		local extra = procedural[name]
+		if w > 0 or locomotion or extra then
 			local base: CFrame
 			if locomotion then
 				base = locomotion[name] or IDENTITY
@@ -428,10 +593,11 @@ local function stepRig(rig: Rig, dt: number, now: number)
 				base = if current == rig.written[motor] then IDENTITY else current
 			end
 			local result = base
-			for _, t in tracks do
-				if t.weight > 0 and table.find(t.joints, name) then
-					result = result:Lerp(sample(t, name), t.weight)
-				end
+			if w > 0 and smoothed then
+				result = base:Lerp(smoothed, math.min(1, w))
+			end
+			if extra then
+				result *= extra
 			end
 			motor.Transform = result
 			rig.written[motor] = result

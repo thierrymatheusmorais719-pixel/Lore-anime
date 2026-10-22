@@ -29,6 +29,7 @@ local VFX = require(Controllers.VFXController)
 local FxController = require(Controllers.FxController)
 
 local MenuController = {}
+MenuController.SideGui = nil :: ScreenGui?
 
 local T = Kit.Theme
 local player = Players.LocalPlayer
@@ -1007,18 +1008,80 @@ function MenuController.Init()
 	})
 	Kit.autoScale(gui)
 
-	-- Botão de menu sempre visível (essencial no celular)
-	local menuGui = Kit.new(
+	-- Barra lateral de atalhos (estilo dos RPGs de anime populares): botões quadrados com
+	-- ícone, legenda e cor própria, sempre visível — essencial no celular.
+	local sideGui = Kit.new(
 		"ScreenGui",
-		{ Name = "MenuButton", ResetOnSpawn = false, DisplayOrder = 11, Parent = player:WaitForChild("PlayerGui") }
+		{ Name = "SideMenu", ResetOnSpawn = false, DisplayOrder = 11, Parent = player:WaitForChild("PlayerGui") }
 	)
-	local menuButton = Kit.button(
-		"☰  Menu",
-		{ Position = UDim2.fromOffset(16, 12), Size = UDim2.fromOffset(120, 40) },
-		MenuController.Toggle
-	)
-	menuButton.Parent = menuGui
-	Kit.autoScale(menuGui)
+	local column = Kit.new("Frame", {
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 14, 0.45, 0),
+		Size = UDim2.fromOffset(70, 480),
+		Parent = sideGui,
+	}, {
+		Kit.new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, VerticalAlignment = Enum.VerticalAlignment.Center }),
+	})
+	local SIDE = {
+		{ tab = "Status", label = "Status", icon = "体", color = Color3.fromRGB(235, 90, 90) },
+		{ tab = "Skills", label = "Árvore", icon = "技", color = Color3.fromRGB(255, 170, 60) },
+		{ tab = "Inventory", label = "Itens", icon = "袋", color = Color3.fromRGB(90, 200, 120) },
+		{ tab = "Quests", label = "Missões", icon = "任", color = Color3.fromRGB(90, 170, 255) },
+		{ tab = "Powers", label = "Poderes", icon = "魂", color = Color3.fromRGB(190, 110, 255) },
+		{ tab = "Travel", label = "Viagem", icon = "門", color = Color3.fromRGB(80, 220, 220) },
+		{ tab = "Settings", label = "Opções", icon = "設", color = Color3.fromRGB(170, 175, 190) },
+	}
+	for i, entry in SIDE do
+		local button = Kit.new("TextButton", {
+			AutoButtonColor = false,
+			Text = "",
+			Size = UDim2.fromOffset(62, 58),
+			BackgroundColor3 = entry.color:Lerp(Color3.new(0, 0, 0), 0.55),
+			LayoutOrder = i,
+			Parent = column,
+		}, {
+			Kit.corner(10),
+			Kit.new("UIStroke", { Color = Color3.new(0, 0, 0), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }),
+			Kit.new("UIGradient", {
+				Rotation = 90,
+				Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(150, 150, 150)),
+			}),
+		})
+		Kit.label(entry.icon, 26, {
+			Size = UDim2.new(1, 0, 0, 36),
+			Position = UDim2.fromOffset(0, 2),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Font = T.FontTitle,
+			TextColor3 = Color3.new(1, 1, 1),
+			Parent = button,
+		}, { Kit.new("UIStroke", { Color = Color3.new(0, 0, 0), Thickness = 1.5 }) })
+		Kit.label(entry.label, 11, {
+			AnchorPoint = Vector2.new(0, 1),
+			Position = UDim2.new(0, 0, 1, -3),
+			Size = UDim2.new(1, 0, 0, 14),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Font = T.FontTitle,
+			TextColor3 = Color3.new(1, 1, 1),
+			Parent = button,
+		}, { Kit.new("UIStroke", { Color = Color3.new(0, 0, 0), Thickness = 1 }) })
+		local scale = Kit.new("UIScale", { Parent = button })
+		button.MouseEnter:Connect(function()
+			Kit.tween(scale, 0.12, { Scale = 1.08 }, Enum.EasingStyle.Back)
+		end)
+		button.MouseLeave:Connect(function()
+			Kit.tween(scale, 0.12, { Scale = 1 })
+		end)
+		button.Activated:Connect(function()
+			if gui.Enabled and openTab == entry.tab then
+				MenuController.Close()
+			else
+				MenuController.Open(entry.tab)
+			end
+		end)
+	end
+	Kit.autoScale(sideGui)
+	MenuController.SideGui = sideGui
 end
 
 local function applySettings(profile)
