@@ -74,7 +74,7 @@ function Kit.tween(
 	return t
 end
 
-function Kit.label(text: string, size: number, props: { [string]: any }?): TextLabel
+function Kit.label(text: string, size: number, props: { [string]: any }?, children: { Instance }?): TextLabel
 	local base = {
 		BackgroundTransparency = 1,
 		Text = text,
@@ -86,7 +86,7 @@ function Kit.label(text: string, size: number, props: { [string]: any }?): TextL
 	for k, v in (props or {}) :: any do
 		base[k] = v
 	end
-	return Kit.new("TextLabel", base)
+	return Kit.new("TextLabel", base, children)
 end
 
 -- Barra com preenchimento suave e "rastro" de dano.

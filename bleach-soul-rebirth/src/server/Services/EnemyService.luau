@@ -9,7 +9,7 @@ local Zones = require(Shared.Config.Zones)
 local Progression = require(Shared.Config.Progression)
 local Log = require(Shared.Util.Log)
 
-local RigBuilder = require(script.Parent.Parent.Builders.RigBuilder)
+local RigBuilder = require(ReplicatedStorage.Shared.Builders.RigBuilder)
 local EnemyBrain = require(script.Parent.Parent.Enemy.EnemyBrain)
 local Registry = require(script.Parent.Parent.Registry)
 

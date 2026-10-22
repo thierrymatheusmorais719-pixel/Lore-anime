@@ -17,7 +17,7 @@ local Stats = require(Shared.Logic.Stats)
 local Loadout = require(Shared.Logic.Loadout)
 local Log = require(Shared.Util.Log)
 
-local Builders = script.Parent.Parent.Builders
+local Builders = Shared.Builders
 local WeaponBuilder = require(Builders.WeaponBuilder)
 local OutfitBuilder = require(Builders.OutfitBuilder)
 

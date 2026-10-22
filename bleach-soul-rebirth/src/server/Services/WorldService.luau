@@ -10,8 +10,8 @@ local Log = require(Shared.Util.Log)
 local World = script.Parent.Parent.World
 local Build = require(World.Build)
 local Regions = require(World.Regions)
-local RigBuilder = require(script.Parent.Parent.Builders.RigBuilder)
-local OutfitBuilder = require(script.Parent.Parent.Builders.OutfitBuilder)
+local RigBuilder = require(ReplicatedStorage.Shared.Builders.RigBuilder)
+local OutfitBuilder = require(ReplicatedStorage.Shared.Builders.OutfitBuilder)
 local Registry = require(script.Parent.Parent.Registry)
 
 local log = Log.new("WorldService")
