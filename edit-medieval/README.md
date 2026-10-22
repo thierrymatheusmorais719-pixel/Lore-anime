@@ -1,7 +1,7 @@
 # Edit cinematográfica medieval (16:9, HD, 2.5D)
 
-Edit horizontal em **4K 60 fps** (3840×2160, ~21 s) feita a partir das 7 pinturas em `refs/`,
-sincronizada à música (≈85 BPM), com efeitos sonoros, no mesmo estilo 2.5D da edit de Jesus
+Edit horizontal em **4K 60 fps** (3840×2160, 28 s) feita a partir das 7 pinturas em `refs/`,
+sincronizada à música do vídeo de referência (`audio/musica_referencia.wav`), com efeitos sonoros, no mesmo estilo 2.5D da edit de Jesus
 (`edit-jesus/`). Resultados: `edit-medieval-4k.mp4` (4K) e `edit-medieval-16x9.mp4` (Full HD).
 
 ## Pipeline
@@ -29,6 +29,8 @@ sincronizada à música (≈85 BPM), com efeitos sonoros, no mesmo estilo 2.5D d
   e ambientes por cena (grilos à noite, vento no castelo e na relva, chuva na tempestade).
 - `legendas.py`: título e frases poéticas em ouro (Cinzel e Cormorant Garamond em `fontes/`, OFL).
   **Desligadas** no vídeo final (`CAPTIONS = False` em `render.py`, `CAPTION_SFX = False` em `sfx.py`).
+- Legendas da música (`legendas.TypeCaptions`): estilo máquina de escrever da referência, tempos
+  medidos no vídeo de referência; o texto fica em `legendas_musica.txt` (vazio = sem legendas).
 - Luz: raios de luar nas cenas noturnas, relâmpagos que iluminam a cena (céu clareia, contorno nos
   personagens) e traço anamórfico de lente nas luzes fortes.
 - Corpo rígido: personagens se movem como peça inteira (sem entortar); cabeças e braços com gestos
