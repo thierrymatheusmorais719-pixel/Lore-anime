@@ -1021,7 +1021,14 @@ function MenuController.Init()
 		Size = UDim2.fromOffset(70, 480),
 		Parent = sideGui,
 	}, {
-		Kit.new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, VerticalAlignment = Enum.VerticalAlignment.Center }),
+		Kit.new(
+			"UIListLayout",
+			{
+				Padding = UDim.new(0, 8),
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+			}
+		),
 	})
 	local SIDE = {
 		{ tab = "Status", label = "Status", icon = "体", color = Color3.fromRGB(235, 90, 90) },
@@ -1042,7 +1049,10 @@ function MenuController.Init()
 			Parent = column,
 		}, {
 			Kit.corner(10),
-			Kit.new("UIStroke", { Color = Color3.new(0, 0, 0), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }),
+			Kit.new(
+				"UIStroke",
+				{ Color = Color3.new(0, 0, 0), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }
+			),
 			Kit.new("UIGradient", {
 				Rotation = 90,
 				Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(150, 150, 150)),

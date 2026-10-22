@@ -371,16 +371,11 @@ function SpectacleFx.LiftRocks(root: BasePart, count: number, duration: number)
 		local start = CFrame.new(ground + Vector3.new(math.cos(angle) * dist, 0, math.sin(angle) * dist))
 		p.CFrame = start
 		p.Parent = workspace:FindFirstChild("ClientVFX") or workspace
-		VFX.tween(
-			p,
-			duration,
-			{
-				CFrame = start
-					* CFrame.new(0, rng:NextNumber(4, 12), 0)
-					* CFrame.Angles(rng:NextNumber(0, 3), rng:NextNumber(0, 3), 0),
-			},
-			Enum.EasingStyle.Sine
-		)
+		VFX.tween(p, duration, {
+			CFrame = start
+				* CFrame.new(0, rng:NextNumber(4, 12), 0)
+				* CFrame.Angles(rng:NextNumber(0, 3), rng:NextNumber(0, 3), 0),
+		}, Enum.EasingStyle.Sine)
 		table.insert(rocks, { part = p, angle = angle })
 	end
 	task.delay(duration, function()
@@ -391,6 +386,63 @@ function SpectacleFx.LiftRocks(root: BasePart, count: number, duration: number)
 			Debris:AddItem(p, 0.65)
 		end
 	end)
+end
+
+-- Flash branco no corpo atingido (Highlight reutilizado; limite do motor = 31 simultâneos)
+local flashPool: { Highlight } = {}
+local flashBusy: { [Highlight]: boolean } = {}
+function SpectacleFx.HitFlash(model: Model?, color: Color3?)
+	if not model or not model.Parent then
+		return
+	end
+	local highlight: Highlight? = nil
+	for _, h in flashPool do
+		if not flashBusy[h] then
+			highlight = h
+			break
+		end
+	end
+	if not highlight then
+		if #flashPool >= 6 then
+			return
+		end
+		local h = Instance.new("Highlight")
+		h.DepthMode = Enum.HighlightDepthMode.Occluded
+		h.OutlineTransparency = 1
+		h.Parent = workspace:FindFirstChild("ClientVFX") or workspace
+		table.insert(flashPool, h)
+		highlight = h
+	end
+	local h = highlight :: Highlight
+	flashBusy[h] = true
+	h.Adornee = model
+	h.FillColor = color or Color3.new(1, 1, 1)
+	h.FillTransparency = 0.05
+	h.Enabled = true
+	VFX.tween(h, 0.14, { FillTransparency = 1 })
+	task.delay(0.15, function()
+		h.Enabled = false
+		h.Adornee = nil
+		flashBusy[h] = nil
+	end)
+end
+
+-- Domo de energia com material de shader (ForceField) que se expande e dissolve.
+function SpectacleFx.Dome(position: Vector3, radius: number, color: Color3, duration: number?)
+	local d = duration or 0.6
+	local dome = VFX.neon(Vector3.one * 2, CFrame.new(position), color, 0, Enum.PartType.Ball)
+	dome.Material = Enum.Material.ForceField
+	VFX.tween(dome, d, { Size = Vector3.one * radius * 2 }, Enum.EasingStyle.Quint)
+	task.delay(d * 0.55, function()
+		VFX.tween(dome, d * 0.45, { Transparency = 1 })
+	end)
+	Debris:AddItem(dome, d + 0.05)
+	if not lowQuality() then
+		local core =
+			VFX.neon(Vector3.one * radius * 0.4, CFrame.new(position), Color3.new(1, 1, 1), 0.2, Enum.PartType.Ball)
+		VFX.tween(core, d * 0.5, { Size = Vector3.one * radius * 0.9, Transparency = 1 })
+		Debris:AddItem(core, d * 0.5 + 0.05)
+	end
 end
 
 -- ============================================================
@@ -408,6 +460,7 @@ type AuraRig = {
 }
 
 local rigs: { [Model]: AuraRig } = {}
+local outlineCount = 0
 
 local function auraKey(model: Model): string?
 	if model:GetAttribute("Mask") then
@@ -543,6 +596,23 @@ local function buildRig(model: Model, key: string): AuraRig?
 				end
 			end
 		end
+	end
+
+	-- Contorno brilhante (forma final e máscara)
+	if (key == "Tier2" or key == "Mask") and outlineCount < 8 then
+		local outline = Instance.new("Highlight")
+		outline.Adornee = model
+		outline.DepthMode = Enum.HighlightDepthMode.Occluded
+		outline.FillColor = palette.primary
+		outline.FillTransparency = 0.88
+		outline.OutlineColor = palette.primary:Lerp(Color3.new(1, 1, 1), 0.3)
+		outline.OutlineTransparency = 0.15
+		outline.Parent = folder
+		outlineCount += 1
+		outline.Destroying:Connect(function()
+			outlineCount -= 1
+		end)
+		table.insert(rig.instances, outline)
 	end
 
 	-- Pedras flutuando aos pés (pressão espiritual do Tier 2)

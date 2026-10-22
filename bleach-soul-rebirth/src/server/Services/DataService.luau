@@ -42,7 +42,12 @@ local function withRetry<T>(label: string, fn: () -> T): (boolean, T?)
 		local message = tostring(result)
 		-- No Studio (lugar não publicado ou sem acesso às APIs) qualquer falha vira modo memória:
 		-- o jogo continua jogável em vez de expulsar o jogador.
-		if RunService:IsStudio() or message:find("StudioAccessToApisNotAllowed") or message:find("403") or message:find("publish") then
+		if
+			RunService:IsStudio()
+			or message:find("StudioAccessToApisNotAllowed")
+			or message:find("403")
+			or message:find("publish")
+		then
 			if not memoryMode then
 				log:Warn(
 					"Sem acesso às APIs do DataStore (Studio). Usando memória — nada será salvo. Ative em Game Settings > Security > Enable Studio Access to API Services."

@@ -18,54 +18,112 @@ end
 
 local LOOKS = {
 	Shinigami = {
-		look = { skin = Color3.fromRGB(236, 205, 175), outfit = Color3.fromRGB(18, 18, 22), pants = Color3.fromRGB(18, 18, 22), hair = Color3.fromRGB(255, 120, 40) },
-		outfit = { trim = Color3.fromRGB(235, 235, 240), robe = Color3.fromRGB(18, 18, 22), coat = Color3.fromRGB(240, 240, 245) },
+		look = {
+			skin = Color3.fromRGB(236, 205, 175),
+			outfit = Color3.fromRGB(18, 18, 22),
+			pants = Color3.fromRGB(18, 18, 22),
+			hair = Color3.fromRGB(255, 120, 40),
+		},
+		outfit = {
+			trim = Color3.fromRGB(235, 235, 240),
+			robe = Color3.fromRGB(18, 18, 22),
+			coat = Color3.fromRGB(240, 240, 245),
+		},
 		weapon = { style = "Katana", length = 5, blade = Color3.fromRGB(215, 225, 240), glow = true },
 		element = "Reiatsu",
 		pose = {
-			RightShoulder = J(105, 25, 15), RightElbow = J(25), RightWrist = J(-55),
-			LeftShoulder = J(25, -15, -25), LeftElbow = J(45),
-			Waist = J(-5, -25), Neck = J(0, 20),
-			RightHip = J(25, 0, 8), RightKnee = J(-30), LeftHip = J(-15, 0, -10), LeftKnee = J(-20),
+			RightShoulder = J(105, 25, 15),
+			RightElbow = J(25),
+			RightWrist = J(-55),
+			LeftShoulder = J(25, -15, -25),
+			LeftElbow = J(45),
+			Waist = J(-5, -25),
+			Neck = J(0, 20),
+			RightHip = J(25, 0, 8),
+			RightKnee = J(-30),
+			LeftHip = J(-15, 0, -10),
+			LeftKnee = J(-20),
 			Root = CFrame.new(0, -0.3, 0),
 		},
 	},
 	Quincy = {
-		look = { skin = Color3.fromRGB(240, 220, 200), outfit = Color3.fromRGB(240, 242, 248), pants = Color3.fromRGB(235, 238, 245), hair = Color3.fromRGB(30, 35, 60) },
+		look = {
+			skin = Color3.fromRGB(240, 220, 200),
+			outfit = Color3.fromRGB(240, 242, 248),
+			pants = Color3.fromRGB(235, 238, 245),
+			hair = Color3.fromRGB(30, 35, 60),
+		},
 		outfit = { trim = Color3.fromRGB(60, 110, 200), robe = Color3.fromRGB(240, 242, 248), cape = true },
 		weapon = { style = "LightBlade", length = 3.6, blade = Color3.fromRGB(170, 220, 255), glow = true },
 		element = "Holy",
 		bow = true,
 		pose = {
-			LeftShoulder = J(90, 15, 0), LeftElbow = J(0),
-			RightShoulder = J(85, -85, 0), RightElbow = J(115),
-			Waist = J(0, 45), Neck = J(0, -40),
-			RightHip = J(-10, 0, 10), RightKnee = J(-15), LeftHip = J(20, 0, -6), LeftKnee = J(-20),
+			LeftShoulder = J(90, 15, 0),
+			LeftElbow = J(0),
+			RightShoulder = J(85, -85, 0),
+			RightElbow = J(115),
+			Waist = J(0, 45),
+			Neck = J(0, -40),
+			RightHip = J(-10, 0, 10),
+			RightKnee = J(-15),
+			LeftHip = J(20, 0, -6),
+			LeftKnee = J(-20),
 		},
 	},
 	Hollow = {
-		look = { skin = Color3.fromRGB(30, 28, 34), mask = true, hole = true, maskColor = Color3.fromRGB(240, 236, 225), eye = Color3.fromRGB(255, 60, 40) },
+		look = {
+			skin = Color3.fromRGB(30, 28, 34),
+			mask = true,
+			hole = true,
+			maskColor = Color3.fromRGB(240, 236, 225),
+			eye = Color3.fromRGB(255, 60, 40),
+		},
 		outfit = nil,
 		weapon = { style = "Claws", length = 3.2, blade = Color3.fromRGB(235, 230, 220), glow = false },
 		element = "Hollow",
 		dual = true,
 		pose = {
-			RightShoulder = J(60, -20, 50), RightElbow = J(40), LeftShoulder = J(60, 20, -50), LeftElbow = J(40),
-			Waist = J(-30), Neck = J(25),
-			RightHip = J(45, 0, 15), RightKnee = J(-70), LeftHip = J(30, 0, -15), LeftKnee = J(-60),
+			RightShoulder = J(60, -20, 50),
+			RightElbow = J(40),
+			LeftShoulder = J(60, 20, -50),
+			LeftElbow = J(40),
+			Waist = J(-30),
+			Neck = J(25),
+			RightHip = J(45, 0, 15),
+			RightKnee = J(-70),
+			LeftHip = J(30, 0, -15),
+			LeftKnee = J(-60),
 			Root = CFrame.new(0, -0.9, 0),
 		},
 	},
 	Fullbringer = {
-		look = { skin = Color3.fromRGB(225, 190, 160), outfit = Color3.fromRGB(45, 50, 60), pants = Color3.fromRGB(30, 32, 40), hair = Color3.fromRGB(150, 60, 40) },
+		look = {
+			skin = Color3.fromRGB(225, 190, 160),
+			outfit = Color3.fromRGB(45, 50, 60),
+			pants = Color3.fromRGB(30, 32, 40),
+			hair = Color3.fromRGB(150, 60, 40),
+		},
 		outfit = { trim = Color3.fromRGB(110, 255, 170), robe = Color3.fromRGB(45, 50, 60) },
-		weapon = { style = "Gauntlet", length = 2, blade = Color3.fromRGB(70, 75, 85), guard = Color3.fromRGB(110, 255, 170), glow = true },
+		weapon = {
+			style = "Gauntlet",
+			length = 2,
+			blade = Color3.fromRGB(70, 75, 85),
+			guard = Color3.fromRGB(110, 255, 170),
+			glow = true,
+		},
 		element = "Verdant",
 		dual = true,
 		pose = {
-			RightShoulder = J(90, 5, 0), RightElbow = J(0), LeftShoulder = J(35, -20, -20), LeftElbow = J(100),
-			Waist = J(-8, 30), Neck = J(0, -20),
-			RightHip = J(-20, 0, 6), RightKnee = J(-20), LeftHip = J(40, 0, -6), LeftKnee = J(-35),
+			RightShoulder = J(90, 5, 0),
+			RightElbow = J(0),
+			LeftShoulder = J(35, -20, -20),
+			LeftElbow = J(100),
+			Waist = J(-8, 30),
+			Neck = J(0, -20),
+			RightHip = J(-20, 0, 6),
+			RightKnee = J(-20),
+			LeftHip = J(40, 0, -6),
+			LeftKnee = J(-35),
 			Root = CFrame.new(0, -0.5, -0.3),
 		},
 	},
@@ -133,7 +191,11 @@ local function addBow(model: Model, color: Color3)
 		p.Size = Vector3.new(0.18, 0.7, 0.18)
 		p.CanCollide = false
 		p.Anchored = true
-		p.CFrame = hand.CFrame * CFrame.new(0, -0.1, -0.6) * CFrame.Angles(0, 0, 0) * CFrame.new(0, math.sin(a) * 2.4, -math.cos(a) * 0.9) * CFrame.Angles(a, 0, 0)
+		p.CFrame = hand.CFrame
+			* CFrame.new(0, -0.1, -0.6)
+			* CFrame.Angles(0, 0, 0)
+			* CFrame.new(0, math.sin(a) * 2.4, -math.cos(a) * 0.9)
+			* CFrame.Angles(a, 0, 0)
 		p.Parent = model
 	end
 	local string_ = Instance.new("Part")

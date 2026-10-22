@@ -149,6 +149,7 @@ handlers.Hit = function(d)
 			AnimController.StopAll(target, 3, 0.04)
 			AnimController.Play(target, reaction)
 		end
+		SpectacleFx.HitFlash(target, if heavy then color:Lerp(Color3.new(1, 1, 1), 0.6) else nil)
 		VFX.Sparks(position, color, if heavy then 26 else 12)
 		VFX.Flash(position, color, if heavy then 7 else 3.5, if heavy then 0.25 else 0.15)
 		if heavy then
@@ -346,6 +347,9 @@ handlers.Burst = function(d)
 	task.spawn(VFX.Burst, d, if d.follow then rootOf(d.actor) else nil)
 	task.delay(d.delay or 0, function()
 		SoundController.Play(if d.ultimate then "Ultimate" else "Boom", d.center)
+		if d.ultimate then
+			SpectacleFx.Dome(d.center + Vector3.new(0, 2, 0), d.radius, VFX.Color(d.element), 0.8)
+		end
 		if d.ultimate or (d.radius >= 12 and nearLocal(d.center, 120)) then
 			crater(
 				d.center + Vector3.new(0, 3, 0),
@@ -535,6 +539,7 @@ handlers.TransformComplete = function(d)
 	VFX.Sparks(root.Position, color, 40)
 	SoundController.Play(if d.form == "Tier2" then "Ultimate" else "Boom", root)
 	SpectacleFx.Crater(root.Position, if d.form == "Tier2" then 14 else 8, color)
+	SpectacleFx.Dome(root.Position, if d.form == "Tier2" then 34 else 18, color, if d.form == "Tier2" then 0.9 else 0.6)
 	if nearLocal(root.Position, 90) then
 		SpectacleFx.ImpactFrame(if d.form == "Tier2" then 1.3 else 0.8)
 		SpectacleFx.BlurPulse(if d.form == "Tier2" then 20 else 12, 0.4)

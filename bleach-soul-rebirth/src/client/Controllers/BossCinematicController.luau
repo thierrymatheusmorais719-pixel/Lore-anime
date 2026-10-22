@@ -124,69 +124,52 @@ function BossCinematicController.Defeat(boss: Model)
 end
 
 function BossCinematicController.Init()
-	gui = Kit.new(
-		"ScreenGui",
-		{
-			Name = "BossCard",
-			ResetOnSpawn = false,
-			DisplayOrder = 55,
-			IgnoreGuiInset = true,
-			Parent = player:WaitForChild("PlayerGui"),
-		}
-	)
-	card = Kit.new(
-		"Frame",
-		{
-			Name = "Card",
-			BackgroundTransparency = 1,
-			AnchorPoint = Vector2.new(0, 0.5),
-			Position = UDim2.new(0, 80, 0.62, 0),
-			Size = UDim2.fromOffset(800, 170),
-			Visible = false,
-			Parent = gui,
-		}
-	)
+	gui = Kit.new("ScreenGui", {
+		Name = "BossCard",
+		ResetOnSpawn = false,
+		DisplayOrder = 55,
+		IgnoreGuiInset = true,
+		Parent = player:WaitForChild("PlayerGui"),
+	})
+	card = Kit.new("Frame", {
+		Name = "Card",
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 80, 0.62, 0),
+		Size = UDim2.fromOffset(800, 170),
+		Visible = false,
+		Parent = gui,
+	})
 	Kit.label(
 		"",
 		96,
 		{ Name = "Kanji", Size = UDim2.fromOffset(120, 110), Font = T.FontTitle, TextTransparency = 1, Parent = card }
 	)
-	Kit.label(
-		"",
-		54,
-		{
-			Name = "Title",
-			Position = UDim2.fromOffset(0, 96),
-			Size = UDim2.new(1, 0, 0, 56),
-			Font = T.FontAnime,
-			TextStrokeColor3 = Color3.new(0, 0, 0),
-			TextTransparency = 1,
-			Parent = card,
-		}
-	)
-	Kit.label(
-		"",
-		18,
-		{
-			Name = "Subtitle",
-			Position = UDim2.fromOffset(4, 150),
-			Size = UDim2.new(1, 0, 0, 22),
-			Font = T.FontBold,
-			TextColor3 = T.Muted,
-			TextTransparency = 1,
-			Parent = card,
-		}
-	)
-	Kit.new(
-		"Frame",
-		{
-			Name = "Stripe",
-			BorderSizePixel = 0,
-			Position = UDim2.fromOffset(0, 92),
-			Size = UDim2.new(0, 0, 0, 4),
-			Parent = card,
-		}
-	)
+	Kit.label("", 54, {
+		Name = "Title",
+		Position = UDim2.fromOffset(0, 96),
+		Size = UDim2.new(1, 0, 0, 56),
+		Font = T.FontAnime,
+		TextStrokeColor3 = Color3.new(0, 0, 0),
+		TextTransparency = 1,
+		Parent = card,
+	})
+	Kit.label("", 18, {
+		Name = "Subtitle",
+		Position = UDim2.fromOffset(4, 150),
+		Size = UDim2.new(1, 0, 0, 22),
+		Font = T.FontBold,
+		TextColor3 = T.Muted,
+		TextTransparency = 1,
+		Parent = card,
+	})
+	Kit.new("Frame", {
+		Name = "Stripe",
+		BorderSizePixel = 0,
+		Position = UDim2.fromOffset(0, 92),
+		Size = UDim2.new(0, 0, 0, 4),
+		Parent = card,
+	})
 	Kit.autoScale(gui)
 end
 

@@ -120,7 +120,16 @@ local function buildCard(parent: Instance, info, order: number)
 			}),
 		}),
 	})
-	local stroke = Kit.new("UIStroke", { Color = color, Thickness = 2, Transparency = 0.55, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = card })
+	local stroke = Kit.new(
+		"UIStroke",
+		{
+			Color = color,
+			Thickness = 2,
+			Transparency = 0.55,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+			Parent = card,
+		}
+	)
 	local scale = Kit.new("UIScale", { Parent = card })
 
 	-- Kanji gigante de fundo
@@ -152,7 +161,10 @@ local function buildCard(parent: Instance, info, order: number)
 	})
 
 	-- Personagem 3D
-	local viewHolder = Kit.new("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 18), Size = UDim2.new(1, 0, 0, 300), Parent = card })
+	local viewHolder = Kit.new(
+		"Frame",
+		{ BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 18), Size = UDim2.new(1, 0, 0, 300), Parent = card }
+	)
 	local ok, viewport, update = pcall(FactionShowcase.Viewport, info.id, color)
 	if ok and viewport then
 		viewport.Parent = viewHolder
@@ -171,7 +183,11 @@ local function buildCard(parent: Instance, info, order: number)
 	}, {
 		Kit.new("UIGradient", {
 			Rotation = 90,
-			Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.25, 0.15), NumberSequenceKeypoint.new(1, 0) }),
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.25, 0.15),
+				NumberSequenceKeypoint.new(1, 0),
+			}),
 		}),
 	})
 	Kit.label(info.tagline, 12, {
@@ -191,9 +207,25 @@ local function buildCard(parent: Instance, info, order: number)
 		Parent = bottom,
 	}, { Kit.new("UIStroke", { Color = color:Lerp(Color3.new(0, 0, 0), 0.5), Thickness = 2.5 }) })
 	-- Etiquetas
-	local tags = Kit.new("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 90), Size = UDim2.new(1, -20, 0, 22), Parent = bottom }, {
-		Kit.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 5) }),
-	})
+	local tags = Kit.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(10, 90),
+			Size = UDim2.new(1, -20, 0, 22),
+			Parent = bottom,
+		},
+		{
+			Kit.new(
+				"UIListLayout",
+				{
+					FillDirection = Enum.FillDirection.Horizontal,
+					HorizontalAlignment = Enum.HorizontalAlignment.Center,
+					Padding = UDim.new(0, 5),
+				}
+			),
+		}
+	)
 	for _, tag in info.tags do
 		Kit.new("TextLabel", {
 			AutomaticSize = Enum.AutomaticSize.X,
@@ -207,14 +239,21 @@ local function buildCard(parent: Instance, info, order: number)
 			Parent = tags,
 		}, { Kit.corner(10) })
 	end
-	Kit.label("Dificuldade  " .. difficultyText(info.difficulty) .. "   ·   Poder inicial: " .. Powers.List[Powers.Starter[info.id]].name, 11, {
-		Position = UDim2.fromOffset(0, 116),
-		Size = UDim2.new(1, 0, 0, 14),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		TextColor3 = T.Muted,
-		Font = T.Font,
-		Parent = bottom,
-	})
+	Kit.label(
+		"Dificuldade  "
+			.. difficultyText(info.difficulty)
+			.. "   ·   Poder inicial: "
+			.. Powers.List[Powers.Starter[info.id]].name,
+		11,
+		{
+			Position = UDim2.fromOffset(0, 116),
+			Size = UDim2.new(1, 0, 0, 14),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextColor3 = T.Muted,
+			Font = T.Font,
+			Parent = bottom,
+		}
+	)
 	local play = Kit.new("TextButton", {
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -12),
@@ -286,14 +325,46 @@ function FactionSelectController.Hide()
 end
 
 function FactionSelectController.Init()
-	gui = Kit.new("ScreenGui", { Name = "FactionSelect", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 30, Enabled = false, Parent = player:WaitForChild("PlayerGui") })
+	gui = Kit.new(
+		"ScreenGui",
+		{
+			Name = "FactionSelect",
+			ResetOnSpawn = false,
+			IgnoreGuiInset = true,
+			DisplayOrder = 30,
+			Enabled = false,
+			Parent = player:WaitForChild("PlayerGui"),
+		}
+	)
 	-- Fundo escurecido com vinheta
-	Kit.new("Frame", { BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.35, Size = UDim2.fromScale(1, 1), Parent = gui }, {
-		Kit.new("UIGradient", {
-			Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.5, 0.5), NumberSequenceKeypoint.new(1, 0) }),
-		}),
-	})
-	local content = Kit.new("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.52), Size = UDim2.fromOffset(1140, 620), Parent = gui })
+	Kit.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.new(0, 0, 0),
+			BackgroundTransparency = 0.35,
+			Size = UDim2.fromScale(1, 1),
+			Parent = gui,
+		},
+		{
+			Kit.new("UIGradient", {
+				Transparency = NumberSequence.new({
+					NumberSequenceKeypoint.new(0, 0),
+					NumberSequenceKeypoint.new(0.5, 0.5),
+					NumberSequenceKeypoint.new(1, 0),
+				}),
+			}),
+		}
+	)
+	local content = Kit.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.52),
+			Size = UDim2.fromOffset(1140, 620),
+			Parent = gui,
+		}
+	)
 	Kit.label("ESCOLHA SEU CAMINHO", 54, {
 		Size = UDim2.new(1, 0, 0, 58),
 		TextXAlignment = Enum.TextXAlignment.Center,
@@ -331,14 +402,18 @@ function FactionSelectController.Init()
 	for i, info in CARDS do
 		buildCard(row, info, i)
 	end
-	Kit.label("Toque ou clique em um cartão para escolher. A facção define suas habilidades, transformações e mentor.", 14, {
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 0, 1, 0),
-		Size = UDim2.new(1, 0, 0, 18),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		TextColor3 = T.Muted,
-		Parent = content,
-	})
+	Kit.label(
+		"Toque ou clique em um cartão para escolher. A facção define suas habilidades, transformações e mentor.",
+		14,
+		{
+			AnchorPoint = Vector2.new(0, 1),
+			Position = UDim2.new(0, 0, 1, 0),
+			Size = UDim2.new(1, 0, 0, 18),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextColor3 = T.Muted,
+			Parent = content,
+		}
+	)
 	Kit.autoScale(gui)
 end
 

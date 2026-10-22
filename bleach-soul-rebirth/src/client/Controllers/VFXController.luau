@@ -161,6 +161,23 @@ function VFX.Shockwave(position: Vector3, color: Color3, radius: number, duratio
 		Enum.PartType.Cylinder
 	)
 	tween(ring, d, { Size = Vector3.new(0.1, radius * 2, radius * 2), Transparency = 1 }, Enum.EasingStyle.Quint)
+	if quality ~= "Low" then
+		local shell = neon(
+			Vector3.new(1.2, 1, 1),
+			CFrame.new(position) * CFrame.Angles(0, 0, math.rad(90)),
+			color,
+			0,
+			Enum.PartType.Cylinder
+		)
+		shell.Material = Enum.Material.ForceField
+		tween(
+			shell,
+			d,
+			{ Size = Vector3.new(radius * 0.25, radius * 2.1, radius * 2.1), Transparency = 1 },
+			Enum.EasingStyle.Quint
+		)
+		Debris:AddItem(shell, d + 0.05)
+	end
 	Debris:AddItem(ring, d + 0.05)
 	if quality ~= "Low" then
 		emit("Dust", position, Color3.fromRGB(200, 195, 185), math.floor(radius * 0.8))
@@ -184,6 +201,53 @@ function VFX.Pillar(position: Vector3, color: Color3, radius: number, height: nu
 end
 
 -- Corte no ar: arco de lâminas finas no plano do golpe (meia-lua).
+-- Fita de luz feita de Beams encadeados (ponta fina → meio grosso → ponta fina).
+-- `points` em coordenadas do `host` (ou do mundo se host = anchor). Retorna (core, glow, attachments).
+local function ribbon(host: BasePart, points: { Vector3 }, maxWidth: number, color: Color3, world: boolean)
+	local n = #points - 1
+	local attachments = {}
+	for i, p in points do
+		local a = Instance.new("Attachment")
+		if world then
+			a.WorldPosition = p
+		else
+			a.Position = p
+		end
+		a.Parent = host
+		attachments[i] = a
+	end
+	local core, glow = {}, {}
+	local function width(i: number): number
+		local t = (i - 1) / n
+		return maxWidth * math.sin(math.pi * t) ^ 0.7
+	end
+	for i = 1, n do
+		for layer = 1, 2 do
+			local beam = Instance.new("Beam")
+			beam.Attachment0 = attachments[i]
+			beam.Attachment1 = attachments[i + 1]
+			beam.FaceCamera = true
+			beam.Segments = 1
+			beam.LightEmission = 1
+			beam.LightInfluence = 0
+			local scale = if layer == 1 then 1 else 2.6
+			beam.Width0 = width(i) * scale + 0.02
+			beam.Width1 = width(i + 1) * scale + 0.02
+			beam.Color = if layer == 1
+				then ColorSequence.new(Color3.new(1, 1, 1), color:Lerp(Color3.new(1, 1, 1), 0.35))
+				else ColorSequence.new(color)
+			beam.Transparency = NumberSequence.new(if layer == 1 then 0 else 0.55)
+			beam:SetAttribute("BaseW0", beam.Width0)
+			beam:SetAttribute("BaseW1", beam.Width1)
+			beam.Parent = host
+			table.insert(if layer == 1 then core else glow, beam)
+		end
+	end
+	return core, glow, attachments
+end
+VFX.ribbon = ribbon
+
+-- Corte no ar: meia-lua lisa que "varre" do início ao fim e some afinando.
 function VFX.SlashArc(
 	cframe: CFrame,
 	color: Color3,
@@ -193,31 +257,57 @@ function VFX.SlashArc(
 	reverse: boolean?
 )
 	local d = duration or 0.22
-	local segments = if quality == "Low" then 5 else 9
-	local arc = math.rad(150)
-	local model = Instance.new("Model")
-	for i = 1, segments do
-		local a = -arc / 2 + arc * (i - 0.5) / segments
-		if reverse then
-			a = -a
+	local n = if quality == "Low" then 6 else 12
+	local arc = math.rad(155)
+	local a0, a1 = -arc / 2, arc / 2
+	if reverse then
+		a0, a1 = a1, a0
+	end
+	local points = {}
+	for i = 0, n do
+		local a = a0 + (a1 - a0) * i / n
+		points[i + 1] = cframe:PointToWorldSpace(Vector3.new(-radius * math.sin(a), 0, -radius * math.cos(a)))
+	end
+	local core, glow, attachments = ribbon(anchor, points, (thickness or 0.35) * 3.4, color, true)
+	for _, b in core do
+		b.Transparency = NumberSequence.new(1)
+	end
+	for _, b in glow do
+		b.Transparency = NumberSequence.new(1)
+	end
+	local sweep = d * 0.35
+	local start = os.clock()
+	local connection
+	connection = RunService.Heartbeat:Connect(function()
+		local elapsed = os.clock() - start
+		for i = 1, n do
+			local revealAt = (i - 1) / n * sweep
+			local age = elapsed - revealAt
+			local c, g = core[i], glow[i]
+			if age >= 0 then
+				local fade = math.clamp(age / d, 0, 1)
+				local thin = 1 - fade * 0.75
+				c.Transparency = NumberSequence.new(fade ^ 1.5)
+				g.Transparency = NumberSequence.new(0.55 + fade * 0.45)
+				c.Width0 = (c:GetAttribute("BaseW0") :: number) * thin
+				c.Width1 = (c:GetAttribute("BaseW1") :: number) * thin
+				g.Width0 = (g:GetAttribute("BaseW0") :: number) * thin
+				g.Width1 = (g:GetAttribute("BaseW1") :: number) * thin
+			end
 		end
-		local taper = 1 - math.abs((i - 0.5) / segments - 0.5) * 1.6
-		local length = radius * arc / segments * 1.15
-		local cf = cframe * CFrame.Angles(0, a, 0) * CFrame.new(0, 0, -radius)
-		local p = neon(Vector3.new(length, (thickness or 0.35) * taper, 0.15), cf, color, 0.05)
-		p.Parent = model
-	end
-	model.Parent = folder
-	for i, p in model:GetChildren() do
-		local delayTime = (if reverse then segments - i else i) * d * 0.25 / segments
-		local part = p :: BasePart
-		part.Transparency = 1
-		task.delay(delayTime, function()
-			part.Transparency = 0.05
-			tween(part, d, { Transparency = 1, Size = part.Size * Vector3.new(1.1, 0.2, 1) })
-		end)
-	end
-	Debris:AddItem(model, d * 1.5 + 0.1)
+		if elapsed > sweep + d then
+			connection:Disconnect()
+			for _, b in core do
+				b:Destroy()
+			end
+			for _, b in glow do
+				b:Destroy()
+			end
+			for _, a in attachments do
+				a:Destroy()
+			end
+		end
+	end)
 end
 
 function VFX.Sparks(position: Vector3, color: Color3, count: number, direction: Vector3?)
@@ -449,20 +539,23 @@ local function buildProjectile(shape: string, size: number, color: Color3, secon
 	local model = Instance.new("Model")
 	local s = size
 	if shape == "Crescent" then
-		local segments = 9
-		local arc = math.rad(140)
-		local radius = 3.2 * s
-		for i = 1, segments do
-			local a = -arc / 2 + arc * (i - 0.5) / segments
-			local taper = 1 - math.abs((i - 0.5) / segments - 0.5) * 1.5
-			local p = neon(
-				Vector3.new(radius * arc / segments * 1.2, 0.5 * s * taper, 0.6 * s * taper),
-				CFrame.Angles(0, 0, a) * CFrame.new(0, radius, 0) * CFrame.Angles(math.pi / 2, 0, 0),
-				if i % 2 == 0 then color else secondary:Lerp(color, 0.5),
-				0.05
-			)
-			p.Parent = model
+		local core = neon(Vector3.one * 0.2, CFrame.identity, color, 1)
+		core.Parent = model
+		local radius = 3.4 * s
+		local arc = math.rad(150)
+		local points = {}
+		local n = if quality == "Low" then 6 else 10
+		for i = 0, n do
+			local a = -arc / 2 + arc * i / n
+			points[i + 1] = Vector3.new(radius * math.sin(a), radius * math.cos(a) - radius * 0.55, 0)
 		end
+		ribbon(core, points, 1.1 * s, color, false)
+		-- Segunda lâmina mais fina atrás (profundidade)
+		local back = {}
+		for i, p in points do
+			back[i] = p * 0.82 + Vector3.new(0, 0, 1.2 * s)
+		end
+		ribbon(core, back, 0.6 * s, secondary:Lerp(color, 0.5), false)
 	elseif shape == "Arrow" then
 		local shaft = neon(Vector3.new(0.25 * s, 0.25 * s, 5 * s), CFrame.identity, color, 0)
 		shaft.Parent = model
@@ -577,6 +670,7 @@ function VFX.Beam(data: { [string]: any })
 		0,
 		Enum.PartType.Cylinder
 	)
+	outer.Material = Enum.Material.ForceField
 	tween(outer, 0.08, { Size = Vector3.new(length, radius * 2, radius * 2) }, Enum.EasingStyle.Back)
 	tween(inner, 0.08, { Size = Vector3.new(length, radius, radius) }, Enum.EasingStyle.Back)
 	VFX.Flash(origin, color, radius * 3, 0.3)
