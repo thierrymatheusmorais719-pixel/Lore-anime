@@ -209,6 +209,8 @@ end
 -- "Hit" → arco de luz no quadro do impacto (fica em sincronia mesmo com hit-stop).
 local function slashFx(model: Model, spec, animName: string)
 	local element = VFX.ElementOf(model)
+	-- criaturas (AnimSet) atacam com garras: som próprio no mesmo marcador
+	local swingSound = if model:GetAttribute("AnimSet") then "Claw" else (spec.sound or "Slash")
 	local color = VFX.Color(element)
 	VFX.WeaponTrail(model, color, spec.windup + 0.15)
 	local function arc()
@@ -233,7 +235,7 @@ local function slashFx(model: Model, spec, animName: string)
 		onMarker = function(marker: string)
 			if marker == "Swing" and not soundPlayed then
 				soundPlayed = true
-				SoundController.Play(spec.sound or "Slash", model.PrimaryPart)
+				SoundController.Play(swingSound, model.PrimaryPart)
 			elseif marker == "Hit" and not arcPlayed then
 				arcPlayed = true
 				arc()
@@ -249,7 +251,7 @@ local function slashFx(model: Model, spec, animName: string)
 		task.delay(spec.windup * 0.6, function()
 			if not soundPlayed then
 				soundPlayed = true
-				SoundController.Play(spec.sound or "Slash", model.PrimaryPart)
+				SoundController.Play(swingSound, model.PrimaryPart)
 			end
 		end)
 		task.delay(spec.windup, function()

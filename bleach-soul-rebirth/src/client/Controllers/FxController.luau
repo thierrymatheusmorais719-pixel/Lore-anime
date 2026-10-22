@@ -15,6 +15,7 @@ local SoundController = require(Controllers.SoundController)
 local CameraController = require(Controllers.CameraController)
 local CombatController = require(Controllers.CombatController)
 local SpectacleFx = require(Controllers.SpectacleFx)
+local ImpactFx = require(Controllers.ImpactFx)
 local BossCinematicController = require(Controllers.BossCinematicController)
 
 local FxController = {}
@@ -128,7 +129,7 @@ handlers.Hit = function(d)
 
 	if d.result == "Blocked" then
 		AnimController.Play(target, "BlockHit")
-		VFX.Sparks(position, Color3.fromRGB(255, 230, 160), 10)
+		ImpactFx.Hit(position, nil, "Gold", 1)
 		SoundController.Play("Block", position)
 		VFX.DamageNumber(position, d.damage, "Blocked")
 	else
@@ -148,11 +149,15 @@ handlers.Hit = function(d)
 			AnimController.Play(target, reaction)
 		end
 		SpectacleFx.HitFlash(target, if heavy then color:Lerp(Color3.new(1, 1, 1), 0.6) else nil)
-		VFX.Sparks(position, color, if heavy then 26 else 12)
-		VFX.Flash(position, color, if heavy then 7 else 3.5, if heavy then 0.25 else 0.15)
+		-- Impacto em camadas: clarão → estilhaços na direção do golpe → poeira (ImpactFx)
+		local attackerRoot = rootOf(attacker)
+		local direction = if attackerRoot then attackerRoot.CFrame.LookVector else nil
+		local finisher = (d.hitstop or 0) >= 0.15
+		ImpactFx.Hit(position, direction, element, if finisher then 3 elseif heavy then 2 else 1)
 		if heavy then
-			VFX.Shockwave(position, color, 7, 0.3, 0.3)
-			VFX.emit("Wisp", position, color, 10)
+			task.delay(0.03, function()
+				VFX.Shockwave(position, color, if finisher then 11 else 7, 0.3, 0.3)
+			end)
 			SpectacleFx.HitLines(position, Color3.new(1, 1, 1), 10, 4)
 			if nearLocal(position, 80) then
 				-- Execuções e finalizadores marcam o chão
@@ -194,9 +199,10 @@ handlers.Parry = function(d)
 	AnimController.Play(d.defender, "ParrySuccess")
 	AnimController.Freeze(d.attacker, 0.14)
 	AnimController.Freeze(d.defender, 0.14)
-	VFX.Sparks(position, Color3.fromRGB(255, 220, 120), 30)
-	VFX.Flash(position, Color3.fromRGB(255, 245, 200), 6, 0.2)
-	VFX.Shockwave(position, Color3.fromRGB(255, 240, 200), 6, 0.25, 0.2)
+	ImpactFx.Hit(position, nil, "Gold", 2)
+	task.delay(0.03, function()
+		VFX.Shockwave(position, Color3.fromRGB(255, 240, 200), 6, 0.25, 0.2)
+	end)
 	SoundController.Play("Parry", position)
 	if isLocal(d.defender) then
 		CombatController.OnParrySuccess()
@@ -213,8 +219,10 @@ end
 handlers.GuardBreak = function(d)
 	local root = rootOf(d.actor)
 	if root then
-		VFX.Shockwave(root.Position, Color3.fromRGB(255, 160, 80), 8, 0.35)
-		VFX.Sparks(root.Position + Vector3.new(0, 1, 0), Color3.fromRGB(255, 200, 120), 25)
+		ImpactFx.Hit(root.Position + Vector3.new(0, 1, 0), nil, "Fire", 2)
+		task.delay(0.03, function()
+			VFX.Shockwave(root.Position, Color3.fromRGB(255, 160, 80), 8, 0.35)
+		end)
 		SoundController.Play("GuardBreak", root.Position)
 	end
 	AnimController.Stop(d.actor, "Block", 0.05)
@@ -267,19 +275,28 @@ handlers.Cast = function(d)
 	-- O marcador "Release" do clip cai exatamente no `windup` da habilidade (quando o servidor libera)
 	local releaseAt = AnimController.MarkerTime(d.anim, "Release", model) or d.windup
 	local speed = if d.windup > 0 then releaseAt / d.windup else 1
-	AnimController.Play(model, d.anim, { speed = speed })
-	local color = VFX.Color(d.element)
 	local root = rootOf(model)
+	AnimController.Play(model, d.anim, {
+		speed = speed,
+		-- preparo soa no início; a descarga soa no quadro "Release" do próprio clip
+		onMarker = function(marker: string)
+			if marker == "Release" and root and root.Parent then
+				SoundController.Play("Lunge", root)
+			end
+		end,
+	})
+	local color = VFX.Color(d.element)
 	if root then
 		SoundController.Play("Cast", root)
 		VFX.WeaponTrail(model, color, d.windup + 0.2)
 		if d.windup >= 0.35 then
-			-- Carga visível (Cero, ultimates)
-			local charge =
-				VFX.neon(Vector3.one * 0.5, root.CFrame * CFrame.new(0, 1, -2.5), color, 0.1, Enum.PartType.Ball)
-			VFX.tween(charge, d.windup, { Size = Vector3.one * (if d.ultimate then 6 else 3) })
+			-- Carga visível (Cero, ultimates): energia converge, núcleo pulsa, anel implode e libera
+			local offset = CFrame.new(0, 1, -2.5)
+			ImpactFx.Charge(root, offset, d.element, d.windup, d.ultimate)
 			task.delay(d.windup, function()
-				charge:Destroy()
+				if root.Parent then
+					ImpactFx.Release((root.CFrame * offset).Position, root.CFrame.LookVector, d.element, d.ultimate)
+				end
 			end)
 		end
 	end
@@ -325,6 +342,7 @@ end
 
 handlers.ProjectileEnd = function(d)
 	VFX.EndProjectile(d)
+	ImpactFx.Hit(d.position, d.direction, d.element, if d.explode then 3 else 1)
 	if d.explode then
 		SoundController.Play("Boom", d.position, 0.8)
 		if nearLocal(d.position, 30) then
@@ -344,6 +362,7 @@ end
 handlers.Burst = function(d)
 	task.spawn(VFX.Burst, d, if d.follow then rootOf(d.actor) else nil)
 	task.delay(d.delay or 0, function()
+		ImpactFx.Hit(d.center, nil, d.element, if d.ultimate or d.radius >= 12 then 3 else 2)
 		SoundController.Play(if d.ultimate then "Ultimate" else "Boom", d.center)
 		if d.ultimate then
 			SpectacleFx.Dome(d.center + Vector3.new(0, 2, 0), d.radius, VFX.Color(d.element), 0.8)
@@ -413,8 +432,8 @@ handlers.Buff = function(d)
 		return
 	end
 	local color = VFX.Color(d.element)
+	ImpactFx.Hit(root.Position, nil, d.element, 2)
 	VFX.Shockwave(root.Position - Vector3.new(0, 2.5, 0), color, d.radius or 8, 0.4)
-	VFX.Flash(root.Position, color, 8, 0.3)
 	VFX.emit("Wisp", root.Position, color, 25)
 	SoundController.Play("Cast", root)
 end
@@ -533,9 +552,11 @@ handlers.TransformComplete = function(d)
 		return
 	end
 	local color = VFX.Color(d.element)
-	VFX.Shockwave(root.Position - Vector3.new(0, 2.5, 0), color, if d.form == "Tier2" then 40 else 22, 0.7, 0.8)
-	VFX.Flash(root.Position, color, if d.form == "Tier2" then 26 else 14, 0.5)
-	VFX.Sparks(root.Position, color, 40)
+	-- Clarão primeiro; anel de choque e o resto em degraus de 0,03 s (o guia: nada dispara junto)
+	ImpactFx.Hit(root.Position, nil, d.element, 3)
+	task.delay(0.03, function()
+		VFX.Shockwave(root.Position - Vector3.new(0, 2.5, 0), color, if d.form == "Tier2" then 40 else 22, 0.7, 0.8)
+	end)
 	SoundController.Play(if d.form == "Tier2" then "Ultimate" else "Boom", root)
 	SpectacleFx.Crater(root.Position, if d.form == "Tier2" then 14 else 8, color)
 	SpectacleFx.Dome(root.Position, if d.form == "Tier2" then 34 else 18, color, if d.form == "Tier2" then 0.9 else 0.6)

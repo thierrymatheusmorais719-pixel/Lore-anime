@@ -2,12 +2,13 @@
 
 RPG de ação inspirado em Bleach, escrito em **Luau** e organizado para **Rojo**. Todo o mapa, os rigs dos
 NPCs/inimigos, as armas, os efeitos e as animações são gerados por código. **Não há assets de terceiros
-nem IDs inventados**: as animações são procedurais (podem ser trocadas por animações publicadas), e os sons
-usam arquivos embutidos no próprio cliente Roblox (`rbxasset://sounds/...`).
+nem IDs inventados**: as animações são clips compilados a partir de poses (podem ser publicadas como
+KeyframeSequence), e os sons usam arquivos embutidos no próprio cliente Roblox (`rbxasset://sounds/...`).
 
-> Status: código completo, com verificação de tipos limpa (luau-lsp + definições Roblox), 31 testes de lógica
-> passando e `rojo build` gerando o `.rbxl`. **Ainda não foi executado dentro do Roblox Studio** (o ambiente
-> onde foi escrito não tem Studio). Siga o roteiro de teste abaixo e reporte o que aparecer na saída.
+> Status: código completo, com verificação de tipos limpa (luau-lsp + definições Roblox), 35 testes de lógica
+> passando, 88 animações compiladas e aprovadas nas checagens de movimento, e `rojo build` gerando o `.rbxl`.
+> **Ainda não foi executado dentro do Roblox Studio** (o ambiente onde foi escrito não tem Studio). Siga o
+> roteiro de teste abaixo e reporte o que aparecer na saída.
 
 ---
 
@@ -70,7 +71,10 @@ src/
 │  │                  Items, Loot, Progression, SkillTrees, Zones, Elements, Animations, Sounds
 │  ├─ Logic/          regras puras e testáveis: CombatRules, Stats, ProgressionLogic, InventoryLogic,
 │  │                  LootLogic, GachaLogic, QuestLogic, DataSchema, Loadout
-│  ├─ Anim/Poses      biblioteca de animações procedurais R15
+│  ├─ Anim/Clips      animações compiladas (GERADO por tools/anims/build.py) + ClipSampler (easing Roblox)
+│  ├─ Anim/Poses      animações procedurais antigas (reserva e prioridades)
+│  ├─ Builders/       RigBuilder (R15 exato + criaturas de Config/CreatureRigs.json), WeaponBuilder,
+│  │                  OutfitBuilder
 │  ├─ Util/           Signal, Trove, Log, RateLimiter, Pool, Spring, TableUtil
 │  ├─ Net             definição dos RemoteEvents/RemoteFunction
 │  └─ Physics         impulsos (LinearVelocity), flutuar no ar
@@ -78,13 +82,14 @@ src/
 │  ├─ Main.server     inicialização (Init em ordem → Start)
 │  ├─ Services/       Data, Combat, Ability, Transformation, Character, Progression, Inventory,
 │  │                  Quest (missões + diálogos), Enemy, World, UI (roteador de pedidos), Dev (só Studio)
-│  ├─ Enemy/EnemyBrain IA: perseguir, combos, esquiva/bloqueio/parry reativos, habilidades, fases
-│  ├─ Builders/       RigBuilder (R15 procedural), WeaponBuilder, OutfitBuilder (tecidos articulados)
+│  ├─ Enemy/EnemyBrain IA: perseguir (linha reta ou PathfindingService), fila de atacantes e ronda,
+│  │                  combos, esquiva/bloqueio/parry reativos, habilidades, fases
 │  └─ World/          Build (primitivas) + Regions (Karakura, Treino, Soul Society, Hueco Mundo)
 └─ client/            → StarterPlayerScripts.Client
    ├─ Main.client
-   ├─ Controllers/    Data, Input, Combat (previsão), Anim, Fx (eventos→efeitos), VFX, Camera, Sound,
-   │                  HUD, Menu, Dialogue, FactionSelect, Zone (iluminação)
+   ├─ Controllers/    Data, Input, Combat (previsão), Anim, Fx (eventos→efeitos), VFX, ImpactFx (impactos
+   │                  e cargas em camadas), SpectacleFx, Camera, Sound, HUD, Menu, Dialogue,
+   │                  FactionSelect, Zone (iluminação)
    └─ UI/Kit          tema e componentes
 ```
 
@@ -145,17 +150,38 @@ migração de dados e **integridade das configs** (toda habilidade/animação/it
 
 ---
 
-## 6. O que ainda precisa ser validado no Studio
+## 6. Animações e criaturas (como regenerar)
 
-- Sensação das poses procedurais (ângulos podem precisar de ajuste fino por golpe em `Anim/Poses.luau`).
-- Equilíbrio de dano/vida/XP (tudo em `Config/`).
-- Comportamento do knockback em terrenos irregulares e das execuções em grupo.
-- Pathfinding: a IA usa `MoveTo` direto (as arenas são abertas); mapas fechados pedem `PathfindingService`.
+```bash
+python3 tools/creatures/bodies.py            # corpos dos Hollows → src/shared/Config/CreatureRigs.json
+python3 tools/anims/author.py                # poses → tools/anims/json (inclui tools/creatures/author_creatures.py)
+python3 tools/anims/build.py --sheets /tmp/folhas   # compila com a skill, exige todas as checagens, gera Clips.luau
+```
+- Cada clip passa por limites de junta, velocidade (≤ 2500°/s), deriva do quadril, contato com o chão,
+  deslize dos pés e simetria da marcha; as folhas de contato (PNG) servem para revisão visual.
+- Golpes: marcador `Hit` = `windup` do servidor (testado); conjurações: marcador `Release`.
+- Hollows: `HollowGrunt` (predador curvado com cauda) e `HollowBrute` (gorila de osso) têm corpo e
+  animações próprias (`HollowSlash1`, `BruteWalk`...). O atributo `AnimSet` do modelo escolhe a versão da
+  criatura; o que ela não tiver cai na animação comum.
+- `tools/anims/keyframes/<Nome>.lua` cria o `KeyframeSequence` no Studio para publicar como animação.
+
+## 7. O que ainda precisa ser validado no Studio / depende de recursos externos
+
+- **Nada foi visto rodando no Roblox**: tipos, testes, compilação de animações e o `.rbxl` foram
+  verificados; aparência dos efeitos, sensação do combate e navegação precisam de um playtest.
+- **Efeitos**: usam as texturas embutidas (`sparkles_main`, `smoke_main`). Texturas próprias (meia-lua de
+  corte, anel, flipbooks) exigem Blender + upload (Open Cloud) — veja a seção 8.
+- **Sons**: só há os sons embutidos do cliente (corte, estocada, desembainhar, pulo). Rugidos, impactos
+  graves e trilha precisam de áudio próprio ou licenciado, trocando os `id` em `Config/Sounds.luau`.
+- **Malhas**: corpos e roupas são primitivas com malha esférica; malhas esculpidas (rostos, cabelos,
+  máscaras detalhadas) exigem modelagem externa e upload.
+- Equilíbrio de dano/vida/XP (tudo em `Config/`); knockback em terreno irregular; execuções em grupo.
+- Pathfinding: confira inimigos contornando paredes do Seireitei e prédios de Karakura.
 - Sessão travada do DataStore ao trocar de servidor rapidamente (a trava expira em 10 min ou é assumida após ~16 s).
 
 ---
 
-## 7. Skill de VFX/animação para o Claude Code
+## 8. Skill de VFX/animação para o Claude Code
 
 O projeto inclui a skill **roblox-vfx-animation** em `.claude/skills/vfxskill/`
 (origem: https://github.com/adnvli/vfxskill, commit `f17b9a6`, licença MIT). O Claude Code a carrega
@@ -168,6 +194,6 @@ automaticamente em trabalhos de efeitos e animações (`/skills` para conferir).
   `ROBLOX_API_KEY` (ou `ROBLOX_OPEN_CLOUD_API_KEY`) e `ROBLOX_USER_ID` ou `ROBLOX_GROUP_ID` (dono do lugar).
   Uploads são permanentes e moderados.
 - **Como se encaixa aqui:** os efeitos deste jogo ficam em `src/client/Controllers/VFXController.luau` e
-  `SpectacleFx.luau` (gerados por código); as animações em `src/shared/Anim/Poses.luau` com IDs
-  publicados opcionais em `src/shared/Config/Animations.luau`. A skill serve para produzir texturas,
+  `SpectacleFx.luau` e `ImpactFx.luau` (gerados por código); as animações em `tools/anims` →
+  `src/shared/Anim/Clips.luau`, com IDs publicados opcionais em `src/shared/Config/Animations.luau`. A skill serve para produzir texturas,
   flipbooks e animações publicadas e então plugá-las nesses arquivos.

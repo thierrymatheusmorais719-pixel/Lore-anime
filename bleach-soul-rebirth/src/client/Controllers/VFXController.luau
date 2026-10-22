@@ -643,13 +643,12 @@ function VFX.EndProjectile(data: { [string]: any })
 		p.model:Destroy()
 	end
 	local color = VFX.Color(data.element)
+	-- Clarão/estilhaços/poeira em camadas ficam com o ImpactFx (FxController); aqui só o anel,
+	-- em degrau depois do clarão
 	if data.explode then
-		VFX.Flash(data.position, color, data.explode * 1.2, 0.35)
-		VFX.Shockwave(data.position - Vector3.new(0, 1.5, 0), color, data.explode, 0.4)
-		VFX.Sparks(data.position, color, 24)
-	else
-		VFX.Flash(data.position, color, 5, 0.18)
-		VFX.Sparks(data.position, color, 8)
+		task.delay(0.03, function()
+			VFX.Shockwave(data.position - Vector3.new(0, 1.5, 0), color, data.explode, 0.4)
+		end)
 	end
 end
 

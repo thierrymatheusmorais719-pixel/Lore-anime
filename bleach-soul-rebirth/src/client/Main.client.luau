@@ -11,6 +11,7 @@ local ORDER = {
 	"CameraController",
 	"VFXController",
 	"SpectacleFx",
+	"ImpactFx",
 	"AnimController",
 	"CombatController",
 	"BossCinematicController",

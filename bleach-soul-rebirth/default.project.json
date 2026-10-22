@@ -40,7 +40,12 @@
       "$properties": {
         "Technology": "Future",
         "ClockTime": 21,
-        "Brightness": 2
+        "Brightness": 2,
+        "GlobalShadows": true,
+        "ShadowSoftness": 0.25,
+        "EnvironmentDiffuseScale": 0.6,
+        "EnvironmentSpecularScale": 0.6,
+        "ExposureCompensation": 0
       }
     },
     "SoundService": {
