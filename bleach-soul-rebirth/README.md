@@ -152,3 +152,22 @@ migração de dados e **integridade das configs** (toda habilidade/animação/it
 - Comportamento do knockback em terrenos irregulares e das execuções em grupo.
 - Pathfinding: a IA usa `MoveTo` direto (as arenas são abertas); mapas fechados pedem `PathfindingService`.
 - Sessão travada do DataStore ao trocar de servidor rapidamente (a trava expira em 10 min ou é assumida após ~16 s).
+
+---
+
+## 7. Skill de VFX/animação para o Claude Code
+
+O projeto inclui a skill **roblox-vfx-animation** em `.claude/skills/vfxskill/`
+(origem: https://github.com/adnvli/vfxskill, commit `f17b9a6`, licença MIT). O Claude Code a carrega
+automaticamente em trabalhos de efeitos e animações (`/skills` para conferir).
+
+- **Requisitos para o fluxo completo:** um MCP do Roblox Studio com `execute_luau` e `screen_capture`
+  (para construir e capturar efeitos quadro a quadro), Node.js 18+ e, opcionalmente, Blender
+  (texturas/flipbooks e malhas de meia-lua/anel).
+- **Variáveis de ambiente** (só para `scripts/upload.mjs`, que envia texturas/malhas/animações via Open Cloud):
+  `ROBLOX_API_KEY` (ou `ROBLOX_OPEN_CLOUD_API_KEY`) e `ROBLOX_USER_ID` ou `ROBLOX_GROUP_ID` (dono do lugar).
+  Uploads são permanentes e moderados.
+- **Como se encaixa aqui:** os efeitos deste jogo ficam em `src/client/Controllers/VFXController.luau` e
+  `SpectacleFx.luau` (gerados por código); as animações em `src/shared/Anim/Poses.luau` com IDs
+  publicados opcionais em `src/shared/Config/Animations.luau`. A skill serve para produzir texturas,
+  flipbooks e animações publicadas e então plugá-las nesses arquivos.
