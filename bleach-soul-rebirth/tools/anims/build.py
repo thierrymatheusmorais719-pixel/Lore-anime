@@ -24,17 +24,18 @@ PART_TO_JOINT = {
 }
 POSE_RE = re.compile(r'P\("(\w+)",([\d.]+),\{([^}]*)\},"(\w+)","(\w+)"')
 
-def parse_luau(text):
+def parse_luau(text, part_to_joint=None):
     tracks, markers = {}, []
     for block in text.split("local k = Instance.new(\"Keyframe\")")[1:]:
         time = float(re.search(r"k\.Time = ([\d.e-]+)", block).group(1))
         for m in re.finditer(r'm\.Name = "(\w+)"; m\.Value = "([^"]*)"', block):
             markers.append((m.group(1), time, m.group(2)))
         for part, weight, cf, style, direction in POSE_RE.findall(block):
-            if float(weight) <= 0 or part not in PART_TO_JOINT:
+            joint = (part_to_joint or PART_TO_JOINT).get(part)
+            if float(weight) <= 0 or not joint:
                 continue
             nums = [float(x) for x in cf.split(",")]
-            tracks.setdefault(PART_TO_JOINT[part], []).append((time, nums, style, direction))
+            tracks.setdefault(joint, []).append((time, nums, style, direction))
     for keys in tracks.values():
         keys.sort(key=lambda k: k[0])
     return tracks, markers
@@ -62,6 +63,11 @@ def main():
         cmd += info.get("flags", [])
         if info.get("waive"):
             cmd += ["--waive", ",".join(info["waive"])]
+        mapping = None
+        if info.get("rig"):  # criatura: corpo próprio (tools/creatures/rigs), juntas pelo nome da peça movida
+            rig_file = os.path.join(here, info["rig"])
+            cmd += ["--rig-json", rig_file]
+            mapping = {j["part1"]: j["name"] for j in json.load(open(rig_file))["joints"]}
         if args.sheets and (not only or name in only):
             cmd += ["--sheet", os.path.join(args.sheets, name + ".png")]
         res = subprocess.run(cmd, capture_output=True, text=True)
@@ -73,9 +79,16 @@ def main():
         if not report.get("ok"):
             failures.append((name, report.get("errors") or [c for c in report.get("checks", []) if c["status"] == "fail"]))
             continue
-        tracks, markers = parse_luau(open(lua_path).read())
+        tracks, markers = parse_luau(open(lua_path).read(), mapping)
+        gs = GROUND_SPEED.get(name)
+        if info.get("groundSpeedFromReport"):
+            # marcha por `gait`: velocidade = stride / (duty × duração) (references/creature-animation.md)
+            src_data = json.load(open(src))
+            gait = src_data["gait"]
+            duty = gait.get("duty", {"walk": 0.65, "trot": 0.5, "pace": 0.5, "bound": 0.4, "gallop": 0.35}[gait["pattern"]])
+            gs = report.get("groundSpeed") or gait["stride"] / (duty * src_data["duration"])
         clips[name] = {"duration": report["duration"], "loop": report["loop"], "priority": report.get("priority", "Action"),
-                       "tracks": tracks, "markers": markers, "groundSpeed": GROUND_SPEED.get(name) or info.get("groundSpeed")}
+                       "tracks": tracks, "markers": markers, "groundSpeed": gs}
         print(f"ok  {name:16s} {report['duration']:.2f}s  poses={report['poses']}  marcadores={[m[0] for m in markers]}")
     if failures:
         for name, why in failures:

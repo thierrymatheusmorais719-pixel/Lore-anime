@@ -1,0 +1,157 @@
+{
+ "loop": true,
+ "priority": "Movement",
+ "duration": 0.5,
+ "gait": {
+  "pattern": "walk",
+  "stride": 2.6,
+  "duty": 0.38,
+  "lift": 0.6,
+  "bob": 0.22
+ },
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -16,
+      -10,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      10,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.45,
+      -0.3,
+      -0.75
+     ]
+    },
+    "RightElbow": {
+     "bend": 25
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.4,
+      -0.1,
+      0.9
+     ]
+    },
+    "LeftElbow": {
+     "bend": 70
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 0.25,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -16,
+      10,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      10,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.4,
+      -0.1,
+      0.9
+     ]
+    },
+    "RightElbow": {
+     "bend": 70
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.45,
+      -0.3,
+      -0.75
+     ]
+    },
+    "LeftElbow": {
+     "bend": 25
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 0.5,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -16,
+      -10,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      10,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.45,
+      -0.3,
+      -0.75
+     ]
+    },
+    "RightElbow": {
+     "bend": 25
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.4,
+      -0.1,
+      0.9
+     ]
+    },
+    "LeftElbow": {
+     "bend": 70
+    }
+   }
+  }
+ ],
+ "waves": [
+  {
+   "joints": [
+    "Tail1",
+    "Tail2",
+    "Tail3"
+   ],
+   "axis": "X",
+   "amplitude": [
+    5,
+    14
+   ],
+   "lag": 0.18,
+   "cycles": 2
+  }
+ ],
+ "name": "HollowRun",
+ "rig": "game.Workspace.HollowGrunt"
+}

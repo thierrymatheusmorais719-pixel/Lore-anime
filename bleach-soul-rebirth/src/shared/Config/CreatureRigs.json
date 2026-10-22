@@ -1,0 +1,2128 @@
+{
+ "HollowGrunt": {
+  "parts": [
+   {
+    "name": "LowerTorso",
+    "size": [
+     1.5,
+     0.75,
+     1.15
+    ],
+    "parent": "HumanoidRootPart",
+    "joint": "Root",
+    "c0": [
+     0,
+     -0.65,
+     0,
+     0,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.05,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "UpperTorso",
+    "size": [
+     2.0,
+     1.8,
+     1.45
+    ],
+    "parent": "LowerTorso",
+    "joint": "Waist",
+    "c0": [
+     0,
+     0.3,
+     0,
+     -28,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     -0.82,
+     0.12,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "Head",
+    "size": [
+     1.15,
+     1.05,
+     1.25
+    ],
+    "parent": "UpperTorso",
+    "joint": "Neck",
+    "c0": [
+     0,
+     0.82,
+     -0.4,
+     30,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     -0.45,
+     0.15,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "RightUpperArm",
+    "size": [
+     0.7,
+     1.65,
+     0.7
+    ],
+    "parent": "UpperTorso",
+    "joint": "RightShoulder",
+    "c0": [
+     1.15,
+     0.5,
+     -0.1,
+     36,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.72,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "LeftUpperArm",
+    "size": [
+     0.7,
+     1.65,
+     0.7
+    ],
+    "parent": "UpperTorso",
+    "joint": "LeftShoulder",
+    "c0": [
+     -1.15,
+     0.5,
+     -0.1,
+     36,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.72,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "RightLowerArm",
+    "size": [
+     0.6,
+     1.6,
+     0.6
+    ],
+    "parent": "RightUpperArm",
+    "joint": "RightElbow",
+    "c0": [
+     0,
+     -0.78,
+     0,
+     18,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.72,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "LeftLowerArm",
+    "size": [
+     0.6,
+     1.6,
+     0.6
+    ],
+    "parent": "LeftUpperArm",
+    "joint": "LeftElbow",
+    "c0": [
+     0,
+     -0.78,
+     0,
+     18,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.72,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "RightHand",
+    "size": [
+     0.85,
+     0.45,
+     0.95
+    ],
+    "parent": "RightLowerArm",
+    "joint": "RightWrist",
+    "c0": [
+     0,
+     -0.78,
+     0,
+     0,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.18,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "LeftHand",
+    "size": [
+     0.85,
+     0.45,
+     0.95
+    ],
+    "parent": "LeftLowerArm",
+    "joint": "LeftWrist",
+    "c0": [
+     0,
+     -0.78,
+     0,
+     0,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.18,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "RightUpperLeg",
+    "size": [
+     0.85,
+     1.45,
+     0.85
+    ],
+    "parent": "LowerTorso",
+    "joint": "RightHip",
+    "c0": [
+     0.5,
+     -0.25,
+     0,
+     22,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.66,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "LeftUpperLeg",
+    "size": [
+     0.85,
+     1.45,
+     0.85
+    ],
+    "parent": "LowerTorso",
+    "joint": "LeftHip",
+    "c0": [
+     -0.5,
+     -0.25,
+     0,
+     22,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.66,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "RightLowerLeg",
+    "size": [
+     0.7,
+     1.45,
+     0.7
+    ],
+    "parent": "RightUpperLeg",
+    "joint": "RightKnee",
+    "c0": [
+     0,
+     -0.68,
+     0,
+     -48,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.68,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "LeftLowerLeg",
+    "size": [
+     0.7,
+     1.45,
+     0.7
+    ],
+    "parent": "LeftUpperLeg",
+    "joint": "LeftKnee",
+    "c0": [
+     0,
+     -0.68,
+     0,
+     -48,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.68,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "RightFoot",
+    "size": [
+     0.85,
+     0.35,
+     1.25
+    ],
+    "parent": "RightLowerLeg",
+    "joint": "RightAnkle",
+    "c0": [
+     0,
+     -0.68,
+     0,
+     26,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.12,
+     -0.2,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Block"
+   },
+   {
+    "name": "LeftFoot",
+    "size": [
+     0.85,
+     0.35,
+     1.25
+    ],
+    "parent": "LeftLowerLeg",
+    "joint": "LeftAnkle",
+    "c0": [
+     0,
+     -0.68,
+     0,
+     26,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.12,
+     -0.2,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Block"
+   },
+   {
+    "name": "Tail1",
+    "size": [
+     0.55,
+     0.55,
+     1.4
+    ],
+    "parent": "LowerTorso",
+    "joint": "Tail1",
+    "c0": [
+     0,
+     0.05,
+     0.5,
+     -15,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0,
+     -0.68,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "Tail2",
+    "size": [
+     0.42,
+     0.42,
+     1.3
+    ],
+    "parent": "Tail1",
+    "joint": "Tail2",
+    "c0": [
+     0,
+     0,
+     0.66,
+     12,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0,
+     -0.62,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "Tail3",
+    "size": [
+     0.28,
+     0.28,
+     1.2
+    ],
+    "parent": "Tail2",
+    "joint": "Tail3",
+    "c0": [
+     0,
+     0,
+     0.62,
+     12,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0,
+     -0.58,
+     0,
+     0,
+     0
+    ],
+    "role": "bone",
+    "mesh": "Sphere"
+   }
+  ],
+  "root": [
+   2.0,
+   2.0,
+   1.1
+  ],
+  "decor": [
+   {
+    "part": "Head",
+    "size": [
+     1.35,
+     1.0,
+     0.35
+    ],
+    "offset": [
+     0,
+     0.08,
+     -0.62,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "material": "SmoothPlastic",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     1.4,
+     0.28,
+     0.42
+    ],
+    "offset": [
+     0,
+     0.42,
+     -0.66,
+     -12,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.28,
+     0.18,
+     0.08
+    ],
+    "offset": [
+     0.3,
+     0.22,
+     -0.84,
+     0,
+     0,
+     -8
+    ],
+    "role": "dark",
+    "shape": "Block"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.28,
+     0.18,
+     0.08
+    ],
+    "offset": [
+     -0.3,
+     0.22,
+     -0.84,
+     0,
+     0,
+     8
+    ],
+    "role": "dark",
+    "shape": "Block"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.18,
+     0.1,
+     0.05
+    ],
+    "offset": [
+     0.3,
+     0.22,
+     -0.88,
+     0,
+     0,
+     -8
+    ],
+    "role": "eye",
+    "shape": "Block",
+    "material": "Neon"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.18,
+     0.1,
+     0.05
+    ],
+    "offset": [
+     -0.3,
+     0.22,
+     -0.88,
+     0,
+     0,
+     8
+    ],
+    "role": "eye",
+    "shape": "Block",
+    "material": "Neon"
+   },
+   {
+    "part": "Head",
+    "size": [
+     1.1,
+     0.35,
+     0.5
+    ],
+    "offset": [
+     0,
+     -0.38,
+     -0.55,
+     8,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.06,
+     0.95,
+     0.04
+    ],
+    "offset": [
+     0.42,
+     0.05,
+     -0.81,
+     0,
+     0,
+     0
+    ],
+    "role": "accent",
+    "shape": "Block",
+    "material": "Neon"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.06,
+     0.95,
+     0.04
+    ],
+    "offset": [
+     -0.42,
+     0.05,
+     -0.81,
+     0,
+     0,
+     0
+    ],
+    "role": "accent",
+    "shape": "Block",
+    "material": "Neon"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.24,
+     0.1
+    ],
+    "offset": [
+     -0.42,
+     -0.2,
+     -0.82,
+     0,
+     0,
+     180
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.24,
+     0.1
+    ],
+    "offset": [
+     -0.3,
+     -0.2,
+     -0.82,
+     0,
+     0,
+     180
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.24,
+     0.1
+    ],
+    "offset": [
+     -0.18,
+     -0.2,
+     -0.82,
+     0,
+     0,
+     180
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.24,
+     0.1
+    ],
+    "offset": [
+     -0.06,
+     -0.2,
+     -0.82,
+     0,
+     0,
+     180
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.24,
+     0.1
+    ],
+    "offset": [
+     0.06,
+     -0.2,
+     -0.82,
+     0,
+     0,
+     180
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.24,
+     0.1
+    ],
+    "offset": [
+     0.18,
+     -0.2,
+     -0.82,
+     0,
+     0,
+     180
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.24,
+     0.1
+    ],
+    "offset": [
+     0.3,
+     -0.2,
+     -0.82,
+     0,
+     0,
+     180
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.24,
+     0.1
+    ],
+    "offset": [
+     0.42,
+     -0.2,
+     -0.82,
+     0,
+     0,
+     180
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.28,
+     0.28,
+     1.0
+    ],
+    "offset": [
+     0.45,
+     0.55,
+     -0.15,
+     -55,
+     0,
+     -25
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.2,
+     0.2,
+     0.9
+    ],
+    "offset": [
+     0.7,
+     1.05,
+     0.05,
+     -100,
+     0,
+     -35
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.1,
+     0.12,
+     1.4
+    ],
+    "offset": [
+     -0.28,
+     -0.12,
+     -0.75,
+     -15,
+     6,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.1,
+     0.12,
+     1.4
+    ],
+    "offset": [
+     0.28,
+     -0.12,
+     -0.75,
+     -15,
+     -6,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.1,
+     0.12,
+     1.4
+    ],
+    "offset": [
+     0,
+     -0.12,
+     -0.75,
+     -15,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.1,
+     0.12,
+     1.4
+    ],
+    "offset": [
+     0,
+     -0.12,
+     -0.75,
+     -15,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.1,
+     0.12,
+     1.4
+    ],
+    "offset": [
+     0.28,
+     -0.12,
+     -0.75,
+     -15,
+     -6,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.1,
+     0.12,
+     1.4
+    ],
+    "offset": [
+     -0.28,
+     -0.12,
+     -0.75,
+     -15,
+     6,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.12,
+     0.55,
+     0.55
+    ],
+    "offset": [
+     0,
+     0.65,
+     0.72,
+     -25,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.12,
+     0.49000000000000005,
+     0.55
+    ],
+    "offset": [
+     0,
+     0.23000000000000004,
+     0.72,
+     -25,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.12,
+     0.43000000000000005,
+     0.55
+    ],
+    "offset": [
+     0,
+     -0.18999999999999995,
+     0.72,
+     -25,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.12,
+     0.37000000000000005,
+     0.55
+    ],
+    "offset": [
+     0,
+     -0.61,
+     0.72,
+     -25,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "Tail1",
+    "size": [
+     0.1,
+     0.35,
+     0.4
+    ],
+    "offset": [
+     0,
+     0.32,
+     0,
+     -20,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "Tail2",
+    "size": [
+     0.08,
+     0.3,
+     0.35
+    ],
+    "offset": [
+     0,
+     0.25,
+     0,
+     -20,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.15,
+     0.75,
+     0.75
+    ],
+    "offset": [
+     0,
+     0.1,
+     -0.7,
+     0,
+     90,
+     0
+    ],
+    "role": "dark",
+    "shape": "Cylinder"
+   },
+   {
+    "part": "RightUpperArm",
+    "size": [
+     0.85,
+     0.35,
+     0.9
+    ],
+    "offset": [
+     0,
+     0.72,
+     0,
+     0,
+     0,
+     -15
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftUpperArm",
+    "size": [
+     0.85,
+     0.35,
+     0.9
+    ],
+    "offset": [
+     0,
+     0.72,
+     0,
+     0,
+     0,
+     15
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "mesh": "Sphere"
+   }
+  ],
+  "declarations": {
+   "version": 1,
+   "feet": [
+    "LeftFoot",
+    "RightFoot"
+   ],
+   "hips": [
+    "LeftHip",
+    "RightHip"
+   ],
+   "hinges": {
+    "LeftElbow": {
+     "axis": "X",
+     "flex": 1
+    },
+    "RightElbow": {
+     "axis": "X",
+     "flex": 1
+    },
+    "LeftKnee": {
+     "axis": "X",
+     "flex": -1
+    },
+    "RightKnee": {
+     "axis": "X",
+     "flex": -1
+    }
+   },
+   "limbs": {
+    "LeftShoulder": {
+     "hinge": "LeftElbow"
+    },
+    "RightShoulder": {
+     "hinge": "RightElbow"
+    },
+    "LeftHip": {
+     "hinge": "LeftKnee",
+     "foot": "LeftAnkle"
+    },
+    "RightHip": {
+     "hinge": "RightKnee",
+     "foot": "RightAnkle"
+    }
+   },
+   "limits": {
+    "Root": "free",
+    "Waist": {
+     "turn": 90
+    },
+    "Neck": {
+     "turn": 90
+    },
+    "LeftShoulder": {
+     "turn": 180
+    },
+    "RightShoulder": {
+     "turn": 180
+    },
+    "LeftElbow": {
+     "min": -15,
+     "max": 160
+    },
+    "RightElbow": {
+     "min": -15,
+     "max": 160
+    },
+    "LeftWrist": {
+     "turn": 100
+    },
+    "RightWrist": {
+     "turn": 100
+    },
+    "LeftHip": {
+     "turn": 150
+    },
+    "RightHip": {
+     "turn": 150
+    },
+    "LeftKnee": {
+     "min": -160,
+     "max": 53
+    },
+    "RightKnee": {
+     "min": -160,
+     "max": 53
+    },
+    "LeftAnkle": {
+     "turn": 80
+    },
+    "RightAnkle": {
+     "turn": 80
+    },
+    "Tail1": {
+     "turn": 70
+    },
+    "Tail2": {
+     "turn": 70
+    },
+    "Tail3": {
+     "turn": 70
+    }
+   }
+  },
+  "animSet": "Hollow"
+ },
+ "HollowBrute": {
+  "parts": [
+   {
+    "name": "LowerTorso",
+    "size": [
+     1.9,
+     0.8,
+     1.35
+    ],
+    "parent": "HumanoidRootPart",
+    "joint": "Root",
+    "c0": [
+     0,
+     -0.55,
+     0,
+     0,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.05,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "UpperTorso",
+    "size": [
+     2.9,
+     2.2,
+     1.9
+    ],
+    "parent": "LowerTorso",
+    "joint": "Waist",
+    "c0": [
+     0,
+     0.35,
+     0,
+     -22,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     -1.0,
+     0.1,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "Head",
+    "size": [
+     1.1,
+     1.0,
+     1.15
+    ],
+    "parent": "UpperTorso",
+    "joint": "Neck",
+    "c0": [
+     0,
+     0.7,
+     -0.75,
+     22,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     -0.35,
+     0.1,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "RightUpperArm",
+    "size": [
+     1.15,
+     1.7,
+     1.15
+    ],
+    "parent": "UpperTorso",
+    "joint": "RightShoulder",
+    "c0": [
+     1.75,
+     0.55,
+     -0.1,
+     28,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.72,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "LeftUpperArm",
+    "size": [
+     1.15,
+     1.7,
+     1.15
+    ],
+    "parent": "UpperTorso",
+    "joint": "LeftShoulder",
+    "c0": [
+     -1.75,
+     0.55,
+     -0.1,
+     28,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.72,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "RightLowerArm",
+    "size": [
+     1.25,
+     1.75,
+     1.25
+    ],
+    "parent": "RightUpperArm",
+    "joint": "RightElbow",
+    "c0": [
+     0,
+     -0.78,
+     0,
+     15,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.8,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "LeftLowerArm",
+    "size": [
+     1.25,
+     1.75,
+     1.25
+    ],
+    "parent": "LeftUpperArm",
+    "joint": "LeftElbow",
+    "c0": [
+     0,
+     -0.78,
+     0,
+     15,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.8,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "RightHand",
+    "size": [
+     1.35,
+     0.8,
+     1.35
+    ],
+    "parent": "RightLowerArm",
+    "joint": "RightWrist",
+    "c0": [
+     0,
+     -0.85,
+     0,
+     0,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.3,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "bone",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "LeftHand",
+    "size": [
+     1.35,
+     0.8,
+     1.35
+    ],
+    "parent": "LeftLowerArm",
+    "joint": "LeftWrist",
+    "c0": [
+     0,
+     -0.85,
+     0,
+     0,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.3,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "bone",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "RightUpperLeg",
+    "size": [
+     1.05,
+     1.15,
+     1.05
+    ],
+    "parent": "LowerTorso",
+    "joint": "RightHip",
+    "c0": [
+     0.65,
+     -0.25,
+     0,
+     18,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.52,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "LeftUpperLeg",
+    "size": [
+     1.05,
+     1.15,
+     1.05
+    ],
+    "parent": "LowerTorso",
+    "joint": "LeftHip",
+    "c0": [
+     -0.65,
+     -0.25,
+     0,
+     18,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.52,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "RightLowerLeg",
+    "size": [
+     0.95,
+     1.15,
+     0.95
+    ],
+    "parent": "RightUpperLeg",
+    "joint": "RightKnee",
+    "c0": [
+     0,
+     -0.52,
+     0,
+     -36,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.52,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "LeftLowerLeg",
+    "size": [
+     0.95,
+     1.15,
+     0.95
+    ],
+    "parent": "LeftUpperLeg",
+    "joint": "LeftKnee",
+    "c0": [
+     0,
+     -0.52,
+     0,
+     -36,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.52,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   },
+   {
+    "name": "RightFoot",
+    "size": [
+     1.1,
+     0.4,
+     1.4
+    ],
+    "parent": "RightLowerLeg",
+    "joint": "RightAnkle",
+    "c0": [
+     0,
+     -0.55,
+     0,
+     18,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.15,
+     -0.2,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Block"
+   },
+   {
+    "name": "LeftFoot",
+    "size": [
+     1.1,
+     0.4,
+     1.4
+    ],
+    "parent": "LeftLowerLeg",
+    "joint": "LeftAnkle",
+    "c0": [
+     0,
+     -0.55,
+     0,
+     18,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.15,
+     -0.2,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Block"
+   }
+  ],
+  "root": [
+   2.6,
+   2.2,
+   1.4
+  ],
+  "decor": [
+   {
+    "part": "Head",
+    "size": [
+     1.25,
+     1.0,
+     0.4
+    ],
+    "offset": [
+     0,
+     0.05,
+     -0.55,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "material": "SmoothPlastic",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.25,
+     0.14,
+     0.06
+    ],
+    "offset": [
+     0.28,
+     0.15,
+     -0.78,
+     0,
+     0,
+     -10
+    ],
+    "role": "eye",
+    "shape": "Block",
+    "material": "Neon"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.25,
+     0.14,
+     0.06
+    ],
+    "offset": [
+     -0.28,
+     0.15,
+     -0.78,
+     0,
+     0,
+     10
+    ],
+    "role": "eye",
+    "shape": "Block",
+    "material": "Neon"
+   },
+   {
+    "part": "Head",
+    "size": [
+     1.0,
+     0.25,
+     0.25
+    ],
+    "offset": [
+     0,
+     -0.32,
+     -0.72,
+     0,
+     0,
+     0
+    ],
+    "role": "dark",
+    "shape": "Block"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     2.4,
+     1.5,
+     0.35
+    ],
+    "offset": [
+     0,
+     0.25,
+     -0.9,
+     8,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "material": "Slate",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.18,
+     0.85,
+     0.85
+    ],
+    "offset": [
+     0,
+     0.0,
+     -1.05,
+     0,
+     90,
+     0
+    ],
+    "role": "dark",
+    "shape": "Cylinder"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.4,
+     0.4,
+     1.4
+    ],
+    "offset": [
+     0.55,
+     0.5,
+     -0.1,
+     -40,
+     0,
+     -35
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightUpperArm",
+    "size": [
+     1.45,
+     0.55,
+     1.45
+    ],
+    "offset": [
+     0,
+     0.65,
+     0,
+     0,
+     0,
+     -10
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "material": "Slate",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftUpperArm",
+    "size": [
+     1.45,
+     0.55,
+     1.45
+    ],
+    "offset": [
+     0,
+     0.65,
+     0,
+     0,
+     0,
+     10
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "material": "Slate",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightLowerArm",
+    "size": [
+     1.4,
+     0.9,
+     1.4
+    ],
+    "offset": [
+     0,
+     -0.25,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "material": "Slate",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftLowerArm",
+    "size": [
+     1.4,
+     0.9,
+     1.4
+    ],
+    "offset": [
+     0,
+     -0.25,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "material": "Slate",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.2,
+     0.25,
+     0.6
+    ],
+    "offset": [
+     0.35,
+     -0.25,
+     -0.6,
+     -20,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.2,
+     0.25,
+     0.6
+    ],
+    "offset": [
+     -0.35,
+     -0.25,
+     -0.6,
+     -20,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.2,
+     0.25,
+     0.6
+    ],
+    "offset": [
+     -0.35,
+     -0.25,
+     -0.6,
+     -20,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.2,
+     0.25,
+     0.6
+    ],
+    "offset": [
+     0.35,
+     -0.25,
+     -0.6,
+     -20,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.18,
+     0.8,
+     0.7
+    ],
+    "offset": [
+     0,
+     0.85,
+     0.95,
+     -25,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.18,
+     0.68,
+     0.7
+    ],
+    "offset": [
+     0,
+     0.35,
+     0.95,
+     -25,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.18,
+     0.56,
+     0.7
+    ],
+    "offset": [
+     0,
+     -0.15000000000000002,
+     0.95,
+     -25,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.18,
+     0.44000000000000006,
+     0.7
+    ],
+    "offset": [
+     0,
+     -0.65,
+     0.95,
+     -25,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge"
+   }
+  ],
+  "declarations": {
+   "version": 1,
+   "feet": [
+    "LeftFoot",
+    "RightFoot"
+   ],
+   "hips": [
+    "LeftHip",
+    "RightHip"
+   ],
+   "hinges": {
+    "LeftElbow": {
+     "axis": "X",
+     "flex": 1
+    },
+    "RightElbow": {
+     "axis": "X",
+     "flex": 1
+    },
+    "LeftKnee": {
+     "axis": "X",
+     "flex": -1
+    },
+    "RightKnee": {
+     "axis": "X",
+     "flex": -1
+    }
+   },
+   "limbs": {
+    "LeftShoulder": {
+     "hinge": "LeftElbow"
+    },
+    "RightShoulder": {
+     "hinge": "RightElbow"
+    },
+    "LeftHip": {
+     "hinge": "LeftKnee",
+     "foot": "LeftAnkle"
+    },
+    "RightHip": {
+     "hinge": "RightKnee",
+     "foot": "RightAnkle"
+    }
+   },
+   "limits": {
+    "Root": "free",
+    "Waist": {
+     "turn": 90
+    },
+    "Neck": {
+     "turn": 90
+    },
+    "LeftShoulder": {
+     "turn": 180
+    },
+    "RightShoulder": {
+     "turn": 180
+    },
+    "LeftElbow": {
+     "min": -15,
+     "max": 160
+    },
+    "RightElbow": {
+     "min": -15,
+     "max": 160
+    },
+    "LeftWrist": {
+     "turn": 100
+    },
+    "RightWrist": {
+     "turn": 100
+    },
+    "LeftHip": {
+     "turn": 150
+    },
+    "RightHip": {
+     "turn": 150
+    },
+    "LeftKnee": {
+     "min": -160,
+     "max": 41
+    },
+    "RightKnee": {
+     "min": -160,
+     "max": 41
+    },
+    "LeftAnkle": {
+     "turn": 80
+    },
+    "RightAnkle": {
+     "turn": 80
+    }
+   }
+  },
+  "animSet": "Brute"
+ }
+}

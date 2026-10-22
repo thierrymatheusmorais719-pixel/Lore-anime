@@ -132,7 +132,8 @@ local LOOKS = {
 -- Resolve CFrames a partir da raiz seguindo Motor6D/Weld (C0/C1) e WeldConstraint (offset gravado).
 local function solve(model: Model, pose: { [string]: CFrame })
 	local root = model.PrimaryPart :: BasePart
-	local edges: { [BasePart]: { { child: BasePart, fn: (CFrame) -> CFrame } } } = {}
+	type Edge = { child: BasePart, fn: (CFrame) -> CFrame }
+	local edges: { [BasePart]: { Edge } } = {}
 	local function add(parent: BasePart, child: BasePart, fn: (CFrame) -> CFrame)
 		edges[parent] = edges[parent] or {}
 		table.insert(edges[parent], { child = child, fn = fn })
@@ -162,7 +163,8 @@ local function solve(model: Model, pose: { [string]: CFrame })
 	local queue = { root }
 	while #queue > 0 do
 		local parent = table.remove(queue, 1) :: BasePart
-		for _, e in edges[parent] or {} do
+		local children: { Edge } = edges[parent] or {}
+		for _, e in children do
 			if not visited[e.child] then
 				visited[e.child] = true
 				e.child.CFrame = e.fn(parent.CFrame)
@@ -253,7 +255,7 @@ function FactionShowcase.Build(factionId: string): Model?
 end
 
 -- Monta ViewportFrame com o personagem, luz da facção e uma leve oscilação.
-function FactionShowcase.Viewport(factionId: string, accent: Color3): (ViewportFrame, () -> ())
+function FactionShowcase.Viewport(factionId: string, accent: Color3): (ViewportFrame, (number) -> ())
 	local viewport = Instance.new("ViewportFrame")
 	viewport.BackgroundTransparency = 1
 	viewport.Size = UDim2.fromScale(1, 1)

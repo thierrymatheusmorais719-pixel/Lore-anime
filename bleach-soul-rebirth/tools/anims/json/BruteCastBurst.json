@@ -1,0 +1,331 @@
+{
+ "name": "BruteCastBurst",
+ "rig": "game.Workspace.HollowBrute",
+ "loop": false,
+ "priority": "Action",
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.1,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.8,
+      -2.8567292493827736,
+      0.2407294901687515
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.8,
+      -2.8567292493827736,
+      -0.2592705098312485
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      -4,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      4,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.5,
+      -0.8,
+      0.3
+     ]
+    },
+    "RightElbow": {
+     "bend": 30
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.5,
+      -0.8,
+      0.3
+     ]
+    },
+    "LeftElbow": {
+     "bend": 30
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "Out"
+   }
+  },
+  {
+   "time": 0.225,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.55,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.9,
+      -2.8567292493827736,
+      0.2407294901687515
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.9,
+      -2.8567292493827736,
+      -0.2592705098312485
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      -22,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -18,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.35,
+      -0.6,
+      0.7
+     ]
+    },
+    "RightElbow": {
+     "bend": 100
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.35,
+      -0.6,
+      0.7
+     ]
+    },
+    "LeftElbow": {
+     "bend": 100
+    }
+   },
+   "easing": {
+    "style": "Linear",
+    "direction": "In"
+   },
+   "name": "Charge"
+  },
+  {
+   "time": 0.3,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.2,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.95,
+      -2.8567292493827736,
+      0.2407294901687515
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.95,
+      -2.8567292493827736,
+      -0.2592705098312485
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      24,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      30,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      1,
+      0.35,
+      -0.1
+     ]
+    },
+    "RightElbow": {
+     "bend": 20
+    },
+    "LeftShoulder": {
+     "aim": [
+      -1,
+      0.35,
+      -0.1
+     ]
+    },
+    "LeftElbow": {
+     "bend": 20
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "Out"
+   },
+   "name": "Release",
+   "markers": [
+    {
+     "name": "Release"
+    }
+   ]
+  },
+  {
+   "time": 0.85,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.2,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.95,
+      -2.8567292493827736,
+      0.2407294901687515
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.95,
+      -2.8567292493827736,
+      -0.2592705098312485
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      24,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      30,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      1,
+      0.35,
+      -0.1
+     ]
+    },
+    "RightElbow": {
+     "bend": 20
+    },
+    "LeftShoulder": {
+     "aim": [
+      -1,
+      0.35,
+      -0.1
+     ]
+    },
+    "LeftElbow": {
+     "bend": 20
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 1.2,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.1,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.8,
+      -2.8567292493827736,
+      0.2407294901687515
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.8,
+      -2.8567292493827736,
+      -0.2592705098312485
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      -4,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      4,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.5,
+      -0.8,
+      0.3
+     ]
+    },
+    "RightElbow": {
+     "bend": 30
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.5,
+      -0.8,
+      0.3
+     ]
+    },
+    "LeftElbow": {
+     "bend": 30
+    }
+   }
+  }
+ ]
+}

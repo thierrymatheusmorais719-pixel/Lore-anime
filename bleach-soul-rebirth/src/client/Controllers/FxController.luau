@@ -265,7 +265,7 @@ handlers.Cast = function(d)
 		return
 	end
 	-- O marcador "Release" do clip cai exatamente no `windup` da habilidade (quando o servidor libera)
-	local releaseAt = AnimController.MarkerTime(d.anim, "Release") or d.windup
+	local releaseAt = AnimController.MarkerTime(d.anim, "Release", model) or d.windup
 	local speed = if d.windup > 0 then releaseAt / d.windup else 1
 	AnimController.Play(model, d.anim, { speed = speed })
 	local color = VFX.Color(d.element)
@@ -494,7 +494,7 @@ handlers.TransformStart = function(d)
 	end
 	local anim = if d.form == "Tier2" then "ReleaseTier2" else "ReleaseTier1"
 	-- "Release" do clip coincide com o fim da canalização no servidor (forma aplicada)
-	local releaseAt = AnimController.MarkerTime(anim, "Release") or d.channel
+	local releaseAt = AnimController.MarkerTime(anim, "Release", model) or d.channel
 	AnimController.Play(model, anim, { speed = releaseAt / math.max(0.1, d.channel) })
 	local color = VFX.Color(d.element)
 	SoundController.Play("Release", root)

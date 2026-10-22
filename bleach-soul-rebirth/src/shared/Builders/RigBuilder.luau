@@ -3,6 +3,10 @@
 -- animações publicadas funcionam igualmente em NPCs e jogadores.
 local RigBuilder = {}
 
+-- Corpos de criatura (Hollows) gerados por tools/creatures/bodies.py — os mesmos usados para
+-- compilar e verificar as animações de cada criatura (tools/creatures/author_creatures.py).
+local CreatureRigs = require(script.Parent.Parent.Config.CreatureRigs) :: any
+
 -- Medidas EXATAS do R15 padrão do Roblox (as mesmas do compilador de animações da skill
 -- roblox-vfx-animation): animações verificadas lá caem iguais aqui, com os pés no chão.
 -- name, size, parent part, joint name, C0 (no pai), C1 (na parte)
@@ -333,9 +337,163 @@ function RigBuilder.build(name: string, look: Look, scale: number?): Model
 		)
 	end
 
+	model:SetAttribute("AnimScale", s)
 	return model
 end
 
 RigBuilder.HipHeight = HIP_HEIGHT
+
+local function transform(t: { number }, s: number): CFrame
+	return CFrame.new(t[1] * s, t[2] * s, t[3] * s) * CFrame.Angles(math.rad(t[4]), math.rad(t[5]), math.rad(t[6]))
+end
+
+local function sphereMesh(p: BasePart)
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Sphere
+	mesh.Parent = p
+end
+
+function RigBuilder.HasCreature(body: string?): boolean
+	return body ~= nil and CreatureRigs[body] ~= nil
+end
+
+-- Monta uma criatura de CreatureRigs: peças orgânicas (esferas esticadas) presas por Motor6D com os
+-- nomes do R15 (+ cauda), enfeites soldados por papel de cor (máscara, ossos, olhos, marcas) e o
+-- HipHeight calculado pelo ponto mais baixo dos pés em repouso (pés no chão em qualquer escala).
+-- O atributo AnimSet escolhe as animações da criatura; AnimScale escala as translações delas.
+function RigBuilder.buildCreature(name: string, bodyName: string, look: Look, scale: number?): Model
+	local body = CreatureRigs[bodyName]
+	assert(body, "corpo de criatura desconhecido: " .. bodyName)
+	local s = scale or 1
+	local skin = look.skin or Color3.fromRGB(30, 28, 34)
+	local maskColor = look.maskColor or Color3.fromRGB(240, 236, 225)
+	local eye = look.eye or Color3.fromRGB(255, 60, 40)
+	local palette: { [string]: Color3 } = {
+		skin = skin,
+		skin2 = skin:Lerp(Color3.new(0, 0, 0), 0.35),
+		bone = maskColor:Lerp(Color3.fromRGB(150, 140, 125), 0.35),
+		mask = maskColor,
+		eye = eye,
+		accent = look.stripes or eye,
+		dark = Color3.fromRGB(6, 5, 9),
+	}
+
+	local model = Instance.new("Model")
+	model.Name = name
+	local rootSize = body.root
+	local root = part("HumanoidRootPart", Vector3.new(rootSize[1], rootSize[2], rootSize[3]) * s, skin, model)
+	root.Transparency = 1
+	root.CanCollide = true
+	root.CanQuery = false
+	model.PrimaryPart = root
+
+	local parts: { [string]: BasePart } = { HumanoidRootPart = root }
+	local low = 0
+	for _, info in body.parts do
+		local size = Vector3.new(info.size[1], info.size[2], info.size[3]) * s
+		local p = part(info.name, size, palette[info.role] or skin, model)
+		p.Material = Enum.Material.Slate
+		if info.mesh == "Sphere" then
+			sphereMesh(p)
+		end
+		parts[info.name] = p
+		local motor = Instance.new("Motor6D")
+		motor.Name = info.joint
+		motor.Part0 = parts[info.parent]
+		motor.Part1 = p
+		motor.C0 = transform(info.c0, s)
+		motor.C1 = transform(info.c1, s)
+		motor.Parent = p
+		p.CFrame = parts[info.parent].CFrame * motor.C0 * motor.C1:Inverse()
+		-- ponto mais baixo (cantos da caixa) em relação ao centro do HumanoidRootPart
+		local half = size / 2
+		for _, sx in { -1, 1 } do
+			for _, sy in { -1, 1 } do
+				for _, sz in { -1, 1 } do
+					local corner = p.CFrame:PointToWorldSpace(half * Vector3.new(sx, sy, sz))
+					low = math.min(low, root.CFrame:PointToObjectSpace(corner).Y)
+				end
+			end
+		end
+	end
+	parts.UpperTorso.CanCollide = true
+	parts.LowerTorso.CanCollide = true
+	-- Ponto de empunhadura das garras (rastro da arma "Claws" sai da ponta das garras)
+	for _, side in { "Right", "Left" } do
+		local hand = parts[side .. "Hand"]
+		if hand then
+			local grip = Instance.new("Attachment")
+			grip.Name = side .. "GripAttachment"
+			grip.Position = Vector3.new(0, -0.12, -0.25) * s
+			grip.Parent = hand
+		end
+	end
+
+	for i, d in body.decor do
+		local base = parts[d.part]
+		if base then
+			local material = if d.material
+				then (Enum.Material :: any)[d.material]
+				elseif d.role == "eye" or d.role == "accent" then Enum.Material.Neon
+				elseif d.role == "bone" or d.role == "mask" then Enum.Material.SmoothPlastic
+				else Enum.Material.Slate
+			local shape = if d.shape == "Cylinder" then Enum.PartType.Cylinder else nil
+			local size = Vector3.new(d.size[1], d.size[2], d.size[3]) * s
+			local piece: BasePart
+			if d.shape == "Wedge" then
+				local w = Instance.new("WedgePart")
+				w.Name = "Decor" .. i
+				w.Size = size
+				w.Color = palette[d.role] or skin
+				w.Material = material
+				w.CanCollide = false
+				w.CanQuery = false
+				w.CanTouch = false
+				w.Massless = true
+				w.CastShadow = false
+				w.CFrame = base.CFrame * transform(d.offset, s)
+				local weld = Instance.new("Weld")
+				weld.Part0 = base
+				weld.Part1 = w
+				weld.C0 = transform(d.offset, s)
+				weld.Parent = w
+				w.Parent = base
+				piece = w
+			else
+				piece = RigBuilder.decorate(
+					base,
+					"Decor" .. i,
+					size,
+					transform(d.offset, s),
+					palette[d.role] or skin,
+					material,
+					shape
+				)
+			end
+			if d.mesh == "Sphere" then
+				sphereMesh(piece)
+			end
+			if d.role == "eye" then
+				piece.Name = "Eye"
+			end
+		end
+	end
+
+	local humanoid = Instance.new("Humanoid")
+	humanoid.RigType = Enum.HumanoidRigType.R15
+	humanoid.HipHeight = -low - root.Size.Y / 2
+	humanoid.AutomaticScalingEnabled = false
+	humanoid.BreakJointsOnDeath = false
+	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+	local animator = Instance.new("Animator")
+	animator.Parent = humanoid
+	humanoid.Parent = model
+
+	model:SetAttribute("AnimSet", body.animSet)
+	model:SetAttribute("AnimScale", s)
+	model:SetAttribute("Creature", bodyName)
+	return model
+end
 
 return RigBuilder

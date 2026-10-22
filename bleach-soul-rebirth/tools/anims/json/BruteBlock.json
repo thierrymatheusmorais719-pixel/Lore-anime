@@ -1,0 +1,132 @@
+{
+ "name": "BruteBlock",
+ "rig": "game.Workspace.HollowBrute",
+ "loop": false,
+ "priority": "Action",
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.1,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.8,
+      -2.8567292493827736,
+      0.2407294901687515
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.8,
+      -2.8567292493827736,
+      -0.2592705098312485
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      -4,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      4,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.5,
+      -0.8,
+      0.3
+     ]
+    },
+    "RightElbow": {
+     "bend": 30
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.5,
+      -0.8,
+      0.3
+     ]
+    },
+    "LeftElbow": {
+     "bend": 30
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "Out"
+   }
+  },
+  {
+   "time": 0.15,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.35,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.8500000000000001,
+      -2.8567292493827736,
+      0.2907294901687515
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.8500000000000001,
+      -2.8567292493827736,
+      -0.4092705098312485
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      -14,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -10,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.15,
+      0.1,
+      0.98
+     ]
+    },
+    "RightElbow": {
+     "bend": 125
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.15,
+      0.2,
+      0.97
+     ]
+    },
+    "LeftElbow": {
+     "bend": 120
+    }
+   }
+  }
+ ]
+}

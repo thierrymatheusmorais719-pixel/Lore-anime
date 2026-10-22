@@ -243,8 +243,8 @@ local function slashFx(model: Model, spec, animName: string)
 	-- Reserva (clip sem marcadores, ex.: animação publicada): tempos do Config/Combat
 	if
 		not track
-		or not AnimController.MarkerTime(animName, "Hit")
-		or not AnimController.MarkerTime(animName, "Swing")
+		or not AnimController.MarkerTime(animName, "Hit", model)
+		or not AnimController.MarkerTime(animName, "Swing", model)
 	then
 		task.delay(spec.windup * 0.6, function()
 			if not soundPlayed then

@@ -1,0 +1,156 @@
+{
+ "loop": true,
+ "priority": "Movement",
+ "duration": 0.9,
+ "gait": {
+  "pattern": "walk",
+  "stride": 1.5,
+  "lift": 0.35,
+  "bob": 0.12
+ },
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -6,
+      -6,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -4,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.4,
+      -0.7,
+      0.45
+     ]
+    },
+    "RightElbow": {
+     "bend": 35
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.4,
+      -0.55,
+      0.6
+     ]
+    },
+    "LeftElbow": {
+     "bend": 45
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 0.45,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -6,
+      6,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -4,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.4,
+      -0.55,
+      0.6
+     ]
+    },
+    "RightElbow": {
+     "bend": 45
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.4,
+      -0.7,
+      0.45
+     ]
+    },
+    "LeftElbow": {
+     "bend": 35
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 0.9,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -6,
+      -6,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -4,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.4,
+      -0.7,
+      0.45
+     ]
+    },
+    "RightElbow": {
+     "bend": 35
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.4,
+      -0.55,
+      0.6
+     ]
+    },
+    "LeftElbow": {
+     "bend": 45
+    }
+   }
+  }
+ ],
+ "waves": [
+  {
+   "joints": [
+    "Tail1",
+    "Tail2",
+    "Tail3"
+   ],
+   "axis": "Y",
+   "amplitude": [
+    8,
+    22
+   ],
+   "lag": 0.18,
+   "cycles": 1
+  }
+ ],
+ "name": "HollowWalk",
+ "rig": "game.Workspace.HollowGrunt"
+}

@@ -139,7 +139,8 @@ function WeaponBuilder.buildModel(spec: any, elementId: string?): Model
 		trailHost.Transparency = 1
 		trailAttachments(trailHost, length)
 	elseif style == "Claws" then
-		for i = -1, 1 do
+		-- bodyClaws: a criatura já tem garras no corpo; só o hospedeiro invisível do rastro é criado
+		for i = -1, if spec.bodyClaws then -2 else 1 do
 			local claw = newPart(
 				model,
 				"Claw",

@@ -544,6 +544,11 @@ with open(os.path.join(out, "NpcSprint.json"), "w") as f:
     json.dump(_d, f, indent=1)
 manifest["NpcSprint"] = {"flags": ["--locomotion"], "waive": []}
 json.dump(_aim_cache, open(_cache_path, "w"))
+
+# Hollows: animações próprias no corpo de cada criatura (tools/creatures/author_creatures.py)
+_sys.path.insert(0, os.path.join(here, "..", "creatures"))
+import author_creatures  # noqa: E402
+author_creatures.author_all(out, manifest)
 with open(os.path.join(out, "manifest.json"), "w") as f:
     json.dump(manifest, f, indent=1)
 print(len(manifest), "clips autorados")

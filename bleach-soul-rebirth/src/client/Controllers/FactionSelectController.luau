@@ -158,15 +158,12 @@ local function buildCard(parent: Instance, info, order: number)
 	})
 
 	-- Personagem 3D
-	local viewHolder = Kit.new(
-		"Frame",
-		{
-			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(0, 18),
-			Size = UDim2.new(1, 0, 0, 300),
-			Parent = card,
-		}
-	)
+	local viewHolder = Kit.new("Frame", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(0, 18),
+		Size = UDim2.new(1, 0, 0, 300),
+		Parent = card,
+	})
 	local ok, viewport, update = pcall(FactionShowcase.Viewport, info.id, color)
 	if ok and viewport then
 		viewport.Parent = viewHolder

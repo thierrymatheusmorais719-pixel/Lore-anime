@@ -1,0 +1,141 @@
+{
+ "loop": true,
+ "priority": "Movement",
+ "duration": 0.62,
+ "gait": {
+  "pattern": "walk",
+  "stride": 2.0,
+  "duty": 0.42,
+  "lift": 0.45,
+  "bob": 0.25
+ },
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -18,
+      -10,
+      6
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      14,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.5,
+      -0.5,
+      -0.6
+     ]
+    },
+    "RightElbow": {
+     "bend": 25
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.5,
+      -0.3,
+      0.8
+     ]
+    },
+    "LeftElbow": {
+     "bend": 50
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 0.31,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -18,
+      10,
+      -6
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      14,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.5,
+      -0.3,
+      0.8
+     ]
+    },
+    "RightElbow": {
+     "bend": 50
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.5,
+      -0.5,
+      -0.6
+     ]
+    },
+    "LeftElbow": {
+     "bend": 25
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 0.62,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -18,
+      -10,
+      6
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      14,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.5,
+      -0.5,
+      -0.6
+     ]
+    },
+    "RightElbow": {
+     "bend": 25
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.5,
+      -0.3,
+      0.8
+     ]
+    },
+    "LeftElbow": {
+     "bend": 50
+    }
+   }
+  }
+ ],
+ "name": "BruteRun",
+ "rig": "game.Workspace.HollowBrute"
+}

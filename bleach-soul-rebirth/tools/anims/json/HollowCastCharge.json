@@ -1,0 +1,430 @@
+{
+ "name": "HollowCastCharge",
+ "rig": "game.Workspace.HollowGrunt",
+ "loop": false,
+ "priority": "Action",
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.15,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.62,
+      -3.4147862680863628,
+      0.2557880755441767
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.62,
+      -3.4147862680863628,
+      -0.39421192445582326
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      -4,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -6,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.55,
+      -0.35,
+      0.75
+     ]
+    },
+    "RightElbow": {
+     "bend": 55
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.55,
+      -0.35,
+      0.75
+     ]
+    },
+    "LeftElbow": {
+     "bend": 55
+    },
+    "Tail1": {
+     "rotation": [
+      25,
+      0,
+      0
+     ]
+    },
+    "Tail2": {
+     "rotation": [
+      12.5,
+      0,
+      0
+     ]
+    },
+    "Tail3": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "Out"
+   }
+  },
+  {
+   "time": 0.3375,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.5,
+      0.2
+     ],
+     "rotation": [
+      0.0,
+      0.0,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.75,
+      -3.4147862680863628,
+      0.35578807554417674
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.75,
+      -3.4147862680863628,
+      -0.6942119244558232
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      18,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      30,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.95,
+      -0.25,
+      0.1
+     ]
+    },
+    "RightElbow": {
+     "bend": 35
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.95,
+      -0.25,
+      0.1
+     ]
+    },
+    "LeftElbow": {
+     "bend": 35
+    },
+    "Tail1": {
+     "rotation": [
+      25,
+      0,
+      0
+     ]
+    },
+    "Tail2": {
+     "rotation": [
+      12.5,
+      0,
+      0
+     ]
+    },
+    "Tail3": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    }
+   },
+   "easing": {
+    "style": "Linear",
+    "direction": "In"
+   },
+   "name": "Charge"
+  },
+  {
+   "time": 0.45,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.6,
+      -0.25
+     ],
+     "rotation": [
+      0.0,
+      0.0,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.75,
+      -3.4147862680863628,
+      0.4557880755441768
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.75,
+      -3.4147862680863628,
+      -0.7442119244558233
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      -14,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -10,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.9,
+      -0.45,
+      -0.2
+     ]
+    },
+    "RightElbow": {
+     "bend": 25
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.9,
+      -0.45,
+      -0.2
+     ]
+    },
+    "LeftElbow": {
+     "bend": 25
+    },
+    "Tail1": {
+     "rotation": [
+      -10,
+      0,
+      0
+     ]
+    },
+    "Tail2": {
+     "rotation": [
+      -5.0,
+      0,
+      0
+     ]
+    },
+    "Tail3": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "Out"
+   },
+   "name": "Release",
+   "markers": [
+    {
+     "name": "Release"
+    }
+   ]
+  },
+  {
+   "time": 0.95,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.6,
+      -0.25
+     ],
+     "rotation": [
+      0.0,
+      0.0,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.75,
+      -3.4147862680863628,
+      0.4557880755441768
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.75,
+      -3.4147862680863628,
+      -0.7442119244558233
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      -14,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -10,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.9,
+      -0.45,
+      -0.2
+     ]
+    },
+    "RightElbow": {
+     "bend": 25
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.9,
+      -0.45,
+      -0.2
+     ]
+    },
+    "LeftElbow": {
+     "bend": 25
+    },
+    "Tail1": {
+     "rotation": [
+      -10,
+      0,
+      0
+     ]
+    },
+    "Tail2": {
+     "rotation": [
+      -5.0,
+      0,
+      0
+     ]
+    },
+    "Tail3": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 1.25,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.15,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.62,
+      -3.4147862680863628,
+      0.2557880755441767
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.62,
+      -3.4147862680863628,
+      -0.39421192445582326
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      -4,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -6,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.55,
+      -0.35,
+      0.75
+     ]
+    },
+    "RightElbow": {
+     "bend": 55
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.55,
+      -0.35,
+      0.75
+     ]
+    },
+    "LeftElbow": {
+     "bend": 55
+    }
+   }
+  }
+ ]
+}

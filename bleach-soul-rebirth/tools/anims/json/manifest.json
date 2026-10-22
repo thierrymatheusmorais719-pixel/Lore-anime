@@ -250,5 +250,294 @@
    "--locomotion"
   ],
   "waive": []
+ },
+ "HollowIdle": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowWalk": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json",
+  "groundSpeedFromReport": true
+ },
+ "HollowRun": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json",
+  "groundSpeedFromReport": true
+ },
+ "HollowSlash1": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowSlash2": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowSlash3": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowSlash4": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowSlash5": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowHeavySlash": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowUppercut": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowBlock": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowBlockHit": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowHit1": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowHit2": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowStagger": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowGuardBreak": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowParried": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowLaunched": {
+  "flags": [],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowDash": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowCastOverhead": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowCastCharge": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowCastBurst": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowCastPoint": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowDashStrikePose": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "BruteIdle": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json"
+ },
+ "BruteWalk": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json",
+  "groundSpeedFromReport": true
+ },
+ "BruteRun": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json",
+  "groundSpeedFromReport": true
+ },
+ "BruteSlash1": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json"
+ },
+ "BruteSlash2": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json"
+ },
+ "BruteSlash3": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json"
+ },
+ "BruteHeavySlash": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json"
+ },
+ "BruteUppercut": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json"
+ },
+ "BruteBlock": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json"
+ },
+ "BruteBlockHit": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json"
+ },
+ "BruteHit1": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json"
+ },
+ "BruteHit2": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json"
+ },
+ "BruteStagger": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json"
+ },
+ "BruteGuardBreak": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json"
+ },
+ "BruteParried": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json"
+ },
+ "BruteCastOverhead": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json"
+ },
+ "BruteCastBurst": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json"
  }
 }

@@ -35,6 +35,7 @@ type Track = {
 	order: number,
 	assetTrack: AnimationTrack?,
 	onMarker: ((string) -> ())?,
+	scale: number,
 }
 
 type Rig = {
@@ -138,9 +139,19 @@ local function definition(name: string): any?
 	return nil
 end
 
+-- Nome efetivo da animação no modelo: criaturas (atributo AnimSet, ex.: "Hollow") tocam a própria
+-- versão ("HollowSlash1") quando existe; senão, a animação comum.
+function AnimController.Resolve(model: Model?, name: string): string
+	local set = model and model:GetAttribute("AnimSet")
+	if type(set) == "string" and definition(set .. name) then
+		return set .. name
+	end
+	return name
+end
+
 -- Tempo de um marcador ("Hit", "Release"...) dentro da animação, se existir.
-function AnimController.MarkerTime(name: string, marker: string): number?
-	local def = definition(name)
+function AnimController.MarkerTime(name: string, marker: string, model: Model?): number?
+	local def = definition(AnimController.Resolve(model, name))
 	if def and def.clip then
 		for _, m in def.markers do
 			if m.name == marker then
@@ -153,8 +164,8 @@ function AnimController.MarkerTime(name: string, marker: string): number?
 	return nil
 end
 
-function AnimController.Length(name: string): number?
-	local def = definition(name)
+function AnimController.Length(name: string, model: Model?): number?
+	local def = definition(AnimController.Resolve(model, name))
 	return def and def.duration or nil
 end
 
@@ -303,6 +314,7 @@ function AnimController.Play(model: Model?, name: string, options: { [string]: a
 	if not model then
 		return nil
 	end
+	name = AnimController.Resolve(model, name)
 	local def = definition(name)
 	if not def then
 		return nil
@@ -336,6 +348,7 @@ function AnimController.Play(model: Model?, name: string, options: { [string]: a
 		order = orderCounter,
 		assetTrack = nil,
 		onMarker = opts.onMarker,
+		scale = model:GetAttribute("AnimScale") or 1,
 	}
 	local asset = assetTrackFor(rig, name)
 	if asset then
@@ -354,6 +367,7 @@ function AnimController.Stop(model: Model?, name: string, fade: number?)
 	if not rig then
 		return
 	end
+	name = AnimController.Resolve(model, name)
 	for _, t in rig.tracks do
 		if t.name == name and not t.stopping then
 			t.stopping = true
@@ -387,6 +401,7 @@ function AnimController.IsPlaying(model: Model?, name: string): boolean
 	if not rig then
 		return false
 	end
+	name = AnimController.Resolve(model, name)
 	for _, t in rig.tracks do
 		if t.name == name and not t.stopping then
 			return true
@@ -413,11 +428,20 @@ function AnimController.Freeze(model: Model?, duration: number)
 	end
 end
 
+-- Clips são autorados no tamanho do corpo base; num modelo escalado as translações (quadril que
+-- desce, avanço do tronco) crescem junto, como as juntas do próprio modelo.
+local function scaled(cf: CFrame, scale: number): CFrame
+	if scale == 1 then
+		return cf
+	end
+	return cf.Rotation + cf.Position * scale
+end
+
 local function sample(track: Track, joint: string): CFrame?
 	local clip = track.def.clip
 	if clip then
 		local keys = clip.tracks[joint]
-		return if keys then sampleKeys(keys, track.time) else IDENTITY
+		return if keys then scaled(sampleKeys(keys, track.time), track.scale) else IDENTITY
 	end
 	local keyframes = track.def.keyframes
 	local t = track.time
@@ -578,22 +602,33 @@ end
 local GAITS = { "Walk", "Run", "Sprint" }
 local function locomotionPose(rig: Rig, dt: number, speed: number, airborne: boolean): { [string]: CFrame }
 	local set = rig.model:GetAttribute("AnimSet") or "Npc"
+	local scale = rig.model:GetAttribute("AnimScale") or 1
+	-- Criaturas só usam as próprias marchas (a marcha humana não serve no corpo delas)
+	local creature = set ~= "Npc"
 	local function get(state: string)
-		return definition(set .. state) or definition("Npc" .. state)
+		return definition(set .. state) or (if creature then nil else definition("Npc" .. state))
 	end
-	-- Escolhe a marcha cuja faixa de taxa cobre a velocidade (a mais lenta que dá conta)
+	-- Escolhe a marcha cuja faixa de taxa cobre a velocidade (a mais lenta que dá conta); a velocidade
+	-- de chão cresce com a escala do modelo (passada maior)
 	local target = "Idle"
 	if airborne then
-		target = "Air"
+		target = if creature then "Run" else "Air"
 	elseif speed > 0.6 then
 		target = "Sprint"
+		local fastest = nil
 		for _, gait in GAITS do
 			local def = get(gait)
 			local gs = def and def.clip and def.clip.groundSpeed
-			if gs and speed <= gs * 2 then
-				target = gait
-				break
+			if gs then
+				fastest = gait
+				if speed <= gs * scale * 2 then
+					target = gait
+					break
+				end
 			end
+		end
+		if target == "Sprint" and not get("Sprint") and fastest then
+			target = fastest
 		end
 	end
 	local fade = 1 - math.exp(-10 * dt)
@@ -615,7 +650,7 @@ local function locomotionPose(rig: Rig, dt: number, speed: number, airborne: boo
 				local rate = 1
 				local gs = def.clip.groundSpeed
 				if gs then
-					rate = math.clamp(speed / gs, 0.5, 2)
+					rate = math.clamp(speed / (gs * scale), 0.5, 2)
 				end
 				if state == "Air" then
 					entry.time = def.duration
@@ -626,7 +661,7 @@ local function locomotionPose(rig: Rig, dt: number, speed: number, airborne: boo
 				accumulated += entry.weight
 				for joint, keys in def.clip.tracks do
 					if joint ~= "Weapon" and joint ~= "OffHand" then
-						local cf = sampleKeys(keys, entry.time)
+						local cf = scaled(sampleKeys(keys, entry.time), scale)
 						local current = result[joint]
 						result[joint] = if current then current:Lerp(cf, share) else IDENTITY:Lerp(cf, share)
 					end
@@ -734,7 +769,7 @@ local function stepRig(rig: Rig, dt: number, now: number)
 			w = 0
 		else
 			rig.smoothW[name] = w
-			rig.smooth[name] = smoothed
+			rig.smooth[name] = smoothed :: any
 		end
 
 		local extra = procedural[name]

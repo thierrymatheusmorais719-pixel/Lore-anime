@@ -477,7 +477,10 @@ test("impacto de cada golpe = windup do servidor", function()
 		truthy(clip, label .. ": clip " .. spec.anim .. " não compilado")
 		local hit = markerTime(clip, "Hit")
 		truthy(hit, label .. ": sem marcador Hit")
-		truthy(math.abs(hit - spec.windup) < 0.002, string.format("%s: Hit %.3f ≠ windup %.3f", label, hit, spec.windup))
+		truthy(
+			math.abs(hit - spec.windup) < 0.002,
+			string.format("%s: Hit %.3f ≠ windup %.3f", label, hit, spec.windup)
+		)
 	end
 	for i, spec in Combat.Light do
 		check(spec, "Light" .. i)
@@ -496,13 +499,90 @@ test("toda animação usada pelo jogo existe compilada", function()
 		truthy(clip, id .. ": " .. a.anim)
 		truthy(markerTime(clip, "Release"), a.anim .. " sem marcador Release")
 	end
-	for _, name in { "SwordIdle", "SwordRun", "Block", "BlockHit", "Draw", "Sheathe", "Charge", "Dash", "AirStep",
-		"Hit1", "Hit2", "Stagger", "Launched", "GuardBreak", "Parried", "ParrySuccess", "ReleaseTier1", "ReleaseTier2",
-		"MaskOn", "Revert", "Wave", "Talk", "NpcIdle", "NpcWalk", "NpcRun", "NpcSprint" } do
+	for _, name in
+		{
+			"SwordIdle",
+			"SwordRun",
+			"Block",
+			"BlockHit",
+			"Draw",
+			"Sheathe",
+			"Charge",
+			"Dash",
+			"AirStep",
+			"Hit1",
+			"Hit2",
+			"Stagger",
+			"Launched",
+			"GuardBreak",
+			"Parried",
+			"ParrySuccess",
+			"ReleaseTier1",
+			"ReleaseTier2",
+			"MaskOn",
+			"Revert",
+			"Wave",
+			"Talk",
+			"NpcIdle",
+			"NpcWalk",
+			"NpcRun",
+			"NpcSprint",
+		}
+	do
 		truthy(Clips[name], name)
 	end
-	truthy(markerTime(Clips.ReleaseTier1, "Release") and markerTime(Clips.ReleaseTier2, "Release"), "Release das formas")
-	truthy(Clips.NpcWalk.groundSpeed and Clips.NpcRun.groundSpeed and Clips.NpcSprint.groundSpeed, "velocidade de chão das marchas")
+	truthy(
+		markerTime(Clips.ReleaseTier1, "Release") and markerTime(Clips.ReleaseTier2, "Release"),
+		"Release das formas"
+	)
+	truthy(
+		Clips.NpcWalk.groundSpeed and Clips.NpcRun.groundSpeed and Clips.NpcSprint.groundSpeed,
+		"velocidade de chão das marchas"
+	)
+end)
+test("criaturas: golpes no tempo do servidor, marchas e versões de cada ação", function()
+	for _, set in { "Hollow", "Brute" } do
+		truthy(Clips[set .. "Idle"] and Clips[set .. "Idle"].loop, set .. "Idle em loop")
+		for _, gait in { "Walk", "Run" } do
+			local clip = Clips[set .. gait]
+			truthy(clip and clip.loop and clip.groundSpeed, set .. gait .. " com velocidade de chão")
+		end
+		truthy(
+			Clips[set .. "Run"].groundSpeed > Clips[set .. "Walk"].groundSpeed,
+			set .. ": correr mais rápido que andar"
+		)
+		local specs = { Heavy = Combat.Heavy, Launcher = Combat.Launcher }
+		for i, spec in Combat.Light do
+			specs["Light" .. i] = spec
+		end
+		for label, spec in specs do
+			local clip = Clips[set .. spec.anim]
+			if clip then
+				local hit = markerTime(clip, "Hit")
+				truthy(hit, set .. spec.anim .. ": sem marcador Hit")
+				truthy(
+					math.abs(hit - spec.windup) < 0.002,
+					string.format("%s %s: Hit %.3f ≠ windup %.3f", set, label, hit, spec.windup)
+				)
+			end
+		end
+		for name, clip in Clips do
+			if name:sub(1, #set + 4) == set .. "Cast" or name == set .. "DashStrikePose" then
+				truthy(markerTime(clip, "Release"), name .. " sem Release")
+			end
+		end
+	end
+	for i = 1, 5 do
+		truthy(Clips["HollowSlash" .. i], "HollowSlash" .. i)
+	end
+	for _, name in { "HeavySlash", "Uppercut", "Block", "BlockHit", "Hit1", "Hit2", "Stagger", "GuardBreak", "Parried" } do
+		truthy(Clips["Hollow" .. name] and Clips["Brute" .. name], "Hollow/Brute " .. name)
+	end
+	for id, def in Enemies do
+		if type(def) == "table" and def.body then
+			truthy(def.weapon == nil or def.weapon.bodyClaws, id .. ": garras do corpo (sem garras duplicadas)")
+		end
+	end
 end)
 test("amostragem reproduz as chaves e o easing do Roblox", function()
 	eq(ClipSampler.ease("Linear", "In", 0.25), 0.25)

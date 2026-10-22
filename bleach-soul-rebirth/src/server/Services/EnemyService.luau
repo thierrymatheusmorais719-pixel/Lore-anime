@@ -54,9 +54,12 @@ function EnemyService.Spawn(enemyId: string, position: Vector3, onDeath: (() -> 
 		return nil
 	end
 	local scale = def.scale or 1
-	local model = RigBuilder.build(enemyId, def.look or {}, scale)
+	local model = if RigBuilder.HasCreature(def.body)
+		then RigBuilder.buildCreature(enemyId, def.body, def.look or {}, scale)
+		else RigBuilder.build(enemyId, def.look or {}, scale)
 	local ground = groundAt(position)
-	local height = RigBuilder.HipHeight * scale + model.PrimaryPart.Size.Y / 2 + 0.1
+	local humanoid = model:FindFirstChildOfClass("Humanoid") :: Humanoid
+	local height = humanoid.HipHeight + model.PrimaryPart.Size.Y / 2 + 0.1
 	model:PivotTo(CFrame.new(ground + Vector3.new(0, height, 0)) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0))
 	model.Parent = if def.boss then bossesFolder else enemiesFolder
 	pcall(function()
