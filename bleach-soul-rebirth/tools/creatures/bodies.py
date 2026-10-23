@@ -160,12 +160,13 @@ def grunt_body(style):
         # chifre único no topo, roxo-avermelhado
         decor += curve(D, "Head", arc_points([0.22, 0.55, 0.0], [0.35, 1.7, 0.25], [0.15, 0.0, -0.1], 3), 0.3, "bone", [110, 40, 60], taper=0.2)
         # marcas vermelhas em gota pelo corpo (frente, costas, pernas)
-        for x, y in ((0.55, 0.55), (0.75, 0.0), (0.45, -0.5), (0.2, 0.75)):
-            side.append(D("UpperTorso", [0.14, 0.5, 0.2], [x, y, -0.66 + abs(x) * 0.12, 0, 0, -15 - x * 20], "skin", "Block", None, "Sphere", MARK))
-            side.append(D("UpperTorso", [0.14, 0.5, 0.2], [x, y, 0.66 - abs(x) * 0.12, 0, 0, -15 - x * 20], "skin", "Block", None, "Sphere", MARK))
-        for part, ys in (("RightUpperLeg", (0.35, -0.2)), ("RightLowerLeg", (0.3, -0.25))):
+        # faixas rentes à superfície dos blocos (frente e costas do tronco, frente das pernas)
+        for x, y in ((0.55, 0.55), (0.78, 0.0), (0.45, -0.5), (0.2, 0.72)):
+            side.append(D("UpperTorso", [0.14, 0.5, 0.05], [x, y, -0.745, 0, 0, -15 - x * 20], "skin", "Block", "SmoothPlastic", None, MARK))
+            side.append(D("UpperTorso", [0.14, 0.5, 0.05], [x, y, 0.745, 0, 0, -15 - x * 20], "skin", "Block", "SmoothPlastic", None, MARK))
+        for part, ys, z in (("RightUpperLeg", (0.35, -0.2), -0.445), ("RightLowerLeg", (0.3, -0.25), -0.375)):
             for y in ys:
-                side.append(D(part, [0.12, 0.42, 0.18], [0.3, y, -0.25, 0, 0, -12], "skin", "Block", None, "Sphere", MARK))
+                side.append(D(part, [0.12, 0.42, 0.05], [0.18, y, z, 0, 0, -12], "skin", "Block", "SmoothPlastic", None, MARK))
         # dedos grossos (2 falanges) com pontas escuras
         for fx in (-0.38, -0.13, 0.13, 0.38):
             pts = arc_points([fx, -0.1, -0.45], [fx * 1.1, -0.85, -0.85], [0, 0.0, -0.25], 2)
@@ -324,26 +325,26 @@ def belt_and_skirt():
     import math as _m
     d = [
         # faixa larga roxa e cinto marrom por cima
-        D("LowerTorso", [2.85, 0.6, 2.15], [0, 0.32, 0, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", PURPLE),
-        D("LowerTorso", [2.95, 0.22, 2.25], [0, 0.6, 0, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", BROWN),
+        D("LowerTorso", [2.85, 0.6, 2.6], [0, 0.32, -0.15, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", PURPLE),
+        D("LowerTorso", [2.95, 0.22, 2.7], [0, 0.6, -0.15, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", BROWN),
         # barriga saliente
         D("UpperTorso", [2.5, 1.4, 1.5], [0, -0.55, -0.42, 0, 0, 0], "skin", "Block", None, "Sphere", SKIN),
     ]
     # discos verdes em volta do cinto (frente e lados)
     for x in (-1.15, -0.55, 0.55, 1.15):
-        z = -1.0 + abs(x) * 0.18
+        z = -1.22 + abs(x) * 0.18
         d.append(D("LowerTorso", [0.18, 0.72, 0.72], [x, 0.32, z, 0, 90 + x * 22, 0], "skin", "Cylinder", "SmoothPlastic", None, GREEN))
         d.append(D("LowerTorso", [0.2, 0.36, 0.36], [x, 0.32, z - 0.03, 0, 90 + x * 22, 0], "skin", "Cylinder", "SmoothPlastic", None, GREEN_D))
     # crânio no centro: calota, órbitas, dentes
     d += [
-        D("LowerTorso", [0.62, 0.58, 0.5], [0, 0.38, -1.12, 0, 0, 0], "bone", "Block", "SmoothPlastic", "Sphere", HORN),
-        D("LowerTorso", [0.14, 0.14, 0.06], [0.13, 0.42, -1.37, 0, 0, 0], "dark", "Block", None, "Sphere", [20, 16, 20]),
-        D("LowerTorso", [0.14, 0.14, 0.06], [-0.13, 0.42, -1.37, 0, 0, 0], "dark", "Block", None, "Sphere", [20, 16, 20]),
-        D("LowerTorso", [0.4, 0.14, 0.3], [0, 0.14, -1.25, 0, 0, 0], "bone", "Block", "SmoothPlastic", None, HORN),
+        D("LowerTorso", [0.62, 0.58, 0.5], [0, 0.38, -1.36, 0, 0, 0], "bone", "Block", "SmoothPlastic", "Sphere", HORN),
+        D("LowerTorso", [0.14, 0.14, 0.06], [0.13, 0.42, -1.61, 0, 0, 0], "dark", "Block", None, "Sphere", [20, 16, 20]),
+        D("LowerTorso", [0.14, 0.14, 0.06], [-0.13, 0.42, -1.61, 0, 0, 0], "dark", "Block", None, "Sphere", [20, 16, 20]),
+        D("LowerTorso", [0.4, 0.14, 0.3], [0, 0.14, -1.49, 0, 0, 0], "bone", "Block", "SmoothPlastic", None, HORN),
     ]
     # cordões roxos com pontas vermelhas pendurados entre os discos
     for x in (-0.85, 0.85):
-        z = -1.05
+        z = -1.28
         pts = arc_points([x, 0.15, z], [x * 0.9, -0.65, z - 0.05], [0, 0, -0.08], 3)
         d += curve(D, "LowerTorso", pts, 0.12, "skin", ROPE, taper=0.8, material="Fabric")
         d.append(D("LowerTorso", [0.22, 0.22, 0.22], [x * 0.9, -0.72, z - 0.05, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", [190, 40, 50]))
@@ -368,10 +369,10 @@ def chest_and_back():
         # gola de armadura em volta do pescoço e placa peitoral alta
         D("UpperTorso", [2.9, 0.75, 2.3], [0, 0.9, 0.05, 0, 0, 0], "skin", "Block", "Metal", "Sphere", ARMOR),
         D("UpperTorso", [2.95, 0.14, 2.35], [0, 0.6, 0.05, 0, 0, 0], "skin", "Block", "SmoothPlastic", "Sphere", TRIM),
-        D("UpperTorso", [2.3, 0.75, 0.35], [0, 0.32, -0.95, -8, 0, 0], "skin", "Block", "Metal", "Sphere", ARMOR),
+        D("UpperTorso", [2.3, 0.75, 0.35], [0, 0.45, -1.05, -8, 0, 0], "skin", "Block", "Metal", "Sphere", ARMOR),
         # alças marrons cruzando o peito
-        D("UpperTorso", [0.26, 2.6, 0.12], [0.55, -0.1, -1.0, -6, 0, 32], "skin", "Block", "Fabric", None, BROWN),
-        D("UpperTorso", [0.26, 2.6, 0.12], [-0.55, -0.1, -1.0, -6, 0, -32], "skin", "Block", "Fabric", None, BROWN),
+        D("UpperTorso", [0.26, 2.4, 0.12], [0.55, 0.0, -1.1, 0, 0, 32], "skin", "Block", "Fabric", None, BROWN),
+        D("UpperTorso", [0.26, 2.4, 0.12], [-0.55, 0.0, -1.1, 0, 0, -32], "skin", "Block", "Fabric", None, BROWN),
         # costas: placa de armadura, borlas roxas penduradas e pano
         D("UpperTorso", [2.6, 1.4, 0.4], [0, 0.35, 1.0, 10, 0, 0], "skin", "Block", "Metal", "Sphere", ARMOR),
         D("UpperTorso", [1.1, 1.5, 0.12], [0, -0.55, 1.1, 8, 0, 0], "skin", "Block", "Fabric", "Sphere", PURPLE),
@@ -570,12 +571,13 @@ menos = {
 }
 
 rigs = {"HollowGrunt": grunt, "HollowFeral": feral, "HollowBrute": brute, "HollowHound": hound, "MenosGrande": menos}
-# Membros em cápsula (sem "contas" ovais nas articulações): braços, pernas e cauda
-LIMBS = ("UpperArm", "LowerArm", "UpperLeg", "LowerLeg", "Tail")
+# Corpo em partes retas, como um corpo R15 normal (sem ovos/cápsulas com cara de massinha):
+# tronco, quadril, braços, pernas, mãos e cauda viram blocos que se encaixam nas articulações.
+# A cabeça segue arredondada (fica coberta pela máscara).
 for body in rigs.values():
     for part in body["parts"]:
-        if part.get("mesh") == "Sphere" and any(k in part["name"] for k in LIMBS):
-            part["mesh"] = "Capsule"
+        if part.get("mesh") in ("Sphere", "Capsule") and part["name"] != "Head":
+            part["mesh"] = "Block"
 
 with open(dest, "w") as f:
     json.dump(rigs, f, indent=1)

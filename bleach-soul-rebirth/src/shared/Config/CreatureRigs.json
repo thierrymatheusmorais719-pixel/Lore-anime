@@ -27,7 +27,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere"
+    "mesh": "Block"
    },
    {
     "name": "UpperTorso",
@@ -55,7 +55,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere"
+    "mesh": "Block"
    },
    {
     "name": "Head",
@@ -111,7 +111,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      116,
      116,
@@ -144,7 +144,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      116,
      116,
@@ -177,7 +177,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      116,
      116,
@@ -210,7 +210,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      116,
      116,
@@ -243,7 +243,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Block",
     "color": [
      100,
      100,
@@ -276,7 +276,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Block",
     "color": [
      100,
      100,
@@ -309,7 +309,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule"
+    "mesh": "Block"
    },
    {
     "name": "LeftUpperLeg",
@@ -337,7 +337,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule"
+    "mesh": "Block"
    },
    {
     "name": "RightLowerLeg",
@@ -365,7 +365,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Capsule"
+    "mesh": "Block"
    },
    {
     "name": "LeftLowerLeg",
@@ -393,7 +393,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Capsule"
+    "mesh": "Block"
    },
    {
     "name": "RightFoot",
@@ -477,7 +477,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Capsule"
+    "mesh": "Block"
    },
    {
     "name": "Tail2",
@@ -505,7 +505,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Capsule"
+    "mesh": "Block"
    },
    {
     "name": "Tail3",
@@ -533,7 +533,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Capsule"
+    "mesh": "Block"
    }
   ],
   "root": [
@@ -1249,12 +1249,12 @@
     "size": [
      0.14,
      0.5,
-     0.2
+     0.05
     ],
     "offset": [
      0.55,
      0.55,
-     -0.5940000000000001,
+     -0.745,
      0,
      0,
      -26.0
@@ -1266,19 +1266,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "UpperTorso",
     "size": [
      0.14,
      0.5,
-     0.2
+     0.05
     ],
     "offset": [
      -0.55,
      0.55,
-     -0.5940000000000001,
+     -0.745,
      0,
      0,
      26.0
@@ -1290,19 +1290,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "UpperTorso",
     "size": [
      0.14,
      0.5,
-     0.2
+     0.05
     ],
     "offset": [
      0.55,
      0.55,
-     0.5940000000000001,
+     0.745,
      0,
      0,
      -26.0
@@ -1314,19 +1314,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "UpperTorso",
     "size": [
      0.14,
      0.5,
-     0.2
+     0.05
     ],
     "offset": [
      -0.55,
      0.55,
-     0.5940000000000001,
+     0.745,
      0,
      0,
      26.0
@@ -1338,22 +1338,22 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "UpperTorso",
     "size": [
      0.14,
      0.5,
-     0.2
+     0.05
     ],
     "offset": [
-     0.75,
+     0.78,
      0.0,
-     -0.5700000000000001,
+     -0.745,
      0,
      0,
-     -30.0
+     -30.6
     ],
     "role": "skin",
     "shape": "Block",
@@ -1362,22 +1362,22 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "UpperTorso",
     "size": [
      0.14,
      0.5,
-     0.2
+     0.05
     ],
     "offset": [
-     -0.75,
+     -0.78,
      0.0,
-     -0.5700000000000001,
+     -0.745,
      0,
      0,
-     30.0
+     30.6
     ],
     "role": "skin",
     "shape": "Block",
@@ -1386,22 +1386,22 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "UpperTorso",
     "size": [
      0.14,
      0.5,
-     0.2
+     0.05
     ],
     "offset": [
-     0.75,
+     0.78,
      0.0,
-     0.5700000000000001,
+     0.745,
      0,
      0,
-     -30.0
+     -30.6
     ],
     "role": "skin",
     "shape": "Block",
@@ -1410,22 +1410,22 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "UpperTorso",
     "size": [
      0.14,
      0.5,
-     0.2
+     0.05
     ],
     "offset": [
-     -0.75,
+     -0.78,
      0.0,
-     0.5700000000000001,
+     0.745,
      0,
      0,
-     30.0
+     30.6
     ],
     "role": "skin",
     "shape": "Block",
@@ -1434,19 +1434,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "UpperTorso",
     "size": [
      0.14,
      0.5,
-     0.2
+     0.05
     ],
     "offset": [
      0.45,
      -0.5,
-     -0.606,
+     -0.745,
      0,
      0,
      -24.0
@@ -1458,19 +1458,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "UpperTorso",
     "size": [
      0.14,
      0.5,
-     0.2
+     0.05
     ],
     "offset": [
      -0.45,
      -0.5,
-     -0.606,
+     -0.745,
      0,
      0,
      24.0
@@ -1482,19 +1482,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "UpperTorso",
     "size": [
      0.14,
      0.5,
-     0.2
+     0.05
     ],
     "offset": [
      0.45,
      -0.5,
-     0.606,
+     0.745,
      0,
      0,
      -24.0
@@ -1506,19 +1506,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "UpperTorso",
     "size": [
      0.14,
      0.5,
-     0.2
+     0.05
     ],
     "offset": [
      -0.45,
      -0.5,
-     0.606,
+     0.745,
      0,
      0,
      24.0
@@ -1530,19 +1530,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "UpperTorso",
     "size": [
      0.14,
      0.5,
-     0.2
+     0.05
     ],
     "offset": [
      0.2,
-     0.75,
-     -0.636,
+     0.72,
+     -0.745,
      0,
      0,
      -19.0
@@ -1554,19 +1554,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "UpperTorso",
     "size": [
      0.14,
      0.5,
-     0.2
+     0.05
     ],
     "offset": [
      -0.2,
-     0.75,
-     -0.636,
+     0.72,
+     -0.745,
      0,
      0,
      19.0
@@ -1578,19 +1578,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "UpperTorso",
     "size": [
      0.14,
      0.5,
-     0.2
+     0.05
     ],
     "offset": [
      0.2,
-     0.75,
-     0.636,
+     0.72,
+     0.745,
      0,
      0,
      -19.0
@@ -1602,19 +1602,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "UpperTorso",
     "size": [
      0.14,
      0.5,
-     0.2
+     0.05
     ],
     "offset": [
      -0.2,
-     0.75,
-     0.636,
+     0.72,
+     0.745,
      0,
      0,
      19.0
@@ -1626,19 +1626,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "RightUpperLeg",
     "size": [
      0.12,
      0.42,
-     0.18
+     0.05
     ],
     "offset": [
-     0.3,
+     0.18,
      0.35,
-     -0.25,
+     -0.445,
      0,
      0,
      -12
@@ -1650,19 +1650,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "LeftUpperLeg",
     "size": [
      0.12,
      0.42,
-     0.18
+     0.05
     ],
     "offset": [
-     -0.3,
+     -0.18,
      0.35,
-     -0.25,
+     -0.445,
      0,
      0,
      12
@@ -1674,19 +1674,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "RightUpperLeg",
     "size": [
      0.12,
      0.42,
-     0.18
+     0.05
     ],
     "offset": [
-     0.3,
+     0.18,
      -0.2,
-     -0.25,
+     -0.445,
      0,
      0,
      -12
@@ -1698,19 +1698,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "LeftUpperLeg",
     "size": [
      0.12,
      0.42,
-     0.18
+     0.05
     ],
     "offset": [
-     -0.3,
+     -0.18,
      -0.2,
-     -0.25,
+     -0.445,
      0,
      0,
      12
@@ -1722,19 +1722,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "RightLowerLeg",
     "size": [
      0.12,
      0.42,
-     0.18
+     0.05
     ],
     "offset": [
+     0.18,
      0.3,
-     0.3,
-     -0.25,
+     -0.375,
      0,
      0,
      -12
@@ -1746,19 +1746,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "LeftLowerLeg",
     "size": [
      0.12,
      0.42,
-     0.18
+     0.05
     ],
     "offset": [
-     -0.3,
+     -0.18,
      0.3,
-     -0.25,
+     -0.375,
      0,
      0,
      12
@@ -1770,19 +1770,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "RightLowerLeg",
     "size": [
      0.12,
      0.42,
-     0.18
+     0.05
     ],
     "offset": [
-     0.3,
+     0.18,
      -0.25,
-     -0.25,
+     -0.375,
      0,
      0,
      -12
@@ -1794,19 +1794,19 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "LeftLowerLeg",
     "size": [
      0.12,
      0.42,
-     0.18
+     0.05
     ],
     "offset": [
-     -0.3,
+     -0.18,
      -0.25,
-     -0.25,
+     -0.375,
      0,
      0,
      12
@@ -1818,7 +1818,7 @@
      28,
      42
     ],
-    "mesh": "Sphere"
+    "material": "SmoothPlastic"
    },
    {
     "part": "RightHand",
@@ -2660,7 +2660,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere",
+    "mesh": "Block",
     "color": [
      64,
      112,
@@ -2693,7 +2693,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Block",
     "color": [
      86,
      140,
@@ -2759,7 +2759,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      86,
      140,
@@ -2792,7 +2792,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      86,
      140,
@@ -2825,7 +2825,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      86,
      140,
@@ -2858,7 +2858,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      86,
      140,
@@ -2891,7 +2891,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Block",
     "color": [
      104,
      66,
@@ -2924,7 +2924,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Block",
     "color": [
      104,
      66,
@@ -2957,7 +2957,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      86,
      140,
@@ -2990,7 +2990,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      86,
      140,
@@ -3023,7 +3023,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      64,
      112,
@@ -3056,7 +3056,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      64,
      112,
@@ -3155,7 +3155,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      64,
      112,
@@ -3188,7 +3188,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      64,
      112,
@@ -3221,7 +3221,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      64,
      112,
@@ -4893,7 +4893,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Block",
     "color": [
      150,
      126,
@@ -4926,7 +4926,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Block",
     "color": [
      150,
      126,
@@ -4992,7 +4992,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      150,
      126,
@@ -5025,7 +5025,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      150,
      126,
@@ -5058,7 +5058,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      150,
      126,
@@ -5091,7 +5091,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      150,
      126,
@@ -5124,7 +5124,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Block",
     "color": [
      118,
      98,
@@ -5157,7 +5157,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Block",
     "color": [
      118,
      98,
@@ -5190,7 +5190,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      26,
      50,
@@ -5224,7 +5224,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      26,
      50,
@@ -5258,7 +5258,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      26,
      50,
@@ -5292,7 +5292,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      26,
      50,
@@ -5901,12 +5901,12 @@
     "size": [
      2.85,
      0.6,
-     2.15
+     2.6
     ],
     "offset": [
      0,
      0.32,
-     0,
+     -0.15,
      0,
      0,
      0
@@ -5926,12 +5926,12 @@
     "size": [
      2.95,
      0.22,
-     2.25
+     2.7
     ],
     "offset": [
      0,
      0.6,
-     0,
+     -0.15,
      0,
      0,
      0
@@ -5980,7 +5980,7 @@
     "offset": [
      -1.15,
      0.32,
-     -0.793,
+     -1.013,
      0,
      64.7,
      0
@@ -6004,7 +6004,7 @@
     "offset": [
      -1.15,
      0.32,
-     -0.8230000000000001,
+     -1.043,
      0,
      64.7,
      0
@@ -6028,7 +6028,7 @@
     "offset": [
      -0.55,
      0.32,
-     -0.901,
+     -1.121,
      0,
      77.9,
      0
@@ -6052,7 +6052,7 @@
     "offset": [
      -0.55,
      0.32,
-     -0.931,
+     -1.151,
      0,
      77.9,
      0
@@ -6076,7 +6076,7 @@
     "offset": [
      0.55,
      0.32,
-     -0.901,
+     -1.121,
      0,
      102.1,
      0
@@ -6100,7 +6100,7 @@
     "offset": [
      0.55,
      0.32,
-     -0.931,
+     -1.151,
      0,
      102.1,
      0
@@ -6124,7 +6124,7 @@
     "offset": [
      1.15,
      0.32,
-     -0.793,
+     -1.013,
      0,
      115.3,
      0
@@ -6148,7 +6148,7 @@
     "offset": [
      1.15,
      0.32,
-     -0.8230000000000001,
+     -1.043,
      0,
      115.3,
      0
@@ -6172,7 +6172,7 @@
     "offset": [
      0,
      0.38,
-     -1.12,
+     -1.36,
      0,
      0,
      0
@@ -6197,7 +6197,7 @@
     "offset": [
      0.13,
      0.42,
-     -1.37,
+     -1.61,
      0,
      0,
      0
@@ -6221,7 +6221,7 @@
     "offset": [
      -0.13,
      0.42,
-     -1.37,
+     -1.61,
      0,
      0,
      0
@@ -6245,7 +6245,7 @@
     "offset": [
      0,
      0.14,
-     -1.25,
+     -1.49,
      0,
      0,
      0
@@ -6269,7 +6269,7 @@
     "offset": [
      -0.8358333333333333,
      0.016666666666666663,
-     -1.093888888888889,
+     -1.323888888888889,
      108.22,
      5.763,
      -163.036
@@ -6294,7 +6294,7 @@
     "offset": [
      -0.8075,
      -0.25,
-     -1.1461111111111113,
+     -1.3761111111111113,
      93.576,
      6.053,
      -90.0
@@ -6319,7 +6319,7 @@
     "offset": [
      -0.7791666666666667,
      -0.5166666666666666,
-     -1.1272222222222223,
+     -1.3572222222222223,
      78.461,
      5.943,
      -26.892
@@ -6344,7 +6344,7 @@
     "offset": [
      -0.765,
      -0.72,
-     -1.1,
+     -1.33,
      0,
      0,
      0
@@ -6369,7 +6369,7 @@
     "offset": [
      0.8358333333333333,
      0.016666666666666663,
-     -1.093888888888889,
+     -1.323888888888889,
      108.22,
      -5.763,
      163.036
@@ -6394,7 +6394,7 @@
     "offset": [
      0.8075,
      -0.25,
-     -1.1461111111111113,
+     -1.3761111111111113,
      93.576,
      -6.053,
      -90.0
@@ -6419,7 +6419,7 @@
     "offset": [
      0.7791666666666667,
      -0.5166666666666666,
-     -1.1272222222222223,
+     -1.3572222222222223,
      78.461,
      -5.943,
      26.892
@@ -6444,7 +6444,7 @@
     "offset": [
      0.765,
      -0.72,
-     -1.1,
+     -1.33,
      0,
      0,
      0
@@ -7868,8 +7868,8 @@
     ],
     "offset": [
      0,
-     0.32,
-     -0.95,
+     0.45,
+     -1.05,
      -8,
      0,
      0
@@ -7888,14 +7888,14 @@
     "part": "UpperTorso",
     "size": [
      0.26,
-     2.6,
+     2.4,
      0.12
     ],
     "offset": [
      0.55,
-     -0.1,
-     -1.0,
-     -6,
+     0.0,
+     -1.1,
+     0,
      0,
      32
     ],
@@ -7912,14 +7912,14 @@
     "part": "UpperTorso",
     "size": [
      0.26,
-     2.6,
+     2.4,
      0.12
     ],
     "offset": [
      -0.55,
-     -0.1,
-     -1.0,
-     -6,
+     0.0,
+     -1.1,
+     0,
      0,
      -32
     ],
@@ -10404,7 +10404,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere"
+    "mesh": "Block"
    },
    {
     "name": "UpperTorso",
@@ -10432,7 +10432,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere"
+    "mesh": "Block"
    },
    {
     "name": "Head",
@@ -10516,7 +10516,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule"
+    "mesh": "Block"
    },
    {
     "name": "LeftUpperArm",
@@ -10544,7 +10544,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule"
+    "mesh": "Block"
    },
    {
     "name": "RightLowerArm",
@@ -10572,7 +10572,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Capsule"
+    "mesh": "Block"
    },
    {
     "name": "LeftLowerArm",
@@ -10600,7 +10600,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Capsule"
+    "mesh": "Block"
    },
    {
     "name": "RightHand",
@@ -10684,7 +10684,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule"
+    "mesh": "Block"
    },
    {
     "name": "LeftUpperLeg",
@@ -10712,7 +10712,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule"
+    "mesh": "Block"
    },
    {
     "name": "RightLowerLeg",
@@ -10740,7 +10740,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Capsule"
+    "mesh": "Block"
    },
    {
     "name": "LeftLowerLeg",
@@ -10768,7 +10768,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Capsule"
+    "mesh": "Block"
    },
    {
     "name": "RightFoot",
@@ -10852,7 +10852,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Capsule"
+    "mesh": "Block"
    },
    {
     "name": "Tail2",
@@ -10880,7 +10880,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Capsule"
+    "mesh": "Block"
    },
    {
     "name": "Tail3",
@@ -10908,7 +10908,7 @@
      0
     ],
     "role": "bone",
-    "mesh": "Capsule"
+    "mesh": "Block"
    }
   ],
   "root": [
@@ -11696,7 +11696,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Block",
     "color": [
      12,
      12,
@@ -11729,7 +11729,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Block",
     "color": [
      22,
      22,
@@ -11796,7 +11796,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      22,
      22,
@@ -11829,7 +11829,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      22,
      22,
@@ -11862,7 +11862,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      22,
      22,
@@ -11895,7 +11895,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      22,
      22,
@@ -11928,7 +11928,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Block",
     "color": [
      12,
      12,
@@ -11961,7 +11961,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Block",
     "color": [
      12,
      12,
@@ -11994,7 +11994,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      12,
      12,
@@ -12027,7 +12027,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      12,
      12,
@@ -12060,7 +12060,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      12,
      12,
@@ -12093,7 +12093,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Capsule",
+    "mesh": "Block",
     "color": [
      12,
      12,

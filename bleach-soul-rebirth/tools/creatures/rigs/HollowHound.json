@@ -22,7 +22,7 @@
     1.15,
     1.7
    ],
-   "shape": "Ball"
+   "shape": "Block"
   },
   {
    "name": "UpperTorso",
@@ -31,7 +31,7 @@
     1.5,
     1.9
    ],
-   "shape": "Ball"
+   "shape": "Block"
   },
   {
    "name": "Head",

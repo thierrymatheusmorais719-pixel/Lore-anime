@@ -22,7 +22,7 @@
     1.2,
     1.5
    ],
-   "shape": "Ball"
+   "shape": "Block"
   },
   {
    "name": "UpperTorso",
@@ -31,7 +31,7 @@
     2.8,
     1.6
    ],
-   "shape": "Ball"
+   "shape": "Block"
   },
   {
    "name": "Head",
@@ -85,7 +85,7 @@
     0.4,
     0.6
    ],
-   "shape": "Ball"
+   "shape": "Block"
   },
   {
    "name": "LeftHand",
@@ -94,7 +94,7 @@
     0.4,
     0.6
    ],
-   "shape": "Ball"
+   "shape": "Block"
   },
   {
    "name": "RightUpperLeg",
