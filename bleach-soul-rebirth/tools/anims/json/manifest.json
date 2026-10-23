@@ -762,5 +762,112 @@
   "flags": [],
   "waive": [],
   "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "MenosIdle": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/MenosGrande.json"
+ },
+ "MenosWalk": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/MenosGrande.json",
+  "groundSpeedFromReport": true
+ },
+ "MenosRun": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/MenosGrande.json",
+  "groundSpeedFromReport": true
+ },
+ "MenosSlash1": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/MenosGrande.json"
+ },
+ "MenosHeavySlash": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/MenosGrande.json"
+ },
+ "MenosCastOverhead": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/MenosGrande.json"
+ },
+ "MenosCastCharge": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/MenosGrande.json"
+ },
+ "MenosHit1": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/MenosGrande.json"
+ },
+ "MenosHit2": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/MenosGrande.json"
+ },
+ "MenosStagger": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/MenosGrande.json"
+ },
+ "MenosGuardBreak": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/MenosGrande.json"
+ },
+ "MenosParried": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/MenosGrande.json"
+ },
+ "MenosLaunched": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/MenosGrande.json"
+ },
+ "MenosRoar": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/MenosGrande.json"
+ },
+ "MenosDeath": {
+  "flags": [],
+  "waive": [
+   "rootDrift"
+  ],
+  "rig": "../creatures/rigs/MenosGrande.json"
  }
 }

@@ -374,7 +374,102 @@ hound = {
     "animSet": "Hound",
 }
 
-rigs = {"HollowGrunt": grunt, "HollowBrute": brute, "HollowHound": hound}
+# ======================================================================= MENOS GRANDE
+# Manto preto altíssimo que afina até a máscara branca no topo (nariz longo), espinhos finos
+# saindo na altura dos ombros, buraco no peito, mangas largas que terminam em farrapos e barra
+# desfiada. Pernas e braços ficam dentro do manto (existem para andar e golpear).
+ROBE = [22, 22, 30]
+ROBE_L = [44, 44, 58]
+ROBE_D = [12, 12, 18]
+MASK_W = [244, 240, 232]
+
+
+def menos_body():
+    import math as _m
+    parts = mirror([
+        P("LowerTorso", [2.0, 1.2, 1.5], "HumanoidRootPart", "Root", [0, -0.3, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], color=ROBE_D),
+        P("UpperTorso", [2.2, 2.8, 1.6], "LowerTorso", "Waist", [0, 0.4, 0, -6, 0, 0], [0, -1.3, 0, 0, 0, 0], color=ROBE),
+        P("Head", [0.9, 1.3, 0.95], "UpperTorso", "Neck", [0, 2.05, -0.15, 6, 0, 0], [0, -0.55, 0, 0, 0, 0], color=MASK_W, material="SmoothPlastic"),
+        P("RightUpperArm", [0.6, 1.5, 0.6], "UpperTorso", "RightShoulder", [1.05, 0.7, 0, 0, 0, 0], [0, 0.65, 0, 0, 0, 0], color=ROBE),
+        P("RightLowerArm", [0.5, 1.4, 0.5], "RightUpperArm", "RightElbow", [0, -0.7, 0, 12, 0, 0], [0, 0.65, 0, 0, 0, 0], color=ROBE),
+        P("RightHand", [0.55, 0.4, 0.6], "RightLowerArm", "RightWrist", [0, -0.68, 0, 0, 0, 0], [0, 0.15, 0, 0, 0, 0], color=ROBE_D),
+        P("RightUpperLeg", [0.8, 1.6, 0.8], "LowerTorso", "RightHip", [0.5, -0.3, 0, 12, 0, 0], [0, 0.75, 0, 0, 0, 0], color=ROBE_D),
+        P("RightLowerLeg", [0.7, 1.6, 0.7], "RightUpperLeg", "RightKnee", [0, -0.75, 0, -26, 0, 0], [0, 0.75, 0, 0, 0, 0], color=ROBE_D),
+        P("RightFoot", [0.8, 0.3, 1.1], "RightLowerLeg", "RightAnkle", [0, -0.78, 0, 14, 0, 0], [0, 0.1, -0.15, 0, 0, 0], "skin", "Block", color=ROBE_D),
+    ])
+    decor = []
+    # a barra mais comprida fica 0,2 acima da sola (no espaço do LowerTorso): o manto nunca
+    # entra no chão e os pés continuam sendo o ponto mais baixo (HipHeight e marchas corretos)
+    import rig_reading
+    frames = rig_reading.rest_frames({"parts": parts})
+    lt_y = frames["LowerTorso"][0][1]
+    hem = rig_reading.lowest_point({"parts": parts}) - lt_y + 0.2
+    jag = [1.0, 0.86, 0.97, 0.92, 1.0, 0.8, 0.95, 0.9]
+    # saia do manto: painéis do quadril até a barra, abrindo em sino, comprimento desfiado
+    count = 22
+    for k in range(count):
+        a = _m.radians(k / count * 360)
+        sx, sz = _m.sin(a), -_m.cos(a)
+        L = jag[k % len(jag)]
+        top = [sx * 1.0, 0.6, sz * 0.75]
+        bottom = [sx * 2.4, 0.6 + (hem - 0.6) * L + 0.12, sz * 1.8]
+        decor.append(seg(D, "LowerTorso", top, bottom, [0.75, 0.14], "skin", ROBE_L if k % 3 == 0 else ROBE, mesh=None, material="Fabric", up=[sx, 0, sz]))
+    # tronco do manto: cone do pescoço até a cintura
+    for k in range(16):
+        a = _m.radians(k / 16 * 360)
+        sx, sz = _m.sin(a), -_m.cos(a)
+        top = [sx * 0.42, 1.6, sz * 0.38]
+        bottom = [sx * 1.55, -1.35, sz * 1.1]
+        decor.append(seg(D, "UpperTorso", top, bottom, [0.75, 0.12], "skin", ROBE if k % 2 else ROBE_L, mesh=None, material="Fabric", up=[sx, 0, sz]))
+    # capuz que sobe e envolve a máscara
+    for k in range(10):
+        a = _m.radians(k / 10 * 360)
+        sx, sz = _m.sin(a), -_m.cos(a)
+        if sz < -0.6:
+            continue  # deixa a frente da máscara à mostra
+        # capuz afunila até uma ponta logo acima e atrás da máscara
+        decor.append(seg(D, "Head", [sx * 0.62, -0.9, sz * 0.6], [sx * 0.08, 0.95, 0.12 + sz * 0.08], [0.55, 0.12], "skin", ROBE, mesh=None, material="Fabric", up=[sx, 0, sz]))
+    # máscara: nariz longo, olhos e boca escuros, sombras lilás
+    decor += [
+        D("Head", [0.95, 1.2, 0.3], [0, 0.0, -0.42, 0, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere", MASK_W),
+        seg(D, "Head", [0, 0.05, -0.55], [0, -0.25, -1.55], 0.26, "mask", MASK_W, mesh="Sphere", material="SmoothPlastic"),
+        D("Head", [0.2, 0.26, 0.08], [0.2, 0.25, -0.58, 0, 0, -8], "dark", "Block", None, "Sphere", [10, 8, 12]),
+        D("Head", [0.2, 0.26, 0.08], [-0.2, 0.25, -0.58, 0, 0, 8], "dark", "Block", None, "Sphere", [10, 8, 12]),
+        D("Head", [0.07, 0.07, 0.04], [0.2, 0.25, -0.63, 0, 0, 0], "eye", "Block", "Neon", "Sphere", [255, 255, 255]),
+        D("Head", [0.07, 0.07, 0.04], [-0.2, 0.25, -0.63, 0, 0, 0], "eye", "Block", "Neon", "Sphere", [255, 255, 255]),
+        D("Head", [0.36, 0.2, 0.08], [0, -0.38, -0.58, 0, 0, 0], "dark", "Block", None, "Sphere", [10, 8, 12]),
+        D("Head", [0.6, 0.3, 0.06], [0, -0.05, -0.57, 0, 0, 0], "skin", "Block", None, "Sphere", [196, 176, 214]),
+    ]
+    # buraco no peito: vazio escuro com borda
+    decor += [
+        D("UpperTorso", [0.2, 1.25, 1.0], [0, 0.05, -0.95, 0, 90, 0], "dark", "Cylinder", None, None, [4, 4, 6]),
+        D("UpperTorso", [0.12, 1.4, 1.15], [0, 0.05, -0.88, 0, 90, 0], "skin", "Cylinder", "Fabric", None, ROBE_L),
+    ]
+    # espinhos finos saindo na altura dos ombros
+    spikes = []
+    for y, out in ((1.25, 1.9), (1.0, 1.5)):
+        spikes.append(seg(D, "UpperTorso", [0.55, y, 0.0], [0.55 + out, y + 0.05, 0.0], 0.1, "skin", [70, 70, 80], mesh=None, material="SmoothPlastic"))
+    # mangas: abas largas que descem dos ombros até abaixo das mãos, pontas em farrapos
+    sleeves = []
+    for i, (dx, dz, L) in enumerate([(0.15, -0.35, 1.0), (0.35, 0.0, 1.12), (0.2, 0.35, 0.92)]):
+        sleeves.append(seg(D, "RightUpperArm", [dx * 0.3, 0.6, dz], [1.1 + dx, -2.0 * L, dz * 1.3], [1.0, 0.12], "skin", ROBE if i % 2 else ROBE_L, mesh=None, material="Fabric", up=[1, 0, 0]))
+        sleeves.append(seg(D, "RightLowerArm", [0.5 + dx, -0.3, dz], [1.5 + dx, -1.7 * L, dz * 1.4], [0.8, 0.1], "skin", ROBE_D, mesh=None, material="Fabric", up=[1, 0, 0]))
+        # farrapos nas pontas das mangas
+        sleeves.append(seg(D, "RightLowerArm", [1.2 + dx, -1.4 * L, dz * 1.4], [1.75 + dx, -2.2 * L, dz * 1.5], [0.3, 0.08], "skin", ROBE, mesh=None, material="Fabric", up=[1, 0, 0]))
+    decor += mirror(spikes + sleeves)
+    return parts, decor
+
+
+menos_parts, menos_decor = menos_body()
+menos = {
+    "parts": menos_parts,
+    "root": [2.6, 3.0, 1.8],
+    "decor": menos_decor,
+    "declarations": biped_declarations(tail=False, knee_rest=26),
+    "animSet": "Menos",
+}
+
+rigs = {"HollowGrunt": grunt, "HollowBrute": brute, "HollowHound": hound, "MenosGrande": menos}
 with open(dest, "w") as f:
     json.dump(rigs, f, indent=1)
 print("corpos:", ", ".join(rigs))

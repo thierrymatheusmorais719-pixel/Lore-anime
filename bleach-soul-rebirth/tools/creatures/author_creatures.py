@@ -593,6 +593,101 @@ def hound(c):
     ], flags=())
 
 
+# ============================================================================ MENOS GRANDE
+def menos(c):
+    G = merge(c.feet(drop=-0.05, width=0.1), waist(0, -3), neck(0, -6), arms([0.45, -0.85, 0.2], 25, [-0.45, -0.85, 0.2], 25))
+    c.guard = G
+    # Parado: o corpo enorme oscila devagar, a cabeça inclina, as mangas balançam
+    c.clip("Idle", [
+        key(0, merge(G, waist(0, -3, 3), neck(-6, -6, -4)), ease("CubicV2", "InOut")),
+        key(2.0, merge(G, c.feet(drop=-0.12, width=0.1), waist(0, -5, -3), neck(6, -9, 4), arms([0.5, -0.82, 0.25], 30, [-0.4, -0.88, 0.15], 20)), ease("CubicV2", "InOut")),
+        key(4.0, merge(G, waist(0, -3, 3), neck(-6, -6, -4))),
+    ], loop=True, priority="Idle")
+    # Andar arrastado: passada curta e lenta, tronco balança de lado
+    c.raw("Walk", {"loop": True, "priority": "Movement", "duration": 1.5,
+                   "gait": {"pattern": "walk", "stride": 1.2, "lift": 0.18, "bob": 0.1},
+                   "keyframes": [key(0, merge(waist(-4, -4, 4), neck(4, -6), arms([0.45, -0.85, 0.05], 25, [-0.45, -0.85, 0.35], 25)), ease("CubicV2", "InOut")),
+                                 key(0.75, merge(waist(4, -4, -4), neck(-4, -6), arms([0.45, -0.85, 0.35], 25, [-0.45, -0.85, 0.05], 25)), ease("CubicV2", "InOut")),
+                                 key(1.5, merge(waist(-4, -4, 4), neck(4, -6), arms([0.45, -0.85, 0.05], 25, [-0.45, -0.85, 0.35], 25)))]},
+          flags=["--locomotion"], ground_speed=True)
+    c.raw("Run", {"loop": True, "priority": "Movement", "duration": 0.95,
+                  "gait": {"pattern": "walk", "stride": 1.7, "duty": 0.6, "lift": 0.25, "bob": 0.14},
+                  "keyframes": [key(0, merge(waist(-5, -10, 5), neck(5, 4), arms([0.5, -0.8, -0.1], 30, [-0.5, -0.75, 0.45], 35)), ease("CubicV2", "InOut")),
+                                key(0.475, merge(waist(5, -10, -5), neck(-5, 4), arms([0.5, -0.75, 0.45], 35, [-0.5, -0.8, -0.1], 30)), ease("CubicV2", "InOut")),
+                                key(0.95, merge(waist(-5, -10, 5), neck(5, 4), arms([0.5, -0.8, -0.1], 30, [-0.5, -0.75, 0.45], 35)))]},
+          flags=["--locomotion"], ground_speed=True)
+    stance = c.feet(drop=-0.15, width=0.12, front=0.25, back=-0.2)
+    # Golpe leve: varrida larga com o braço direito (a manga rasga o ar)
+    w, d = LIGHT[0]
+    c.clip("Slash1", [
+        key(0, G, ease("Linear", "In")),
+        key(w * 0.55, merge(stance, waist(-25, -2), neck(10, -4), arms([1, 0.15, -0.3], 30, [-0.45, -0.8, 0.3], 25)), ease("Linear", "In"), name="WindUp"),
+        key(w, merge(stance, waist(10, -8), neck(-5, -8), arms([0.2, -0.3, 1], 10, [-0.45, -0.85, 0.2], 25)), ease("Linear", "In"), name="Hit", markers=["Hit"]),
+        key(w + 0.12, merge(stance, waist(25, -8), neck(-10, -8), arms([-0.6, -0.4, 0.7], 15, [-0.45, -0.85, 0.15], 25)), ease("CubicV2", "Out")),
+        key(d, merge(stance, waist(15, -5), arms([-0.3, -0.75, 0.55], 20, [-0.45, -0.85, 0.2], 25)), ease("CubicV2", "InOut")),
+        key(d + 0.45, G),
+    ])
+    # Esmagar (pesado e habilidade de área): ergue os dois braços e desce com o corpo todo
+    def slam(name, w, d, release_marker=False):
+        hit_markers = ["Release"] if release_marker else ["Hit"]
+        c.clip(name, [
+            key(0, G, ease("CubicV2", "Out")),
+            key(w * 0.35, merge(c.feet(drop=-0.05, width=0.12), waist(0, 6), neck(0, 8), arms([0.95, 0.2, 0.15], 30, [-0.95, 0.2, 0.15], 30, [0, 1, 0], [0, 1, 0])), ease("Linear", "In")),
+            key(w * 0.7, merge(c.feet(drop=0.0, width=0.12), waist(0, 14), neck(0, 18), arms([0.35, 1, -0.15], 40, [-0.35, 1, -0.15], 40, [0, 0, -1], [0, 0, -1])), ease("Linear", "In"), name="Raise" if release_marker else "WindUp", markers=None if release_marker else ["Swing"]),
+            key(w, merge(c.feet(drop=-0.5, width=0.12, front=0.3, back=-0.2), c.root(-0.5, 0.25), waist(0, -24), neck(0, -14), arms([0.3, -0.6, 0.75], 5, [-0.3, -0.6, 0.75], 5, [0, 1, 0], [0, 1, 0])), ease("Linear", "In"), name="Hit", markers=hit_markers),
+            key(w + 0.2, merge(c.feet(drop=-0.55, width=0.12, front=0.3, back=-0.2), c.root(-0.55, 0.3), waist(0, -28), neck(0, -16), arms([0.3, -0.75, 0.6], 8, [-0.3, -0.75, 0.6], 8, [0, 1, 0], [0, 1, 0])), ease("CubicV2", "Out")),
+            key(d, merge(G, waist(0, -12)), ease("CubicV2", "InOut")),
+            key(d + 0.5, G),
+        ])
+    slam("HeavySlash", *HEAVY)
+    slam("CastOverhead", 0.6, 1.3, release_marker=True)
+    # Cero: a cabeça vai para trás juntando energia e projeta para a frente na descarga
+    c.clip("CastCharge", [
+        key(0, G, ease("CubicV2", "Out")),
+        key(0.9, merge(c.feet(drop=-0.1, width=0.15, front=0.2, back=-0.3), c.root(-0.1, -0.15, 0, 8), waist(0, 14), neck(0, 30), arms([0.85, -0.2, 0.3], 30, [-0.85, -0.2, 0.3], 30)), ease("Linear", "In"), name="Charge"),
+        key(1.3, merge(c.feet(drop=-0.3, width=0.15, front=0.3, back=-0.3), c.root(-0.3, 0.2), waist(0, -14), neck(0, -22), arms([0.75, -0.55, -0.2], 25, [-0.75, -0.55, -0.2], 25)), ease("CubicV2", "Out"), name="Release", markers=["Release"]),
+        key(2.0, merge(c.feet(drop=-0.3, width=0.15, front=0.3, back=-0.3), c.root(-0.3, 0.2), waist(0, -12), neck(0, -18), arms([0.75, -0.55, -0.2], 25, [-0.75, -0.55, -0.2], 25)), ease("CubicV2", "InOut")),
+        key(2.5, G),
+    ])
+
+    def reaction(name, peak, duration, at=0.1, hold=0.55):
+        c.clip(name, [key(0, G, ease("Linear", "In")), key(at, peak, ease("CubicV2", "Out"), name="Impact"),
+                      key(duration * hold, peak, ease("CubicV2", "InOut")), key(duration, G)])
+
+    reaction("Hit1", merge(c.feet(drop=-0.15, width=0.12), c.root(-0.15, -0.15, 5), waist(6, 8, 4), neck(8, 12), arms([0.6, -0.6, 0.1], 30, [-0.5, -0.8, 0.1], 25)), 0.6)
+    reaction("Hit2", merge(c.feet(drop=-0.15, width=0.12), c.root(-0.15, -0.15, -5), waist(-6, 8, -4), neck(-8, 12), arms([0.5, -0.8, 0.1], 25, [-0.6, -0.6, 0.1], 30)), 0.6)
+    reaction("Stagger", merge(c.feet(drop=-0.3, width=0.15, front=0.1, back=-0.4), c.root(-0.3, -0.35, 0, 6), waist(0, 14), neck(0, 20), arms([0.8, -0.2, 0.1], 25, [-0.8, -0.2, 0.1], 25)), 1.1)
+    reaction("GuardBreak", merge(c.feet(drop=-0.3, width=0.15, front=0.1, back=-0.4), c.root(-0.3, -0.35, 0, 6), waist(0, 16), neck(0, 22), arms([0.7, 0.4, 0.1], 25, [-0.7, 0.4, 0.1], 25)), 1.2, hold=0.7)
+    reaction("Parried", merge(c.feet(drop=-0.2, width=0.12, front=0.1, back=-0.3), c.root(-0.2, -0.25, 8), waist(8, 10), neck(5, 14), arms([0.7, 0.3, 0.0], 30, [-0.5, -0.8, 0.2], 25)), 1.0, at=0.12, hold=0.65)
+    reaction("Launched", merge(c.feet(drop=-0.35, width=0.15, front=0.1, back=-0.4), c.root(-0.35, -0.4, 0, 8), waist(0, 18), neck(0, 24), arms([0.85, 0.1, 0.1], 25, [-0.85, 0.1, 0.1], 25)), 1.2)
+    # Rugido: cabeça para cima, mangas abertas, tremor
+    roar = merge(c.feet(drop=0.0, width=0.12), c.root(0.0, -0.1, 0, 6), waist(0, 12), neck(0, 32), arms([1, 0.2, -0.1], 25, [-1, 0.2, -0.1], 25))
+    c.clip("Roar", [
+        key(0, G, ease("CubicV2", "Out")),
+        key(0.4, merge(c.feet(drop=-0.25, width=0.12), waist(0, -10), neck(0, -14), arms([0.4, -0.8, 0.4], 40, [-0.4, -0.8, 0.4], 40)), ease("CubicV2", "Out"), name="Inhale"),
+        key(0.75, roar, ease("CubicV2", "InOut"), name="Roar", markers=["Roar"]),
+        key(1.0, merge(roar, neck(6, 34)), ease("CubicV2", "InOut")),
+        key(1.25, merge(roar, neck(-6, 34)), ease("CubicV2", "InOut")),
+        key(1.5, roar, ease("CubicV2", "InOut")),
+        key(2.0, G),
+    ])
+    # Morte: perde a força, ajoelha dentro do manto e tomba de lado devagar
+    stand_legs = {"Root": {"position": [0, -0.05, 0]}, "RightHip": {"aim": [0.12, -1, 0.1]}, "RightKnee": {"bend": 15},
+                  "LeftHip": {"aim": [-0.12, -1, -0.05]}, "LeftKnee": {"bend": 15}}
+    G_death = merge({k: v for k, v in G.items() if k not in ("Root", "RightHip", "LeftHip")}, stand_legs)
+    down = {"Root": {"position": [0, -1.6, 0.1], "rotation": [-10, 0, 0]},
+            "RightHip": {"aim": [0.15, -0.35, 0.9]}, "RightKnee": {"bend": 120}, "LeftHip": {"aim": [-0.15, -0.35, 0.9]}, "LeftKnee": {"bend": 120}}
+    fallen = {"Root": {"position": [1.2, -2.7, 0.1], "rotation": [-10, 0, -78]},
+              "RightHip": {"aim": [0.15, -0.35, 0.9]}, "RightKnee": {"bend": 100}, "LeftHip": {"aim": [-0.15, -0.4, 0.85]}, "LeftKnee": {"bend": 90}}
+    c.clip("Death", [
+        key(0, G_death, ease("CubicV2", "Out")),
+        key(0.25, merge(G_death, waist(0, 16), neck(0, 26), arms([0.9, 0.2, 0.1], 25, [-0.9, 0.2, 0.1], 25)), ease("CubicV2", "InOut"), name="Impact", markers=["Impact"]),
+        key(1.0, merge(down, waist(0, -10), neck(0, -20), arms([0.4, -0.9, 0.2], 20, [-0.4, -0.9, 0.2], 20)), ease("CubicV2", "In"), name="Knees", markers=["Thud"]),
+        key(1.7, merge(fallen, waist(0, -6), neck(-15, -10), arms([0.6, -0.5, 0.4], 30, [-0.9, 0.3, 0.1], 20)), ease("Bounce", "Out"), name="Fall", markers=["Thud"]),
+        key(2.3, merge(fallen, waist(0, -6), neck(-18, -10), arms([0.6, -0.5, 0.4], 30, [-0.9, 0.3, 0.1], 22))),
+    ], flags=(), waive=("rootDrift",))  # termina caído de propósito: o jogo segura o último quadro
+
+
 def author_all(out, manifest):
-    for body, fn in (("HollowGrunt", grunt), ("HollowBrute", brute), ("HollowHound", hound)):
+    for body, fn in (("HollowGrunt", grunt), ("HollowBrute", brute), ("HollowHound", hound), ("MenosGrande", menos)):
         fn(Creature(body, out, manifest))
