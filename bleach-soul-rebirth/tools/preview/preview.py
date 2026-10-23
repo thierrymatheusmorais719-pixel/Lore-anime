@@ -98,10 +98,11 @@ local function dump(label, model)
 			if mesh then
 				shape = "Ball"
 			end
-			table.insert(items, string.format('{"n":"%s","shape":"%s","s":[%s,%s,%s],"p":[%s,%s,%s],"r":[%s],"c":[%s,%s,%s],"t":%s,"m":"%s"}',
+			table.insert(items, string.format('{"n":"%s","shape":"%s","s":[%s,%s,%s],"p":[%s,%s,%s],"r":[%s],"c":[%s,%s,%s],"t":%s,"m":"%s","k":"%s"}',
 				p.Name, shape, num(p.Size.X), num(p.Size.Y), num(p.Size.Z), num(cf.p[1]), num(cf.p[2]), num(cf.p[3]),
 				table.concat((function() local t = {} for i = 1, 9 do t[i] = num(cf.r[i]) end return t end)(), ","),
-				num(c.R), num(c.G), num(c.B), num(p.Transparency or 0), p.Material and p.Material.Name or "Plastic"))
+				num(c.R), num(c.G), num(c.B), num(p.Transparency or 0), p.Material and p.Material.Name or "Plastic",
+				tostring(p:GetAttribute("Sculpt") or "")))
 		end
 	end
 	print('{"label":"' .. label .. '","parts":[' .. table.concat(items, ",") .. ']}')
@@ -149,6 +150,20 @@ def attach_sculpt(models, bodies):
                     verts, tris = res
                     part["mesh_tris"] = [[verts[a], verts[b], verts[c]] for a, b, c in tris]
                     part["t"] = 0  # a peça base fica invisível no jogo; aqui desenhamos a malha no lugar dela
+        # peças extras (máscara, tubos): soldadas à parte, no lugar das peças marcadas com o mesmo id
+        if body in sculpt.STYLE:
+            by_name = {p_["n"]: p_ for p_ in m["parts"]}
+            for key, part_name, verts, tris in sculpt.overlays_for(body, rigs[body]):
+                replaced = [p_ for p_ in m["parts"] if p_.get("k") == key]
+                base = by_name.get(part_name)
+                if not base or not replaced:
+                    continue
+                extra = dict(base)
+                extra.update(n=key, c=replaced[0]["c"], m=replaced[0]["m"], t=0, shape="Mesh",
+                             mesh_tris=[[verts[a], verts[b], verts[c]] for a, b, c in tris])
+                for p_ in replaced:
+                    p_["t"] = 1
+                m["parts"].append(extra)
 
 
 def corners(part):

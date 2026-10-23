@@ -47,13 +47,22 @@ def seg(D, part, a, b, thickness, role, color=None, mesh="Sphere", material=None
     return D(part, size, center + ang, role, shape, material, mesh, color)
 
 
-def curve(D, part, points, thickness, role, color=None, taper=1.0, material=None):
-    """Cadeia de segmentos por uma lista de pontos (chifre, cordão); afina até `taper`× no fim."""
+_tube_ids = [0]
+
+
+def curve(D, part, points, thickness, role, color=None, taper=1.0, material=None, tip=None):
+    """Cadeia de segmentos por uma lista de pontos (chifre, cordão); afina até `taper`× no fim.
+    Os segmentos levam a marca "tube" (id, índice, ponta): sculpt.py junta a cadeia num tubo liso
+    (ponta afiada se `tip`, padrão = afina até menos da metade); os blocos ficam como reserva."""
     out = []
     n = len(points) - 1
+    _tube_ids[0] += 1
+    sharp = tip if tip is not None else taper < 0.5
     for i in range(n):
         k = 1 - (1 - taper) * (i / max(1, n - 1))
-        out.append(seg(D, part, points[i], points[i + 1], thickness * k, role, color, material=material))
+        d = seg(D, part, points[i], points[i + 1], thickness * k, role, color, mesh=None, material=material)
+        d["tube"] = [_tube_ids[0], i, 1 if sharp else 0]
+        out.append(d)
     return out
 
 

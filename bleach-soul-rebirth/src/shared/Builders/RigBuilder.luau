@@ -545,6 +545,10 @@ function RigBuilder.buildCreature(name: string, bodyName: string, look: Look, sc
 			if d.role == "eye" then
 				piece.Name = "Eye"
 			end
+			-- peça que a pele esculpida (CreatureSkin) troca por uma malha lisa quando disponível
+			if d.sculpt then
+				piece:SetAttribute("Sculpt", d.sculpt)
+			end
 		end
 	end
 

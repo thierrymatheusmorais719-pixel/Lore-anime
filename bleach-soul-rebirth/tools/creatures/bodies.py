@@ -32,6 +32,28 @@ def D(part, size, offset, role, shape="Block", material=None, mesh=None, color=N
     return d
 
 
+def S(d, key):
+    """Marca a peça como substituída pela malha esculpida `key` (sculpt.py) quando ela existir."""
+    d["sculpt"] = key
+    return d
+
+
+def conform(d):
+    """Marca pintada: sculpt.py a assenta sobre a pele esculpida (gota que acompanha a curva)."""
+    d["conform"] = 1
+    return d
+
+
+def shard(part, tip, base, width, role, color, material="Fabric", thin=0.08):
+    """Lasca pontuda (cunha) da base até a ponta: tufo de pelo, pena, espinho. A face larga fica
+    virada para fora do eixo Y da peça-mãe (aparece de frente, não de quina)."""
+    import math as _m
+    dx, dz = base[0], base[2]
+    n = _m.hypot(dx, dz) or 1
+    up = [-dz / n, 0, dx / n] if n > 1e-3 else [1, 0, 0]
+    return seg(D, part, tip, base, [thin, width], role, color, mesh=None, material=material, shape="Wedge", up=up)
+
+
 def mirror(items):
     """Duplica peças do lado direito (Right*) para o esquerdo, espelhando X e rotações Y/Z."""
     out = []
@@ -142,8 +164,8 @@ def grunt_body(style):
     if purple:
         # caveira sorridente: crânio, órbitas com olhos amarelos contornados, nariz, sorriso de dentes
         decor += [
-            D("Head", [1.3, 1.15, 0.6], [0, 0.08, -0.5, 0, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere", WHITE),
-            D("Head", [1.0, 0.45, 0.4], [0, -0.42, -0.6, 6, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere", WHITE),
+            S(D("Head", [1.3, 1.15, 0.6], [0, 0.08, -0.5, 0, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere", WHITE), "Mask"),
+            S(D("Head", [1.0, 0.45, 0.4], [0, -0.42, -0.6, 6, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere", WHITE), "Mask"),
             D("Head", [0.1, 0.12, 0.06], [0.07, -0.08, -0.84, 0, 0, 20], "dark", "Wedge", None, None, INK),
             D("Head", [0.1, 0.12, 0.06], [-0.07, -0.08, -0.84, 0, 0, -20], "dark", "Wedge", None, None, INK),
             D("Head", [0.82, 0.06, 0.08], [0, -0.38, -0.8, 0, 0, 0], "dark", "Block", None, None, INK),
@@ -162,11 +184,11 @@ def grunt_body(style):
         # marcas vermelhas em gota pelo corpo (frente, costas, pernas)
         # faixas rentes à superfície dos blocos (frente e costas do tronco, frente das pernas)
         for x, y in ((0.55, 0.55), (0.78, 0.0), (0.45, -0.5), (0.2, 0.72)):
-            side.append(D("UpperTorso", [0.14, 0.5, 0.05], [x, y, -0.745, 0, 0, -15 - x * 20], "skin", "Block", "SmoothPlastic", None, MARK))
-            side.append(D("UpperTorso", [0.14, 0.5, 0.05], [x, y, 0.745, 0, 0, -15 - x * 20], "skin", "Block", "SmoothPlastic", None, MARK))
+            side.append(conform(D("UpperTorso", [0.14, 0.5, 0.05], [x, y, -0.745, 0, 0, -15 - x * 20], "skin", "Block", "SmoothPlastic", None, MARK)))
+            side.append(conform(D("UpperTorso", [0.14, 0.5, 0.05], [x, y, 0.745, 0, 0, -15 - x * 20], "skin", "Block", "SmoothPlastic", None, MARK)))
         for part, ys, z in (("RightUpperLeg", (0.35, -0.2), -0.445), ("RightLowerLeg", (0.3, -0.25), -0.375)):
             for y in ys:
-                side.append(D(part, [0.12, 0.42, 0.05], [0.18, y, z, 0, 0, -12], "skin", "Block", "SmoothPlastic", None, MARK))
+                side.append(conform(D(part, [0.12, 0.42, 0.05], [0.18, y, z, 0, 0, -12], "skin", "Block", "SmoothPlastic", None, MARK)))
         # dedos grossos (2 falanges) com pontas escuras
         for fx in (-0.38, -0.13, 0.13, 0.38):
             pts = arc_points([fx, -0.1, -0.45], [fx * 1.1, -0.85, -0.85], [0, 0.0, -0.25], 2)
@@ -177,27 +199,40 @@ def grunt_body(style):
     else:
         # caveira alongada (cavalo) com dentes grandes e olhos amarelos pequenos
         decor += [
-            D("Head", [1.15, 0.85, 0.55], [0, 0.35, -0.55, -10, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere", WHITE),
-            D("Head", [0.85, 1.15, 0.6], [0, -0.3, -0.72, 15, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere", WHITE),
-            D("Head", [0.8, 0.12, 0.12], [0, -0.48, -1.0, 15, 0, 0], "dark", "Block", None, None, INK),
+            S(D("Head", [1.15, 0.85, 0.55], [0, 0.35, -0.55, -10, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere", WHITE), "Mask"),
+            S(D("Head", [0.85, 1.15, 0.6], [0, -0.3, -0.72, 15, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere", WHITE), "Mask"),
         ]
+        # dentes grandes (a máscara esculpida já traz os dentes em relevo e esconde estes)
         for i in range(6):
             x = -0.3 + i * 0.12
-            decor.append(D("Head", [0.11, 0.24, 0.1], [x, -0.36, -1.03, 15, 0, 0], "mask", "Block", "SmoothPlastic", None, WHITE))
-            decor.append(D("Head", [0.11, 0.22, 0.1], [x, -0.62, -0.96, 15, 0, 0], "mask", "Block", "SmoothPlastic", None, WHITE))
+            decor.append(S(D("Head", [0.11, 0.24, 0.1], [x, -0.36, -1.03, 15, 0, 0], "mask", "Block", "SmoothPlastic", None, WHITE), "Mask"))
+            decor.append(S(D("Head", [0.11, 0.22, 0.1], [x, -0.62, -0.96, 15, 0, 0], "mask", "Block", "SmoothPlastic", None, WHITE), "Mask"))
         side += [
             D("Head", [0.2, 0.16, 0.08], [0.28, 0.32, -0.82, 0, 0, -15], "dark", "Block", None, "Sphere", INK),
             D("Head", [0.1, 0.09, 0.05], [0.28, 0.32, -0.86, 0, 0, -15], "eye", "Block", "Neon", "Sphere", YELLOW),
         ]
-        # juba marrom: bolas de pelo em volta da cabeça e do pescoço, com pontas
-        for k in range(10):
-            a = _m.radians(k / 10 * 360)
-            x, y = _m.cos(a) * 0.75, _m.sin(a) * 0.7
-            if y < -0.45:
-                continue
-            decor.append(D("Head", [0.75, 0.75, 0.6], [x, y + 0.05, 0.15, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", FUR if k % 2 else FUR_D))
-            decor.append(seg(D, "Head", [x * 1.1, y * 1.1, 0.2], [x * 1.65, y * 1.6 + 0.1, 0.35], 0.25, "skin", FUR_D, material="Fabric"))
-        decor.append(D("UpperTorso", [1.8, 0.8, 1.4], [0, 0.85, 0.0, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", FUR))
+        # juba marrom: duas coroas de mechas pontudas em leque atrás da caveira, varridas para trás
+        # (comprimentos irregulares), e um colar de mechas eriçadas sobre os ombros
+        jag = [1.0, 0.78, 1.15, 0.9, 1.05, 0.72, 1.2, 0.86]
+        for layer, (R, L, count, width, z0) in enumerate([(0.55, 0.95, 13, 0.36, 0.2), (0.42, 0.7, 11, 0.3, 0.05)]):
+            for k in range(count):
+                a = _m.radians(k / count * 360 + layer * 14 + 90)
+                cx, cy = _m.cos(a), _m.sin(a)
+                if cy < -0.6:
+                    continue
+                Lk = L * jag[(k + layer * 3) % len(jag)]
+                base = [cx * R, cy * R * 0.95 + 0.1, z0]
+                tip = [cx * (R + Lk), cy * (R + Lk) * 0.95 + 0.1 + 0.12, z0 + 0.45 + Lk * 0.3]
+                up = [-cy, cx, 0]
+                decor.append(seg(D, "Head", tip, base, [0.1, width], "skin", FUR if (k + layer) % 2 else FUR_D,
+                                 mesh=None, material="Fabric", shape="Wedge", up=up))
+        for k in range(12):
+            a = _m.radians(k / 12 * 360)
+            sx, sz = _m.sin(a), -_m.cos(a)
+            base = [sx * 0.75, 0.75, sz * 0.55]
+            Lk = 0.6 * jag[k % len(jag)]
+            tip = [sx * (0.75 + Lk), 0.75 + Lk * 0.9, sz * (0.55 + Lk) + 0.25]
+            decor.append(shard("UpperTorso", tip, base, 0.45, "skin", FUR if k % 2 else FUR_D, thin=0.1))
         # garras longas de galho: três por mão, curvas, ásperas
         for fx in (-0.32, 0.0, 0.32):
             pts = arc_points([fx, -0.1, -0.4], [fx * 1.4, -1.75, -1.45], [0, 0.0, -0.4], 3)
@@ -290,18 +325,19 @@ def pauldron():
     d = []
     # três placas sobrepostas descendo para fora, cada uma com borda creme
     for i, (x, y, rz, w) in enumerate([(0.05, 0.85, -8, 2.1), (0.3, 0.5, -24, 2.0), (0.52, 0.12, -40, 1.75)]):
-        d.append(D("RightUpperArm", [w, 0.5, 1.95 - i * 0.15], [x, y, 0, 0, 0, rz], "skin", "Block", "Metal", "Sphere", ARMOR))
-        d.append(D("RightUpperArm", [w + 0.06, 0.12, 2.0 - i * 0.15], [x + 0.03, y - 0.2, 0, 0, 0, rz], "skin", "Block", "SmoothPlastic", "Sphere", TRIM))
+        d.append(D("RightUpperArm", [w, 0.32, 1.95 - i * 0.15], [x, y, 0, 0, 0, rz], "skin", "Block", "Metal", None, ARMOR))
+        d.append(D("RightUpperArm", [w + 0.06, 0.1, 2.0 - i * 0.15], [x + 0.03, y - 0.19, 0, 0, 0, rz], "skin", "Block", "SmoothPlastic", None, TRIM))
     # pontas da ombreira
     d.append(D("RightUpperArm", [0.3, 0.75, 0.55], [0.25, 1.25, -0.35, 0, 0, -15], "skin", "Wedge", "Metal", None, ARMOR_D))
     d.append(D("RightUpperArm", [0.3, 0.6, 0.5], [0.3, 1.15, 0.45, 0, 180, -15], "skin", "Wedge", "Metal", None, ARMOR_D))
     # bracelete marrom + pelagem amarela no bíceps
     d.append(D("RightUpperArm", [0.35, 1.3, 1.3], [0, -0.45, 0, 0, 0, 90], "skin", "Cylinder", "Fabric", None, BROWN))
-    for k in range(10):
-        ang = k / 10 * 360
-        import math as _m
-        x, z = _m.cos(_m.radians(ang)) * 0.62, _m.sin(_m.radians(ang)) * 0.62
-        d.append(D("RightUpperArm", [0.32, 0.4, 0.32], [x, -0.72, z, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", FEATHER))
+    import math as _m
+    for k in range(12):
+        a = _m.radians(k / 12 * 360)
+        x, z = _m.cos(a), _m.sin(a)
+        d.append(shard("RightUpperArm", [x * 0.78, -1.15 - (k % 2) * 0.15, z * 0.78], [x * 0.64, -0.5, z * 0.64], 0.34,
+                       "skin", FEATHER if k % 2 else FEATHER_D))
     return d
 
 
@@ -312,9 +348,11 @@ def bracer():
         D("RightLowerArm", [0.1, 1.38, 1.38], [0, 0.48, 0, 0, 0, 90], "skin", "Cylinder", "Metal", None, GOLD),
         D("RightLowerArm", [0.1, 1.38, 1.38], [0, -0.48, 0, 0, 0, 90], "skin", "Cylinder", "Metal", None, GOLD),
     ]
-    for k in range(9):
-        a = _m.radians(k / 9 * 360)
-        d.append(D("RightLowerArm", [0.34, 0.36, 0.34], [_m.cos(a) * 0.62, -0.72, _m.sin(a) * 0.62, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", FEATHER))
+    for k in range(11):
+        a = _m.radians(k / 11 * 360)
+        x, z = _m.cos(a), _m.sin(a)
+        d.append(shard("RightLowerArm", [x * 0.8, -1.05 - (k % 2) * 0.12, z * 0.8], [x * 0.66, -0.5, z * 0.66], 0.32,
+                       "skin", FEATHER if k % 2 else FEATHER_D))
     # garras grossas
     for x in (-0.42, -0.14, 0.14, 0.42):
         d.append(D("RightHand", [0.16, 0.22, 0.55], [x, -0.3, -0.6, -35, 0, 0], "bone", "Wedge", "SmoothPlastic", None, CLAW))
@@ -325,10 +363,8 @@ def belt_and_skirt():
     import math as _m
     d = [
         # faixa larga roxa e cinto marrom por cima
-        D("LowerTorso", [2.85, 0.6, 2.6], [0, 0.32, -0.15, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", PURPLE),
-        D("LowerTorso", [2.95, 0.22, 2.7], [0, 0.6, -0.15, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", BROWN),
-        # barriga saliente
-        D("UpperTorso", [2.5, 1.4, 1.5], [0, -0.55, -0.42, 0, 0, 0], "skin", "Block", None, "Sphere", SKIN),
+        D("LowerTorso", [0.6, 2.75, 2.75], [0, 0.32, -0.15, 0, 0, 90], "skin", "Cylinder", "Fabric", None, PURPLE),
+        D("LowerTorso", [0.22, 2.85, 2.85], [0, 0.6, -0.15, 0, 0, 90], "skin", "Cylinder", "Fabric", None, BROWN),
     ]
     # discos verdes em volta do cinto (frente e lados)
     for x in (-1.15, -0.55, 0.55, 1.15):
@@ -347,7 +383,7 @@ def belt_and_skirt():
         z = -1.28
         pts = arc_points([x, 0.15, z], [x * 0.9, -0.65, z - 0.05], [0, 0, -0.08], 3)
         d += curve(D, "LowerTorso", pts, 0.12, "skin", ROPE, taper=0.8, material="Fabric")
-        d.append(D("LowerTorso", [0.22, 0.22, 0.22], [x * 0.9, -0.72, z - 0.05, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", [190, 40, 50]))
+        d.append(shard("LowerTorso", [x * 0.9, -1.05, z - 0.05], [x * 0.9, -0.62, z - 0.05], 0.26, "skin", [190, 40, 50], thin=0.12))
     # saia de penas: duas camadas em volta do quadril, alternando dourado/âmbar
     # comprimentos irregulares (barra desfiada), penas finas e pontudas
     jag = [1.0, 0.82, 1.12, 0.9, 1.05, 0.78, 1.15, 0.95, 0.86, 1.08]
@@ -360,35 +396,36 @@ def belt_and_skirt():
             top = [x * 0.92, y + L * 0.4, z * 0.92]
             bottom = [x * 1.16, y - L * 0.6, z * 1.16]
             color = [FEATHER, FEATHER_D, GOLD][(k + layer) % 3]
-            d.append(seg(D, "LowerTorso", top, bottom, [width, 0.1], "skin", color, mesh="Sphere", material="Fabric", up=[x, 0, z]))
+            d.append(shard("LowerTorso", bottom, top, width, "skin", color))
     return d
 
 
 def chest_and_back():
     d = [
         # gola de armadura em volta do pescoço e placa peitoral alta
-        D("UpperTorso", [2.9, 0.75, 2.3], [0, 0.9, 0.05, 0, 0, 0], "skin", "Block", "Metal", "Sphere", ARMOR),
-        D("UpperTorso", [2.95, 0.14, 2.35], [0, 0.6, 0.05, 0, 0, 0], "skin", "Block", "SmoothPlastic", "Sphere", TRIM),
-        D("UpperTorso", [2.3, 0.75, 0.35], [0, 0.45, -1.05, -8, 0, 0], "skin", "Block", "Metal", "Sphere", ARMOR),
+        D("UpperTorso", [0.75, 2.4, 2.4], [0, 0.9, 0.05, 0, 0, 90], "skin", "Cylinder", "Metal", None, ARMOR),
+        D("UpperTorso", [0.12, 2.48, 2.48], [0, 0.55, 0.05, 0, 0, 90], "skin", "Cylinder", "SmoothPlastic", None, TRIM),
+        D("UpperTorso", [2.1, 0.6, 0.25], [0, 0.45, -1.1, -8, 0, 0], "skin", "Block", "Metal", None, ARMOR),
+        D("UpperTorso", [2.16, 0.1, 0.28], [0, 0.17, -1.07, -8, 0, 0], "skin", "Block", "SmoothPlastic", None, TRIM),
         # alças marrons cruzando o peito
         D("UpperTorso", [0.26, 2.4, 0.12], [0.55, 0.0, -1.1, 0, 0, 32], "skin", "Block", "Fabric", None, BROWN),
         D("UpperTorso", [0.26, 2.4, 0.12], [-0.55, 0.0, -1.1, 0, 0, -32], "skin", "Block", "Fabric", None, BROWN),
         # costas: placa de armadura, borlas roxas penduradas e pano
-        D("UpperTorso", [2.6, 1.4, 0.4], [0, 0.35, 1.0, 10, 0, 0], "skin", "Block", "Metal", "Sphere", ARMOR),
-        D("UpperTorso", [1.1, 1.5, 0.12], [0, -0.55, 1.1, 8, 0, 0], "skin", "Block", "Fabric", "Sphere", PURPLE),
-        D("LowerTorso", [2.2, 0.5, 0.5], [0, 0.55, 1.0, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", PURPLE),
+        D("UpperTorso", [2.5, 1.3, 0.25], [0, 0.35, 1.05, 10, 0, 0], "skin", "Block", "Metal", None, ARMOR),
+        D("UpperTorso", [2.56, 0.1, 0.28], [0, -0.3, 1.0, 10, 0, 0], "skin", "Block", "SmoothPlastic", None, TRIM),
+        D("UpperTorso", [1.1, 1.5, 0.08], [0, -0.55, 1.12, 8, 0, 0], "skin", "Block", "Fabric", None, PURPLE),
     ]
     for x in (-0.4, 0.0, 0.4):
         pts = arc_points([x, 0.75, 1.15], [x * 1.1, -0.25, 1.25], [0, 0, 0.05], 3)
         d += curve(D, "UpperTorso", pts, 0.2, "skin", ROPE, taper=0.6, material="Fabric")
-        d.append(D("UpperTorso", [0.32, 0.38, 0.32], [x * 1.1, -0.35, 1.25, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", PURPLE))
+        d.append(shard("UpperTorso", [x * 1.1, -0.75, 1.3], [x * 1.1, -0.25, 1.25], 0.3, "skin", PURPLE, thin=0.12))
     return d
 
 
 def legs():
     d = [
         # calças bufantes, faixa no tornozelo, garras dos pés
-        D("RightUpperLeg", [1.45, 1.1, 1.45], [0, -0.1, 0, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", PANTS),
+        D("RightUpperLeg", [1.0, 1.42, 1.42], [0, -0.15, 0, 0, 0, 90], "skin", "Cylinder", "Fabric", None, PANTS),
         D("RightLowerLeg", [0.3, 1.3, 1.3], [0, -0.42, 0, 0, 0, 90], "skin", "Cylinder", "Fabric", None, ARMOR_D),
     ]
     for x in (-0.38, 0.0, 0.38):
@@ -438,12 +475,12 @@ hound_decor = [
   + [D("UpperTorso", [0.12, 0.6 - i * 0.08, 0.5], [0, 0.85, 0.6 - i * 0.45, -35, 0, 0], "bone", "Wedge") for i in range(4)] \
   + [D("LowerTorso", [0.1, 0.42, 0.45], [0, 0.65, 0.2 - i * 0.5, -35, 0, 0], "bone", "Wedge") for i in range(2)] \
   + mirror([
-    D("RightUpperArm", [0.75, 0.32, 0.8], [0, 0.55, 0, 0, 0, -15], "bone", "Block", "Slate", "Sphere"),
+] + curve(D, "RightUpperArm", arc_points([0.15, 0.45, -0.25], [0.45, 0.7, 0.55], [0.15, 0.15, 0.0], 3), 0.22, "bone", taper=0.25) + [
     D("RightHand", [0.08, 0.1, 0.5], [0.18, 0.0, -0.58, -4, 0, 0], "bone", "Wedge"),
     D("RightHand", [0.08, 0.1, 0.5], [-0.05, 0.0, -0.6, -4, 0, 0], "bone", "Wedge"),
     D("RightFoot", [0.08, 0.1, 0.45], [0.15, 0.0, -0.6, -4, 0, 0], "bone", "Wedge"),
-    D("Head", [0.2, 0.2, 0.9], [0.38, 0.55, 0.55, 35, 0, -20], "bone", "Block", None, "Sphere"),
 ])
+hound_decor += both(curve(D, "Head", arc_points([0.35, 0.4, 0.3], [0.62, 0.75, 1.35], [0.15, 0.2, 0.0], 4), 0.24, "bone", taper=0.25))
 
 
 def quadruped_declarations():
@@ -578,6 +615,22 @@ for body in rigs.values():
     for part in body["parts"]:
         if part.get("mesh") in ("Sphere", "Capsule") and part["name"] != "Head":
             part["mesh"] = "Block"
+
+# Cadeias de segmentos (chifres, dedos, garras, cordões) viram tubos lisos esculpidos: cada cadeia
+# (já espelhada) ganha um id próprio em "sculpt"; sculpt.py gera o tubo e o cliente esconde os blocos
+for body in rigs.values():
+    groups = {}
+    for d in body["decor"]:
+        if "tube" in d:
+            key = (d["tube"][0], d["part"], d["offset"][0] < -1e-6)
+            if key not in groups:
+                groups[key] = "Tube%d" % (len(groups) + 1)
+            d["sculpt"] = groups[key]
+    marks = 0
+    for d in body["decor"]:
+        if d.get("conform"):
+            marks += 1
+            d["sculpt"] = "Mark%d" % marks
 
 with open(dest, "w") as f:
     json.dump(rigs, f, indent=1)
