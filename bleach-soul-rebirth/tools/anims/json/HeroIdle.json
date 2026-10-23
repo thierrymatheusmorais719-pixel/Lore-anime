@@ -1,0 +1,192 @@
+{
+ "loop": true,
+ "priority": "Idle",
+ "easing": {
+  "style": "CubicV2",
+  "direction": "InOut"
+ },
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.08,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.527,
+      -2.93,
+      0.3
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.527,
+      -2.93,
+      -0.3
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.12,
+      -1,
+      0.02
+     ]
+    },
+    "RightElbow": {
+     "bend": 10
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.12,
+      -1,
+      0.02
+     ]
+    },
+    "LeftElbow": {
+     "bend": 12
+    }
+   }
+  },
+  {
+   "time": 1.6,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.14,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.527,
+      -2.93,
+      0.3
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.527,
+      -2.93,
+      -0.3
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      2,
+      3,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -2,
+      -4,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.16,
+      -1,
+      0.05
+     ]
+    },
+    "RightElbow": {
+     "bend": 16
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.15,
+      -1,
+      0.04
+     ]
+    },
+    "LeftElbow": {
+     "bend": 18
+    }
+   }
+  },
+  {
+   "time": 3.2,
+   "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.08,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.527,
+      -2.93,
+      0.3
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.527,
+      -2.93,
+      -0.3
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.12,
+      -1,
+      0.02
+     ]
+    },
+    "RightElbow": {
+     "bend": 10
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.12,
+      -1,
+      0.02
+     ]
+    },
+    "LeftElbow": {
+     "bend": 12
+    }
+   }
+  }
+ ],
+ "name": "HeroIdle",
+ "rig": "R15"
+}

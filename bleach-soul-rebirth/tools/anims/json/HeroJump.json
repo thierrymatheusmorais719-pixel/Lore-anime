@@ -1,0 +1,130 @@
+{
+ "loop": false,
+ "priority": "Movement",
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.1,
+      -1,
+      0
+     ]
+    },
+    "RightElbow": {
+     "bend": 10
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.1,
+      -1,
+      0
+     ]
+    },
+    "LeftElbow": {
+     "bend": 10
+    },
+    "RightHip": {
+     "aim": [
+      0.05,
+      -1,
+      0
+     ]
+    },
+    "RightKnee": {
+     "bend": 5
+    },
+    "LeftHip": {
+     "aim": [
+      -0.05,
+      -1,
+      0
+     ]
+    },
+    "LeftKnee": {
+     "bend": 5
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "Out"
+   }
+  },
+  {
+   "time": 0.25,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -8,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      6,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.55,
+      0.6,
+      0.25
+     ]
+    },
+    "RightElbow": {
+     "bend": 25
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.55,
+      0.6,
+      0.25
+     ]
+    },
+    "LeftElbow": {
+     "bend": 25
+    },
+    "RightHip": {
+     "aim": [
+      0.1,
+      -0.85,
+      0.5
+     ]
+    },
+    "RightKnee": {
+     "bend": 70
+    },
+    "LeftHip": {
+     "aim": [
+      -0.1,
+      -1,
+      0.1
+     ]
+    },
+    "LeftKnee": {
+     "bend": 35
+    }
+   }
+  }
+ ],
+ "name": "HeroJump",
+ "rig": "R15"
+}

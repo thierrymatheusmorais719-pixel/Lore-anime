@@ -234,15 +234,7 @@ clip("Slash5", [
 # ---------------------------------------------------------------- posturas com espada (só tronco/braços:
 # as pernas continuam no Animate padrão do Roblox, que anda/corre/pula)
 UPPER_GUARD = merge(GUARD_ARMS, waist(-12, -2))
-clip("SwordIdle", [
-    key(0, UPPER_GUARD),
-    key(1.2, merge(GUARD_ARMS, waist(-12, -4), arm([0.35, -0.42, 0.8], 68, [0, 0, 0]), left([-0.25, -0.72, 0.45], 78))),
-    key(2.4, UPPER_GUARD),
-], loop=True, priority="Idle", easing=ease("CubicV2", "InOut"), defaults=UPPER_GUARD)
-
-RUN_ARMS = blade(merge(waist(0, -14), neck(0, 8), arm([0.3, -0.75, -0.55], 15), left([-0.15, -0.6, 0.6], 80)), [0.15, -0.25, -1])
-clip("SwordRun", [key(0, RUN_ARMS), key(0.34, merge(RUN_ARMS, left([-0.15, -0.75, 0.35], 70))), key(0.68, RUN_ARMS)],
-     loop=True, priority="Movement", easing=ease("CubicV2", "InOut"), defaults=RUN_ARMS)
+# SwordIdle/SwordRun e toda a locomoção do jogador: tools/anims/player_moves.py (no fim do arquivo)
 
 BLOCK = blade(merge(feet(drop=-0.35), waist(-8, -4), neck(0, -6), arm([0.4, 0.45, 0.8], 95), left([-0.45, 0.35, 0.8], 100)), [-1, 0.2, 0.1])
 clip("Block", [key(0, BLOCK), key(0.5, merge(BLOCK, feet(drop=-0.38))), key(1, BLOCK)], loop=True,
@@ -544,6 +536,10 @@ with open(os.path.join(out, "NpcSprint.json"), "w") as f:
     json.dump(_d, f, indent=1)
 manifest["NpcSprint"] = {"flags": ["--locomotion"], "waive": []}
 json.dump(_aim_cache, open(_cache_path, "w"))
+
+# Jogador: locomoção própria (Hero* embainhada, Sword* com a espada), substitui o Animate padrão
+import player_moves  # noqa: E402
+player_moves.author(out, manifest, blade)
 
 # Hollows: animações próprias no corpo de cada criatura (tools/creatures/author_creatures.py)
 _sys.path.insert(0, os.path.join(here, "..", "creatures"))

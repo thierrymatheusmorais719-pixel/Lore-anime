@@ -594,6 +594,18 @@ test("segunda liberação tem cutscene com tempos coerentes", function()
 	end
 	truthy(Clips.ReleaseTier2 and Clips.SwordIdle and Clips.CastSlash, "clips usados na cena")
 end)
+test("jogador: locomoção própria completa e na velocidade do jogo", function()
+	for _, set in { "Hero", "Sword" } do
+		for _, state in { "Idle", "Walk", "Run", "Sprint", "Jump", "Fall" } do
+			truthy(Clips[set .. state], set .. state)
+		end
+		local run, sprint = Clips[set .. "Run"].groundSpeed, Clips[set .. "Sprint"].groundSpeed
+		truthy(run and sprint and Clips[set .. "Walk"].groundSpeed, set .. ": marchas com velocidade de chão")
+		-- a taxa de reprodução fica perto de 1 nas velocidades reais (andar 18, disparada 27)
+		truthy(math.abs(Combat.BaseWalkSpeed / run - 1) < 0.25, set .. "Run fora da velocidade de andar")
+		truthy(math.abs(Combat.SprintSpeed / sprint - 1) < 0.25, set .. "Sprint fora da disparada")
+	end
+end)
 test("amostragem reproduz as chaves e o easing do Roblox", function()
 	eq(ClipSampler.ease("Linear", "In", 0.25), 0.25)
 	eq(ClipSampler.ease("CubicV2", "In", 0.5), 0.125)

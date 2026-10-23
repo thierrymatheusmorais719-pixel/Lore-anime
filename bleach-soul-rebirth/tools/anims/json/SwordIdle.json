@@ -1,23 +1,46 @@
 {
- "name": "SwordIdle",
- "rig": "R15",
  "loop": true,
  "priority": "Idle",
+ "easing": {
+  "style": "CubicV2",
+  "direction": "InOut"
+ },
  "keyframes": [
   {
    "time": 0,
    "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.28,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.6375,
+      -2.93,
+      0.45
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.6375,
+      -2.93,
+      -0.45
+     ]
+    },
     "Waist": {
      "rotation": [
-      -2,
-      -12,
+      -3,
+      -14,
       0
      ]
     },
     "Neck": {
      "rotation": [
       0,
-      10,
+      12,
       0
      ]
     },
@@ -31,13 +54,6 @@
     "RightElbow": {
      "bend": 65
     },
-    "Weapon": {
-     "rotation": [
-      -60,
-      -15,
-      0
-     ]
-    },
     "LeftShoulder": {
      "aim": [
       -0.25,
@@ -47,22 +63,50 @@
     },
     "LeftElbow": {
      "bend": 75
+    },
+    "Weapon": {
+     "rotation": [
+      -60,
+      -15,
+      0
+     ]
     }
    }
   },
   {
    "time": 1.2,
    "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.34,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.6375,
+      -2.93,
+      0.45
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.6375,
+      -2.93,
+      -0.45
+     ]
+    },
     "Waist": {
      "rotation": [
-      -4,
+      -5,
       -12,
       0
      ]
     },
     "Neck": {
      "rotation": [
-      0,
+      -2,
       10,
       0
      ]
@@ -77,13 +121,6 @@
     "RightElbow": {
      "bend": 68
     },
-    "Weapon": {
-     "rotation": [
-      0,
-      0,
-      0
-     ]
-    },
     "LeftShoulder": {
      "aim": [
       -0.25,
@@ -93,23 +130,51 @@
     },
     "LeftElbow": {
      "bend": 78
+    },
+    "Weapon": {
+     "rotation": [
+      -60,
+      -20,
+      0
+     ]
     }
    }
   },
   {
    "time": 2.4,
    "joints": {
+    "Root": {
+     "position": [
+      0,
+      -0.28,
+      0
+     ]
+    },
+    "RightHip": {
+     "aimAt": [
+      0.6375,
+      -2.93,
+      0.45
+     ]
+    },
+    "LeftHip": {
+     "aimAt": [
+      -0.6375,
+      -2.93,
+      -0.45
+     ]
+    },
     "Waist": {
      "rotation": [
-      -2,
-      -12,
+      -3,
+      -14,
       0
      ]
     },
     "Neck": {
      "rotation": [
       0,
-      10,
+      12,
       0
      ]
     },
@@ -123,13 +188,6 @@
     "RightElbow": {
      "bend": 65
     },
-    "Weapon": {
-     "rotation": [
-      -60,
-      -15,
-      0
-     ]
-    },
     "LeftShoulder": {
      "aim": [
       -0.25,
@@ -139,12 +197,17 @@
     },
     "LeftElbow": {
      "bend": 75
+    },
+    "Weapon": {
+     "rotation": [
+      -60,
+      -15,
+      0
+     ]
     }
    }
   }
  ],
- "easing": {
-  "style": "CubicV2",
-  "direction": "InOut"
- }
+ "name": "SwordIdle",
+ "rig": "R15"
 }

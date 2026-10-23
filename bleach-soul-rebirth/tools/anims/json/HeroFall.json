@@ -1,0 +1,189 @@
+{
+ "loop": true,
+ "priority": "Movement",
+ "easing": {
+  "style": "CubicV2",
+  "direction": "InOut"
+ },
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      6,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      8,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.9,
+      0.2,
+      0.1
+     ]
+    },
+    "RightElbow": {
+     "bend": 30
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.9,
+      0.25,
+      0.05
+     ]
+    },
+    "LeftElbow": {
+     "bend": 35
+    },
+    "RightHip": {
+     "aim": [
+      0.15,
+      -1,
+      0.25
+     ]
+    },
+    "RightKnee": {
+     "bend": 30
+    },
+    "LeftHip": {
+     "aim": [
+      -0.15,
+      -1,
+      -0.1
+     ]
+    },
+    "LeftKnee": {
+     "bend": 20
+    }
+   }
+  },
+  {
+   "time": 0.6,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      6,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      8,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.95,
+      0.3,
+      0.05
+     ]
+    },
+    "RightElbow": {
+     "bend": 25
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.95,
+      0.3,
+      0.0
+     ]
+    },
+    "LeftElbow": {
+     "bend": 30
+    },
+    "RightHip": {
+     "aim": [
+      0.15,
+      -1,
+      0.25
+     ]
+    },
+    "RightKnee": {
+     "bend": 30
+    },
+    "LeftHip": {
+     "aim": [
+      -0.15,
+      -1,
+      -0.1
+     ]
+    },
+    "LeftKnee": {
+     "bend": 20
+    }
+   }
+  },
+  {
+   "time": 1.2,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      6,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      8,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.9,
+      0.2,
+      0.1
+     ]
+    },
+    "RightElbow": {
+     "bend": 30
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.9,
+      0.25,
+      0.05
+     ]
+    },
+    "LeftElbow": {
+     "bend": 35
+    },
+    "RightHip": {
+     "aim": [
+      0.15,
+      -1,
+      0.25
+     ]
+    },
+    "RightKnee": {
+     "bend": 30
+    },
+    "LeftHip": {
+     "aim": [
+      -0.15,
+      -1,
+      -0.1
+     ]
+    },
+    "LeftKnee": {
+     "bend": 20
+    }
+   }
+  }
+ ],
+ "name": "HeroFall",
+ "rig": "R15"
+}

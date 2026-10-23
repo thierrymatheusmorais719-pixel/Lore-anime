@@ -45,6 +45,8 @@ type Rig = {
 	motors: { [string]: Motor6D },
 	cloth: { { motor: Motor6D, pitch: number, vel: number, side: number, sideVel: number } },
 	written: { [Motor6D]: CFrame },
+	hipTurn: number?,
+	locoState: string?,
 	tracks: { Track },
 	manual: boolean,
 	phase: number,
@@ -204,6 +206,13 @@ local function scanMotors(rig: Rig)
 	end
 end
 
+-- Sem o Animate padrão do Roblox (ou com o Animate vazio do projeto, StarterCharacterScripts),
+-- a locomoção é toda nossa. O padrão traz valores (idle, walk, run...) como filhos; o nosso, não.
+local function usesOwnLocomotion(model: Model): boolean
+	local animate = model:FindFirstChild("Animate")
+	return animate == nil or #animate:GetChildren() == 0
+end
+
 function AnimController.Register(model: Model)
 	if rigs[model] then
 		return rigs[model]
@@ -216,7 +225,7 @@ function AnimController.Register(model: Model)
 		cloth = {},
 		written = {},
 		tracks = {},
-		manual = model:FindFirstChild("Animate") == nil,
+		manual = usesOwnLocomotion(model),
 		phase = 0,
 		frozenUntil = 0,
 		assetCache = {},
@@ -465,7 +474,12 @@ end
 
 local function updateStance(rig: Rig)
 	local model = rig.model
-	if model:GetAttribute("Team") ~= "Players" then
+	-- Só para rigs que ainda usam o Animate padrão; sem ele a locomoção própria já faz a guarda
+	if model:GetAttribute("Team") ~= "Players" or rig.manual then
+		if rig.stance then
+			AnimController.Stop(model, rig.stance)
+			rig.stance = nil
+		end
 		return
 	end
 	local drawn = model:GetAttribute("Drawn") == true
@@ -596,43 +610,90 @@ proceduralLayer = function(rig: Rig, dt: number, _now: number): { [string]: CFra
 	return out
 end
 
--- Locomoção de rigs sem Animate (NPCs/inimigos) com as marchas compiladas: parado, andar,
--- correr, disparar. Cada marcha toca na taxa velocidade ÷ velocidade de chão (0,5×–2×) para os
--- pés não deslizarem; troca com crossfade. `AnimSet` no modelo escolhe outro conjunto (ex.: "Hollow").
+-- Locomoção de rigs sem Animate (jogadores, NPCs, inimigos) com as marchas compiladas: parado,
+-- andar, correr, disparar, pulo e queda. Cada marcha toca na taxa velocidade ÷ velocidade de chão
+-- (0,5×–2×) para os pés não deslizarem; troca com crossfade.
+-- Conjunto: criaturas pelo atributo AnimSet ("Hollow", "Brute"...); jogadores "Sword" com a espada
+-- sacada ou "Hero" embainhada; demais NPCs "Npc".
+-- Direção: andando de lado o quadril gira para o lado do passo e o peito continua para a frente;
+-- andando para trás a marcha toca ao contrário.
 local GAITS = { "Walk", "Run", "Sprint" }
-local function locomotionPose(rig: Rig, dt: number, speed: number, airborne: boolean): { [string]: CFrame }
-	local set = rig.model:GetAttribute("AnimSet") or "Npc"
-	local scale = rig.model:GetAttribute("AnimScale") or 1
-	-- Criaturas só usam as próprias marchas (a marcha humana não serve no corpo delas)
-	local creature = set ~= "Npc"
-	local function get(state: string)
-		return definition(set .. state) or (if creature then nil else definition("Npc" .. state))
+local LOCO_STATES = { "Idle", "Walk", "Run", "Sprint", "Jump", "Fall" }
+local MAX_HIP_TURN = math.rad(65)
+
+local function animSetOf(rig: Rig): (string, boolean)
+	local model = rig.model
+	local creatureSet = model:GetAttribute("AnimSet")
+	if type(creatureSet) == "string" then
+		return creatureSet, true
 	end
-	-- Escolhe a marcha cuja faixa de taxa cobre a velocidade (a mais lenta que dá conta); a velocidade
-	-- de chão cresce com a escala do modelo (passada maior)
+	if model:GetAttribute("Team") == "Players" or Players:GetPlayerFromCharacter(model) then
+		return if model:GetAttribute("Drawn") == true then "Sword" else "Hero", false
+	end
+	return "Npc", false
+end
+
+local function locomotionPose(rig: Rig, dt: number, velocity: Vector3, airborne: boolean): { [string]: CFrame }
+	local set, creature = animSetOf(rig)
+	local scale = rig.model:GetAttribute("AnimScale") or 1
+	local flat = Vector3.new(velocity.X, 0, velocity.Z)
+	local speed = flat.Magnitude
+	local function get(state: string)
+		local def = definition(set .. state)
+		if def then
+			return def
+		end
+		if creature then
+			return nil -- a marcha humana não serve no corpo de uma criatura
+		end
+		return definition("Hero" .. state) or definition("Npc" .. state)
+	end
+
+	-- Direção do passo em relação ao corpo
+	local hipTurn, backwards = 0, false
+	local root = rig.root
+	if root and speed > 1 and not creature then
+		local localDir = root.CFrame:VectorToObjectSpace(flat.Unit)
+		local angle = math.atan2(-localDir.X, -localDir.Z) -- 0 = frente, + = esquerda
+		if math.abs(angle) > math.rad(110) then
+			backwards = true
+			angle = if angle > 0 then angle - math.pi else angle + math.pi
+		end
+		hipTurn = math.clamp(angle, -MAX_HIP_TURN, MAX_HIP_TURN)
+	end
+	rig.hipTurn = (rig.hipTurn or 0) + (hipTurn - (rig.hipTurn or 0)) * (1 - math.exp(-12 * dt))
+
+	-- Estado: no ar (subindo/caindo), parado, ou a marcha mais próxima da velocidade
 	local target = "Idle"
 	if airborne then
-		target = if creature then "Run" else "Air"
+		if creature then
+			target = if get("Run") then "Run" else "Idle"
+		else
+			target = if velocity.Y > 2 then "Jump" else "Fall"
+		end
 	elseif speed > 0.6 then
-		target = "Sprint"
-		local fastest = nil
+		local best, bestError = nil, math.huge
 		for _, gait in GAITS do
 			local def = get(gait)
 			local gs = def and def.clip and def.clip.groundSpeed
 			if gs then
-				fastest = gait
-				if speed <= gs * scale * 2 then
-					target = gait
-					break
+				local err = math.abs(math.log(speed / (gs * scale)))
+				if err < bestError then
+					best, bestError = gait, err
 				end
 			end
 		end
-		if target == "Sprint" and not get("Sprint") and fastest then
-			target = fastest
-		end
+		target = best or "Idle"
 	end
-	local fade = 1 - math.exp(-10 * dt)
-	for _, state in { "Idle", "Walk", "Run", "Sprint", "Air" } do
+	if target ~= rig.locoState then
+		if target == "Jump" and rig.loco.Jump then
+			rig.loco.Jump.time = 0
+		end
+		rig.locoState = target
+	end
+
+	local fade = 1 - math.exp(-(if airborne then 14 else 10) * dt)
+	for _, state in LOCO_STATES do
 		local entry = rig.loco[state]
 		if not entry then
 			entry = { time = 0, weight = 0 }
@@ -642,32 +703,42 @@ local function locomotionPose(rig: Rig, dt: number, speed: number, airborne: boo
 	end
 	local result: { [string]: CFrame } = {}
 	local accumulated = 0
-	for _, state in { "Idle", "Walk", "Run", "Sprint", "Air" } do
+	for _, state in LOCO_STATES do
 		local entry = rig.loco[state]
 		if entry.weight > 0.01 then
-			local def = if state == "Air" then definition("AirStep") else get(state)
+			local def = get(state)
+			if not def and (state == "Jump" or state == "Fall") then
+				def = definition("AirStep")
+			end
 			if def and def.clip then
 				local rate = 1
 				local gs = def.clip.groundSpeed
 				if gs then
 					rate = math.clamp(speed / (gs * scale), 0.5, 2)
+					if backwards then
+						rate = -rate
+					end
 				end
-				if state == "Air" then
-					entry.time = def.duration
-				else
+				if def.loop then
 					entry.time = (entry.time + dt * rate) % def.duration
+				else
+					entry.time = math.min(def.duration, entry.time + dt)
 				end
 				local share = entry.weight / (accumulated + entry.weight)
 				accumulated += entry.weight
 				for joint, keys in def.clip.tracks do
-					if joint ~= "Weapon" and joint ~= "OffHand" then
-						local cf = scaled(sampleKeys(keys, entry.time), scale)
-						local current = result[joint]
-						result[joint] = if current then current:Lerp(cf, share) else IDENTITY:Lerp(cf, share)
-					end
+					local cf = scaled(sampleKeys(keys, entry.time), scale)
+					local current = result[joint]
+					result[joint] = if current then current:Lerp(cf, share) else IDENTITY:Lerp(cf, share)
 				end
 			end
 		end
+	end
+	-- Quadril para o lado do passo, peito de volta para a frente
+	local turn = rig.hipTurn
+	if math.abs(turn) > 0.01 then
+		result.Root = CFrame.Angles(0, turn, 0) * (result.Root or IDENTITY)
+		result.Waist = CFrame.Angles(0, -turn * 0.75, 0) * (result.Waist or IDENTITY)
 	end
 	return result
 end
@@ -721,7 +792,7 @@ local function stepRig(rig: Rig, dt: number, now: number)
 		local speed = Vector3.new(v.X, 0, v.Z).Magnitude
 		rig.phase += dt * speed * 0.42
 		local airborne = rig.humanoid.FloorMaterial == Enum.Material.Air and math.abs(v.Y) > 6
-		locomotion = locomotionPose(rig, dt, speed, airborne)
+		locomotion = locomotionPose(rig, dt, v, airborne)
 	end
 
 	table.sort(tracks, function(a, b)
@@ -827,7 +898,7 @@ function AnimController.Start()
 			-- O Animate é inserido logo após o spawn
 			task.delay(1, function()
 				if rigs[character] then
-					rig.manual = character:FindFirstChild("Animate") == nil
+					rig.manual = usesOwnLocomotion(character)
 					scanMotors(rig)
 				end
 			end)

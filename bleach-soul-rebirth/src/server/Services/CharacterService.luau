@@ -161,6 +161,24 @@ local function setupCharacter(player: Player, character: Model)
 			"é R6. Configure Game Settings > Avatar > R15 para animações completas."
 		)
 	end
+	-- Corpo nas proporções do R15 padrão (as animações são compiladas e verificadas nessas medidas:
+	-- pés no chão, alcance dos braços, empunhadura). Mantém rosto, cabelo, roupas e acessórios do
+	-- avatar; troca só as partes do corpo (Rthro/escala) pelas padrão.
+	pcall(function()
+		local description = humanoid:GetAppliedDescription()
+		description.HeightScale = 1
+		description.WidthScale = 1
+		description.DepthScale = 1
+		description.HeadScale = 1
+		description.BodyTypeScale = 0
+		description.ProportionScale = 0
+		description.Torso = 0
+		description.LeftArm = 0
+		description.RightArm = 0
+		description.LeftLeg = 0
+		description.RightLeg = 0
+		humanoid:ApplyDescription(description)
+	end)
 	-- Aguarda o rig montar (mãos e torso) antes de prender armas.
 	character:WaitForChild("RightHand", 5)
 	character:WaitForChild("LowerTorso", 5)

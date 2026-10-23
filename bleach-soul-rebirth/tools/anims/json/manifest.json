@@ -29,14 +29,6 @@
   ],
   "waive": []
  },
- "SwordIdle": {
-  "flags": [],
-  "waive": []
- },
- "SwordRun": {
-  "flags": [],
-  "waive": []
- },
  "Block": {
   "flags": [
    "--grounded"
@@ -250,6 +242,80 @@
    "--locomotion"
   ],
   "waive": []
+ },
+ "HeroIdle": {
+  "flags": [],
+  "waive": [],
+  "groundSpeedFromReport": false
+ },
+ "HeroWalk": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": [],
+  "groundSpeedFromReport": true
+ },
+ "HeroRun": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": [],
+  "groundSpeedFromReport": true
+ },
+ "HeroSprint": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": [],
+  "groundSpeedFromReport": true
+ },
+ "HeroJump": {
+  "flags": [],
+  "waive": [],
+  "groundSpeedFromReport": false
+ },
+ "HeroFall": {
+  "flags": [],
+  "waive": [],
+  "groundSpeedFromReport": false
+ },
+ "SwordIdle": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "groundSpeedFromReport": false
+ },
+ "SwordWalk": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": [],
+  "groundSpeedFromReport": true
+ },
+ "SwordRun": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": [],
+  "groundSpeedFromReport": true
+ },
+ "SwordSprint": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": [],
+  "groundSpeedFromReport": true
+ },
+ "SwordJump": {
+  "flags": [],
+  "waive": [],
+  "groundSpeedFromReport": false
+ },
+ "SwordFall": {
+  "flags": [],
+  "waive": [],
+  "groundSpeedFromReport": false
  },
  "HollowIdle": {
   "flags": [

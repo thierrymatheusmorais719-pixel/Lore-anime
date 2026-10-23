@@ -1,0 +1,141 @@
+{
+ "loop": true,
+ "priority": "Movement",
+ "duration": 0.31,
+ "gait": {
+  "pattern": "walk",
+  "stride": 2.4,
+  "duty": 0.3,
+  "lift": 0.36,
+  "bob": 0.08
+ },
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -26,
+      -6,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      22,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.35,
+      -0.35,
+      -0.85
+     ]
+    },
+    "RightElbow": {
+     "bend": 20
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.35,
+      -0.35,
+      -0.85
+     ]
+    },
+    "LeftElbow": {
+     "bend": 20
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 0.155,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -26,
+      6,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      22,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.35,
+      -0.35,
+      -0.85
+     ]
+    },
+    "RightElbow": {
+     "bend": 20
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.35,
+      -0.35,
+      -0.85
+     ]
+    },
+    "LeftElbow": {
+     "bend": 20
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 0.31,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -26,
+      -6,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      22,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.35,
+      -0.35,
+      -0.85
+     ]
+    },
+    "RightElbow": {
+     "bend": 20
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.35,
+      -0.35,
+      -0.85
+     ]
+    },
+    "LeftElbow": {
+     "bend": 20
+    }
+   }
+  }
+ ],
+ "name": "HeroSprint",
+ "rig": "R15"
+}

@@ -1,31 +1,38 @@
 {
- "name": "SwordRun",
- "rig": "R15",
  "loop": true,
  "priority": "Movement",
+ "duration": 0.36,
+ "gait": {
+  "pattern": "walk",
+  "stride": 2.3,
+  "duty": 0.36,
+  "lift": 0.38,
+  "bob": 0.12,
+  "crouch": 0.1
+ },
  "keyframes": [
   {
    "time": 0,
    "joints": {
     "Waist": {
      "rotation": [
-      -14,
-      0,
+      -16,
+      -8,
       0
      ]
     },
     "Neck": {
      "rotation": [
+      12,
       8,
-      0,
       0
      ]
     },
     "RightShoulder": {
      "aim": [
-      0.3,
-      -0.75,
-      -0.55
+      0.35,
+      -0.8,
+      -0.4
      ]
     },
     "RightElbow": {
@@ -33,9 +40,59 @@
     },
     "LeftShoulder": {
      "aim": [
-      -0.15,
-      -0.6,
-      0.6
+      -0.12,
+      -0.55,
+      0.8
+     ]
+    },
+    "LeftElbow": {
+     "bend": 95
+    },
+    "Weapon": {
+     "rotation": [
+      -130,
+      -5,
+      0
+     ]
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 0.18,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -16,
+      8,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      12,
+      -4,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.35,
+      -0.8,
+      -0.25
+     ]
+    },
+    "RightElbow": {
+     "bend": 20
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.12,
+      -0.75,
+      -0.6
      ]
     },
     "LeftElbow": {
@@ -43,35 +100,39 @@
     },
     "Weapon": {
      "rotation": [
-      -130,
-      0,
+      -150,
+      10,
       0
      ]
     }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
    }
   },
   {
-   "time": 0.34,
+   "time": 0.36,
    "joints": {
     "Waist": {
      "rotation": [
-      -14,
-      0,
+      -16,
+      -8,
       0
      ]
     },
     "Neck": {
      "rotation": [
+      12,
       8,
-      0,
       0
      ]
     },
     "RightShoulder": {
      "aim": [
-      0.3,
-      -0.75,
-      -0.55
+      0.35,
+      -0.8,
+      -0.4
      ]
     },
     "RightElbow": {
@@ -79,72 +140,24 @@
     },
     "LeftShoulder": {
      "aim": [
-      -0.15,
-      -0.75,
-      0.35
+      -0.12,
+      -0.55,
+      0.8
      ]
     },
     "LeftElbow": {
-     "bend": 70
+     "bend": 95
     },
     "Weapon": {
      "rotation": [
       -130,
-      0,
-      0
-     ]
-    }
-   }
-  },
-  {
-   "time": 0.68,
-   "joints": {
-    "Waist": {
-     "rotation": [
-      -14,
-      0,
-      0
-     ]
-    },
-    "Neck": {
-     "rotation": [
-      8,
-      0,
-      0
-     ]
-    },
-    "RightShoulder": {
-     "aim": [
-      0.3,
-      -0.75,
-      -0.55
-     ]
-    },
-    "RightElbow": {
-     "bend": 15
-    },
-    "LeftShoulder": {
-     "aim": [
-      -0.15,
-      -0.6,
-      0.6
-     ]
-    },
-    "LeftElbow": {
-     "bend": 80
-    },
-    "Weapon": {
-     "rotation": [
-      -130,
-      0,
+      -5,
       0
      ]
     }
    }
   }
  ],
- "easing": {
-  "style": "CubicV2",
-  "direction": "InOut"
- }
+ "name": "SwordRun",
+ "rig": "R15"
 }

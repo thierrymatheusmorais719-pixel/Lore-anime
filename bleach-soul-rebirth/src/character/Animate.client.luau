@@ -1,0 +1,4 @@
+-- Substitui o Animate padrão do Roblox (mesmo nome em StarterCharacterScripts = o Roblox não insere
+-- o dele). Toda a animação do personagem vem do AnimController (marchas Hero*/Sword*, golpes,
+-- reações), compilada e verificada em tools/anims. Este script fica vazio de propósito: sem filhos,
+-- o AnimController reconhece que a locomoção é dele.
