@@ -87,9 +87,12 @@ src/
 │  └─ World/          Build (primitivas) + Regions (Karakura, Treino, Soul Society, Hueco Mundo)
 └─ client/            → StarterPlayerScripts.Client
    ├─ Main.client
-   ├─ Controllers/    Data, Input, Combat (previsão), Anim, Fx (eventos→efeitos), VFX, ImpactFx (impactos
-   │                  e cargas em camadas), SpectacleFx, Camera, Sound, HUD, Menu, Dialogue,
-   │                  FactionSelect, Zone (iluminação)
+   ├─ Controllers/    Data, Input, Combat (previsão; o corte segue o caminho real da lâmina), Anim
+   │                  (locomoção própria do jogador e das criaturas), Fx (eventos→efeitos), VFX,
+   │                  ImpactFx (impactos e cargas em camadas), ElementFx (assinatura visual por
+   │                  elemento, com orçamento de objetos), SpectacleFx, ReleaseCutscene, Camera,
+   │                  Sound, HUD, Menu, Dialogue, FactionSelect, Zone (iluminação)
+   └─ (character/)    → StarterCharacterScripts: Animate vazio que substitui o padrão do Roblox
    └─ UI/Kit          tema e componentes
 ```
 
@@ -160,8 +163,13 @@ python3 tools/anims/build.py --sheets /tmp/folhas   # compila com a skill, exige
 - Cada clip passa por limites de junta, velocidade (≤ 2500°/s), deriva do quadril, contato com o chão,
   deslize dos pés e simetria da marcha; as folhas de contato (PNG) servem para revisão visual.
 - Golpes: marcador `Hit` = `windup` do servidor (testado); conjurações: marcador `Release`.
-- Hollows: `HollowGrunt` (predador curvado com cauda) e `HollowBrute` (gorila de osso) têm corpo e
-  animações próprias (`HollowSlash1`, `BruteWalk`...). O atributo `AnimSet` do modelo escolhe a versão da
+- Hollows: `HollowGrunt` (predador curvado com cauda), `HollowBrute` (gorila de osso) e
+  `HollowHound` (quadrúpede com mandíbula articulada) têm corpo e animações próprias (`HollowSlash1`,
+  `BruteWalk`, `HoundRun`...), incluindo rugido de entrada em combate e morte.
+- Jogador: `Hero*` (espada embainhada) e `Sword*` (espada na mão) — parado, andar, correr, disparar,
+  pulo e queda (`tools/anims/player_moves.py`). O `Animate` padrão do Roblox é substituído.
+- Armas: `python3 tools/preview/preview.py weapons saida.png` roda o `WeaponBuilder` real fora do
+  Studio e desenha todas as Zanpakutō (precisa do CLI `luau`). O atributo `AnimSet` do modelo escolhe a versão da
   criatura; o que ela não tiver cai na animação comum.
 - `tools/anims/keyframes/<Nome>.lua` cria o `KeyframeSequence` no Studio para publicar como animação.
 

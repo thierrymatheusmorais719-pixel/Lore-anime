@@ -11,6 +11,7 @@ local ORDER = {
 	"CameraController",
 	"VFXController",
 	"SpectacleFx",
+	"ElementFx",
 	"ImpactFx",
 	"ReleaseCutscene",
 	"AnimController",

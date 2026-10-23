@@ -14,6 +14,7 @@ local TweenService = game:GetService("TweenService")
 
 local Elements = require(ReplicatedStorage.Shared.Config.Elements)
 local VFX = require(script.Parent.VFXController)
+local ElementFx = require(script.Parent.ElementFx)
 
 local ImpactFx = {}
 
@@ -195,6 +196,10 @@ function ImpactFx.Hit(position: Vector3, direction: Vector3?, element: string?, 
 	-- +0,06 s: poeira neutra (matéria dessaturada ao lado da energia) que cresce enquanto some
 	task.delay(0.06, function()
 		fire("Dust", position, Vector3.yAxis, ColorSequence.new(p.smoke), math.floor(3 * s), s)
+	end)
+	-- +0,05 s: assinatura do elemento (forma própria de cada poder; golpes leves em escala menor)
+	task.delay(0.05, function()
+		ElementFx.Signature(position, dir, element, if t >= 3 then 2 elseif t == 2 then 1 else 0.5)
 	end)
 	-- +0,10 s: resíduo — brasas lentas subindo (só pesados)
 	if t >= 2 then
