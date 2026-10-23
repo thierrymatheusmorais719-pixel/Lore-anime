@@ -111,7 +111,12 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere"
+    "mesh": "Sphere",
+    "color": [
+     116,
+     116,
+     122
+    ]
    },
    {
     "name": "LeftUpperArm",
@@ -139,14 +144,19 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere"
+    "mesh": "Sphere",
+    "color": [
+     116,
+     116,
+     122
+    ]
    },
    {
     "name": "RightLowerArm",
     "size": [
-     0.6,
+     0.62,
      1.6,
-     0.6
+     0.62
     ],
     "parent": "RightUpperArm",
     "joint": "RightElbow",
@@ -166,15 +176,20 @@
      0,
      0
     ],
-    "role": "skin2",
-    "mesh": "Sphere"
+    "role": "skin",
+    "mesh": "Sphere",
+    "color": [
+     116,
+     116,
+     122
+    ]
    },
    {
     "name": "LeftLowerArm",
     "size": [
-     0.6,
+     0.62,
      1.6,
-     0.6
+     0.62
     ],
     "parent": "LeftUpperArm",
     "joint": "LeftElbow",
@@ -194,15 +209,20 @@
      0,
      0
     ],
-    "role": "skin2",
-    "mesh": "Sphere"
+    "role": "skin",
+    "mesh": "Sphere",
+    "color": [
+     116,
+     116,
+     122
+    ]
    },
    {
     "name": "RightHand",
     "size": [
-     0.85,
-     0.45,
-     0.95
+     1.1,
+     0.5,
+     1.15
     ],
     "parent": "RightLowerArm",
     "joint": "RightWrist",
@@ -216,21 +236,26 @@
     ],
     "c1": [
      0,
-     0.18,
+     0.2,
      0,
      0,
      0,
      0
     ],
-    "role": "skin2",
-    "mesh": "Sphere"
+    "role": "skin",
+    "mesh": "Sphere",
+    "color": [
+     100,
+     100,
+     106
+    ]
    },
    {
     "name": "LeftHand",
     "size": [
-     0.85,
-     0.45,
-     0.95
+     1.1,
+     0.5,
+     1.15
     ],
     "parent": "LeftLowerArm",
     "joint": "LeftWrist",
@@ -244,14 +269,19 @@
     ],
     "c1": [
      0,
-     0.18,
+     0.2,
      0,
      0,
      0,
      0
     ],
-    "role": "skin2",
-    "mesh": "Sphere"
+    "role": "skin",
+    "mesh": "Sphere",
+    "color": [
+     100,
+     100,
+     106
+    ]
    },
    {
     "name": "RightUpperLeg",
@@ -424,9 +454,9 @@
    {
     "name": "Tail1",
     "size": [
-     0.55,
-     0.55,
-     1.4
+     0.42,
+     0.42,
+     1.2
     ],
     "parent": "LowerTorso",
     "joint": "Tail1",
@@ -441,7 +471,7 @@
     "c1": [
      0,
      0,
-     -0.68,
+     -0.58,
      0,
      0,
      0
@@ -452,16 +482,16 @@
    {
     "name": "Tail2",
     "size": [
-     0.42,
-     0.42,
-     1.3
+     0.3,
+     0.3,
+     1.05
     ],
     "parent": "Tail1",
     "joint": "Tail2",
     "c0": [
      0,
      0,
-     0.66,
+     0.56,
      12,
      0,
      0
@@ -469,7 +499,7 @@
     "c1": [
      0,
      0,
-     -0.62,
+     -0.5,
      0,
      0,
      0
@@ -480,17 +510,2639 @@
    {
     "name": "Tail3",
     "size": [
-     0.28,
-     0.28,
-     1.2
+     0.2,
+     0.2,
+     0.9
     ],
     "parent": "Tail2",
     "joint": "Tail3",
     "c0": [
      0,
      0,
-     0.62,
+     0.5,
      12,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0,
+     -0.44,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere"
+   }
+  ],
+  "root": [
+   2.0,
+   2.0,
+   1.1
+  ],
+  "decor": [
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.16,
+     0.8,
+     0.8
+    ],
+    "offset": [
+     0,
+     0.05,
+     -0.7,
+     0,
+     90,
+     0
+    ],
+    "role": "dark",
+    "shape": "Cylinder",
+    "color": [
+     14,
+     12,
+     16
+    ]
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.1,
+     0.95,
+     0.95
+    ],
+    "offset": [
+     0,
+     0.05,
+     -0.66,
+     0,
+     90,
+     0
+    ],
+    "role": "skin2",
+    "shape": "Cylinder"
+   },
+   {
+    "part": "Head",
+    "size": [
+     1.3,
+     1.15,
+     0.6
+    ],
+    "offset": [
+     0,
+     0.08,
+     -0.5,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     1.0,
+     0.45,
+     0.4
+    ],
+    "offset": [
+     0,
+     -0.42,
+     -0.6,
+     6,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.12,
+     0.06
+    ],
+    "offset": [
+     0.07,
+     -0.08,
+     -0.84,
+     0,
+     0,
+     20
+    ],
+    "role": "dark",
+    "shape": "Wedge",
+    "color": [
+     14,
+     12,
+     16
+    ]
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.12,
+     0.06
+    ],
+    "offset": [
+     -0.07,
+     -0.08,
+     -0.84,
+     0,
+     0,
+     -20
+    ],
+    "role": "dark",
+    "shape": "Wedge",
+    "color": [
+     14,
+     12,
+     16
+    ]
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.82,
+     0.06,
+     0.08
+    ],
+    "offset": [
+     0,
+     -0.38,
+     -0.8,
+     0,
+     0,
+     0
+    ],
+    "role": "dark",
+    "shape": "Block",
+    "color": [
+     14,
+     12,
+     16
+    ]
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.16,
+     0.06
+    ],
+    "offset": [
+     -0.36,
+     -0.29,
+     -0.8,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.14,
+     0.06
+    ],
+    "offset": [
+     -0.36,
+     -0.47,
+     -0.78,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.16,
+     0.06
+    ],
+    "offset": [
+     -0.24,
+     -0.29,
+     -0.8,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.14,
+     0.06
+    ],
+    "offset": [
+     -0.24,
+     -0.47,
+     -0.78,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.16,
+     0.06
+    ],
+    "offset": [
+     -0.12,
+     -0.29,
+     -0.8,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.14,
+     0.06
+    ],
+    "offset": [
+     -0.12,
+     -0.47,
+     -0.78,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.16,
+     0.06
+    ],
+    "offset": [
+     0.0,
+     -0.29,
+     -0.8,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.14,
+     0.06
+    ],
+    "offset": [
+     0.0,
+     -0.47,
+     -0.78,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.16,
+     0.06
+    ],
+    "offset": [
+     0.12,
+     -0.29,
+     -0.8,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.14,
+     0.06
+    ],
+    "offset": [
+     0.12,
+     -0.47,
+     -0.78,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.16,
+     0.06
+    ],
+    "offset": [
+     0.24,
+     -0.29,
+     -0.8,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.14,
+     0.06
+    ],
+    "offset": [
+     0.24,
+     -0.47,
+     -0.78,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.16,
+     0.06
+    ],
+    "offset": [
+     0.36,
+     -0.29,
+     -0.8,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.14,
+     0.06
+    ],
+    "offset": [
+     0.36,
+     -0.47,
+     -0.78,
+     0,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.3,
+     0.3,
+     0.542121332975587
+    ],
+    "offset": [
+     0.3083333333333333,
+     0.7416666666666667,
+     -0.0027777777777777887,
+     -90.83,
+     24.741,
+     91.983
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     110,
+     40,
+     60
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.18,
+     0.18,
+     0.4666728603117608
+    ],
+    "offset": [
+     0.4183333333333333,
+     1.125,
+     0.03611111111111109,
+     -77.735,
+     6.304,
+     26.796
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     110,
+     40,
+     60
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.059999999999999984,
+     0.059999999999999984,
+     0.45377312418484816
+    ],
+    "offset": [
+     0.39499999999999996,
+     1.5083333333333333,
+     0.16388888888888886,
+     -65.807,
+     -12.088,
+     -24.991
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     110,
+     40,
+     60
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.36,
+     0.3,
+     0.1
+    ],
+    "offset": [
+     0.27,
+     0.18,
+     -0.8,
+     0,
+     0,
+     -12
+    ],
+    "role": "dark",
+    "shape": "Block",
+    "color": [
+     14,
+     12,
+     16
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.36,
+     0.3,
+     0.1
+    ],
+    "offset": [
+     -0.27,
+     0.18,
+     -0.8,
+     0,
+     0,
+     12
+    ],
+    "role": "dark",
+    "shape": "Block",
+    "color": [
+     14,
+     12,
+     16
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.22,
+     0.2,
+     0.08
+    ],
+    "offset": [
+     0.27,
+     0.18,
+     -0.85,
+     0,
+     0,
+     -12
+    ],
+    "role": "eye",
+    "shape": "Block",
+    "material": "Neon",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.22,
+     0.2,
+     0.08
+    ],
+    "offset": [
+     -0.27,
+     0.18,
+     -0.85,
+     0,
+     0,
+     12
+    ],
+    "role": "eye",
+    "shape": "Block",
+    "material": "Neon",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.06,
+     0.4,
+     0.04
+    ],
+    "offset": [
+     0.48,
+     0.0,
+     -0.78,
+     0,
+     0,
+     25
+    ],
+    "role": "dark",
+    "shape": "Block",
+    "color": [
+     14,
+     12,
+     16
+    ]
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.06,
+     0.4,
+     0.04
+    ],
+    "offset": [
+     -0.48,
+     0.0,
+     -0.78,
+     0,
+     0,
+     -25
+    ],
+    "role": "dark",
+    "shape": "Block",
+    "color": [
+     14,
+     12,
+     16
+    ]
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.14,
+     0.5,
+     0.2
+    ],
+    "offset": [
+     0.55,
+     0.55,
+     -0.5940000000000001,
+     0,
+     0,
+     -26.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.14,
+     0.5,
+     0.2
+    ],
+    "offset": [
+     -0.55,
+     0.55,
+     -0.5940000000000001,
+     0,
+     0,
+     26.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.14,
+     0.5,
+     0.2
+    ],
+    "offset": [
+     0.55,
+     0.55,
+     0.5940000000000001,
+     0,
+     0,
+     -26.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.14,
+     0.5,
+     0.2
+    ],
+    "offset": [
+     -0.55,
+     0.55,
+     0.5940000000000001,
+     0,
+     0,
+     26.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.14,
+     0.5,
+     0.2
+    ],
+    "offset": [
+     0.75,
+     0.0,
+     -0.5700000000000001,
+     0,
+     0,
+     -30.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.14,
+     0.5,
+     0.2
+    ],
+    "offset": [
+     -0.75,
+     0.0,
+     -0.5700000000000001,
+     0,
+     0,
+     30.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.14,
+     0.5,
+     0.2
+    ],
+    "offset": [
+     0.75,
+     0.0,
+     0.5700000000000001,
+     0,
+     0,
+     -30.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.14,
+     0.5,
+     0.2
+    ],
+    "offset": [
+     -0.75,
+     0.0,
+     0.5700000000000001,
+     0,
+     0,
+     30.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.14,
+     0.5,
+     0.2
+    ],
+    "offset": [
+     0.45,
+     -0.5,
+     -0.606,
+     0,
+     0,
+     -24.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.14,
+     0.5,
+     0.2
+    ],
+    "offset": [
+     -0.45,
+     -0.5,
+     -0.606,
+     0,
+     0,
+     24.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.14,
+     0.5,
+     0.2
+    ],
+    "offset": [
+     0.45,
+     -0.5,
+     0.606,
+     0,
+     0,
+     -24.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.14,
+     0.5,
+     0.2
+    ],
+    "offset": [
+     -0.45,
+     -0.5,
+     0.606,
+     0,
+     0,
+     24.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.14,
+     0.5,
+     0.2
+    ],
+    "offset": [
+     0.2,
+     0.75,
+     -0.636,
+     0,
+     0,
+     -19.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.14,
+     0.5,
+     0.2
+    ],
+    "offset": [
+     -0.2,
+     0.75,
+     -0.636,
+     0,
+     0,
+     19.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.14,
+     0.5,
+     0.2
+    ],
+    "offset": [
+     0.2,
+     0.75,
+     0.636,
+     0,
+     0,
+     -19.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     0.14,
+     0.5,
+     0.2
+    ],
+    "offset": [
+     -0.2,
+     0.75,
+     0.636,
+     0,
+     0,
+     19.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightUpperLeg",
+    "size": [
+     0.12,
+     0.42,
+     0.18
+    ],
+    "offset": [
+     0.3,
+     0.35,
+     -0.25,
+     0,
+     0,
+     -12
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftUpperLeg",
+    "size": [
+     0.12,
+     0.42,
+     0.18
+    ],
+    "offset": [
+     -0.3,
+     0.35,
+     -0.25,
+     0,
+     0,
+     12
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightUpperLeg",
+    "size": [
+     0.12,
+     0.42,
+     0.18
+    ],
+    "offset": [
+     0.3,
+     -0.2,
+     -0.25,
+     0,
+     0,
+     -12
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftUpperLeg",
+    "size": [
+     0.12,
+     0.42,
+     0.18
+    ],
+    "offset": [
+     -0.3,
+     -0.2,
+     -0.25,
+     0,
+     0,
+     12
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightLowerLeg",
+    "size": [
+     0.12,
+     0.42,
+     0.18
+    ],
+    "offset": [
+     0.3,
+     0.3,
+     -0.25,
+     0,
+     0,
+     -12
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftLowerLeg",
+    "size": [
+     0.12,
+     0.42,
+     0.18
+    ],
+    "offset": [
+     -0.3,
+     0.3,
+     -0.25,
+     0,
+     0,
+     12
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightLowerLeg",
+    "size": [
+     0.12,
+     0.42,
+     0.18
+    ],
+    "offset": [
+     0.3,
+     -0.25,
+     -0.25,
+     0,
+     0,
+     -12
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftLowerLeg",
+    "size": [
+     0.12,
+     0.42,
+     0.18
+    ],
+    "offset": [
+     -0.3,
+     -0.25,
+     -0.25,
+     0,
+     0,
+     12
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     140,
+     28,
+     42
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.26,
+     0.26,
+     0.6900767867779785
+    ],
+    "offset": [
+     -0.3895,
+     -0.2875,
+     -0.675,
+     140.194,
+     -1.858,
+     178.452
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     100,
+     100,
+     106
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.26,
+     0.26,
+     0.6900767867779785
+    ],
+    "offset": [
+     0.3895,
+     -0.2875,
+     -0.675,
+     140.194,
+     1.858,
+     -178.452
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     100,
+     100,
+     106
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.20800000000000002,
+     0.20800000000000002,
+     0.46199545931808633
+    ],
+    "offset": [
+     -0.40850000000000003,
+     -0.6625,
+     -0.875,
+     82.405,
+     -2.875,
+     -90.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     100,
+     100,
+     106
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.20800000000000002,
+     0.20800000000000002,
+     0.46199545931808633
+    ],
+    "offset": [
+     0.40850000000000003,
+     -0.6625,
+     -0.875,
+     82.405,
+     2.875,
+     90.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     100,
+     100,
+     106
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.16,
+     0.18,
+     0.22
+    ],
+    "offset": [
+     -0.41800000000000004,
+     -0.95,
+     -0.87,
+     30,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     40,
+     34,
+     40
+    ]
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.16,
+     0.18,
+     0.22
+    ],
+    "offset": [
+     0.41800000000000004,
+     -0.95,
+     -0.87,
+     30,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     40,
+     34,
+     40
+    ]
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.26,
+     0.26,
+     0.6898047883040903
+    ],
+    "offset": [
+     -0.13325,
+     -0.2875,
+     -0.675,
+     140.194,
+     -0.636,
+     179.47
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     100,
+     100,
+     106
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.26,
+     0.26,
+     0.6898047883040903
+    ],
+    "offset": [
+     0.13325,
+     -0.2875,
+     -0.675,
+     140.194,
+     0.636,
+     -179.47
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     100,
+     100,
+     106
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.20800000000000002,
+     0.20800000000000002,
+     0.46157448381200333
+    ],
+    "offset": [
+     -0.13975,
+     -0.6625,
+     -0.875,
+     82.405,
+     -0.984,
+     -90.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     100,
+     100,
+     106
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.20800000000000002,
+     0.20800000000000002,
+     0.46157448381200333
+    ],
+    "offset": [
+     0.13975,
+     -0.6625,
+     -0.875,
+     82.405,
+     0.984,
+     90.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     100,
+     100,
+     106
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.16,
+     0.18,
+     0.22
+    ],
+    "offset": [
+     -0.14300000000000002,
+     -0.95,
+     -0.87,
+     30,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     40,
+     34,
+     40
+    ]
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.16,
+     0.18,
+     0.22
+    ],
+    "offset": [
+     0.14300000000000002,
+     -0.95,
+     -0.87,
+     30,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     40,
+     34,
+     40
+    ]
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.26,
+     0.26,
+     0.6898047883040903
+    ],
+    "offset": [
+     0.13325,
+     -0.2875,
+     -0.675,
+     140.194,
+     0.636,
+     -179.47
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     100,
+     100,
+     106
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.26,
+     0.26,
+     0.6898047883040903
+    ],
+    "offset": [
+     -0.13325,
+     -0.2875,
+     -0.675,
+     140.194,
+     -0.636,
+     179.47
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     100,
+     100,
+     106
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.20800000000000002,
+     0.20800000000000002,
+     0.46157448381200333
+    ],
+    "offset": [
+     0.13975,
+     -0.6625,
+     -0.875,
+     82.405,
+     0.984,
+     -90.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     100,
+     100,
+     106
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.20800000000000002,
+     0.20800000000000002,
+     0.46157448381200333
+    ],
+    "offset": [
+     -0.13975,
+     -0.6625,
+     -0.875,
+     82.405,
+     -0.984,
+     90.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     100,
+     100,
+     106
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.16,
+     0.18,
+     0.22
+    ],
+    "offset": [
+     0.14300000000000002,
+     -0.95,
+     -0.87,
+     30,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     40,
+     34,
+     40
+    ]
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.16,
+     0.18,
+     0.22
+    ],
+    "offset": [
+     -0.14300000000000002,
+     -0.95,
+     -0.87,
+     30,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     40,
+     34,
+     40
+    ]
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.26,
+     0.26,
+     0.6900767867779785
+    ],
+    "offset": [
+     0.3895,
+     -0.2875,
+     -0.675,
+     140.194,
+     1.858,
+     -178.452
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     100,
+     100,
+     106
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.26,
+     0.26,
+     0.6900767867779785
+    ],
+    "offset": [
+     -0.3895,
+     -0.2875,
+     -0.675,
+     140.194,
+     -1.858,
+     178.452
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     100,
+     100,
+     106
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.20800000000000002,
+     0.20800000000000002,
+     0.46199545931808633
+    ],
+    "offset": [
+     0.40850000000000003,
+     -0.6625,
+     -0.875,
+     82.405,
+     2.875,
+     -90.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     100,
+     100,
+     106
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.20800000000000002,
+     0.20800000000000002,
+     0.46199545931808633
+    ],
+    "offset": [
+     -0.40850000000000003,
+     -0.6625,
+     -0.875,
+     82.405,
+     -2.875,
+     90.0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     100,
+     100,
+     106
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.16,
+     0.18,
+     0.22
+    ],
+    "offset": [
+     0.41800000000000004,
+     -0.95,
+     -0.87,
+     30,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     40,
+     34,
+     40
+    ]
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.16,
+     0.18,
+     0.22
+    ],
+    "offset": [
+     -0.41800000000000004,
+     -0.95,
+     -0.87,
+     30,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     40,
+     34,
+     40
+    ]
+   },
+   {
+    "part": "RightFoot",
+    "size": [
+     0.12,
+     0.14,
+     0.4
+    ],
+    "offset": [
+     -0.28,
+     -0.02,
+     -0.75,
+     -8,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     140,
+     28,
+     42
+    ]
+   },
+   {
+    "part": "LeftFoot",
+    "size": [
+     0.12,
+     0.14,
+     0.4
+    ],
+    "offset": [
+     0.28,
+     -0.02,
+     -0.75,
+     -8,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     140,
+     28,
+     42
+    ]
+   },
+   {
+    "part": "RightFoot",
+    "size": [
+     0.12,
+     0.14,
+     0.4
+    ],
+    "offset": [
+     0.0,
+     -0.02,
+     -0.75,
+     -8,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     140,
+     28,
+     42
+    ]
+   },
+   {
+    "part": "LeftFoot",
+    "size": [
+     0.12,
+     0.14,
+     0.4
+    ],
+    "offset": [
+     -0.0,
+     -0.02,
+     -0.75,
+     -8,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     140,
+     28,
+     42
+    ]
+   },
+   {
+    "part": "RightFoot",
+    "size": [
+     0.12,
+     0.14,
+     0.4
+    ],
+    "offset": [
+     0.28,
+     -0.02,
+     -0.75,
+     -8,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     140,
+     28,
+     42
+    ]
+   },
+   {
+    "part": "LeftFoot",
+    "size": [
+     0.12,
+     0.14,
+     0.4
+    ],
+    "offset": [
+     -0.28,
+     -0.02,
+     -0.75,
+     -8,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     140,
+     28,
+     42
+    ]
+   }
+  ],
+  "declarations": {
+   "version": 1,
+   "feet": [
+    "LeftFoot",
+    "RightFoot"
+   ],
+   "hips": [
+    "LeftHip",
+    "RightHip"
+   ],
+   "hinges": {
+    "LeftElbow": {
+     "axis": "X",
+     "flex": 1
+    },
+    "RightElbow": {
+     "axis": "X",
+     "flex": 1
+    },
+    "LeftKnee": {
+     "axis": "X",
+     "flex": -1
+    },
+    "RightKnee": {
+     "axis": "X",
+     "flex": -1
+    }
+   },
+   "limbs": {
+    "LeftShoulder": {
+     "hinge": "LeftElbow"
+    },
+    "RightShoulder": {
+     "hinge": "RightElbow"
+    },
+    "LeftHip": {
+     "hinge": "LeftKnee",
+     "foot": "LeftAnkle"
+    },
+    "RightHip": {
+     "hinge": "RightKnee",
+     "foot": "RightAnkle"
+    }
+   },
+   "limits": {
+    "Root": "free",
+    "Waist": {
+     "turn": 90
+    },
+    "Neck": {
+     "turn": 90
+    },
+    "LeftShoulder": {
+     "turn": 180
+    },
+    "RightShoulder": {
+     "turn": 180
+    },
+    "LeftElbow": {
+     "min": -15,
+     "max": 160
+    },
+    "RightElbow": {
+     "min": -15,
+     "max": 160
+    },
+    "LeftWrist": {
+     "turn": 100
+    },
+    "RightWrist": {
+     "turn": 100
+    },
+    "LeftHip": {
+     "turn": 150
+    },
+    "RightHip": {
+     "turn": 150
+    },
+    "LeftKnee": {
+     "min": -160,
+     "max": 53
+    },
+    "RightKnee": {
+     "min": -160,
+     "max": 53
+    },
+    "LeftAnkle": {
+     "turn": 80
+    },
+    "RightAnkle": {
+     "turn": 80
+    },
+    "Tail1": {
+     "turn": 70
+    },
+    "Tail2": {
+     "turn": 70
+    },
+    "Tail3": {
+     "turn": 70
+    }
+   }
+  },
+  "animSet": "Hollow"
+ },
+ "HollowFeral": {
+  "parts": [
+   {
+    "name": "LowerTorso",
+    "size": [
+     1.5,
+     0.75,
+     1.15
+    ],
+    "parent": "HumanoidRootPart",
+    "joint": "Root",
+    "c0": [
+     0,
+     -0.65,
+     0,
+     0,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.05,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere",
+    "color": [
+     64,
+     112,
+     116
+    ]
+   },
+   {
+    "name": "UpperTorso",
+    "size": [
+     2.0,
+     1.8,
+     1.45
+    ],
+    "parent": "LowerTorso",
+    "joint": "Waist",
+    "c0": [
+     0,
+     0.3,
+     0,
+     -28,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     -0.82,
+     0.12,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere",
+    "color": [
+     86,
+     140,
+     144
+    ]
+   },
+   {
+    "name": "Head",
+    "size": [
+     1.15,
+     1.05,
+     1.25
+    ],
+    "parent": "UpperTorso",
+    "joint": "Neck",
+    "c0": [
+     0,
+     0.82,
+     -0.4,
+     30,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     -0.45,
+     0.15,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere",
+    "color": [
+     64,
+     112,
+     116
+    ]
+   },
+   {
+    "name": "RightUpperArm",
+    "size": [
+     0.7,
+     1.65,
+     0.7
+    ],
+    "parent": "UpperTorso",
+    "joint": "RightShoulder",
+    "c0": [
+     1.15,
+     0.5,
+     -0.1,
+     36,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.72,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere",
+    "color": [
+     86,
+     140,
+     144
+    ]
+   },
+   {
+    "name": "LeftUpperArm",
+    "size": [
+     0.7,
+     1.65,
+     0.7
+    ],
+    "parent": "UpperTorso",
+    "joint": "LeftShoulder",
+    "c0": [
+     -1.15,
+     0.5,
+     -0.1,
+     36,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.72,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere",
+    "color": [
+     86,
+     140,
+     144
+    ]
+   },
+   {
+    "name": "RightLowerArm",
+    "size": [
+     0.62,
+     1.6,
+     0.62
+    ],
+    "parent": "RightUpperArm",
+    "joint": "RightElbow",
+    "c0": [
+     0,
+     -0.78,
+     0,
+     18,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.72,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere",
+    "color": [
+     86,
+     140,
+     144
+    ]
+   },
+   {
+    "name": "LeftLowerArm",
+    "size": [
+     0.62,
+     1.6,
+     0.62
+    ],
+    "parent": "LeftUpperArm",
+    "joint": "LeftElbow",
+    "c0": [
+     0,
+     -0.78,
+     0,
+     18,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.72,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere",
+    "color": [
+     86,
+     140,
+     144
+    ]
+   },
+   {
+    "name": "RightHand",
+    "size": [
+     1.1,
+     0.5,
+     1.15
+    ],
+    "parent": "RightLowerArm",
+    "joint": "RightWrist",
+    "c0": [
+     0,
+     -0.78,
+     0,
+     0,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.2,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere",
+    "color": [
+     104,
+     66,
+     44
+    ]
+   },
+   {
+    "name": "LeftHand",
+    "size": [
+     1.1,
+     0.5,
+     1.15
+    ],
+    "parent": "LeftLowerArm",
+    "joint": "LeftWrist",
+    "c0": [
+     0,
+     -0.78,
+     0,
+     0,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.2,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere",
+    "color": [
+     104,
+     66,
+     44
+    ]
+   },
+   {
+    "name": "RightUpperLeg",
+    "size": [
+     0.85,
+     1.45,
+     0.85
+    ],
+    "parent": "LowerTorso",
+    "joint": "RightHip",
+    "c0": [
+     0.5,
+     -0.25,
+     0,
+     22,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.66,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere",
+    "color": [
+     86,
+     140,
+     144
+    ]
+   },
+   {
+    "name": "LeftUpperLeg",
+    "size": [
+     0.85,
+     1.45,
+     0.85
+    ],
+    "parent": "LowerTorso",
+    "joint": "LeftHip",
+    "c0": [
+     -0.5,
+     -0.25,
+     0,
+     22,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.66,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "mesh": "Sphere",
+    "color": [
+     86,
+     140,
+     144
+    ]
+   },
+   {
+    "name": "RightLowerLeg",
+    "size": [
+     0.7,
+     1.45,
+     0.7
+    ],
+    "parent": "RightUpperLeg",
+    "joint": "RightKnee",
+    "c0": [
+     0,
+     -0.68,
+     0,
+     -48,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.68,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere",
+    "color": [
+     64,
+     112,
+     116
+    ]
+   },
+   {
+    "name": "LeftLowerLeg",
+    "size": [
+     0.7,
+     1.45,
+     0.7
+    ],
+    "parent": "LeftUpperLeg",
+    "joint": "LeftKnee",
+    "c0": [
+     0,
+     -0.68,
+     0,
+     -48,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.68,
+     0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere",
+    "color": [
+     64,
+     112,
+     116
+    ]
+   },
+   {
+    "name": "RightFoot",
+    "size": [
+     0.85,
+     0.35,
+     1.25
+    ],
+    "parent": "RightLowerLeg",
+    "joint": "RightAnkle",
+    "c0": [
+     0,
+     -0.68,
+     0,
+     26,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.12,
+     -0.2,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Block",
+    "color": [
+     64,
+     112,
+     116
+    ]
+   },
+   {
+    "name": "LeftFoot",
+    "size": [
+     0.85,
+     0.35,
+     1.25
+    ],
+    "parent": "LeftLowerLeg",
+    "joint": "LeftAnkle",
+    "c0": [
+     0,
+     -0.68,
+     0,
+     26,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0.12,
+     -0.2,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Block",
+    "color": [
+     64,
+     112,
+     116
+    ]
+   },
+   {
+    "name": "Tail1",
+    "size": [
+     0.42,
+     0.42,
+     1.2
+    ],
+    "parent": "LowerTorso",
+    "joint": "Tail1",
+    "c0": [
+     0,
+     0.05,
+     0.5,
+     -15,
      0,
      0
     ],
@@ -502,8 +3154,79 @@
      0,
      0
     ],
-    "role": "bone",
-    "mesh": "Sphere"
+    "role": "skin2",
+    "mesh": "Sphere",
+    "color": [
+     64,
+     112,
+     116
+    ]
+   },
+   {
+    "name": "Tail2",
+    "size": [
+     0.3,
+     0.3,
+     1.05
+    ],
+    "parent": "Tail1",
+    "joint": "Tail2",
+    "c0": [
+     0,
+     0,
+     0.56,
+     12,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0,
+     -0.5,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere",
+    "color": [
+     64,
+     112,
+     116
+    ]
+   },
+   {
+    "name": "Tail3",
+    "size": [
+     0.2,
+     0.2,
+     0.9
+    ],
+    "parent": "Tail2",
+    "joint": "Tail3",
+    "c0": [
+     0,
+     0,
+     0.5,
+     12,
+     0,
+     0
+    ],
+    "c1": [
+     0,
+     0,
+     -0.44,
+     0,
+     0,
+     0
+    ],
+    "role": "skin2",
+    "mesh": "Sphere",
+    "color": [
+     64,
+     112,
+     116
+    ]
    }
   ],
   "root": [
@@ -513,628 +3236,1528 @@
   ],
   "decor": [
    {
-    "part": "Head",
+    "part": "UpperTorso",
     "size": [
-     1.35,
-     1.0,
-     0.35
+     0.16,
+     0.8,
+     0.8
     ],
     "offset": [
      0,
-     0.08,
-     -0.62,
-     0,
-     0,
-     0
-    ],
-    "role": "mask",
-    "shape": "Block",
-    "material": "SmoothPlastic",
-    "mesh": "Sphere"
-   },
-   {
-    "part": "Head",
-    "size": [
-     1.4,
-     0.28,
-     0.42
-    ],
-    "offset": [
-     0,
-     0.42,
-     -0.66,
-     -12,
-     0,
-     0
-    ],
-    "role": "mask",
-    "shape": "Block",
-    "material": "SmoothPlastic"
-   },
-   {
-    "part": "Head",
-    "size": [
-     0.28,
-     0.18,
-     0.08
-    ],
-    "offset": [
-     0.3,
-     0.22,
-     -0.84,
-     0,
-     0,
-     -8
-    ],
-    "role": "dark",
-    "shape": "Block"
-   },
-   {
-    "part": "Head",
-    "size": [
-     0.28,
-     0.18,
-     0.08
-    ],
-    "offset": [
-     -0.3,
-     0.22,
-     -0.84,
-     0,
-     0,
-     8
-    ],
-    "role": "dark",
-    "shape": "Block"
-   },
-   {
-    "part": "Head",
-    "size": [
-     0.18,
-     0.1,
-     0.05
-    ],
-    "offset": [
-     0.3,
-     0.22,
-     -0.88,
-     0,
-     0,
-     -8
-    ],
-    "role": "eye",
-    "shape": "Block",
-    "material": "Neon"
-   },
-   {
-    "part": "Head",
-    "size": [
-     0.18,
-     0.1,
-     0.05
-    ],
-    "offset": [
-     -0.3,
-     0.22,
-     -0.88,
-     0,
-     0,
-     8
-    ],
-    "role": "eye",
-    "shape": "Block",
-    "material": "Neon"
-   },
-   {
-    "part": "Head",
-    "size": [
-     1.1,
-     0.35,
-     0.5
-    ],
-    "offset": [
-     0,
-     -0.38,
-     -0.55,
-     8,
-     0,
-     0
-    ],
-    "role": "mask",
-    "shape": "Block",
-    "material": "SmoothPlastic"
-   },
-   {
-    "part": "Head",
-    "size": [
-     0.06,
-     0.95,
-     0.04
-    ],
-    "offset": [
-     0.42,
      0.05,
-     -0.81,
-     0,
-     0,
-     0
-    ],
-    "role": "accent",
-    "shape": "Block",
-    "material": "Neon"
-   },
-   {
-    "part": "Head",
-    "size": [
-     0.06,
-     0.95,
-     0.04
-    ],
-    "offset": [
-     -0.42,
-     0.05,
-     -0.81,
-     0,
-     0,
-     0
-    ],
-    "role": "accent",
-    "shape": "Block",
-    "material": "Neon"
-   },
-   {
-    "part": "Head",
-    "size": [
-     0.1,
-     0.24,
-     0.1
-    ],
-    "offset": [
-     -0.42,
-     -0.2,
-     -0.82,
-     0,
-     0,
-     180
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "Head",
-    "size": [
-     0.1,
-     0.24,
-     0.1
-    ],
-    "offset": [
-     -0.3,
-     -0.2,
-     -0.82,
-     0,
-     0,
-     180
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "Head",
-    "size": [
-     0.1,
-     0.24,
-     0.1
-    ],
-    "offset": [
-     -0.18,
-     -0.2,
-     -0.82,
-     0,
-     0,
-     180
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "Head",
-    "size": [
-     0.1,
-     0.24,
-     0.1
-    ],
-    "offset": [
-     -0.06,
-     -0.2,
-     -0.82,
-     0,
-     0,
-     180
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "Head",
-    "size": [
-     0.1,
-     0.24,
-     0.1
-    ],
-    "offset": [
-     0.06,
-     -0.2,
-     -0.82,
-     0,
-     0,
-     180
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "Head",
-    "size": [
-     0.1,
-     0.24,
-     0.1
-    ],
-    "offset": [
-     0.18,
-     -0.2,
-     -0.82,
-     0,
-     0,
-     180
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "Head",
-    "size": [
-     0.1,
-     0.24,
-     0.1
-    ],
-    "offset": [
-     0.3,
-     -0.2,
-     -0.82,
-     0,
-     0,
-     180
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "Head",
-    "size": [
-     0.1,
-     0.24,
-     0.1
-    ],
-    "offset": [
-     0.42,
-     -0.2,
-     -0.82,
-     0,
-     0,
-     180
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "Head",
-    "size": [
-     0.28,
-     0.28,
-     1.0
-    ],
-    "offset": [
-     0.45,
-     0.55,
-     -0.15,
-     -55,
-     0,
-     -25
-    ],
-    "role": "bone",
-    "shape": "Block",
-    "mesh": "Sphere"
-   },
-   {
-    "part": "Head",
-    "size": [
-     0.2,
-     0.2,
-     0.9
-    ],
-    "offset": [
-     0.7,
-     1.05,
-     0.05,
-     -100,
-     0,
-     -35
-    ],
-    "role": "bone",
-    "shape": "Block",
-    "mesh": "Sphere"
-   },
-   {
-    "part": "RightHand",
-    "size": [
-     0.1,
-     0.12,
-     1.4
-    ],
-    "offset": [
-     -0.28,
-     -0.12,
-     -0.75,
-     -15,
-     6,
-     0
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "LeftHand",
-    "size": [
-     0.1,
-     0.12,
-     1.4
-    ],
-    "offset": [
-     0.28,
-     -0.12,
-     -0.75,
-     -15,
-     -6,
-     0
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "RightHand",
-    "size": [
-     0.1,
-     0.12,
-     1.4
-    ],
-    "offset": [
-     0,
-     -0.12,
-     -0.75,
-     -15,
-     0,
-     0
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "LeftHand",
-    "size": [
-     0.1,
-     0.12,
-     1.4
-    ],
-    "offset": [
-     0,
-     -0.12,
-     -0.75,
-     -15,
-     0,
-     0
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "RightHand",
-    "size": [
-     0.1,
-     0.12,
-     1.4
-    ],
-    "offset": [
-     0.28,
-     -0.12,
-     -0.75,
-     -15,
-     -6,
-     0
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "LeftHand",
-    "size": [
-     0.1,
-     0.12,
-     1.4
-    ],
-    "offset": [
-     -0.28,
-     -0.12,
-     -0.75,
-     -15,
-     6,
-     0
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "UpperTorso",
-    "size": [
-     0.12,
-     0.55,
-     0.55
-    ],
-    "offset": [
-     0,
-     0.65,
-     0.72,
-     -25,
-     0,
-     0
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "UpperTorso",
-    "size": [
-     0.12,
-     0.49000000000000005,
-     0.55
-    ],
-    "offset": [
-     0,
-     0.23000000000000004,
-     0.72,
-     -25,
-     0,
-     0
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "UpperTorso",
-    "size": [
-     0.12,
-     0.43000000000000005,
-     0.55
-    ],
-    "offset": [
-     0,
-     -0.18999999999999995,
-     0.72,
-     -25,
-     0,
-     0
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "UpperTorso",
-    "size": [
-     0.12,
-     0.37000000000000005,
-     0.55
-    ],
-    "offset": [
-     0,
-     -0.61,
-     0.72,
-     -25,
-     0,
-     0
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "Tail1",
-    "size": [
-     0.1,
-     0.35,
-     0.4
-    ],
-    "offset": [
-     0,
-     0.32,
-     0,
-     -20,
-     0,
-     0
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "Tail2",
-    "size": [
-     0.08,
-     0.3,
-     0.35
-    ],
-    "offset": [
-     0,
-     0.25,
-     0,
-     -20,
-     0,
-     0
-    ],
-    "role": "bone",
-    "shape": "Wedge"
-   },
-   {
-    "part": "UpperTorso",
-    "size": [
-     0.15,
-     0.75,
-     0.75
-    ],
-    "offset": [
-     0,
-     0.1,
      -0.7,
      0,
      90,
      0
     ],
     "role": "dark",
-    "shape": "Cylinder"
+    "shape": "Cylinder",
+    "color": [
+     14,
+     12,
+     16
+    ]
    },
    {
-    "part": "RightUpperArm",
+    "part": "UpperTorso",
     "size": [
-     0.85,
-     0.35,
-     0.9
+     0.1,
+     0.95,
+     0.95
     ],
     "offset": [
      0,
-     0.72,
+     0.05,
+     -0.66,
      0,
+     90,
+     0
+    ],
+    "role": "skin2",
+    "shape": "Cylinder",
+    "color": [
+     64,
+     112,
+     116
+    ]
+   },
+   {
+    "part": "Head",
+    "size": [
+     1.15,
+     0.85,
+     0.55
+    ],
+    "offset": [
+     0,
+     0.35,
+     -0.55,
+     -10,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.85,
+     1.15,
+     0.6
+    ],
+    "offset": [
+     0,
+     -0.3,
+     -0.72,
+     15,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.8,
+     0.12,
+     0.12
+    ],
+    "offset": [
+     0,
+     -0.48,
+     -1.0,
+     15,
+     0,
+     0
+    ],
+    "role": "dark",
+    "shape": "Block",
+    "color": [
+     14,
+     12,
+     16
+    ]
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.11,
+     0.24,
+     0.1
+    ],
+    "offset": [
+     -0.3,
+     -0.36,
+     -1.03,
+     15,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.11,
+     0.22,
+     0.1
+    ],
+    "offset": [
+     -0.3,
+     -0.62,
+     -0.96,
+     15,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.11,
+     0.24,
+     0.1
+    ],
+    "offset": [
+     -0.18,
+     -0.36,
+     -1.03,
+     15,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.11,
+     0.22,
+     0.1
+    ],
+    "offset": [
+     -0.18,
+     -0.62,
+     -0.96,
+     15,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.11,
+     0.24,
+     0.1
+    ],
+    "offset": [
+     -0.06,
+     -0.36,
+     -1.03,
+     15,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.11,
+     0.22,
+     0.1
+    ],
+    "offset": [
+     -0.06,
+     -0.62,
+     -0.96,
+     15,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.11,
+     0.24,
+     0.1
+    ],
+    "offset": [
+     0.06,
+     -0.36,
+     -1.03,
+     15,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.11,
+     0.22,
+     0.1
+    ],
+    "offset": [
+     0.06,
+     -0.62,
+     -0.96,
+     15,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.11,
+     0.24,
+     0.1
+    ],
+    "offset": [
+     0.18,
+     -0.36,
+     -1.03,
+     15,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.11,
+     0.22,
+     0.1
+    ],
+    "offset": [
+     0.18,
+     -0.62,
+     -0.96,
+     15,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.11,
+     0.24,
+     0.1
+    ],
+    "offset": [
+     0.3,
+     -0.36,
+     -1.03,
+     15,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.11,
+     0.22,
+     0.1
+    ],
+    "offset": [
+     0.3,
+     -0.62,
+     -0.96,
+     15,
+     0,
+     0
+    ],
+    "role": "mask",
+    "shape": "Block",
+    "color": [
+     240,
+     238,
+     232
+    ],
+    "material": "SmoothPlastic"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.75,
+     0.75,
+     0.6
+    ],
+    "offset": [
+     0.75,
+     0.05,
+     0.15,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     78,
+     46,
+     30
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.25,
+     0.25,
+     0.5501735776342275
+    ],
+    "offset": [
+     1.03125,
+     0.05,
+     0.275,
+     -33.69,
+     66.393,
+     31.42
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     78,
+     46,
+     30
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.75,
+     0.75,
+     0.6
+    ],
+    "offset": [
+     0.6067627457812106,
+     0.4614496766047312,
+     0.15,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     104,
+     64,
+     42
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.25,
+     0.25,
+     0.5767980581226854
+    ],
+    "offset": [
+     0.8342987754491645,
+     0.6054570634163872,
+     0.275,
+     -63.866,
+     44.42,
+     54.97
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     78,
+     46,
+     30
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.75,
+     0.75,
+     0.6
+    ],
+    "offset": [
+     0.2317627457812106,
+     0.7157395614066074,
+     0.15,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     78,
+     46,
+     30
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.25,
+     0.25,
+     0.5755257333431811
+    ],
+    "offset": [
+     0.31867377544916453,
+     0.94874840789892,
+     0.275,
+     -70.888,
+     15.549,
+     37.724
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     78,
+     46,
+     30
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.75,
+     0.75,
+     0.6
+    ],
+    "offset": [
+     -0.2317627457812105,
+     0.7157395614066075,
+     0.15,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     104,
+     64,
+     42
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.25,
+     0.25,
+     0.5755257333431811
+    ],
+    "offset": [
+     -0.3186737754491644,
+     0.9487484078989202,
+     0.275,
+     -70.888,
+     -15.549,
+     -37.724
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     78,
+     46,
+     30
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.75,
+     0.75,
+     0.6
+    ],
+    "offset": [
+     -0.6067627457812105,
+     0.46144967660473124,
+     0.15,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     78,
+     46,
+     30
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.25,
+     0.25,
+     0.5767980581226853
+    ],
+    "offset": [
+     -0.8342987754491644,
+     0.6054570634163872,
+     0.275,
+     -63.866,
+     -44.42,
+     -54.97
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     78,
+     46,
+     30
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.75,
+     0.75,
+     0.6
+    ],
+    "offset": [
+     -0.75,
+     0.050000000000000086,
+     0.15,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     104,
+     64,
+     42
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.25,
+     0.25,
+     0.5501735776342275
+    ],
+    "offset": [
+     -1.03125,
+     0.05000000000000012,
+     0.275,
+     -33.69,
+     -66.393,
+     -31.42
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     78,
+     46,
+     30
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.75,
+     0.75,
+     0.6
+    ],
+    "offset": [
+     -0.6067627457812107,
+     -0.3614496766047311,
+     0.15,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     78,
+     46,
+     30
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.25,
+     0.25,
+     0.4808496460660262
+    ],
+    "offset": [
+     -0.8342987754491646,
+     -0.5054570634163871,
+     0.275,
+     35.177,
+     -61.193,
+     31.7
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     78,
+     46,
+     30
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.75,
+     0.75,
+     0.6
+    ],
+    "offset": [
+     0.6067627457812105,
+     -0.3614496766047313,
+     0.15,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     104,
+     64,
+     42
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.25,
+     0.25,
+     0.4808496460660261
+    ],
+    "offset": [
+     0.8342987754491644,
+     -0.5054570634163873,
+     0.275,
+     35.177,
+     61.193,
+     -31.7
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     78,
+     46,
+     30
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "UpperTorso",
+    "size": [
+     1.8,
+     0.8,
+     1.4
+    ],
+    "offset": [
+     0,
+     0.85,
+     0.0,
+     0,
+     0,
+     0
+    ],
+    "role": "skin",
+    "shape": "Block",
+    "color": [
+     104,
+     64,
+     42
+    ],
+    "material": "Fabric",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.2,
+     0.16,
+     0.08
+    ],
+    "offset": [
+     0.28,
+     0.32,
+     -0.82,
      0,
      0,
      -15
     ],
-    "role": "bone",
+    "role": "dark",
     "shape": "Block",
+    "color": [
+     14,
+     12,
+     16
+    ],
     "mesh": "Sphere"
    },
    {
-    "part": "LeftUpperArm",
+    "part": "Head",
     "size": [
-     0.85,
-     0.35,
-     0.9
+     0.2,
+     0.16,
+     0.08
     ],
     "offset": [
-     0,
-     0.72,
-     0,
+     -0.28,
+     0.32,
+     -0.82,
      0,
      0,
      15
     ],
+    "role": "dark",
+    "shape": "Block",
+    "color": [
+     14,
+     12,
+     16
+    ],
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.09,
+     0.05
+    ],
+    "offset": [
+     0.28,
+     0.32,
+     -0.86,
+     0,
+     0,
+     -15
+    ],
+    "role": "eye",
+    "shape": "Block",
+    "color": [
+     255,
+     214,
+     40
+    ],
+    "material": "Neon",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "Head",
+    "size": [
+     0.1,
+     0.09,
+     0.05
+    ],
+    "offset": [
+     -0.28,
+     0.32,
+     -0.86,
+     0,
+     0,
+     15
+    ],
+    "role": "eye",
+    "shape": "Block",
+    "color": [
+     255,
+     214,
+     40
+    ],
+    "material": "Neon",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.24,
+     0.24,
+     0.9916165956589644
+    ],
+    "offset": [
+     -0.3413333333333333,
+     -0.37499999999999994,
+     -0.7527777777777778,
+     142.063,
+     -2.731,
+     177.873
+    ],
     "role": "bone",
     "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
     "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.24,
+     0.24,
+     0.9916165956589644
+    ],
+    "offset": [
+     0.3413333333333333,
+     -0.37499999999999994,
+     -0.7527777777777778,
+     142.063,
+     2.731,
+     -177.873
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.156,
+     0.156,
+     0.715714965728204
+    ],
+    "offset": [
+     -0.384,
+     -0.9249999999999999,
+     -1.2805555555555554,
+     122.471,
+     -3.745,
+     174.14
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.156,
+     0.156,
+     0.715714965728204
+    ],
+    "offset": [
+     0.384,
+     -0.9249999999999999,
+     -1.2805555555555554,
+     122.471,
+     3.745,
+     -174.14
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.07200000000000001,
+     0.07200000000000001,
+     0.5804804406918695
+    ],
+    "offset": [
+     -0.42666666666666664,
+     -1.475,
+     -1.4527777777777775,
+     89.421,
+     -4.436,
+     -90.0
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.07200000000000001,
+     0.07200000000000001,
+     0.5804804406918695
+    ],
+    "offset": [
+     0.42666666666666664,
+     -1.475,
+     -1.4527777777777775,
+     89.421,
+     4.436,
+     90.0
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.24,
+     0.24,
+     0.9905997104712859
+    ],
+    "offset": [
+     0.0,
+     -0.37499999999999994,
+     -0.7527777777777778,
+     142.063,
+     0.0,
+     -180.0
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.24,
+     0.24,
+     0.9905997104712859
+    ],
+    "offset": [
+     -0.0,
+     -0.37499999999999994,
+     -0.7527777777777778,
+     142.063,
+     -0.0,
+     180.0
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.156,
+     0.156,
+     0.7143202405202649
+    ],
+    "offset": [
+     0.0,
+     -0.9249999999999999,
+     -1.2805555555555554,
+     122.471,
+     0.0,
+     -180.0
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.156,
+     0.156,
+     0.7143202405202649
+    ],
+    "offset": [
+     -0.0,
+     -0.9249999999999999,
+     -1.2805555555555554,
+     122.471,
+     -0.0,
+     180.0
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.07200000000000001,
+     0.07200000000000001,
+     0.5788280576457268
+    ],
+    "offset": [
+     0.0,
+     -1.475,
+     -1.4527777777777775,
+     89.421,
+     0.0,
+     -90.0
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.07200000000000001,
+     0.07200000000000001,
+     0.5788280576457268
+    ],
+    "offset": [
+     -0.0,
+     -1.475,
+     -1.4527777777777775,
+     89.421,
+     -0.0,
+     90.0
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.24,
+     0.24,
+     0.9916165956589644
+    ],
+    "offset": [
+     0.3413333333333333,
+     -0.37499999999999994,
+     -0.7527777777777778,
+     142.063,
+     2.731,
+     -177.873
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.24,
+     0.24,
+     0.9916165956589644
+    ],
+    "offset": [
+     -0.3413333333333333,
+     -0.37499999999999994,
+     -0.7527777777777778,
+     142.063,
+     -2.731,
+     177.873
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.156,
+     0.156,
+     0.715714965728204
+    ],
+    "offset": [
+     0.384,
+     -0.9249999999999999,
+     -1.2805555555555554,
+     122.471,
+     3.745,
+     -174.14
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.156,
+     0.156,
+     0.715714965728204
+    ],
+    "offset": [
+     -0.384,
+     -0.9249999999999999,
+     -1.2805555555555554,
+     122.471,
+     -3.745,
+     174.14
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightHand",
+    "size": [
+     0.07200000000000001,
+     0.07200000000000001,
+     0.5804804406918695
+    ],
+    "offset": [
+     0.42666666666666664,
+     -1.475,
+     -1.4527777777777775,
+     89.421,
+     4.436,
+     -90.0
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "LeftHand",
+    "size": [
+     0.07200000000000001,
+     0.07200000000000001,
+     0.5804804406918695
+    ],
+    "offset": [
+     -0.42666666666666664,
+     -1.475,
+     -1.4527777777777775,
+     89.421,
+     -4.436,
+     90.0
+    ],
+    "role": "bone",
+    "shape": "Block",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood",
+    "mesh": "Sphere"
+   },
+   {
+    "part": "RightFoot",
+    "size": [
+     0.12,
+     0.14,
+     0.45
+    ],
+    "offset": [
+     -0.28,
+     -0.02,
+     -0.75,
+     -8,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood"
+   },
+   {
+    "part": "LeftFoot",
+    "size": [
+     0.12,
+     0.14,
+     0.45
+    ],
+    "offset": [
+     0.28,
+     -0.02,
+     -0.75,
+     -8,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood"
+   },
+   {
+    "part": "RightFoot",
+    "size": [
+     0.12,
+     0.14,
+     0.45
+    ],
+    "offset": [
+     0.0,
+     -0.02,
+     -0.75,
+     -8,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood"
+   },
+   {
+    "part": "LeftFoot",
+    "size": [
+     0.12,
+     0.14,
+     0.45
+    ],
+    "offset": [
+     -0.0,
+     -0.02,
+     -0.75,
+     -8,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood"
+   },
+   {
+    "part": "RightFoot",
+    "size": [
+     0.12,
+     0.14,
+     0.45
+    ],
+    "offset": [
+     0.28,
+     -0.02,
+     -0.75,
+     -8,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood"
+   },
+   {
+    "part": "LeftFoot",
+    "size": [
+     0.12,
+     0.14,
+     0.45
+    ],
+    "offset": [
+     -0.28,
+     -0.02,
+     -0.75,
+     -8,
+     0,
+     0
+    ],
+    "role": "bone",
+    "shape": "Wedge",
+    "color": [
+     104,
+     66,
+     44
+    ],
+    "material": "Wood"
    }
   ],
   "declarations": {

@@ -249,12 +249,37 @@ def render(models, out, cols=2, cell=(520, 300), views=None):
 
 
 if __name__ == "__main__":
-    what, out = sys.argv[1], sys.argv[2]
+    what = sys.argv[1]
+    out = sys.argv[2] if len(sys.argv) > 2 else None
     if what == "weapons":
         models = run_weapons()
         render(models, out)
         for m in models:
             print(m["label"], len(m["parts"]), "peças")
+    elif what == "check":
+        # Toda criatura: nenhuma peça (enfeites incluídos) abaixo do apoio em repouso
+        rigs = json.load(open(os.path.join(root, "src", "shared", "Config", "CreatureRigs.json")))
+        enemies_src = open(os.path.join(root, "src", "shared", "Config", "Enemies.luau"), encoding="utf-8").read()
+        pairs = []
+        for body in rigs:
+            enemy = re.search(r'Enemies\.(\w+) = \{[^}]*?body = "' + body + '"', enemies_src, re.S)
+            pairs.append((body, enemy.group(1) if enemy else None))
+        missing = [b for b, e in pairs if not e]
+        models = run_creatures([b for b, e in pairs if e], [e for b, e in pairs if e])
+        bad = []
+        for m in models:
+            support = [p_ for p_ in m["parts"] if p_["n"] in ("RightFoot", "LeftFoot", "RightHand", "LeftHand")]
+            feet = min(min(c[1] for c in corners(p_)) for p_ in m["parts"] if p_["n"] in ("RightFoot", "LeftFoot")) if support else 0
+            hands = [min(c[1] for c in corners(p_)) for p_ in m["parts"] if p_["n"] in ("RightHand", "LeftHand")]
+            ground = min([feet] + [h for h in hands if h < feet + 0.05])
+            low, name = min((min(c[1] for c in corners(p_)), p_["n"]) for p_ in m["parts"])
+            status = "ok" if low >= ground - 0.02 else "FALHA"
+            if status != "ok":
+                bad.append(m["label"])
+            print(f"{status:5s} {m['label']}: apoio {ground:.2f}, mais baixo {low:.2f} ({name})")
+        if missing:
+            print("corpos sem inimigo que os use:", ", ".join(missing))
+        sys.exit(1 if bad else 0)
     elif what == "creatures":
         # creatures saida.png Corpo:Inimigo [Corpo:Inimigo ...]
         pairs = [a.split(":") for a in sys.argv[3:]]

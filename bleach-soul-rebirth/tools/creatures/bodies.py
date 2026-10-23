@@ -47,6 +47,22 @@ def mirror(items):
     return out
 
 
+def both(items):
+    """Espelha decorações: peças do lado direito viram esquerdas (mirror); peças centrais (cabeça,
+    tronco) ganham uma cópia com X invertido."""
+    out = []
+    for it in items:
+        if "Right" in it.get("part", ""):
+            out += mirror([it])
+        else:
+            out.append(it)
+            m = json.loads(json.dumps(it))
+            v = m["offset"]
+            m["offset"] = [-v[0], v[1], v[2], v[3], -v[4], -v[5]]
+            out.append(m)
+    return out
+
+
 def biped_declarations(tail=True, knee_rest=0):
     """knee_rest: quanto o joelho já vem dobrado no corpo (graus); a perna pode esticar até reta."""
     d = {
@@ -77,49 +93,133 @@ def biped_declarations(tail=True, knee_rest=0):
     return d
 
 
-# ======================================================================= GRUNT
-# Predador magro e curvado: tronco inclinado, braços longos com garras, pernas dobradas
-# (dão folga para passadas), cauda de três segmentos, máscara de caveira com chifres.
-grunt_parts = mirror([
-    P("LowerTorso", [1.5, 0.75, 1.15], "HumanoidRootPart", "Root", [0, -0.65, 0, 0, 0, 0], [0, 0.05, 0, 0, 0, 0], "skin2"),
-    P("UpperTorso", [2.0, 1.8, 1.45], "LowerTorso", "Waist", [0, 0.3, 0, -28, 0, 0], [0, -0.82, 0.12, 0, 0, 0]),
-    P("Head", [1.15, 1.05, 1.25], "UpperTorso", "Neck", [0, 0.82, -0.4, 30, 0, 0], [0, -0.45, 0.15, 0, 0, 0], "skin2"),
-    P("RightUpperArm", [0.7, 1.65, 0.7], "UpperTorso", "RightShoulder", [1.15, 0.5, -0.1, 36, 0, 0], [0, 0.72, 0, 0, 0, 0]),
-    P("RightLowerArm", [0.6, 1.6, 0.6], "RightUpperArm", "RightElbow", [0, -0.78, 0, 18, 0, 0], [0, 0.72, 0, 0, 0, 0], "skin2"),
-    P("RightHand", [0.85, 0.45, 0.95], "RightLowerArm", "RightWrist", [0, -0.78, 0, 0, 0, 0], [0, 0.18, 0, 0, 0, 0], "skin2"),
-    P("RightUpperLeg", [0.85, 1.45, 0.85], "LowerTorso", "RightHip", [0.5, -0.25, 0, 22, 0, 0], [0, 0.66, 0, 0, 0, 0]),
-    P("RightLowerLeg", [0.7, 1.45, 0.7], "RightUpperLeg", "RightKnee", [0, -0.68, 0, -48, 0, 0], [0, 0.68, 0, 0, 0, 0], "skin2"),
-    P("RightFoot", [0.85, 0.35, 1.25], "RightLowerLeg", "RightAnkle", [0, -0.68, 0, 26, 0, 0], [0, 0.12, -0.2, 0, 0, 0], "skin2", "Block"),
-    P("Tail1", [0.55, 0.55, 1.4], "LowerTorso", "Tail1", [0, 0.05, 0.5, -15, 0, 0], [0, 0, -0.68, 0, 0, 0], "skin2"),
-    P("Tail2", [0.42, 0.42, 1.3], "Tail1", "Tail2", [0, 0, 0.66, 12, 0, 0], [0, 0, -0.62, 0, 0, 0], "skin2"),
-    P("Tail3", [0.28, 0.28, 1.2], "Tail2", "Tail3", [0, 0, 0.62, 12, 0, 0], [0, 0, -0.58, 0, 0, 0], "bone"),
-])
+# ======================================================================= GRUNT (e variante Selvagem)
+# Mesmo esqueleto curvado (pernas dobradas, cauda curta), dois visuais:
+#   "purple" (imagem de referência 2): corpo roxo-azulado com marcas vermelhas em gota, braços
+#     cinza longos com mãos enormes de dedos grossos, caveira sorridente de olhos amarelos e chifre
+#   "feral" (imagem 3): corpo verde-azulado, juba marrom, caveira alongada de dentes grandes,
+#     garras longas como galhos
+from shapes import seg, curve, arc_points  # noqa: E402,F811
 
-SKULL_MASK = [
-    # placa frontal, sobrancelha, bochechas, mandíbula com dentes, chifres, olhos, marcas
-    D("Head", [1.35, 1.0, 0.35], [0, 0.08, -0.62, 0, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere"),
-    D("Head", [1.4, 0.28, 0.42], [0, 0.42, -0.66, -12, 0, 0], "mask", "Block", "SmoothPlastic"),
-    D("Head", [0.28, 0.18, 0.08], [0.3, 0.22, -0.84, 0, 0, -8], "dark"),
-    D("Head", [0.28, 0.18, 0.08], [-0.3, 0.22, -0.84, 0, 0, 8], "dark"),
-    D("Head", [0.18, 0.1, 0.05], [0.3, 0.22, -0.88, 0, 0, -8], "eye", "Block", "Neon"),
-    D("Head", [0.18, 0.1, 0.05], [-0.3, 0.22, -0.88, 0, 0, 8], "eye", "Block", "Neon"),
-    D("Head", [1.1, 0.35, 0.5], [0, -0.38, -0.55, 8, 0, 0], "mask", "Block", "SmoothPlastic"),
-    D("Head", [0.06, 0.95, 0.04], [0.42, 0.05, -0.81, 0, 0, 0], "accent", "Block", "Neon"),
-    D("Head", [0.06, 0.95, 0.04], [-0.42, 0.05, -0.81, 0, 0, 0], "accent", "Block", "Neon"),
-] + [D("Head", [0.1, 0.24, 0.1], [-0.42 + i * 0.12, -0.2, -0.82, 0, 0, 180], "bone", "Wedge") for i in range(8)] + mirror([
-    D("Head", [0.28, 0.28, 1.0], [0.45, 0.55, -0.15, -55, 0, -25], "bone", "Block", None, "Sphere"),
-    D("Head", [0.2, 0.2, 0.9], [0.7, 1.05, 0.05, -100, 0, -35], "bone", "Block", None, "Sphere"),
-])
-CLAWS = mirror([D("RightHand", [0.1, 0.12, 1.4], [x, -0.12, -0.75, -15, ry, 0], "bone", "Wedge") for x, ry in ((-0.28, 6), (0, 0), (0.28, -6))])
-SPINE = [D("UpperTorso", [0.12, 0.55 - i * 0.06, 0.55], [0, 0.65 - i * 0.42, 0.72, -25, 0, 0], "bone", "Wedge") for i in range(4)] + \
-        [D("Tail1", [0.1, 0.35, 0.4], [0, 0.32, 0, -20, 0, 0], "bone", "Wedge"), D("Tail2", [0.08, 0.3, 0.35], [0, 0.25, 0, -20, 0, 0], "bone", "Wedge")]
-CHEST_HOLE = [D("UpperTorso", [0.15, 0.75, 0.75], [0, 0.1, -0.7, 0, 90, 0], "dark", "Cylinder")]
-SHOULDER_BONES = mirror([D("RightUpperArm", [0.85, 0.35, 0.9], [0, 0.72, 0, 0, 0, -15], "bone", "Block", None, "Sphere")])
 
+def grunt_body(style):
+    import math as _m
+    purple = style == "purple"
+    BODY = [92, 92, 130] if purple else [86, 140, 144]
+    BODY_D = [70, 70, 104] if purple else [64, 112, 116]
+    ARM = [116, 116, 122] if purple else BODY
+    HAND = [100, 100, 106] if purple else [104, 66, 44]
+    MARK = [140, 28, 42]
+    WHITE = [240, 238, 232]
+    YELLOW = [255, 214, 40]
+    INK = [14, 12, 16]
+    FUR = [104, 64, 42]
+    FUR_D = [78, 46, 30]
+    # pele pelo papel (skin/skin2): o `look` de cada inimigo tinge (Hollow comum roxo-azulado,
+    # Kurokage roxo-escuro); braços, mãos, marcas e máscara têm cor própria
+    if purple:
+        BODY = BODY_D = None
+    parts = mirror([
+        P("LowerTorso", [1.5, 0.75, 1.15], "HumanoidRootPart", "Root", [0, -0.65, 0, 0, 0, 0], [0, 0.05, 0, 0, 0, 0], "skin2", color=BODY_D),
+        P("UpperTorso", [2.0, 1.8, 1.45], "LowerTorso", "Waist", [0, 0.3, 0, -28, 0, 0], [0, -0.82, 0.12, 0, 0, 0], color=BODY),
+        P("Head", [1.15, 1.05, 1.25], "UpperTorso", "Neck", [0, 0.82, -0.4, 30, 0, 0], [0, -0.45, 0.15, 0, 0, 0], "skin2", color=BODY_D),
+        P("RightUpperArm", [0.7, 1.65, 0.7], "UpperTorso", "RightShoulder", [1.15, 0.5, -0.1, 36, 0, 0], [0, 0.72, 0, 0, 0, 0], color=ARM),
+        P("RightLowerArm", [0.62, 1.6, 0.62], "RightUpperArm", "RightElbow", [0, -0.78, 0, 18, 0, 0], [0, 0.72, 0, 0, 0, 0], color=ARM),
+        P("RightHand", [1.1, 0.5, 1.15], "RightLowerArm", "RightWrist", [0, -0.78, 0, 0, 0, 0], [0, 0.2, 0, 0, 0, 0], color=HAND),
+        P("RightUpperLeg", [0.85, 1.45, 0.85], "LowerTorso", "RightHip", [0.5, -0.25, 0, 22, 0, 0], [0, 0.66, 0, 0, 0, 0], color=BODY),
+        P("RightLowerLeg", [0.7, 1.45, 0.7], "RightUpperLeg", "RightKnee", [0, -0.68, 0, -48, 0, 0], [0, 0.68, 0, 0, 0, 0], "skin2", color=BODY_D),
+        P("RightFoot", [0.85, 0.35, 1.25], "RightLowerLeg", "RightAnkle", [0, -0.68, 0, 26, 0, 0], [0, 0.12, -0.2, 0, 0, 0], "skin2", "Block", color=BODY_D),
+        P("Tail1", [0.42, 0.42, 1.2], "LowerTorso", "Tail1", [0, 0.05, 0.5, -15, 0, 0], [0, 0, -0.58, 0, 0, 0], "skin2", color=BODY_D),
+        P("Tail2", [0.3, 0.3, 1.05], "Tail1", "Tail2", [0, 0, 0.56, 12, 0, 0], [0, 0, -0.5, 0, 0, 0], "skin2", color=BODY_D),
+        P("Tail3", [0.2, 0.2, 0.9], "Tail2", "Tail3", [0, 0, 0.5, 12, 0, 0], [0, 0, -0.44, 0, 0, 0], "skin2", color=BODY_D),
+    ])
+    decor = [
+        # buraco no peito: anel escuro com borda clara
+        D("UpperTorso", [0.16, 0.8, 0.8], [0, 0.05, -0.7, 0, 90, 0], "dark", "Cylinder", None, None, INK),
+        D("UpperTorso", [0.1, 0.95, 0.95], [0, 0.05, -0.66, 0, 90, 0], "skin2", "Cylinder", None, None, BODY_D),
+    ]
+    side = []
+    if purple:
+        # caveira sorridente: crânio, órbitas com olhos amarelos contornados, nariz, sorriso de dentes
+        decor += [
+            D("Head", [1.3, 1.15, 0.6], [0, 0.08, -0.5, 0, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere", WHITE),
+            D("Head", [1.0, 0.45, 0.4], [0, -0.42, -0.6, 6, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere", WHITE),
+            D("Head", [0.1, 0.12, 0.06], [0.07, -0.08, -0.84, 0, 0, 20], "dark", "Wedge", None, None, INK),
+            D("Head", [0.1, 0.12, 0.06], [-0.07, -0.08, -0.84, 0, 0, -20], "dark", "Wedge", None, None, INK),
+            D("Head", [0.82, 0.06, 0.08], [0, -0.38, -0.8, 0, 0, 0], "dark", "Block", None, None, INK),
+        ]
+        for i in range(7):
+            x = -0.36 + i * 0.12
+            decor.append(D("Head", [0.1, 0.16, 0.06], [x, -0.29, -0.8, 0, 0, 0], "mask", "Block", "SmoothPlastic", None, WHITE))
+            decor.append(D("Head", [0.1, 0.14, 0.06], [x, -0.47, -0.78, 0, 0, 0], "mask", "Block", "SmoothPlastic", None, WHITE))
+        side += [
+            D("Head", [0.36, 0.3, 0.1], [0.27, 0.18, -0.8, 0, 0, -12], "dark", "Block", None, "Sphere", INK),
+            D("Head", [0.22, 0.2, 0.08], [0.27, 0.18, -0.85, 0, 0, -12], "eye", "Block", "Neon", "Sphere"),
+            D("Head", [0.06, 0.4, 0.04], [0.48, 0.0, -0.78, 0, 0, 25], "dark", "Block", None, None, INK),  # rachadura
+        ]
+        # chifre único no topo, roxo-avermelhado
+        decor += curve(D, "Head", arc_points([0.22, 0.55, 0.0], [0.35, 1.7, 0.25], [0.15, 0.0, -0.1], 3), 0.3, "bone", [110, 40, 60], taper=0.2)
+        # marcas vermelhas em gota pelo corpo (frente, costas, pernas)
+        for x, y in ((0.55, 0.55), (0.75, 0.0), (0.45, -0.5), (0.2, 0.75)):
+            side.append(D("UpperTorso", [0.14, 0.5, 0.2], [x, y, -0.66 + abs(x) * 0.12, 0, 0, -15 - x * 20], "skin", "Block", None, "Sphere", MARK))
+            side.append(D("UpperTorso", [0.14, 0.5, 0.2], [x, y, 0.66 - abs(x) * 0.12, 0, 0, -15 - x * 20], "skin", "Block", None, "Sphere", MARK))
+        for part, ys in (("RightUpperLeg", (0.35, -0.2)), ("RightLowerLeg", (0.3, -0.25))):
+            for y in ys:
+                side.append(D(part, [0.12, 0.42, 0.18], [0.3, y, -0.25, 0, 0, -12], "skin", "Block", None, "Sphere", MARK))
+        # dedos grossos (2 falanges) com pontas escuras
+        for fx in (-0.38, -0.13, 0.13, 0.38):
+            pts = arc_points([fx, -0.1, -0.45], [fx * 1.1, -0.85, -0.85], [0, 0.0, -0.25], 2)
+            side += curve(D, "RightHand", pts, 0.26, "skin", HAND, taper=0.8)
+            side.append(D("RightHand", [0.16, 0.18, 0.22], [fx * 1.1, -0.95, -0.87, 30, 0, 0], "bone", "Wedge", None, None, [40, 34, 40]))
+        for tx in (-0.28, 0.0, 0.28):
+            side.append(D("RightFoot", [0.12, 0.14, 0.4], [tx, -0.02, -0.75, -8, 0, 0], "bone", "Wedge", None, None, MARK))
+    else:
+        # caveira alongada (cavalo) com dentes grandes e olhos amarelos pequenos
+        decor += [
+            D("Head", [1.15, 0.85, 0.55], [0, 0.35, -0.55, -10, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere", WHITE),
+            D("Head", [0.85, 1.15, 0.6], [0, -0.3, -0.72, 15, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere", WHITE),
+            D("Head", [0.8, 0.12, 0.12], [0, -0.48, -1.0, 15, 0, 0], "dark", "Block", None, None, INK),
+        ]
+        for i in range(6):
+            x = -0.3 + i * 0.12
+            decor.append(D("Head", [0.11, 0.24, 0.1], [x, -0.36, -1.03, 15, 0, 0], "mask", "Block", "SmoothPlastic", None, WHITE))
+            decor.append(D("Head", [0.11, 0.22, 0.1], [x, -0.62, -0.96, 15, 0, 0], "mask", "Block", "SmoothPlastic", None, WHITE))
+        side += [
+            D("Head", [0.2, 0.16, 0.08], [0.28, 0.32, -0.82, 0, 0, -15], "dark", "Block", None, "Sphere", INK),
+            D("Head", [0.1, 0.09, 0.05], [0.28, 0.32, -0.86, 0, 0, -15], "eye", "Block", "Neon", "Sphere", YELLOW),
+        ]
+        # juba marrom: bolas de pelo em volta da cabeça e do pescoço, com pontas
+        for k in range(10):
+            a = _m.radians(k / 10 * 360)
+            x, y = _m.cos(a) * 0.75, _m.sin(a) * 0.7
+            if y < -0.45:
+                continue
+            decor.append(D("Head", [0.75, 0.75, 0.6], [x, y + 0.05, 0.15, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", FUR if k % 2 else FUR_D))
+            decor.append(seg(D, "Head", [x * 1.1, y * 1.1, 0.2], [x * 1.65, y * 1.6 + 0.1, 0.35], 0.25, "skin", FUR_D, material="Fabric"))
+        decor.append(D("UpperTorso", [1.8, 0.8, 1.4], [0, 0.85, 0.0, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", FUR))
+        # garras longas de galho: três por mão, curvas, ásperas
+        for fx in (-0.32, 0.0, 0.32):
+            pts = arc_points([fx, -0.1, -0.4], [fx * 1.4, -1.75, -1.45], [0, 0.0, -0.4], 3)
+            side += curve(D, "RightHand", pts, 0.24, "bone", HAND, taper=0.3, material="Wood")
+        for tx in (-0.28, 0.0, 0.28):
+            side.append(D("RightFoot", [0.12, 0.14, 0.45], [tx, -0.02, -0.75, -8, 0, 0], "bone", "Wedge", "Wood", None, HAND))
+    decor += both(side)
+    return parts, decor
+
+
+grunt_parts, grunt_decor = grunt_body("purple")
 grunt = {
     "parts": grunt_parts,
     "root": [2.0, 2.0, 1.1],
-    "decor": SKULL_MASK + CLAWS + SPINE + CHEST_HOLE + SHOULDER_BONES,
+    "decor": grunt_decor,
+    "declarations": biped_declarations(knee_rest=48),
+    "animSet": "Hollow",
+}
+feral_parts, feral_decor = grunt_body("feral")
+feral = {
+    "parts": feral_parts,
+    "root": [2.0, 2.0, 1.1],
+    "decor": feral_decor,
     "declarations": biped_declarations(knee_rest=48),
     "animSet": "Hollow",
 }
@@ -469,7 +569,7 @@ menos = {
     "animSet": "Menos",
 }
 
-rigs = {"HollowGrunt": grunt, "HollowBrute": brute, "HollowHound": hound, "MenosGrande": menos}
+rigs = {"HollowGrunt": grunt, "HollowFeral": feral, "HollowBrute": brute, "HollowHound": hound, "MenosGrande": menos}
 with open(dest, "w") as f:
     json.dump(rigs, f, indent=1)
 print("corpos:", ", ".join(rigs))

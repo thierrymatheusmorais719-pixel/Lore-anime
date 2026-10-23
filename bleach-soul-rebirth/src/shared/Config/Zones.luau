@@ -220,7 +220,7 @@ Zones.Spawners = {
 	},
 	{
 		zone = "Karakura",
-		enemy = "HollowGrunt",
+		enemy = "HollowFeral",
 		position = Vector3.new(120, 0, -150),
 		count = 3,
 		radius = 25,

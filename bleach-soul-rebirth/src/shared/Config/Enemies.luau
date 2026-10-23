@@ -5,14 +5,6 @@
 --   phases (chefes): limiar de vida -> novo comportamento
 local Enemies = {}
 
-local HOLLOW_LOOK = {
-	skin = Color3.fromRGB(30, 28, 34),
-	mask = true,
-	hole = true,
-	maskColor = Color3.fromRGB(240, 236, 225),
-	eye = Color3.fromRGB(255, 60, 40),
-}
-
 Enemies.HollowGrunt = {
 	name = "Hollow",
 	level = 2,
@@ -21,7 +13,12 @@ Enemies.HollowGrunt = {
 	damageMultiplier = 0.8,
 	scale = 1,
 	body = "HollowGrunt",
-	look = HOLLOW_LOOK,
+	look = {
+		skin = Color3.fromRGB(92, 92, 130),
+		mask = true,
+		maskColor = Color3.fromRGB(240, 238, 232),
+		eye = Color3.fromRGB(255, 214, 40),
+	},
 	weapon = { style = "Claws", length = 1.6, blade = Color3.fromRGB(230, 225, 215), bodyClaws = true },
 	comboLength = 3,
 	attackRange = 7,
@@ -65,6 +62,36 @@ Enemies.HollowBrute = {
 	abilities = { { id = "E_Slam", weight = 1, minRange = 0, maxRange = 12 } },
 	xp = 85,
 	loot = "HollowBrute",
+}
+
+-- Selvagem: mesmo esqueleto do Hollow comum, juba e garras de galho longas (alcance maior)
+Enemies.HollowFeral = {
+	name = "Hollow Selvagem",
+	level = 3,
+	health = 140,
+	walkSpeed = 16,
+	damageMultiplier = 0.9,
+	scale = 1.05,
+	body = "HollowFeral",
+	look = {
+		skin = Color3.fromRGB(86, 140, 144),
+		mask = true,
+		maskColor = Color3.fromRGB(240, 238, 232),
+		eye = Color3.fromRGB(255, 214, 40),
+	},
+	weapon = { style = "Claws", length = 2.4, blade = Color3.fromRGB(104, 66, 44), bodyClaws = true },
+	comboLength = 3,
+	attackRange = 8,
+	aggroRange = 60,
+	leashRange = 120,
+	reactionTime = 0.35,
+	dodgeChance = 0.12,
+	blockChance = 0.05,
+	parryChance = 0,
+	aggression = 0.75,
+	abilities = { { id = "E_Leap", weight = 1, minRange = 12, maxRange = 30 } },
+	xp = 40,
+	loot = "HollowGrunt",
 }
 
 -- Caçador: Hollow quadrúpede rápido que anda em matilha; morde em investida, dá patadas e dá o bote.
