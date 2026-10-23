@@ -378,6 +378,16 @@ function RigBuilder.buildCreature(name: string, bodyName: string, look: Look, sc
 		dark = Color3.fromRGB(6, 5, 9),
 	}
 
+	-- Cor de uma peça: explícita no corpo (`color` = {r, g, b}, para armaduras e tecidos com cor
+	-- própria) ou pelo papel (pele, osso, máscara...), que o `look` do inimigo tinge
+	local function colorOf(entry: any): Color3
+		local c = entry.color
+		if c then
+			return Color3.fromRGB(c[1], c[2], c[3])
+		end
+		return palette[entry.role] or skin
+	end
+
 	local model = Instance.new("Model")
 	model.Name = name
 	local rootSize = body.root
@@ -391,8 +401,8 @@ function RigBuilder.buildCreature(name: string, bodyName: string, look: Look, sc
 	local low = 0
 	for _, info in body.parts do
 		local size = Vector3.new(info.size[1], info.size[2], info.size[3]) * s
-		local p = part(info.name, size, palette[info.role] or skin, model)
-		p.Material = Enum.Material.Slate
+		local p = part(info.name, size, colorOf(info), model)
+		p.Material = if info.material then (Enum.Material :: any)[info.material] else Enum.Material.Slate
 		if info.mesh == "Sphere" then
 			sphereMesh(p)
 		end
@@ -444,7 +454,7 @@ function RigBuilder.buildCreature(name: string, bodyName: string, look: Look, sc
 				local w = Instance.new("WedgePart")
 				w.Name = "Decor" .. i
 				w.Size = size
-				w.Color = palette[d.role] or skin
+				w.Color = colorOf(d)
 				w.Material = material
 				w.CanCollide = false
 				w.CanQuery = false
@@ -460,15 +470,8 @@ function RigBuilder.buildCreature(name: string, bodyName: string, look: Look, sc
 				w.Parent = base
 				piece = w
 			else
-				piece = RigBuilder.decorate(
-					base,
-					"Decor" .. i,
-					size,
-					transform(d.offset, s),
-					palette[d.role] or skin,
-					material,
-					shape
-				)
+				piece =
+					RigBuilder.decorate(base, "Decor" .. i, size, transform(d.offset, s), colorOf(d), material, shape)
 			end
 			if d.mesh == "Sphere" then
 				sphereMesh(piece)

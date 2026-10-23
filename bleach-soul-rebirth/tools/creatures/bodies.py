@@ -12,12 +12,19 @@ here = os.path.dirname(os.path.abspath(__file__))
 dest = os.path.join(here, "..", "..", "src", "shared", "Config", "CreatureRigs.json")
 
 
-def P(name, size, parent, joint, c0, c1, role="skin", mesh="Sphere"):
-    return {"name": name, "size": size, "parent": parent, "joint": joint, "c0": c0, "c1": c1, "role": role, "mesh": mesh}
+def P(name, size, parent, joint, c0, c1, role="skin", mesh="Sphere", color=None, material=None):
+    p = {"name": name, "size": size, "parent": parent, "joint": joint, "c0": c0, "c1": c1, "role": role, "mesh": mesh}
+    if color:
+        p["color"] = color
+    if material:
+        p["material"] = material
+    return p
 
 
-def D(part, size, offset, role, shape="Block", material=None, mesh=None):
+def D(part, size, offset, role, shape="Block", material=None, mesh=None, color=None):
     d = {"part": part, "size": size, "offset": offset, "role": role, "shape": shape}
+    if color:
+        d["color"] = color
     if material:
         d["material"] = material
     if mesh:
@@ -117,38 +124,183 @@ grunt = {
     "animSet": "Hollow",
 }
 
-# ======================================================================= BRUTE
-# Gorila de osso: peito e braços enormes, pernas curtas, cabeça baixa entre os ombros, placas de armadura.
+# ======================================================================= BRUTE (samurai)
+# Referência: chefe ogro de armadura samurai (corpo largo e pesado, pele roxo-acinzentada, armadura
+# verde-petróleo com bordas creme, ombreiras enormes em camadas, chifres curvos claros, máscara
+# escura com pontos roxos acesos, cinturão com discos verdes, cordões roxos e crânio, saia de penas
+# douradas, calças largas verde-escuras, pés grandes com garras; costas com borlas roxas).
+from shapes import seg, curve, arc_points  # noqa: E402
+
+SKIN = [150, 126, 168]
+SKIN_D = [118, 98, 138]
+ARMOR = [30, 62, 64]
+ARMOR_D = [17, 34, 37]
+TRIM = [216, 206, 168]
+GOLD = [226, 172, 48]
+FEATHER = [240, 190, 42]
+FEATHER_D = [206, 140, 28]
+GREEN = [72, 140, 58]
+GREEN_D = [44, 96, 40]
+PURPLE = [108, 40, 118]
+ROPE = [150, 62, 150]
+BROWN = [92, 56, 34]
+HORN = [234, 226, 198]
+PANTS = [26, 50, 52]
+CLAW = [206, 176, 124]
+GLOW = [196, 96, 255]
+
 brute_parts = mirror([
-    P("LowerTorso", [1.9, 0.8, 1.35], "HumanoidRootPart", "Root", [0, -0.55, 0, 0, 0, 0], [0, 0.05, 0, 0, 0, 0], "skin2"),
-    P("UpperTorso", [2.9, 2.2, 1.9], "LowerTorso", "Waist", [0, 0.35, 0, -22, 0, 0], [0, -1.0, 0.1, 0, 0, 0]),
-    P("Head", [1.1, 1.0, 1.15], "UpperTorso", "Neck", [0, 0.7, -0.75, 22, 0, 0], [0, -0.35, 0.1, 0, 0, 0], "skin2"),
-    P("RightUpperArm", [1.15, 1.7, 1.15], "UpperTorso", "RightShoulder", [1.75, 0.55, -0.1, 28, 0, 0], [0, 0.72, 0, 0, 0, 0]),
-    P("RightLowerArm", [1.25, 1.75, 1.25], "RightUpperArm", "RightElbow", [0, -0.78, 0, 15, 0, 0], [0, 0.8, 0, 0, 0, 0], "skin2"),
-    P("RightHand", [1.35, 0.8, 1.35], "RightLowerArm", "RightWrist", [0, -0.85, 0, 0, 0, 0], [0, 0.3, 0, 0, 0, 0], "bone"),
-    P("RightUpperLeg", [1.05, 1.15, 1.05], "LowerTorso", "RightHip", [0.65, -0.25, 0, 18, 0, 0], [0, 0.52, 0, 0, 0, 0]),
-    P("RightLowerLeg", [0.95, 1.15, 0.95], "RightUpperLeg", "RightKnee", [0, -0.52, 0, -36, 0, 0], [0, 0.52, 0, 0, 0, 0], "skin2"),
-    P("RightFoot", [1.1, 0.4, 1.4], "RightLowerLeg", "RightAnkle", [0, -0.55, 0, 18, 0, 0], [0, 0.15, -0.2, 0, 0, 0], "skin2", "Block"),
+    P("LowerTorso", [2.6, 1.3, 1.9], "HumanoidRootPart", "Root", [0, -0.35, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], color=SKIN),
+    P("UpperTorso", [3.2, 2.2, 2.1], "LowerTorso", "Waist", [0, 0.45, 0, -12, 0, 0], [0, -1.0, 0.05, 0, 0, 0], color=SKIN),
+    P("Head", [1.25, 1.15, 1.25], "UpperTorso", "Neck", [0, 0.95, -0.6, 12, 0, 0], [0, -0.38, 0.1, 0, 0, 0], color=SKIN_D),
+    P("RightUpperArm", [1.15, 1.7, 1.15], "UpperTorso", "RightShoulder", [1.95, 0.5, -0.05, 18, 0, 0], [0, 0.65, 0, 0, 0, 0], color=SKIN),
+    P("RightLowerArm", [1.15, 1.6, 1.15], "RightUpperArm", "RightElbow", [0, -0.78, 0, 16, 0, 0], [0, 0.72, 0, 0, 0, 0], color=SKIN),
+    P("RightHand", [1.25, 0.85, 1.35], "RightLowerArm", "RightWrist", [0, -0.78, 0, 0, 0, 0], [0, 0.3, 0, 0, 0, 0], color=SKIN_D),
+    P("RightUpperLeg", [1.25, 1.15, 1.25], "LowerTorso", "RightHip", [0.78, -0.4, 0, 16, 0, 0], [0, 0.52, 0, 0, 0, 0], color=PANTS, material="Fabric"),
+    P("RightLowerLeg", [1.1, 1.15, 1.1], "RightUpperLeg", "RightKnee", [0, -0.52, 0, -34, 0, 0], [0, 0.52, 0, 0, 0, 0], color=PANTS, material="Fabric"),
+    P("RightFoot", [1.25, 0.45, 1.6], "RightLowerLeg", "RightAnkle", [0, -0.55, 0, 18, 0, 0], [0, 0.15, -0.25, 0, 0, 0], "skin", "Block", color=SKIN_D),
 ])
-brute_decor = [
-    D("Head", [1.25, 1.0, 0.4], [0, 0.05, -0.55, 0, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere"),
-    D("Head", [0.25, 0.14, 0.06], [0.28, 0.15, -0.78, 0, 0, -10], "eye", "Block", "Neon"),
-    D("Head", [0.25, 0.14, 0.06], [-0.28, 0.15, -0.78, 0, 0, 10], "eye", "Block", "Neon"),
-    D("Head", [1.0, 0.25, 0.25], [0, -0.32, -0.72, 0, 0, 0], "dark"),
-    D("UpperTorso", [2.4, 1.5, 0.35], [0, 0.25, -0.9, 8, 0, 0], "bone", "Block", "Slate", "Sphere"),
-    D("UpperTorso", [0.18, 0.85, 0.85], [0, 0.0, -1.05, 0, 90, 0], "dark", "Cylinder"),
-] + mirror([
-    D("Head", [0.4, 0.4, 1.4], [0.55, 0.5, -0.1, -40, 0, -35], "bone", "Block", None, "Sphere"),
-    D("RightUpperArm", [1.45, 0.55, 1.45], [0, 0.65, 0, 0, 0, -10], "bone", "Block", "Slate", "Sphere"),
-    D("RightLowerArm", [1.4, 0.9, 1.4], [0, -0.25, 0, 0, 0, 0], "bone", "Block", "Slate", "Sphere"),
-    D("RightHand", [0.2, 0.25, 0.6], [0.35, -0.25, -0.6, -20, 0, 0], "bone", "Wedge"),
-    D("RightHand", [0.2, 0.25, 0.6], [-0.35, -0.25, -0.6, -20, 0, 0], "bone", "Wedge"),
-]) + [D("UpperTorso", [0.18, 0.8 - i * 0.12, 0.7], [0, 0.85 - i * 0.5, 0.95, -25, 0, 0], "bone", "Wedge") for i in range(4)]
+
+
+def brute_head():
+    d = [
+        # elmo/máscara escura que cobre a cabeça, com crista
+        D("Head", [1.45, 1.3, 1.45], [0, 0.08, 0, 0, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere", ARMOR_D),
+        D("Head", [1.05, 0.85, 0.3], [0, -0.02, -0.62, -6, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere", [36, 28, 48]),
+        D("Head", [0.18, 0.5, 1.1], [0, 0.62, 0.05, 0, 0, 0], "mask", "Block", "SmoothPlastic", None, ARMOR),
+        D("Head", [1.1, 0.12, 0.34], [0, 0.42, -0.66, -10, 0, 0], "mask", "Block", "SmoothPlastic", None, TRIM),
+    ]
+    # pontos roxos acesos na máscara (3 x 3), olhos maiores no meio
+    for row in range(3):
+        for col in (-1, 0, 1):
+            big = row == 1 and col != 0
+            size = 0.16 if big else 0.1
+            d.append(D("Head", [size, size, 0.08], [col * 0.26, 0.2 - row * 0.2, -0.79, 0, 0, 0], "eye", "Block", "Neon", "Sphere", GLOW))
+    # chifres curvos: saem do topo para fora, sobem e curvam para dentro na ponta
+    horn = arc_points([0.42, 0.45, 0.05], [0.55, 1.75, 0.15], [0.75, 0.05, 0.0], 4)
+    d += mirror(curve(D, "RightHead", horn, 0.36, "bone", HORN, taper=0.35, material="SmoothPlastic"))
+    for item in d:
+        if item["part"] in ("RightHead", "LeftHead"):
+            item["part"] = "Head"
+    return d
+
+
+def pauldron():
+    d = []
+    # três placas sobrepostas descendo para fora, cada uma com borda creme
+    for i, (x, y, rz, w) in enumerate([(0.05, 0.85, -8, 2.1), (0.3, 0.5, -24, 2.0), (0.52, 0.12, -40, 1.75)]):
+        d.append(D("RightUpperArm", [w, 0.5, 1.95 - i * 0.15], [x, y, 0, 0, 0, rz], "skin", "Block", "Metal", "Sphere", ARMOR))
+        d.append(D("RightUpperArm", [w + 0.06, 0.12, 2.0 - i * 0.15], [x + 0.03, y - 0.2, 0, 0, 0, rz], "skin", "Block", "SmoothPlastic", "Sphere", TRIM))
+    # pontas da ombreira
+    d.append(D("RightUpperArm", [0.3, 0.75, 0.55], [0.25, 1.25, -0.35, 0, 0, -15], "skin", "Wedge", "Metal", None, ARMOR_D))
+    d.append(D("RightUpperArm", [0.3, 0.6, 0.5], [0.3, 1.15, 0.45, 0, 180, -15], "skin", "Wedge", "Metal", None, ARMOR_D))
+    # bracelete marrom + pelagem amarela no bíceps
+    d.append(D("RightUpperArm", [0.35, 1.3, 1.3], [0, -0.45, 0, 0, 0, 90], "skin", "Cylinder", "Fabric", None, BROWN))
+    for k in range(10):
+        ang = k / 10 * 360
+        import math as _m
+        x, z = _m.cos(_m.radians(ang)) * 0.62, _m.sin(_m.radians(ang)) * 0.62
+        d.append(D("RightUpperArm", [0.32, 0.4, 0.32], [x, -0.72, z, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", FEATHER))
+    return d
+
+
+def bracer():
+    import math as _m
+    d = [
+        D("RightLowerArm", [1.05, 1.32, 1.32], [0, 0.0, 0, 0, 0, 90], "skin", "Cylinder", "Metal", None, ARMOR_D),
+        D("RightLowerArm", [0.1, 1.38, 1.38], [0, 0.48, 0, 0, 0, 90], "skin", "Cylinder", "Metal", None, GOLD),
+        D("RightLowerArm", [0.1, 1.38, 1.38], [0, -0.48, 0, 0, 0, 90], "skin", "Cylinder", "Metal", None, GOLD),
+    ]
+    for k in range(9):
+        a = _m.radians(k / 9 * 360)
+        d.append(D("RightLowerArm", [0.34, 0.36, 0.34], [_m.cos(a) * 0.62, -0.72, _m.sin(a) * 0.62, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", FEATHER))
+    # garras grossas
+    for x in (-0.42, -0.14, 0.14, 0.42):
+        d.append(D("RightHand", [0.16, 0.22, 0.55], [x, -0.3, -0.6, -35, 0, 0], "bone", "Wedge", "SmoothPlastic", None, CLAW))
+    return d
+
+
+def belt_and_skirt():
+    import math as _m
+    d = [
+        # faixa larga roxa e cinto marrom por cima
+        D("LowerTorso", [2.85, 0.6, 2.15], [0, 0.32, 0, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", PURPLE),
+        D("LowerTorso", [2.95, 0.22, 2.25], [0, 0.6, 0, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", BROWN),
+        # barriga saliente
+        D("UpperTorso", [2.5, 1.4, 1.5], [0, -0.55, -0.42, 0, 0, 0], "skin", "Block", None, "Sphere", SKIN),
+    ]
+    # discos verdes em volta do cinto (frente e lados)
+    for x in (-1.15, -0.55, 0.55, 1.15):
+        z = -1.0 + abs(x) * 0.18
+        d.append(D("LowerTorso", [0.18, 0.72, 0.72], [x, 0.32, z, 0, 90 + x * 22, 0], "skin", "Cylinder", "SmoothPlastic", None, GREEN))
+        d.append(D("LowerTorso", [0.2, 0.36, 0.36], [x, 0.32, z - 0.03, 0, 90 + x * 22, 0], "skin", "Cylinder", "SmoothPlastic", None, GREEN_D))
+    # crânio no centro: calota, órbitas, dentes
+    d += [
+        D("LowerTorso", [0.62, 0.58, 0.5], [0, 0.38, -1.12, 0, 0, 0], "bone", "Block", "SmoothPlastic", "Sphere", HORN),
+        D("LowerTorso", [0.14, 0.14, 0.06], [0.13, 0.42, -1.37, 0, 0, 0], "dark", "Block", None, "Sphere", [20, 16, 20]),
+        D("LowerTorso", [0.14, 0.14, 0.06], [-0.13, 0.42, -1.37, 0, 0, 0], "dark", "Block", None, "Sphere", [20, 16, 20]),
+        D("LowerTorso", [0.4, 0.14, 0.3], [0, 0.14, -1.25, 0, 0, 0], "bone", "Block", "SmoothPlastic", None, HORN),
+    ]
+    # cordões roxos com pontas vermelhas pendurados entre os discos
+    for x in (-0.85, 0.85):
+        z = -1.05
+        pts = arc_points([x, 0.15, z], [x * 0.9, -0.65, z - 0.05], [0, 0, -0.08], 3)
+        d += curve(D, "LowerTorso", pts, 0.12, "skin", ROPE, taper=0.8, material="Fabric")
+        d.append(D("LowerTorso", [0.22, 0.22, 0.22], [x * 0.9, -0.72, z - 0.05, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", [190, 40, 50]))
+    # saia de penas: duas camadas em volta do quadril, alternando dourado/âmbar
+    # comprimentos irregulares (barra desfiada), penas finas e pontudas
+    jag = [1.0, 0.82, 1.12, 0.9, 1.05, 0.78, 1.15, 0.95, 0.86, 1.08]
+    for layer, (radius, length, y, count, width) in enumerate([(1.34, 1.45, -0.6, 30, 0.3), (1.2, 1.05, -0.42, 24, 0.34)]):
+        for k in range(count):
+            ang = k / count * 360 + layer * 6
+            a = _m.radians(ang)
+            x, z = _m.sin(a) * radius, -_m.cos(a) * radius * 0.85
+            L = length * jag[(k * 3 + layer) % len(jag)]
+            top = [x * 0.92, y + L * 0.4, z * 0.92]
+            bottom = [x * 1.16, y - L * 0.6, z * 1.16]
+            color = [FEATHER, FEATHER_D, GOLD][(k + layer) % 3]
+            d.append(seg(D, "LowerTorso", top, bottom, [width, 0.1], "skin", color, mesh="Sphere", material="Fabric", up=[x, 0, z]))
+    return d
+
+
+def chest_and_back():
+    d = [
+        # gola de armadura em volta do pescoço e placa peitoral alta
+        D("UpperTorso", [2.9, 0.75, 2.3], [0, 0.9, 0.05, 0, 0, 0], "skin", "Block", "Metal", "Sphere", ARMOR),
+        D("UpperTorso", [2.95, 0.14, 2.35], [0, 0.6, 0.05, 0, 0, 0], "skin", "Block", "SmoothPlastic", "Sphere", TRIM),
+        D("UpperTorso", [2.3, 0.75, 0.35], [0, 0.32, -0.95, -8, 0, 0], "skin", "Block", "Metal", "Sphere", ARMOR),
+        # alças marrons cruzando o peito
+        D("UpperTorso", [0.26, 2.6, 0.12], [0.55, -0.1, -1.0, -6, 0, 32], "skin", "Block", "Fabric", None, BROWN),
+        D("UpperTorso", [0.26, 2.6, 0.12], [-0.55, -0.1, -1.0, -6, 0, -32], "skin", "Block", "Fabric", None, BROWN),
+        # costas: placa de armadura, borlas roxas penduradas e pano
+        D("UpperTorso", [2.6, 1.4, 0.4], [0, 0.35, 1.0, 10, 0, 0], "skin", "Block", "Metal", "Sphere", ARMOR),
+        D("UpperTorso", [1.1, 1.5, 0.12], [0, -0.55, 1.1, 8, 0, 0], "skin", "Block", "Fabric", "Sphere", PURPLE),
+        D("LowerTorso", [2.2, 0.5, 0.5], [0, 0.55, 1.0, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", PURPLE),
+    ]
+    for x in (-0.4, 0.0, 0.4):
+        pts = arc_points([x, 0.75, 1.15], [x * 1.1, -0.25, 1.25], [0, 0, 0.05], 3)
+        d += curve(D, "UpperTorso", pts, 0.2, "skin", ROPE, taper=0.6, material="Fabric")
+        d.append(D("UpperTorso", [0.32, 0.38, 0.32], [x * 1.1, -0.35, 1.25, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", PURPLE))
+    return d
+
+
+def legs():
+    d = [
+        # calças bufantes, faixa no tornozelo, garras dos pés
+        D("RightUpperLeg", [1.45, 1.1, 1.45], [0, -0.1, 0, 0, 0, 0], "skin", "Block", "Fabric", "Sphere", PANTS),
+        D("RightLowerLeg", [0.3, 1.3, 1.3], [0, -0.42, 0, 0, 0, 90], "skin", "Cylinder", "Fabric", None, ARMOR_D),
+    ]
+    for x in (-0.38, 0.0, 0.38):
+        d.append(D("RightFoot", [0.18, 0.2, 0.42], [x, -0.05, -0.85, -10, 0, 0], "bone", "Wedge", "SmoothPlastic", None, CLAW))
+    return d
+
+
+brute_decor = brute_head() + belt_and_skirt() + chest_and_back() + mirror(pauldron() + bracer() + legs())
 brute = {
     "parts": brute_parts,
-    "root": [2.6, 2.2, 1.4],
+    "root": [3.2, 2.4, 1.8],
     "decor": brute_decor,
-    "declarations": biped_declarations(tail=False, knee_rest=36),
+    "declarations": biped_declarations(tail=False, knee_rest=34),
     "animSet": "Brute",
 }
 
