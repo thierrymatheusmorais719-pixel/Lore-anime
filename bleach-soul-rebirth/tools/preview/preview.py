@@ -135,6 +135,22 @@ def run_creatures(bodies, enemies):
     return [json.loads(l) for l in res.stdout.splitlines() if l.startswith("{")]
 
 
+def attach_sculpt(models, bodies):
+    """Troca as partes do corpo pelas malhas esculpidas (o que o cliente monta com EditableMesh)."""
+    sys.path.insert(0, os.path.join(root, "tools", "creatures"))
+    import sculpt
+    rigs = json.load(open(os.path.join(root, "src", "shared", "Config", "CreatureRigs.json")))
+    for m, body in zip(models, bodies):
+        info = {p_["name"]: p_ for p_ in rigs[body]["parts"]}
+        for part in m["parts"]:
+            if part["n"] in info and body in sculpt.STYLE:
+                res = sculpt.mesh_for(body, rigs[body], info[part["n"]])
+                if res:
+                    verts, tris = res
+                    part["mesh_tris"] = [[verts[a], verts[b], verts[c]] for a, b, c in tris]
+                    part["t"] = 0  # a peça base fica invisível no jogo; aqui desenhamos a malha no lugar dela
+
+
 def corners(part):
     sx, sy, sz = [v / 2 for v in part["s"]]
     r, p = part["r"], part["p"]
@@ -155,6 +171,8 @@ def local_polys(part):
     sx, sy, sz = [v / 2 for v in part["s"]]
     shape = part["shape"]
     polys = []
+    if part.get("mesh_tris"):
+        return part["mesh_tris"]
     if shape == "Ball":
         lat, lon = 6, 10
         def pt(i, j):
@@ -284,6 +302,8 @@ if __name__ == "__main__":
         # creatures saida.png Corpo:Inimigo [Corpo:Inimigo ...]
         pairs = [a.split(":") for a in sys.argv[3:]]
         models = run_creatures([p[0] for p in pairs], [p[1] for p in pairs])
+        if os.environ.get("SCULPT", "1") == "1":
+            attach_sculpt(models, [p[0] for p in pairs])
         render(models, out, cols=1, cell=(420, 460), views=[("frente", 180), ("3/4", 145), ("lado", 90), ("costas", 0)])
         for m in models:
             print(m["label"], len(m["parts"]), "peças")

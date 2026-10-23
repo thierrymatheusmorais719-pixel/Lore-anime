@@ -156,7 +156,8 @@ migração de dados e **integridade das configs** (toda habilidade/animação/it
 ## 6. Animações e criaturas (como regenerar)
 
 ```bash
-python3 tools/creatures/bodies.py            # corpos dos Hollows → src/shared/Config/CreatureRigs.json
+python3 tools/creatures/bodies.py            # corpos dos Hollows → Config/CreatureRigs.json + malhas
+                                             # esculpidas → Config/CreatureMeshes.luau (sculpt.py)
 python3 tools/anims/author.py                # poses → tools/anims/json (inclui tools/creatures/author_creatures.py)
 python3 tools/anims/build.py --sheets /tmp/folhas   # compila com a skill, exige todas as checagens, gera Clips.luau
 ```
@@ -166,6 +167,10 @@ python3 tools/anims/build.py --sheets /tmp/folhas   # compila com a skill, exige
 - Hollows: `HollowGrunt` (predador curvado com cauda), `HollowBrute` (gorila de osso) e
   `HollowHound` (quadrúpede com mandíbula articulada) têm corpo e animações próprias (`HollowSlash1`,
   `BruteWalk`, `HoundRun`...), incluindo rugido de entrada em combate e morte.
+- Pele esculpida: braços, pernas, tronco, mãos e pés dos Hollows são malhas lisas (músculos,
+  barriga, membros que afinam) montadas no cliente com `EditableMesh` (`CreatureSkin`); o esqueleto
+  de blocos continua por baixo, invisível, para animação, hitbox e colisão. Sem `EditableMesh`
+  disponível, os blocos aparecem como reserva.
 - Jogador: `Hero*` (espada embainhada) e `Sword*` (espada na mão) — parado, andar, correr, disparar,
   pulo e queda (`tools/anims/player_moves.py`). O `Animate` padrão do Roblox é substituído.
 - Armas: `python3 tools/preview/preview.py weapons saida.png` roda o `WeaponBuilder` real fora do

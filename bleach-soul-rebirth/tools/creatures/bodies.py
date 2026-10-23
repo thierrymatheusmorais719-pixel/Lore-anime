@@ -582,3 +582,7 @@ for body in rigs.values():
 with open(dest, "w") as f:
     json.dump(rigs, f, indent=1)
 print("corpos:", ", ".join(rigs))
+
+# Malhas esculpidas (pele lisa montada no cliente com EditableMesh) a partir destes corpos
+import sculpt  # noqa: E402
+sculpt.main()
