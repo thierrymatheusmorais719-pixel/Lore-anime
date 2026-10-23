@@ -18,6 +18,14 @@ local Loot = {
 		},
 		pity = { id = "ReishiCrystal", after = 6 },
 	},
+	HollowHound = {
+		kan = { 8, 15 },
+		guaranteed = { { id = "HollowFragment", qty = { 1, 3 } } },
+		chance = {
+			{ id = "SoulCandy", qty = { 1, 1 }, chance = 0.1 },
+			{ id = "ReishiCrystal", qty = { 1, 1 }, chance = 0.08 },
+		},
+	},
 	TrainingPuppet = {
 		kan = { 3, 6 },
 		guaranteed = {},

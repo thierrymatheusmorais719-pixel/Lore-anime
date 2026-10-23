@@ -541,8 +541,10 @@ test("toda animação usada pelo jogo existe compilada", function()
 	)
 end)
 test("criaturas: golpes no tempo do servidor, marchas e versões de cada ação", function()
-	for _, set in { "Hollow", "Brute" } do
+	for _, set in { "Hollow", "Brute", "Hound" } do
 		truthy(Clips[set .. "Idle"] and Clips[set .. "Idle"].loop, set .. "Idle em loop")
+		truthy(Clips[set .. "Death"] and not Clips[set .. "Death"].loop, set .. "Death")
+		truthy(Clips[set .. "Roar"] and markerTime(Clips[set .. "Roar"], "Roar"), set .. "Roar com marcador")
 		for _, gait in { "Walk", "Run" } do
 			local clip = Clips[set .. gait]
 			truthy(clip and clip.loop and clip.groundSpeed, set .. gait .. " com velocidade de chão")
@@ -576,7 +578,10 @@ test("criaturas: golpes no tempo do servidor, marchas e versões de cada ação"
 		truthy(Clips["HollowSlash" .. i], "HollowSlash" .. i)
 	end
 	for _, name in { "HeavySlash", "Uppercut", "Block", "BlockHit", "Hit1", "Hit2", "Stagger", "GuardBreak", "Parried" } do
-		truthy(Clips["Hollow" .. name] and Clips["Brute" .. name], "Hollow/Brute " .. name)
+		truthy(
+			Clips["Hollow" .. name] and Clips["Brute" .. name] and Clips["Hound" .. name],
+			"Hollow/Brute/Hound " .. name
+		)
 	end
 	for id, def in Enemies do
 		if type(def) == "table" and def.body then

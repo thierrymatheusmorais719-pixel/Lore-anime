@@ -36,6 +36,7 @@ type Track = {
 	assetTrack: AnimationTrack?,
 	onMarker: ((string) -> ())?,
 	scale: number,
+	hold: boolean,
 }
 
 type Rig = {
@@ -358,6 +359,7 @@ function AnimController.Play(model: Model?, name: string, options: { [string]: a
 		assetTrack = nil,
 		onMarker = opts.onMarker,
 		scale = model:GetAttribute("AnimScale") or 1,
+		hold = opts.hold == true,
 	}
 	local asset = assetTrackFor(rig, name)
 	if asset then
@@ -767,7 +769,11 @@ local function stepRig(rig: Rig, dt: number, now: number)
 			end
 		end
 		if not t.loop and not t.stopping and t.time >= t.def.duration then
-			t.stopping = true
+			if t.hold then
+				t.time = t.def.duration -- segura o último quadro (corpos caídos)
+			else
+				t.stopping = true
+			end
 		end
 		if t.loop and t.time >= t.def.duration then
 			t.time %= t.def.duration

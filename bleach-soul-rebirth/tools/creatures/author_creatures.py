@@ -57,6 +57,10 @@ class Creature:
         parts = {p["name"]: p for p in data["parts"]}
         ankle = rig_reading.mul(frames["RightLowerLeg"], rig_reading.frame(parts["RightFoot"]["c0"]))[0]
         self.ankle = (ankle[0], ankle[1], -ankle[2])  # [direita, cima, frente]
+        self.front_ankle = None
+        if parts.get("RightHand", {}).get("parent") == "RightLowerArm" and self.set == "Hound":
+            fa = rig_reading.mul(frames["RightLowerArm"], rig_reading.frame(parts["RightHand"]["c0"]))[0]
+            self.front_ankle = (fa[0], fa[1], -fa[2])
         self.rig = "game.Workspace." + body
         self.guard = {}
 
@@ -64,6 +68,14 @@ class Creature:
         x, y, z = self.ankle
         return {"Root": {"position": [0, drop, 0]},
                 "RightHip": {"aimAt": [x + width, y, z + front]}, "LeftHip": {"aimAt": [-x - width, y, z + back]}}
+
+    def paws(self, drop=0.0, spread=0.0, front=0.0, back=0.0):
+        """Quadrúpede: as quatro patas plantadas (front/back deslocam as da frente/de trás)."""
+        fx, fy, fz = self.front_ankle
+        hx, hy, hz = self.ankle
+        return {"Root": {"position": [0, drop, 0]},
+                "RightShoulder": {"aimAt": [fx + spread, fy, fz + front]}, "LeftShoulder": {"aimAt": [-fx - spread, fy, fz + front]},
+                "RightHip": {"aimAt": [hx + spread, hy, hz + back]}, "LeftHip": {"aimAt": [-hx - spread, hy, hz + back]}}
 
     def root(self, drop, forward=0.0, yaw=0.0, pitch=0.0):
         return {"Root": {"position": [0, drop, -forward], "rotation": [pitch, yaw, 0]}}
@@ -244,6 +256,41 @@ def grunt(c):
         key(0.5, G),
     ])
 
+    # Entrada em combate: ergue o tronco, abre os braços e ruge (sacode a cabeça)
+    roar = merge(c.feet(drop=-0.1, width=0.2, front=0.35, back=-0.45), c.root(-0.1, -0.15, 0, 10), waist(0, 26), neck(0, 30),
+                 arms([1, 0.3, -0.35], 30, [-1, 0.3, -0.35], 30), tail(10, 20, 25, lift=30))
+    c.clip("Roar", [
+        key(0, G, ease("CubicV2", "Out")),
+        key(0.25, merge(c.feet(drop=-0.45, width=0.2, front=0.35, back=-0.45), waist(0, -14), neck(0, -10), arms([0.4, -0.6, 0.6], 80, [-0.4, -0.6, 0.6], 80)), ease("CubicV2", "Out"), name="Inhale"),
+        key(0.45, roar, ease("CubicV2", "InOut"), name="Roar", markers=["Roar"]),
+        key(0.65, merge(roar, neck(12, 32)), ease("CubicV2", "InOut")),
+        key(0.85, merge(roar, neck(-12, 32)), ease("CubicV2", "InOut")),
+        key(1.05, roar, ease("CubicV2", "InOut")),
+        key(1.35, G),
+    ])
+    # Morte: recua com o golpe, os joelhos cedem e cai de cara no chão (fica no fim)
+    stand_legs = {"Root": {"position": [0, -0.15, 0]}, "RightHip": {"aim": [0.15, -1, 0.15]}, "RightKnee": {"bend": 20},
+                  "LeftHip": {"aim": [-0.15, -1, -0.1]}, "LeftKnee": {"bend": 20}}
+    G_death = merge({k: v for k, v in G.items() if k not in ("Root", "RightHip", "LeftHip")}, stand_legs)
+    c.clip("Death", [
+        key(0, G_death, ease("CubicV2", "Out")),
+        key(0.14, merge(waist(0, 22), neck(0, 28), arms([0.95, 0.2, 0.2], 30, [-0.95, 0.25, 0.15], 30), tail(0, 0, 0, lift=25),
+                        {"Root": {"position": [0, -0.3, 0.35], "rotation": [14, 0, 0]},
+                         "RightHip": {"aim": [0.2, -1, 0.1]}, "RightKnee": {"bend": 40}, "LeftHip": {"aim": [-0.2, -1, 0.05]}, "LeftKnee": {"bend": 40}}),
+            ease("CubicV2", "InOut"), name="Impact", markers=["Impact"]),
+        key(0.55, merge(waist(0, -8), neck(0, -25), arms([0.3, -1, 0.2], 15, [-0.3, -1, 0.15], 15), tail(0, 0, 0, lift=-5),
+                        {"Root": {"position": [0, -1.35, 0.1], "rotation": [-12, 0, 0]},
+                         "RightHip": {"aim": [0.2, -0.45, 0.9]}, "RightKnee": {"bend": 125}, "LeftHip": {"aim": [-0.2, -0.45, 0.9]}, "LeftKnee": {"bend": 125}}),
+            ease("CubicV2", "In"), name="Knees"),
+        key(0.95, merge(waist(0, -28), neck(10, -30), arms([0.4, -0.85, 0.5], 15, [-0.3, -0.9, 0.45], 20), tail(10, 15, 10, lift=-25),
+                        {"Root": {"position": [0, -1.75, 0.1], "rotation": [-38, 0, 0]},
+                         "RightHip": {"aim": [0.2, -0.3, 0.95]}, "RightKnee": {"bend": 140}, "LeftHip": {"aim": [-0.2, -0.3, 0.95]}, "LeftKnee": {"bend": 140}}),
+            ease("Bounce", "Out"), name="Slump", markers=["Thud"]),
+        key(1.5, merge(waist(0, -30), neck(14, -34), arms([0.4, -0.88, 0.45], 18, [-0.3, -0.92, 0.4], 22), tail(14, 18, 14, lift=-25),
+                       {"Root": {"position": [0, -1.8, 0.1], "rotation": [-40, 0, 0]},
+                        "RightHip": {"aim": [0.2, -0.3, 0.95]}, "RightKnee": {"bend": 140}, "LeftHip": {"aim": [-0.2, -0.3, 0.95]}, "LeftKnee": {"bend": 140}})),
+    ], flags=(), waive=("rootDrift",))  # termina deitado de propósito: o jogo segura o último quadro
+
     def cast(name, release, anticipation, pose, hold=0.4):
         c.clip(name, [
             key(0, G, ease("CubicV2", "Out")),
@@ -361,6 +408,41 @@ def brute(c):
     reaction("GuardBreak", merge(c.feet(drop=-0.4, width=0.25, front=0.1, back=-0.6), c.root(-0.4, -0.45), waist(0, 24), neck(0, 26), arms([0.65, 0.75, 0.05], 20, [-0.65, 0.75, 0.05], 20)), 1.0, hold=0.7)
     reaction("Parried", merge(c.feet(drop=-0.3, width=0.2, front=0.15, back=-0.5), c.root(-0.3, -0.35, 12), waist(15, 18), neck(8, 20), arms([0.6, 0.65, -0.2], 25, [-0.55, -0.6, 0.3], 40)), 0.85, at=0.09, hold=0.65)
 
+    # Entrada em combate: bate no peito duas vezes e ruge de cabeça erguida
+    chest = merge(c.feet(drop=-0.2, width=0.25), waist(0, 10), neck(0, 18))
+    c.clip("Roar", [
+        key(0, G, ease("CubicV2", "Out")),
+        key(0.2, merge(chest, arms([0.8, 0.2, 0.5], 110, [-0.6, -0.5, 0.4], 50)), ease("Linear", "In"), name="Raise"),
+        key(0.32, merge(chest, arms([0.15, -0.2, 0.9], 140, [-0.6, -0.5, 0.4], 50)), ease("CubicV2", "Out"), name="PoundR", markers=["Pound"]),
+        key(0.48, merge(chest, arms([0.6, -0.5, 0.4], 50, [-0.8, 0.2, 0.5], 110)), ease("Linear", "In")),
+        key(0.6, merge(chest, arms([0.6, -0.5, 0.4], 50, [-0.15, -0.2, 0.9], 140)), ease("CubicV2", "Out"), name="PoundL", markers=["Pound"]),
+        key(0.85, merge(c.feet(drop=-0.05, width=0.25), waist(0, 24), neck(0, 34), arms([1, 0.35, -0.2], 25, [-1, 0.35, -0.2], 25)), ease("CubicV2", "InOut"), name="Roar", markers=["Roar"]),
+        key(1.25, merge(c.feet(drop=-0.05, width=0.25), waist(0, 24), neck(0, 30), arms([1, 0.3, -0.2], 25, [-1, 0.3, -0.2], 25)), ease("CubicV2", "InOut")),
+        key(1.6, G),
+    ])
+    # Morte: cai de joelhos e tomba para o lado com o peso todo
+    stand_legs = {"Root": {"position": [0, -0.1, 0]}, "RightHip": {"aim": [0.2, -1, 0.1]}, "RightKnee": {"bend": 15},
+                  "LeftHip": {"aim": [-0.2, -1, -0.1]}, "LeftKnee": {"bend": 15}}
+    G_death = merge({k: v for k, v in G.items() if k not in ("Root", "RightHip", "LeftHip")}, stand_legs)
+    c.clip("Death", [
+        key(0, G_death, ease("CubicV2", "Out")),
+        key(0.15, merge(waist(0, 18), neck(0, 22), arms([0.9, -0.2, 0.2], 25, [-0.9, -0.1, 0.2], 25),
+                        {"Root": {"position": [0, -0.3, 0.3], "rotation": [10, 0, 0]},
+                         "RightHip": {"aim": [0.3, -1, 0.1]}, "RightKnee": {"bend": 35}, "LeftHip": {"aim": [-0.3, -1, 0.05]}, "LeftKnee": {"bend": 35}}),
+            ease("CubicV2", "InOut"), name="Impact", markers=["Impact"]),
+        key(0.6, merge(waist(0, -10), neck(0, -20), arms([0.45, -0.95, 0.2], 20, [-0.45, -0.95, 0.2], 20),
+                       {"Root": {"position": [0, -1.0, 0], "rotation": [-8, 0, 0]},
+                        "RightHip": {"aim": [0.3, -0.35, 0.9]}, "RightKnee": {"bend": 120}, "LeftHip": {"aim": [-0.3, -0.35, 0.9]}, "LeftKnee": {"bend": 120}}),
+            ease("CubicV2", "In"), name="Knees", markers=["Thud"]),
+        key(1.05, merge(waist(0, -6), neck(-15, 0), arms([0.6, -0.6, 0.4], 30, [-0.9, 0.2, 0.1], 20),
+                        {"Root": {"position": [0.6, -2.1, 0], "rotation": [-10, 0, -80]},
+                         "RightHip": {"aim": [0.3, -0.5, 0.75]}, "RightKnee": {"bend": 90}, "LeftHip": {"aim": [-0.3, -0.6, 0.7]}, "LeftKnee": {"bend": 70}}),
+            ease("Bounce", "Out"), name="Fall", markers=["Thud"]),
+        key(1.5, merge(waist(0, -6), neck(-18, 0), arms([0.6, -0.6, 0.4], 30, [-0.9, 0.2, 0.1], 22),
+                       {"Root": {"position": [0.6, -2.1, 0], "rotation": [-10, 0, -80]},
+                        "RightHip": {"aim": [0.3, -0.5, 0.75]}, "RightKnee": {"bend": 90}, "LeftHip": {"aim": [-0.3, -0.6, 0.7]}, "LeftKnee": {"bend": 70}})),
+    ], flags=(), waive=("rootDrift",))  # termina caído de propósito: o jogo segura o último quadro
+
     def cast(name, release, anticipation, pose, hold=0.45):
         c.clip(name, [
             key(0, G, ease("CubicV2", "Out")),
@@ -379,6 +461,138 @@ def brute(c):
          merge(c.feet(drop=-0.2, width=0.3), waist(0, 24), neck(0, 30), arms([1, 0.35, -0.1], 20, [-1, 0.35, -0.1], 20)), hold=0.55)
 
 
+# ============================================================================ HOUND
+def hound(c):
+    def jaw(open_deg):
+        return {"Jaw": {"rotation": [-open_deg, 0, 0]}}
+
+    G = merge(c.paws(drop=-0.15, spread=0.05), waist(0, -3), neck(0, -10), jaw(0))
+    c.guard = merge(G, tail(0, 0, 0))
+    TAIL_WAVE = {"joints": ["Tail1", "Tail2", "Tail3"], "axis": "Y", "amplitude": [8, 20], "lag": 0.18}
+    # Parado: respira, fareja (cabeça varre), mandíbula entreabre
+    c.clip("Idle", [
+        key(0, merge(G, waist(0, -2), neck(-12, -12), jaw(4)), ease("CubicV2", "InOut")),
+        key(1.0, merge(c.paws(drop=-0.22, spread=0.05), waist(0, -5), neck(10, -6), jaw(10)), ease("CubicV2", "InOut")),
+        key(2.0, merge(G, waist(0, -2), neck(-12, -12), jaw(4))),
+    ], loop=True, priority="Idle", extra={"waves": [dict(TAIL_WAVE, cycles=2)]})
+    # Trote e galope (pés plantados pelo gait); cabeça baixa e firme na corrida
+    c.raw("Walk", {"loop": True, "priority": "Movement", "duration": 0.6,
+                   "gait": {"pattern": "trot", "stride": 1.6, "lift": 0.35, "bob": 0.08},
+                   "keyframes": [key(0, merge(neck(0, -10), jaw(3)), ease("CubicV2", "InOut")), key(0.3, merge(neck(0, -6), jaw(6)), ease("CubicV2", "InOut")), key(0.6, merge(neck(0, -10), jaw(3)))],
+                   "waves": [dict(TAIL_WAVE, cycles=1)]}, flags=["--locomotion"], ground_speed=True)
+    c.raw("Run", {"loop": True, "priority": "Movement", "duration": 0.42,
+                  "gait": {"pattern": "gallop", "stride": 2.4, "duty": 0.38, "lift": 0.45, "bob": 0.15},
+                  "keyframes": [key(0, merge(neck(0, -18), jaw(12)), ease("CubicV2", "InOut")), key(0.21, merge(neck(0, -8), jaw(20)), ease("CubicV2", "InOut")), key(0.42, merge(neck(0, -18), jaw(12)))],
+                  "waves": [dict(TAIL_WAVE, axis="X", amplitude=[4, 12], cycles=1)]}, flags=["--locomotion"], ground_speed=True)
+
+    def strike(name, w, d, start, windup, hit, follow, end, windup_at=0.55):
+        c.clip(name, [
+            key(0, start, ease("Linear", "In")),
+            key(w * windup_at, windup, ease("Linear", "In"), name="WindUp"),
+            key(w, hit, ease("Linear", "In"), name="Hit", markers=["Hit"]),
+            key(w + (d - w) * 0.45, follow, ease("CubicV2", "Out")),
+            key(d, end, ease("CubicV2", "InOut")),
+            key(d + 0.25, G),
+        ])
+
+    crouch = c.paws(drop=-0.45, spread=0.08, front=-0.15, back=0.1)
+    lunge = c.paws(drop=-0.35, spread=0.08, front=0.35, back=-0.15)
+    # 1: mordida em investida — boca abre no preparo e fecha no impacto
+    E1 = merge(lunge, c.root(-0.35, 0.3), waist(0, -4), neck(0, -12), jaw(2), tail(0, 0, 0, lift=5))
+    strike("Slash1", *LIGHT[0], G,
+           merge(crouch, c.root(-0.45, -0.2), waist(0, 6), neck(0, 10), jaw(35), tail(0, 0, 0, lift=20)),
+           merge(lunge, c.root(-0.3, 0.6), waist(0, -8), neck(0, -20), jaw(0), tail(0, 0, 0, lift=-5)),
+           merge(lunge, c.root(-0.32, 0.55), waist(0, -6), neck(8, -16), jaw(4), tail(0, 0, 0)),
+           E1)
+    # 2: patada com a pata direita da frente, de fora para dentro
+    E2 = merge(lunge, c.root(-0.35, 0.3, -5), waist(-8, -4), neck(-10, -10), jaw(6))
+    c.clip("Slash2", [
+        key(0, E1, ease("Linear", "In")),
+        key(LIGHT[1][0] * 0.4, merge(c.paws(drop=-0.22, spread=0.08, front=0.2, back=-0.1), c.root(-0.22, 0.15, 8), waist(12, 4), neck(15, -4), jaw(20),
+                                      {"RightShoulder": {"aim": [0.6, -0.3, 0.7]}}), ease("Linear", "In"), name="WindUp", markers=["Swing"]),
+        key(LIGHT[1][0], merge(c.paws(drop=-0.28, spread=0.08, front=0.25, back=-0.1), c.root(-0.28, 0.3, -6), waist(-10, -4), neck(-12, -10), jaw(8),
+                               {"RightShoulder": {"aim": [-0.15, -0.75, 0.6]}}), ease("Linear", "In"), name="Hit", markers=["Hit"]),
+        key(LIGHT[1][0] + 0.09, E2, ease("CubicV2", "Out")),
+        key(LIGHT[1][1], E2, ease("CubicV2", "InOut")),
+        key(LIGHT[1][1] + 0.25, G),
+    ])
+    # 3: salto curto com mordida dupla (mandíbula fecha forte no impacto)
+    strike("Slash3", *LIGHT[2], E2,
+           merge(c.paws(drop=-0.42, spread=0.08, front=-0.05, back=0.1), c.root(-0.42, -0.1, 0, 5), waist(0, 8), neck(0, 18), jaw(40), tail(0, 0, 0, lift=25)),
+           merge(lunge, c.root(-0.2, 0.75, 0, -8), waist(0, -10), neck(0, -24), jaw(0), tail(0, 0, 0, lift=-10)),
+           merge(lunge, c.root(-0.3, 0.7, 0, -6), waist(0, -8), neck(0, -18), jaw(14)),
+           merge(lunge, c.root(-0.35, 0.4), neck(0, -12), jaw(4)))
+    # Pesado: bote — agacha fundo, salta e prende o alvo com as duas patas e a mordida
+    w, d = HEAVY
+    c.clip("HeavySlash", [
+        key(0, G, ease("CubicV2", "Out")),
+        key(w * 0.75, merge(c.paws(drop=-0.6, spread=0.1, front=-0.2, back=0.15), c.root(-0.6, -0.35, 0, 12), waist(0, 10), neck(0, 20), jaw(45), tail(0, 0, 0, lift=30)), ease("Linear", "In"), name="WindUp", markers=["Swing"]),
+        key(w, merge(waist(0, -6), neck(0, -22), jaw(0), tail(0, 0, 0, lift=-15),
+                     {"Root": {"position": [0, 0.1, -1.1], "rotation": [-14, 0, 0]},
+                      "RightShoulder": {"aim": [0.15, -0.3, 1]}, "LeftShoulder": {"aim": [-0.15, -0.3, 1]},
+                      "RightHip": {"aim": [0.1, -0.6, -0.8]}, "LeftHip": {"aim": [-0.1, -0.6, -0.8]}}),
+            ease("Linear", "In"), name="Hit", markers=["Hit"]),
+        key(w + 0.15, merge(lunge, c.root(-0.4, 0.8), waist(0, -10), neck(0, -20), jaw(10)), ease("CubicV2", "Out")),
+        key(d, merge(lunge, c.root(-0.35, 0.5), neck(0, -12), jaw(6)), ease("CubicV2", "InOut")),
+        key(d + 0.35, G),
+    ], flags=())
+    w, d = LAUNCHER
+    strike("Uppercut", w, d, G,
+           merge(crouch, c.root(-0.5, -0.1), neck(0, -30), jaw(30)),
+           merge(c.paws(drop=-0.2, spread=0.08), c.root(-0.2, 0.1, 0, 5), neck(0, 35), jaw(0)),
+           merge(c.paws(drop=-0.22, spread=0.08), c.root(-0.22, 0.08, 0, 4), neck(0, 30), jaw(10)),
+           G, windup_at=0.45)
+
+    def reaction(name, peak, duration, at=0.06, hold=0.55):
+        c.clip(name, [key(0, G, ease("Linear", "In")), key(at, peak, ease("CubicV2", "Out"), name="Impact"),
+                      key(duration * hold, peak, ease("CubicV2", "InOut")), key(duration, G)])
+
+    reaction("Hit1", merge(c.paws(drop=-0.3, spread=0.1, front=-0.15, back=0.1), c.root(-0.3, -0.35, 12), waist(8, 6), neck(25, 10), jaw(25), tail(10, 15, 15, lift=15)), 0.42)
+    reaction("Hit2", merge(c.paws(drop=-0.3, spread=0.1, front=-0.15, back=0.1), c.root(-0.3, -0.35, -12), waist(-8, 6), neck(-25, 10), jaw(25), tail(-10, -15, -15, lift=15)), 0.42)
+    reaction("Stagger", merge(c.paws(drop=-0.55, spread=0.15, front=-0.1, back=0.1), c.root(-0.55, -0.15, 0, 6), waist(0, 6), neck(0, 25), jaw(30), tail(0, 0, 0, lift=25)), 0.8)
+    reaction("GuardBreak", merge(c.paws(drop=-0.55, spread=0.15, front=-0.1, back=0.1), c.root(-0.55, -0.15, 0, 6), neck(0, 30), jaw(35)), 1.0, hold=0.7)
+    reaction("Parried", merge(c.paws(drop=-0.45, spread=0.12, front=-0.1, back=0.1), c.root(-0.45, -0.15, 12, 5), neck(20, 20), jaw(25)), 0.85, at=0.09, hold=0.65)
+    BLOCK = merge(c.paws(drop=-0.55, spread=0.12, front=-0.2, back=0.2), c.root(-0.55, -0.3), neck(0, -25), jaw(0), tail(0, 0, 0, lift=-10))
+    c.clip("Block", [key(0, G, ease("CubicV2", "Out")), key(0.12, BLOCK)])
+    c.clip("BlockHit", [key(0, BLOCK, ease("Linear", "In")), key(0.06, merge(BLOCK, c.root(-0.6, -0.5)), ease("CubicV2", "Out")), key(0.3, BLOCK)])
+    c.clip("Dash", [
+        key(0, G, ease("CubicV2", "Out")),
+        key(0.12, merge(c.paws(drop=-0.5, spread=0.1, front=0.4, back=-0.4), c.root(-0.5, 0.2), neck(0, -20), jaw(15)), ease("CubicV2", "InOut")),
+        key(0.45, G),
+    ])
+    # Rugido: cabeça para cima, mandíbula escancarada, tremor
+    rear = {"Root": {"position": [0, 0.12, 0.2], "rotation": [28, 0, 0]},
+            "RightShoulder": {"aim": [0.25, -0.2, 1]}, "LeftShoulder": {"aim": [-0.25, -0.5, 0.85]}}
+    howl = merge(rear, waist(0, 6), neck(0, 30), jaw(42), tail(0, 10, 20, lift=-20))
+    c.clip("Roar", [
+        key(0, G, ease("CubicV2", "Out")),
+        key(0.3, merge(c.paws(drop=-0.45, spread=0.1), waist(0, -4), neck(0, -25), jaw(10)), ease("CubicV2", "Out"), name="Inhale"),
+        key(0.55, howl, ease("CubicV2", "InOut"), name="Roar", markers=["Roar"]),
+        key(0.75, merge(howl, neck(8, 34), {"RightShoulder": {"aim": [0.25, -0.5, 0.85]}, "LeftShoulder": {"aim": [-0.25, -0.2, 1]}}), ease("CubicV2", "InOut")),
+        key(0.95, merge(howl, neck(-8, 34)), ease("CubicV2", "InOut")),
+        key(1.2, merge(c.paws(drop=-0.3, spread=0.1), neck(0, 10), jaw(30)), ease("Bounce", "Out"), name="Land", markers=["Thud"]),
+        key(1.5, G),
+    ], flags=())
+    # Ataque à distância e salto usam o bote
+    c.clip("CastOverhead", [
+        key(0, G, ease("CubicV2", "Out")),
+        key(0.22, merge(c.paws(drop=-0.6, spread=0.1, front=-0.2, back=0.15), c.root(-0.6, -0.3, 0, 12), neck(0, 20), jaw(40)), ease("Linear", "In"), name="Charge"),
+        key(0.3, merge(lunge, c.root(-0.3, 0.45, 0, -6), neck(0, -20), jaw(0)), ease("CubicV2", "Out"), name="Release", markers=["Release"]),
+        key(0.7, merge(lunge, c.root(-0.35, 0.5), neck(0, -12), jaw(6)), ease("CubicV2", "InOut")),
+        key(1.0, G),
+    ])
+    # Morte: tomba de lado, patas soltas, cabeça cai
+    side = {"Root": {"position": [0.5, -1.05, 0], "rotation": [0, 0, -85]}}
+    limp = {"RightShoulder": {"aim": [0.6, -0.2, 0.8]}, "LeftShoulder": {"aim": [0.5, -0.4, 0.75]},
+            "RightHip": {"aim": [0.6, -0.3, -0.7]}, "LeftHip": {"aim": [0.5, -0.45, -0.7]}}
+    c.clip("Death", [
+        key(0, G, ease("CubicV2", "Out")),
+        key(0.15, merge(c.paws(drop=-0.45, spread=0.12, front=-0.1, back=0.1), c.root(-0.45, -0.15, 0, 6), neck(0, 30), jaw(40), tail(0, 0, 0, lift=25)), ease("CubicV2", "InOut"), name="Impact", markers=["Impact"]),
+        key(0.65, merge(side, limp, waist(0, 0, -6), neck(-10, -20), jaw(20), tail(10, 10, 10, lift=-20)), ease("Bounce", "Out"), name="Fall", markers=["Thud"]),
+        key(1.2, merge(side, limp, waist(0, 0, -6), neck(-12, -22), jaw(24), tail(14, 12, 10, lift=-22))),
+    ], flags=())
+
+
 def author_all(out, manifest):
-    for body, fn in (("HollowGrunt", grunt), ("HollowBrute", brute)):
+    for body, fn in (("HollowGrunt", grunt), ("HollowBrute", brute), ("HollowHound", hound)):
         fn(Creature(body, out, manifest))

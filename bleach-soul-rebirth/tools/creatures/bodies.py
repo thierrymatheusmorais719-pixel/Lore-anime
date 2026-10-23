@@ -152,7 +152,77 @@ brute = {
     "animSet": "Brute",
 }
 
-rigs = {"HollowGrunt": grunt, "HollowBrute": brute}
+# ======================================================================= HOUND
+# Quadrúpede veloz: corpo horizontal, focinho longo de caveira com mandíbula que abre (junta Jaw),
+# espinhos na espinha, cauda longa. Pernas com nomes do R15 (patas da frente = mãos, para o rastro
+# das garras); joelhos dobrados em repouso para dar folga às passadas.
+hound_parts = mirror([
+    P("LowerTorso", [1.5, 1.15, 1.7], "HumanoidRootPart", "Root", [0, -0.2, 0.95, 0, 0, 0], [0, 0, 0, 0, 0, 0], "skin2"),
+    P("UpperTorso", [1.8, 1.5, 1.9], "LowerTorso", "Waist", [0, 0.15, -0.8, 0, 0, 0], [0, 0, 0.95, 0, 0, 0]),
+    P("Head", [1.05, 0.95, 1.6], "UpperTorso", "Neck", [0, 0.45, -0.85, 12, 0, 0], [0, -0.15, 0.6, 0, 0, 0], "skin2"),
+    P("Jaw", [0.85, 0.3, 1.3], "Head", "Jaw", [0, -0.42, 0.25, 0, 0, 0], [0, 0, 0.55, 0, 0, 0], "bone", "Block"),
+    P("RightUpperArm", [0.55, 1.25, 0.6], "UpperTorso", "RightShoulder", [0.72, -0.53, -0.35, 12, 0, 0], [0, 0.5, 0, 0, 0, 0]),
+    P("RightLowerArm", [0.42, 1.15, 0.45], "RightUpperArm", "RightElbow", [0, -0.55, 0, -30, 0, 0], [0, 0.52, 0, 0, 0, 0], "skin2"),
+    P("RightHand", [0.6, 0.28, 0.8], "RightLowerArm", "RightWrist", [0, -0.55, 0, 18, 0, 0], [0, 0.1, -0.15, 0, 0, 0], "skin2", "Block"),
+    P("RightUpperLeg", [0.62, 1.3, 0.75], "LowerTorso", "RightHip", [0.6, -0.3, 0.15, -28, 0, 0], [0, 0.55, 0, 0, 0, 0]),
+    P("RightLowerLeg", [0.45, 1.25, 0.45], "RightUpperLeg", "RightKnee", [0, -0.6, 0, 48, 0, 0], [0, 0.58, 0, 0, 0, 0], "skin2"),
+    P("RightFoot", [0.6, 0.28, 0.85], "RightLowerLeg", "RightAnkle", [0, -0.6, 0, -20, 0, 0], [0, 0.1, -0.2, 0, 0, 0], "skin2", "Block"),
+    P("Tail1", [0.5, 0.5, 1.4], "LowerTorso", "Tail1", [0, 0.25, 0.75, -20, 0, 0], [0, 0, -0.68, 0, 0, 0], "skin2"),
+    P("Tail2", [0.38, 0.38, 1.3], "Tail1", "Tail2", [0, 0, 0.66, 10, 0, 0], [0, 0, -0.62, 0, 0, 0], "skin2"),
+    P("Tail3", [0.25, 0.25, 1.2], "Tail2", "Tail3", [0, 0, 0.62, 10, 0, 0], [0, 0, -0.58, 0, 0, 0], "bone"),
+])
+hound_decor = [
+    # caveira alongada: placa superior, testa, olhos, presas de cima e de baixo
+    D("Head", [1.15, 0.45, 1.75], [0, 0.32, -0.1, 0, 0, 0], "mask", "Block", "SmoothPlastic", "Sphere"),
+    D("Head", [1.2, 0.3, 0.55], [0, 0.42, 0.35, -15, 0, 0], "mask", "Block", "SmoothPlastic"),
+    D("Head", [0.24, 0.12, 0.06], [0.33, 0.25, -0.35, 0, 25, -10], "eye", "Block", "Neon"),
+    D("Head", [0.24, 0.12, 0.06], [-0.33, 0.25, -0.35, 0, -25, 10], "eye", "Block", "Neon"),
+    D("Head", [0.06, 0.06, 1.3], [0.2, 0.42, -0.1, 0, 0, 0], "accent", "Block", "Neon"),
+    D("Head", [0.06, 0.06, 1.3], [-0.2, 0.42, -0.1, 0, 0, 0], "accent", "Block", "Neon"),
+    D("UpperTorso", [0.18, 0.7, 0.7], [0, -0.05, -0.65, 0, 90, 0], "dark", "Cylinder"),
+] + [D("Head", [0.09, 0.22, 0.09], [-0.36 + i * 0.12, -0.12, -0.72 + (i % 2) * 0.02, 0, 0, 180], "bone", "Wedge") for i in range(7)] \
+  + [D("Jaw", [0.09, 0.2, 0.09], [-0.3 + i * 0.12, 0.2, -0.55, 0, 0, 0], "bone", "Wedge") for i in range(6)] \
+  + [D("UpperTorso", [0.12, 0.6 - i * 0.08, 0.5], [0, 0.85, 0.6 - i * 0.45, -35, 0, 0], "bone", "Wedge") for i in range(4)] \
+  + [D("LowerTorso", [0.1, 0.42, 0.45], [0, 0.65, 0.2 - i * 0.5, -35, 0, 0], "bone", "Wedge") for i in range(2)] \
+  + mirror([
+    D("RightUpperArm", [0.75, 0.32, 0.8], [0, 0.55, 0, 0, 0, -15], "bone", "Block", "Slate", "Sphere"),
+    D("RightHand", [0.08, 0.1, 0.5], [0.18, 0.0, -0.58, -4, 0, 0], "bone", "Wedge"),
+    D("RightHand", [0.08, 0.1, 0.5], [-0.05, 0.0, -0.6, -4, 0, 0], "bone", "Wedge"),
+    D("RightFoot", [0.08, 0.1, 0.45], [0.15, 0.0, -0.6, -4, 0, 0], "bone", "Wedge"),
+    D("Head", [0.2, 0.2, 0.9], [0.38, 0.55, 0.55, 35, 0, -20], "bone", "Block", None, "Sphere"),
+])
+
+
+def quadruped_declarations():
+    legs = {}
+    hinges = {}
+    limits = {"Root": "free", "Waist": {"turn": 60}, "Neck": {"turn": 80}, "Jaw": {"turn": 45}}
+    for side in ("Right", "Left"):
+        hinges[side + "Elbow"] = {"axis": "X", "flex": -1}
+        hinges[side + "Knee"] = {"axis": "X", "flex": 1}
+        legs[side + "Shoulder"] = {"hinge": side + "Elbow", "foot": side + "Wrist"}
+        legs[side + "Hip"] = {"hinge": side + "Knee", "foot": side + "Ankle"}
+        limits[side + "Shoulder"] = {"turn": 120}
+        limits[side + "Hip"] = {"turn": 120}
+        limits[side + "Elbow"] = {"min": -150, "max": 50}
+        limits[side + "Knee"] = {"min": -30, "max": 150}
+        limits[side + "Wrist"] = {"turn": 80}
+        limits[side + "Ankle"] = {"turn": 80}
+    for t in ("Tail1", "Tail2", "Tail3"):
+        limits[t] = {"turn": 70}
+    return {"version": 1, "feet": ["RightHand", "LeftHand", "RightFoot", "LeftFoot"],
+            "hinges": hinges, "limbs": legs, "limits": limits}
+
+
+hound = {
+    "parts": hound_parts,
+    "root": [2.0, 1.6, 3.4],
+    "decor": hound_decor,
+    "declarations": quadruped_declarations(),
+    "animSet": "Hound",
+}
+
+rigs = {"HollowGrunt": grunt, "HollowBrute": brute, "HollowHound": hound}
 with open(dest, "w") as f:
     json.dump(rigs, f, indent=1)
 print("corpos:", ", ".join(rigs))

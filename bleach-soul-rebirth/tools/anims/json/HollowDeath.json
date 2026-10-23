@@ -1,0 +1,492 @@
+{
+ "name": "HollowDeath",
+ "rig": "game.Workspace.HollowGrunt",
+ "loop": false,
+ "priority": "Action",
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -4,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -6,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.55,
+      -0.35,
+      0.75
+     ]
+    },
+    "RightElbow": {
+     "bend": 55
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.55,
+      -0.35,
+      0.75
+     ]
+    },
+    "LeftElbow": {
+     "bend": 55
+    },
+    "Root": {
+     "position": [
+      0,
+      -0.15,
+      0
+     ]
+    },
+    "RightHip": {
+     "aim": [
+      0.15,
+      -1,
+      0.15
+     ]
+    },
+    "RightKnee": {
+     "bend": 20
+    },
+    "LeftHip": {
+     "aim": [
+      -0.15,
+      -1,
+      -0.1
+     ]
+    },
+    "LeftKnee": {
+     "bend": 20
+    },
+    "Tail1": {
+     "rotation": [
+      25,
+      0,
+      0
+     ]
+    },
+    "Tail2": {
+     "rotation": [
+      12.5,
+      0,
+      0
+     ]
+    },
+    "Tail3": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "Out"
+   }
+  },
+  {
+   "time": 0.14,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      22,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      28,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.95,
+      0.2,
+      0.2
+     ]
+    },
+    "RightElbow": {
+     "bend": 30
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.95,
+      0.25,
+      0.15
+     ]
+    },
+    "LeftElbow": {
+     "bend": 30
+    },
+    "Tail1": {
+     "rotation": [
+      25,
+      0,
+      0
+     ]
+    },
+    "Tail2": {
+     "rotation": [
+      12.5,
+      0,
+      0
+     ]
+    },
+    "Tail3": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    },
+    "Root": {
+     "position": [
+      0,
+      -0.3,
+      0.35
+     ],
+     "rotation": [
+      14,
+      0,
+      0
+     ]
+    },
+    "RightHip": {
+     "aim": [
+      0.2,
+      -1,
+      0.1
+     ]
+    },
+    "RightKnee": {
+     "bend": 40
+    },
+    "LeftHip": {
+     "aim": [
+      -0.2,
+      -1,
+      0.05
+     ]
+    },
+    "LeftKnee": {
+     "bend": 40
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   },
+   "name": "Impact",
+   "markers": [
+    {
+     "name": "Impact"
+    }
+   ]
+  },
+  {
+   "time": 0.55,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -8,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -25,
+      0,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.3,
+      -1,
+      0.2
+     ]
+    },
+    "RightElbow": {
+     "bend": 15
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.3,
+      -1,
+      0.15
+     ]
+    },
+    "LeftElbow": {
+     "bend": 15
+    },
+    "Tail1": {
+     "rotation": [
+      -5,
+      0,
+      0
+     ]
+    },
+    "Tail2": {
+     "rotation": [
+      -2.5,
+      0,
+      0
+     ]
+    },
+    "Tail3": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    },
+    "Root": {
+     "position": [
+      0,
+      -1.35,
+      0.1
+     ],
+     "rotation": [
+      -12,
+      0,
+      0
+     ]
+    },
+    "RightHip": {
+     "aim": [
+      0.2,
+      -0.45,
+      0.9
+     ]
+    },
+    "RightKnee": {
+     "bend": 125
+    },
+    "LeftHip": {
+     "aim": [
+      -0.2,
+      -0.45,
+      0.9
+     ]
+    },
+    "LeftKnee": {
+     "bend": 125
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "In"
+   },
+   "name": "Knees"
+  },
+  {
+   "time": 0.95,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -28,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -30,
+      10,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.4,
+      -0.85,
+      0.5
+     ]
+    },
+    "RightElbow": {
+     "bend": 15
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.3,
+      -0.9,
+      0.45
+     ]
+    },
+    "LeftElbow": {
+     "bend": 20
+    },
+    "Tail1": {
+     "rotation": [
+      -25,
+      10,
+      0
+     ]
+    },
+    "Tail2": {
+     "rotation": [
+      -12.5,
+      15,
+      0
+     ]
+    },
+    "Tail3": {
+     "rotation": [
+      0,
+      10,
+      0
+     ]
+    },
+    "Root": {
+     "position": [
+      0,
+      -1.75,
+      0.1
+     ],
+     "rotation": [
+      -38,
+      0,
+      0
+     ]
+    },
+    "RightHip": {
+     "aim": [
+      0.2,
+      -0.3,
+      0.95
+     ]
+    },
+    "RightKnee": {
+     "bend": 140
+    },
+    "LeftHip": {
+     "aim": [
+      -0.2,
+      -0.3,
+      0.95
+     ]
+    },
+    "LeftKnee": {
+     "bend": 140
+    }
+   },
+   "easing": {
+    "style": "Bounce",
+    "direction": "Out"
+   },
+   "name": "Slump",
+   "markers": [
+    {
+     "name": "Thud"
+    }
+   ]
+  },
+  {
+   "time": 1.5,
+   "joints": {
+    "Waist": {
+     "rotation": [
+      -30,
+      0,
+      0
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      -34,
+      14,
+      0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.4,
+      -0.88,
+      0.45
+     ]
+    },
+    "RightElbow": {
+     "bend": 18
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.3,
+      -0.92,
+      0.4
+     ]
+    },
+    "LeftElbow": {
+     "bend": 22
+    },
+    "Tail1": {
+     "rotation": [
+      -25,
+      14,
+      0
+     ]
+    },
+    "Tail2": {
+     "rotation": [
+      -12.5,
+      18,
+      0
+     ]
+    },
+    "Tail3": {
+     "rotation": [
+      0,
+      14,
+      0
+     ]
+    },
+    "Root": {
+     "position": [
+      0,
+      -1.8,
+      0.1
+     ],
+     "rotation": [
+      -40,
+      0,
+      0
+     ]
+    },
+    "RightHip": {
+     "aim": [
+      0.2,
+      -0.3,
+      0.95
+     ]
+    },
+    "RightKnee": {
+     "bend": 140
+    },
+    "LeftHip": {
+     "aim": [
+      -0.2,
+      -0.3,
+      0.95
+     ]
+    },
+    "LeftKnee": {
+     "bend": 140
+    }
+   }
+  }
+ ]
+}

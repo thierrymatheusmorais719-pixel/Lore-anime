@@ -450,6 +450,20 @@
   "waive": [],
   "rig": "../creatures/rigs/HollowGrunt.json"
  },
+ "HollowRoar": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
+ "HollowDeath": {
+  "flags": [],
+  "waive": [
+   "rootDrift"
+  ],
+  "rig": "../creatures/rigs/HollowGrunt.json"
+ },
  "HollowCastOverhead": {
   "flags": [
    "--grounded"
@@ -592,6 +606,20 @@
   "waive": [],
   "rig": "../creatures/rigs/HollowBrute.json"
  },
+ "BruteRoar": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowBrute.json"
+ },
+ "BruteDeath": {
+  "flags": [],
+  "waive": [
+   "rootDrift"
+  ],
+  "rig": "../creatures/rigs/HollowBrute.json"
+ },
  "BruteCastOverhead": {
   "flags": [
    "--grounded"
@@ -605,5 +633,134 @@
   ],
   "waive": [],
   "rig": "../creatures/rigs/HollowBrute.json"
+ },
+ "HoundIdle": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "HoundWalk": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json",
+  "groundSpeedFromReport": true
+ },
+ "HoundRun": {
+  "flags": [
+   "--locomotion"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json",
+  "groundSpeedFromReport": true
+ },
+ "HoundSlash1": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "HoundSlash2": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "HoundSlash3": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "HoundHeavySlash": {
+  "flags": [],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "HoundUppercut": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "HoundHit1": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "HoundHit2": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "HoundStagger": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "HoundGuardBreak": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "HoundParried": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "HoundBlock": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "HoundBlockHit": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "HoundDash": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "HoundRoar": {
+  "flags": [],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "HoundCastOverhead": {
+  "flags": [
+   "--grounded"
+  ],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
+ },
+ "HoundDeath": {
+  "flags": [],
+  "waive": [],
+  "rig": "../creatures/rigs/HollowHound.json"
  }
 }

@@ -48,14 +48,14 @@
     "LeftElbow": {
      "bend": 75
     },
-    "LeftHip": {
+    "RightHip": {
      "rotation": [
       0,
       0,
       0
      ]
     },
-    "RightHip": {
+    "LeftHip": {
      "rotation": [
       0,
       0,

@@ -5,6 +5,8 @@ local Sounds = {
 	Slash = { id = "rbxasset://sounds/swordslash.wav", volume = 0.7, pitch = { 1.05, 1.25 } },
 	-- garras de Hollow: o mesmo corte, mais grave e áspero (som do preparo, marcador "Swing")
 	Claw = { id = "rbxasset://sounds/swordslash.wav", volume = 0.75, pitch = { 0.62, 0.75 } },
+	-- rugido de Hollow (som embutido grave; troque por um rugido próprio/licenciado)
+	Roar = { id = "rbxasset://sounds/swordlunge.wav", volume = 1, pitch = { 0.2, 0.26 } },
 	Lunge = { id = "rbxasset://sounds/swordlunge.wav", volume = 0.8, pitch = { 0.95, 1.1 } },
 	Draw = { id = "rbxasset://sounds/unsheath.wav", volume = 0.7, pitch = { 1, 1.1 } },
 	Sheathe = { id = "rbxasset://sounds/unsheath.wav", volume = 0.5, pitch = { 0.7, 0.75 } },

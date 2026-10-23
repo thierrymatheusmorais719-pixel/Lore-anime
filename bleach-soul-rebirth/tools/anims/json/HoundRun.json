@@ -1,0 +1,97 @@
+{
+ "loop": true,
+ "priority": "Movement",
+ "duration": 0.42,
+ "gait": {
+  "pattern": "gallop",
+  "stride": 2.4,
+  "duty": 0.38,
+  "lift": 0.45,
+  "bob": 0.15
+ },
+ "keyframes": [
+  {
+   "time": 0,
+   "joints": {
+    "Neck": {
+     "rotation": [
+      -18,
+      0,
+      0
+     ]
+    },
+    "Jaw": {
+     "rotation": [
+      -12,
+      0,
+      0
+     ]
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 0.21,
+   "joints": {
+    "Neck": {
+     "rotation": [
+      -8,
+      0,
+      0
+     ]
+    },
+    "Jaw": {
+     "rotation": [
+      -20,
+      0,
+      0
+     ]
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "InOut"
+   }
+  },
+  {
+   "time": 0.42,
+   "joints": {
+    "Neck": {
+     "rotation": [
+      -18,
+      0,
+      0
+     ]
+    },
+    "Jaw": {
+     "rotation": [
+      -12,
+      0,
+      0
+     ]
+    }
+   }
+  }
+ ],
+ "waves": [
+  {
+   "joints": [
+    "Tail1",
+    "Tail2",
+    "Tail3"
+   ],
+   "axis": "X",
+   "amplitude": [
+    4,
+    12
+   ],
+   "lag": 0.18,
+   "cycles": 1
+  }
+ ],
+ "name": "HoundRun",
+ "rig": "game.Workspace.HollowHound"
+}

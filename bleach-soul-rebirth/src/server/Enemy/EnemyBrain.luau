@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 local Abilities = require(Shared.Config.Abilities)
 local Combat = require(Shared.Config.Combat)
+local Clips = require(Shared.Anim.Clips)
 local Physics = require(Shared.Physics)
 
 local Registry = require(script.Parent.Parent.Registry)
@@ -80,6 +81,7 @@ function EnemyBrain.new(actor, def, spawnPosition: Vector3)
 	self.strafeSign = if rng:NextNumber() < 0.5 then 1 else -1
 	self.strafeSwitch = 0
 	self.engaged = false
+	self.lastRoar = -math.huge
 	return self
 end
 
@@ -375,11 +377,20 @@ function EnemyBrain:Step()
 	local distance = horizontalDistance(target.root.Position, actor.root.Position)
 	local reach = def.attackRange * (actor.extra.reach or 1)
 	if not self.engaged then
-		-- Percebeu o alvo: encara e hesita um instante antes de avançar (leitura de "alerta")
+		-- Percebeu o alvo: encara e ruge (criaturas) antes de avançar; não ataca durante o rugido
 		self.engaged = true
 		self:Stop()
 		self:Face(target.root.Position)
-		self.nextDecision = now + rng:NextNumber(0.25, 0.5)
+		local roar = 0
+		local set = actor.model:GetAttribute("AnimSet")
+		local clip = type(set) == "string" and Clips[set .. "Roar"]
+		if clip and (now - self.lastRoar) > 20 then
+			self.lastRoar = now
+			roar = clip.duration
+			CombatService.SetBusy(actor, roar)
+			CombatService.Broadcast("Alert", { actor = actor.model }, actor.root.Position)
+		end
+		self.nextDecision = now + roar + rng:NextNumber(0.15, 0.4)
 		return
 	end
 	if now < self.nextDecision then

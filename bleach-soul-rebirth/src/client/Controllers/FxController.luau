@@ -642,13 +642,53 @@ handlers.MaskOff = function(d)
 	end
 end
 
+-- Inimigo percebeu um jogador: rugido de entrada em combate (som e tremor no marcador "Roar")
+handlers.Alert = function(d)
+	local model = d.actor
+	if not model or AnimController.Resolve(model, "Roar") == "Roar" then
+		return
+	end
+	AnimController.Play(model, "Roar", {
+		onMarker = function(marker: string)
+			local r = rootOf(model)
+			if not r then
+				return
+			end
+			if marker == "Roar" then
+				SoundController.Play("Roar", r)
+				VFX.Shockwave(r.Position - Vector3.new(0, 2, 0), Color3.fromRGB(200, 195, 185), 9, 0.5, 0.15)
+				if nearLocal(r.Position, 45) then
+					CameraController.Shake(0.18)
+				end
+			elseif marker == "Pound" or marker == "Thud" then
+				SoundController.Play("Land", r)
+			end
+		end,
+	})
+end
+
 handlers.Death = function(d)
 	local model = d.actor
 	if not model then
 		return
 	end
 	AnimController.StopAll(model, 0, 0.1)
-	AnimController.Play(model, "Launched")
+	-- Criaturas têm morte própria (segura o corpo caído até sumir); os outros, o arremesso
+	if AnimController.Resolve(model, "Death") ~= "Death" then
+		AnimController.Play(model, "Death", {
+			hold = true,
+			fadeIn = 0.05,
+			onMarker = function(marker: string)
+				local r = rootOf(model)
+				if marker == "Thud" and r then
+					SoundController.Play("Land", r)
+					VFX.emit("Dust", r.Position - Vector3.new(0, 2, 0), Color3.fromRGB(150, 145, 135), 8)
+				end
+			end,
+		})
+	else
+		AnimController.Play(model, "Launched")
+	end
 	local color = if d.team == "Enemies" then Color3.fromRGB(40, 30, 50) else Color3.fromRGB(200, 220, 255)
 	local deathRoot = rootOf(model)
 	local isBoss = model:GetAttribute("Boss") == true

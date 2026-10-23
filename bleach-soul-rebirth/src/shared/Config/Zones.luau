@@ -185,6 +185,23 @@ Zones.Portals = {
 }
 
 Zones.Spawners = {
+	-- matilhas de Caçadores (quadrúpedes)
+	{
+		zone = "Karakura",
+		enemy = "HollowHound",
+		position = Vector3.new(-150, 0, 180),
+		count = 3,
+		radius = 18,
+		respawn = 14,
+	},
+	{
+		zone = "HuecoMundo",
+		enemy = "HollowHound",
+		position = Vector3.new(-200, 0, -180),
+		count = 4,
+		radius = 25,
+		respawn = 14,
+	},
 	{
 		zone = "Karakura",
 		enemy = "HollowGrunt",

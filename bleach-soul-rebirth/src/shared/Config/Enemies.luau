@@ -67,6 +67,37 @@ Enemies.HollowBrute = {
 	loot = "HollowBrute",
 }
 
+-- Caçador: Hollow quadrúpede rápido que anda em matilha; morde em investida, dá patadas e dá o bote.
+Enemies.HollowHound = {
+	name = "Hollow Caçador",
+	level = 4,
+	health = 150,
+	walkSpeed = 24,
+	damageMultiplier = 0.9,
+	scale = 1,
+	body = "HollowHound",
+	look = {
+		skin = Color3.fromRGB(34, 36, 44),
+		mask = true,
+		maskColor = Color3.fromRGB(236, 232, 220),
+		eye = Color3.fromRGB(255, 200, 50),
+		stripes = Color3.fromRGB(255, 140, 40),
+	},
+	weapon = { style = "Claws", length = 1, blade = Color3.fromRGB(230, 225, 215), bodyClaws = true },
+	comboLength = 3,
+	attackRange = 7,
+	aggroRange = 70,
+	leashRange = 130,
+	reactionTime = 0.3,
+	dodgeChance = 0.2,
+	blockChance = 0,
+	parryChance = 0,
+	aggression = 0.85,
+	abilities = { { id = "E_Leap", weight = 1, minRange = 12, maxRange = 30 } },
+	xp = 50,
+	loot = "HollowHound",
+}
+
 Enemies.TrainingPuppet = {
 	name = "Boneco de Treino",
 	level = 1,
