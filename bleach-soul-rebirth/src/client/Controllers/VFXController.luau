@@ -268,6 +268,16 @@ function VFX.SlashArc(
 		local a = a0 + (a1 - a0) * i / n
 		points[i + 1] = cframe:PointToWorldSpace(Vector3.new(-radius * math.sin(a), 0, -radius * math.cos(a)))
 	end
+	VFX.SweepRibbon(points, color, thickness, d)
+end
+
+-- Fita de energia que se revela ao longo de `points` (do primeiro ao último) e some afinando.
+function VFX.SweepRibbon(points: { Vector3 }, color: Color3, thickness: number?, duration: number?)
+	local d = duration or 0.22
+	local n = #points - 1
+	if n < 1 then
+		return
+	end
 	local core, glow, attachments = ribbon(anchor, points, (thickness or 0.35) * 3.4, color, true)
 	for _, b in core do
 		b.Transparency = NumberSequence.new(1)
@@ -308,6 +318,45 @@ function VFX.SlashArc(
 			end
 		end
 	end)
+end
+
+-- Corte que segue o caminho real da lâmina: `samples` são posições da ponta da arma gravadas
+-- durante o golpe. Reamostra em pontos igualmente espaçados, alonga um pouco para fora do centro
+-- do movimento (exagero de anime) e desenha a fita. Devolve false se o caminho for curto demais.
+function VFX.BladePathArc(
+	samples: { Vector3 },
+	pivot: Vector3,
+	color: Color3,
+	thickness: number?,
+	duration: number?
+): boolean
+	if #samples < 3 then
+		return false
+	end
+	local total = 0
+	local lengths = { 0 }
+	for i = 2, #samples do
+		total += (samples[i] - samples[i - 1]).Magnitude
+		lengths[i] = total
+	end
+	if total < 2 then
+		return false
+	end
+	local count = if quality == "Low" then 6 else 12
+	local points = {}
+	local j = 1
+	for k = 0, count do
+		local target = total * k / count
+		while j < #samples - 1 and lengths[j + 1] < target do
+			j += 1
+		end
+		local span = lengths[j + 1] - lengths[j]
+		local t = if span > 0 then (target - lengths[j]) / span else 0
+		local p = samples[j]:Lerp(samples[j + 1], t)
+		points[k + 1] = pivot + (p - pivot) * 1.15
+	end
+	VFX.SweepRibbon(points, color, thickness, duration)
+	return true
 end
 
 function VFX.Sparks(position: Vector3, color: Color3, count: number, direction: Vector3?)

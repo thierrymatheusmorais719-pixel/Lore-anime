@@ -230,15 +230,66 @@ local function slashFx(model: Model, spec, animName: string)
 		local reverse = animName == "Slash2" or animName == "Air2" or animName == "Counter"
 		VFX.SlashArc(frame, color, if spec.heavy then 7 else 5.5, if spec.heavy then 0.6 else 0.35, 0.22, reverse)
 	end
+	-- Ponta da arma (ou das garras): o corte desenhado segue o caminho que ela fez de verdade
+	local tipAttachment: Attachment? = nil
+	for _, child in model:GetChildren() do
+		if child.Name == "Weapon" and child:IsA("Model") and child:GetAttribute("Hand") ~= "LeftHand" then
+			local host = child:FindFirstChild("TrailHost")
+			tipAttachment = host and host:FindFirstChild("TrailTop") :: Attachment?
+		end
+	end
+	local samples: { Vector3 } = {}
+	local sampling: RBXScriptConnection? = nil
+	local function startSampling()
+		if sampling or not tipAttachment then
+			return
+		end
+		local tip = tipAttachment :: Attachment
+		sampling = RunService.RenderStepped:Connect(function()
+			table.insert(samples, tip.WorldPosition)
+		end)
+		task.delay(1.5, function()
+			if sampling then
+				sampling:Disconnect()
+				sampling = nil
+			end
+		end)
+	end
+	local function pathArc()
+		if sampling then
+			sampling:Disconnect()
+			sampling = nil
+		end
+		local root = model.PrimaryPart
+		local drawn = false
+		if root and #samples >= 3 then
+			-- usa só o trecho final (o golpe em si), não a preparação inteira
+			local from = math.max(1, #samples - 9)
+			local path = table.move(samples, from, #samples, 1, {})
+			drawn = VFX.BladePathArc(
+				path,
+				root.Position + Vector3.new(0, 1, 0),
+				color,
+				if spec.heavy then 0.55 else 0.32,
+				0.24
+			)
+		end
+		if not drawn then
+			arc()
+		end
+	end
 	local soundPlayed, arcPlayed = false, false
 	local track = AnimController.Play(model, animName, {
 		onMarker = function(marker: string)
 			if marker == "Swing" and not soundPlayed then
 				soundPlayed = true
 				SoundController.Play(swingSound, model.PrimaryPart)
+				startSampling()
 			elseif marker == "Hit" and not arcPlayed then
 				arcPlayed = true
-				arc()
+				startSampling()
+				-- grava mais dois quadros do seguimento para o arco terminar onde a lâmina passou
+				task.delay(0.035, pathArc)
 			end
 		end,
 	})
