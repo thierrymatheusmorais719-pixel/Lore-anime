@@ -495,6 +495,9 @@ function RigBuilder.buildCreature(name: string, bodyName: string, look: Look, sc
 		end
 	end
 
+	-- enfeites nomeados pelo papel (Mask, Bone, Eye...): o cliente acha a máscara para estilhaçar
+	-- na morte e os olhos para acender
+	local ROLE_NAME = { mask = "Mask", bone = "Bone", eye = "Eye", accent = "Accent", dark = "Dark" }
 	for i, d in body.decor do
 		local base = parts[d.part]
 		if base then
@@ -508,7 +511,7 @@ function RigBuilder.buildCreature(name: string, bodyName: string, look: Look, sc
 			local piece: BasePart
 			if d.shape == "Wedge" then
 				local w = Instance.new("WedgePart")
-				w.Name = "Decor" .. i
+				w.Name = ROLE_NAME[d.role] or ("Decor" .. i)
 				w.Size = size
 				w.Color = colorOf(d)
 				w.Material = material
@@ -526,8 +529,15 @@ function RigBuilder.buildCreature(name: string, bodyName: string, look: Look, sc
 				w.Parent = base
 				piece = w
 			else
-				piece =
-					RigBuilder.decorate(base, "Decor" .. i, size, transform(d.offset, s), colorOf(d), material, shape)
+				piece = RigBuilder.decorate(
+					base,
+					ROLE_NAME[d.role] or ("Decor" .. i),
+					size,
+					transform(d.offset, s),
+					colorOf(d),
+					material,
+					shape
+				)
 			end
 			if d.mesh == "Sphere" then
 				sphereMesh(piece)

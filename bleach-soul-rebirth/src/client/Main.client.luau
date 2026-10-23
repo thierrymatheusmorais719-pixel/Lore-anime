@@ -16,6 +16,7 @@ local ORDER = {
 	"ReleaseCutscene",
 	"AnimController",
 	"CreatureSkin",
+	"HollowFx",
 	"CombatController",
 	"BossCinematicController",
 	"FxController",

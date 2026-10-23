@@ -110,6 +110,13 @@ function EnemyService.Spawn(enemyId: string, position: Vector3, onDeath: (() -> 
 
 	local brain = EnemyBrain.new(actor, def, ground)
 	brains[model] = brain
+	-- Criaturas chegam rasgando o espaço (Garganta): o cliente mostra o rasgo e revela o corpo;
+	-- durante a chegada ela não age e não toma dano
+	if model:GetAttribute("Creature") then
+		model:SetAttribute("Entrance", workspace:GetServerTimeNow())
+		actor.iframeUntil = CombatService.now() + 1.3
+		brain.nextDecision = os.clock() + 1.5
+	end
 
 	-- Fases de chefe por limiar de vida
 	if def.phases then

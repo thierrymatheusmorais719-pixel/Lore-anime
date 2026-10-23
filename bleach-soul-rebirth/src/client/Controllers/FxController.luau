@@ -17,6 +17,7 @@ local CombatController = require(Controllers.CombatController)
 local SpectacleFx = require(Controllers.SpectacleFx)
 local ImpactFx = require(Controllers.ImpactFx)
 local ReleaseCutscene = require(Controllers.ReleaseCutscene)
+local HollowFx = require(Controllers.HollowFx)
 local BossCinematicController = require(Controllers.BossCinematicController)
 
 local FxController = {}
@@ -673,6 +674,9 @@ handlers.Death = function(d)
 		return
 	end
 	AnimController.StopAll(model, 0, 0.1)
+	if model:GetAttribute("Creature") then
+		HollowFx.Shatter(model)
+	end
 	-- Criaturas têm morte própria (segura o corpo caído até sumir); os outros, o arremesso
 	if AnimController.Resolve(model, "Death") ~= "Death" then
 		AnimController.Play(model, "Death", {
