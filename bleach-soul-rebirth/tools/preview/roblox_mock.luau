@@ -25,7 +25,7 @@ Vector3Meta = {
 		return v3(-a.X, -a.Y, -a.Z)
 	end,
 }
-Vector3 = { new = v3, one = v3(1, 1, 1), zero = v3(0, 0, 0), yAxis = v3(0, 1, 0) }
+Vector3 = { new = v3, one = v3(1, 1, 1), zero = v3(0, 0, 0), xAxis = v3(1, 0, 0), yAxis = v3(0, 1, 0), zAxis = v3(0, 0, 1) }
 CF.__add = function(a, b)
 	return new(a.p[1] + b.X, a.p[2] + b.Y, a.p[3] + b.Z, a.r)
 end

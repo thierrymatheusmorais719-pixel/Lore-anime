@@ -398,6 +398,7 @@ function RigBuilder.buildCreature(name: string, bodyName: string, look: Look, sc
 	model.PrimaryPart = root
 
 	local parts: { [string]: BasePart } = { HumanoidRootPart = root }
+	local capsules: { [BasePart]: any } = {}
 	local low = 0
 	for _, info in body.parts do
 		local size = Vector3.new(info.size[1], info.size[2], info.size[3]) * s
@@ -407,6 +408,7 @@ function RigBuilder.buildCreature(name: string, bodyName: string, look: Look, sc
 			sphereMesh(p)
 		end
 		parts[info.name] = p
+		capsules[p] = info
 		local motor = Instance.new("Motor6D")
 		motor.Name = info.joint
 		motor.Part0 = parts[info.parent]
@@ -424,6 +426,60 @@ function RigBuilder.buildCreature(name: string, bodyName: string, look: Look, sc
 					low = math.min(low, root.CFrame:PointToObjectSpace(corner).Y)
 				end
 			end
+		end
+	end
+	-- Membros em cápsula (tubo + pontas arredondadas do mesmo diâmetro): onde dois segmentos se
+	-- encontram as pontas se sobrepõem e a articulação fica lisa, sem "contas" ovais. Segmentos de
+	-- cima (braço, coxa) ganham um volume de músculo embutido. A peça animada fica invisível.
+	for p, info in capsules do
+		if info.mesh == "Capsule" then
+			local size = p.Size
+			local axis, length, diameter
+			if size.Y >= size.X and size.Y >= size.Z then
+				axis, length, diameter = "Y", size.Y, (size.X + size.Z) / 2
+			elseif size.Z >= size.X then
+				axis, length, diameter = "Z", size.Z, (size.X + size.Y) / 2
+			else
+				axis, length, diameter = "X", size.X, (size.Y + size.Z) / 2
+			end
+			diameter = math.min(diameter, length)
+			local turn = if axis == "Y"
+				then CFrame.Angles(0, 0, math.rad(90))
+				elseif axis == "Z" then CFrame.Angles(0, math.rad(90), 0)
+				else CFrame.identity
+			local along = if axis == "Y" then Vector3.yAxis elseif axis == "Z" then Vector3.zAxis else Vector3.xAxis
+			local color, material = p.Color, p.Material
+			local span = length - diameter
+			RigBuilder.decorate(
+				p,
+				"Limb",
+				Vector3.new(span, diameter, diameter),
+				turn,
+				color,
+				material,
+				Enum.PartType.Cylinder
+			)
+			for _, sign in { -1, 1 } do
+				RigBuilder.decorate(
+					p,
+					"LimbCap",
+					Vector3.one * diameter,
+					CFrame.new(along * (sign * span / 2)),
+					color,
+					material,
+					Enum.PartType.Ball
+				)
+			end
+			if string.find(info.name, "Upper") then
+				local bulgeSize = if axis == "Y"
+					then Vector3.new(diameter * 1.16, length * 0.6, diameter * 1.12)
+					elseif axis == "Z" then Vector3.new(diameter * 1.16, diameter * 1.12, length * 0.6)
+					else Vector3.new(length * 0.6, diameter * 1.16, diameter * 1.12)
+				local bulge =
+					RigBuilder.decorate(p, "Muscle", bulgeSize, CFrame.new(along * (length * 0.08)), color, material)
+				sphereMesh(bulge)
+			end
+			p.Transparency = 1
 		end
 	end
 	parts.UpperTorso.CanCollide = true

@@ -49,7 +49,7 @@
     1.7,
     1.15
    ],
-   "shape": "Ball"
+   "shape": "Block"
   },
   {
    "name": "LeftUpperArm",
@@ -58,7 +58,7 @@
     1.7,
     1.15
    ],
-   "shape": "Ball"
+   "shape": "Block"
   },
   {
    "name": "RightLowerArm",
@@ -67,7 +67,7 @@
     1.6,
     1.15
    ],
-   "shape": "Ball"
+   "shape": "Block"
   },
   {
    "name": "LeftLowerArm",
@@ -76,7 +76,7 @@
     1.6,
     1.15
    ],
-   "shape": "Ball"
+   "shape": "Block"
   },
   {
    "name": "RightHand",
@@ -103,7 +103,7 @@
     1.15,
     1.25
    ],
-   "shape": "Ball"
+   "shape": "Block"
   },
   {
    "name": "LeftUpperLeg",
@@ -112,7 +112,7 @@
     1.15,
     1.25
    ],
-   "shape": "Ball"
+   "shape": "Block"
   },
   {
    "name": "RightLowerLeg",
@@ -121,7 +121,7 @@
     1.15,
     1.1
    ],
-   "shape": "Ball"
+   "shape": "Block"
   },
   {
    "name": "LeftLowerLeg",
@@ -130,7 +130,7 @@
     1.15,
     1.1
    ],
-   "shape": "Ball"
+   "shape": "Block"
   },
   {
    "name": "RightFoot",

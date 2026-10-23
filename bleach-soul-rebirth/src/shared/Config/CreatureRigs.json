@@ -111,7 +111,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      116,
      116,
@@ -144,7 +144,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      116,
      116,
@@ -177,7 +177,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      116,
      116,
@@ -210,7 +210,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      116,
      116,
@@ -309,7 +309,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    },
    {
     "name": "LeftUpperLeg",
@@ -337,7 +337,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    },
    {
     "name": "RightLowerLeg",
@@ -365,7 +365,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    },
    {
     "name": "LeftLowerLeg",
@@ -393,7 +393,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    },
    {
     "name": "RightFoot",
@@ -477,7 +477,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    },
    {
     "name": "Tail2",
@@ -505,7 +505,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    },
    {
     "name": "Tail3",
@@ -533,7 +533,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    }
   ],
   "root": [
@@ -2759,7 +2759,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      86,
      140,
@@ -2792,7 +2792,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      86,
      140,
@@ -2825,7 +2825,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      86,
      140,
@@ -2858,7 +2858,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      86,
      140,
@@ -2957,7 +2957,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      86,
      140,
@@ -2990,7 +2990,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      86,
      140,
@@ -3023,7 +3023,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      64,
      112,
@@ -3056,7 +3056,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      64,
      112,
@@ -3155,7 +3155,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      64,
      112,
@@ -3188,7 +3188,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      64,
      112,
@@ -3221,7 +3221,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      64,
      112,
@@ -4992,7 +4992,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      150,
      126,
@@ -5025,7 +5025,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      150,
      126,
@@ -5058,7 +5058,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      150,
      126,
@@ -5091,7 +5091,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      150,
      126,
@@ -5190,7 +5190,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      26,
      50,
@@ -5224,7 +5224,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      26,
      50,
@@ -5258,7 +5258,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      26,
      50,
@@ -5292,7 +5292,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      26,
      50,
@@ -10516,7 +10516,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    },
    {
     "name": "LeftUpperArm",
@@ -10544,7 +10544,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    },
    {
     "name": "RightLowerArm",
@@ -10572,7 +10572,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    },
    {
     "name": "LeftLowerArm",
@@ -10600,7 +10600,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    },
    {
     "name": "RightHand",
@@ -10684,7 +10684,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    },
    {
     "name": "LeftUpperLeg",
@@ -10712,7 +10712,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    },
    {
     "name": "RightLowerLeg",
@@ -10740,7 +10740,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    },
    {
     "name": "LeftLowerLeg",
@@ -10768,7 +10768,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    },
    {
     "name": "RightFoot",
@@ -10852,7 +10852,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    },
    {
     "name": "Tail2",
@@ -10880,7 +10880,7 @@
      0
     ],
     "role": "skin2",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    },
    {
     "name": "Tail3",
@@ -10908,7 +10908,7 @@
      0
     ],
     "role": "bone",
-    "mesh": "Sphere"
+    "mesh": "Capsule"
    }
   ],
   "root": [
@@ -11796,7 +11796,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      22,
      22,
@@ -11829,7 +11829,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      22,
      22,
@@ -11862,7 +11862,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      22,
      22,
@@ -11895,7 +11895,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      22,
      22,
@@ -11994,7 +11994,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      12,
      12,
@@ -12027,7 +12027,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      12,
      12,
@@ -12060,7 +12060,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      12,
      12,
@@ -12093,7 +12093,7 @@
      0
     ],
     "role": "skin",
-    "mesh": "Sphere",
+    "mesh": "Capsule",
     "color": [
      12,
      12,

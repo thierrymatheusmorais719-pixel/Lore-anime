@@ -570,6 +570,13 @@ menos = {
 }
 
 rigs = {"HollowGrunt": grunt, "HollowFeral": feral, "HollowBrute": brute, "HollowHound": hound, "MenosGrande": menos}
+# Membros em cápsula (sem "contas" ovais nas articulações): braços, pernas e cauda
+LIMBS = ("UpperArm", "LowerArm", "UpperLeg", "LowerLeg", "Tail")
+for body in rigs.values():
+    for part in body["parts"]:
+        if part.get("mesh") == "Sphere" and any(k in part["name"] for k in LIMBS):
+            part["mesh"] = "Capsule"
+
 with open(dest, "w") as f:
     json.dump(rigs, f, indent=1)
 print("corpos:", ", ".join(rigs))
