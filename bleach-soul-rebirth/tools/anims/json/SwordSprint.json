@@ -58,7 +58,57 @@
    },
    "easing": {
     "style": "CubicV2",
-    "direction": "InOut"
+    "direction": "Out"
+   }
+  },
+  {
+   "time": 0.0775,
+   "joints": {
+    "LeftElbow": {
+     "bend": 32.0
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.4,
+      -0.3,
+      -0.85
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      26.0,
+      0,
+      -3.0
+     ]
+    },
+    "RightElbow": {
+     "bend": 27.0
+    },
+    "Weapon": {
+     "rotation": [
+      -110.0,
+      10.0,
+      0.0
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      -30.0,
+      0,
+      4.0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.4,
+      -0.3,
+      -0.85
+     ]
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "In"
    }
   },
   {
@@ -108,7 +158,57 @@
    },
    "easing": {
     "style": "CubicV2",
-    "direction": "InOut"
+    "direction": "Out"
+   }
+  },
+  {
+   "time": 0.2325,
+   "joints": {
+    "LeftElbow": {
+     "bend": 32.0
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.4,
+      -0.3,
+      -0.85
+     ]
+    },
+    "Neck": {
+     "rotation": [
+      26.0,
+      0,
+      3.0
+     ]
+    },
+    "RightElbow": {
+     "bend": 27.0
+    },
+    "Weapon": {
+     "rotation": [
+      -110.0,
+      10.0,
+      0.0
+     ]
+    },
+    "Waist": {
+     "rotation": [
+      -30.0,
+      0,
+      -4.0
+     ]
+    },
+    "RightShoulder": {
+     "aim": [
+      0.4,
+      -0.3,
+      -0.85
+     ]
+    }
+   },
+   "easing": {
+    "style": "CubicV2",
+    "direction": "In"
    }
   },
   {

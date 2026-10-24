@@ -58,14 +58,54 @@ def author(out, manifest, blade_aim):
         json.dump(data, open(os.path.join(out, name + ".json"), "w"), indent=1)
         manifest[name] = {"flags": flags, "waive": [], "groundSpeedFromReport": ground_speed}
 
-    def gait(name, duration, stride, duty, lift, bob, upper_a, upper_b, crouch=0):
-        """Marcha: o gait move quadril e pernas; as chaves animam só o tronco e os braços,
-        balançando em oposição às pernas (meio ciclo cada lado)."""
+    def blend(a, b, t):
+        """Mistura duas poses de tronco/braços (aim, bend, rotation) — pose de passagem."""
+        out = {}
+        for joint in set(a) | set(b):
+            ja, jb = a.get(joint), b.get(joint)
+            if ja is None or jb is None:
+                out[joint] = json.loads(json.dumps(ja or jb))
+                continue
+            j = {}
+            for field in set(ja) | set(jb):
+                va, vb = ja.get(field), jb.get(field)
+                if isinstance(va, list) and isinstance(vb, list):
+                    j[field] = [round(x + (y - x) * t, 4) for x, y in zip(va, vb)]
+                elif isinstance(va, (int, float)) and isinstance(vb, (int, float)):
+                    j[field] = round(va + (vb - va) * t, 4)
+                else:
+                    j[field] = json.loads(json.dumps(va if va is not None else vb))
+            out[joint] = j
+        return out
+
+    def passing(a, b, side, energy):
+        """Pose de passagem (perna de apoio embaixo do corpo): braços cruzando o meio com
+        cotovelos mais dobrados, tronco sem torção e inclinado para o lado do apoio, cabeça firme."""
+        p = blend(a, b, 0.5)
+        for elbow in ("RightElbow", "LeftElbow"):
+            if elbow in p and "bend" in p[elbow]:
+                p[elbow]["bend"] = round(p[elbow]["bend"] + 12 * energy, 3)
+        w = p.get("Waist", {}).get("rotation", [0, 0, 0])
+        p["Waist"] = {"rotation": [w[0] - 2 * energy, 0, 4 * energy * side]}
+        n = p.get("Neck", {}).get("rotation", [0, 0, 0])
+        p["Neck"] = {"rotation": [n[0] + 2 * energy, 0, -3 * energy * side]}
+        return p
+
+    def gait(name, duration, stride, duty, lift, bob, upper_a, upper_b, crouch=0, energy=1.0):
+        """Marcha: o gait move quadril e pernas; as chaves animam o tronco e os braços em quatro
+        poses por ciclo — contato (balanço máximo), passagem (braços cruzando, peso de lado),
+        contato do outro lado, passagem — em oposição às pernas."""
         g = {"pattern": "walk", "stride": stride, "duty": duty, "lift": lift, "bob": bob}
         if crouch:
             g["crouch"] = crouch
-        write(name, {"loop": True, "priority": "Movement", "duration": duration, "gait": g,
-                     "keyframes": [key(0, upper_a, ease()), key(duration / 2, upper_b, ease()), key(duration, upper_a)]},
+        keys = [
+            key(0, upper_a, ease("CubicV2", "Out")),
+            key(duration * 0.25, passing(upper_a, upper_b, 1, energy), ease("CubicV2", "In")),
+            key(duration / 2, upper_b, ease("CubicV2", "Out")),
+            key(duration * 0.75, passing(upper_b, upper_a, -1, energy), ease("CubicV2", "In")),
+            key(duration, upper_a),
+        ]
+        write(name, {"loop": True, "priority": "Movement", "duration": duration, "gait": g, "keyframes": keys},
               ["--locomotion"], ground_speed=True)
 
     # ------------------------------------------------------------------ HERO (embainhada)
@@ -84,8 +124,9 @@ def author(out, manifest, blade_aim):
          merge(waist(9, -3, -2), neck(-7, 2), arms([0.12, -1, -0.45], 12, [-0.12, -1, 0.6], 32)))
     # Corrida (18 studs/s): tronco inclinado, braços dobrados bombeando, ombros contra o quadril
     gait("HeroRun", 0.36, 2.3, 0.36, 0.38, 0.12,
-         merge(waist(-10, -14), neck(8, 10), arms([0.12, -0.75, -0.65], 80, [-0.12, -0.55, 0.8], 95)),
-         merge(waist(10, -14), neck(-8, 10), arms([0.12, -0.55, 0.8], 95, [-0.12, -0.75, -0.65], 80)))
+         merge(waist(-13, -16, 2), neck(10, 11), arms([0.14, -0.7, -0.75], 75, [-0.14, -0.45, 0.88], 100)),
+         merge(waist(13, -16, -2), neck(-10, 11), arms([0.14, -0.45, 0.88], 100, [-0.14, -0.7, -0.75], 75)),
+         energy=1.3)
     # Disparada (27 studs/s, Shift): bem inclinado, braços para trás (corrida de anime)
     sprint_arms = merge(waist(0, -26), neck(0, 22), arms([0.35, -0.35, -0.85], 20, [-0.35, -0.35, -0.85], 20))
     gait("HeroSprint", 0.31, 2.4, 0.3, 0.36, 0.08,
