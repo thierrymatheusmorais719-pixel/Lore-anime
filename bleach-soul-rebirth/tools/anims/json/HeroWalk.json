@@ -15,37 +15,37 @@
    "joints": {
     "Waist": {
      "rotation": [
-      0,
-      -6,
-      0
+      -3,
+      -9,
+      2
      ]
     },
     "Neck": {
      "rotation": [
-      0,
-      4,
+      2,
+      7,
       0
      ]
     },
     "RightShoulder": {
      "aim": [
-      0.08,
+      0.12,
       -1,
-      0.35
+      0.6
      ]
     },
     "RightElbow": {
-     "bend": 12
+     "bend": 32
     },
     "LeftShoulder": {
      "aim": [
-      -0.08,
+      -0.12,
       -1,
-      -0.3
+      -0.45
      ]
     },
     "LeftElbow": {
-     "bend": 14
+     "bend": 12
     }
    },
    "easing": {
@@ -58,37 +58,37 @@
    "joints": {
     "Waist": {
      "rotation": [
-      0,
-      6,
-      0
+      -3,
+      9,
+      -2
      ]
     },
     "Neck": {
      "rotation": [
-      0,
-      -4,
+      2,
+      -7,
       0
      ]
     },
     "RightShoulder": {
      "aim": [
-      0.08,
+      0.12,
       -1,
-      -0.3
+      -0.45
      ]
     },
     "RightElbow": {
-     "bend": 14
+     "bend": 12
     },
     "LeftShoulder": {
      "aim": [
-      -0.08,
+      -0.12,
       -1,
-      0.35
+      0.6
      ]
     },
     "LeftElbow": {
-     "bend": 12
+     "bend": 32
     }
    },
    "easing": {
@@ -101,37 +101,37 @@
    "joints": {
     "Waist": {
      "rotation": [
-      0,
-      -6,
-      0
+      -3,
+      -9,
+      2
      ]
     },
     "Neck": {
      "rotation": [
-      0,
-      4,
+      2,
+      7,
       0
      ]
     },
     "RightShoulder": {
      "aim": [
-      0.08,
+      0.12,
       -1,
-      0.35
+      0.6
      ]
     },
     "RightElbow": {
-     "bend": 12
+     "bend": 32
     },
     "LeftShoulder": {
      "aim": [
-      -0.08,
+      -0.12,
       -1,
-      -0.3
+      -0.45
      ]
     },
     "LeftElbow": {
-     "bend": 14
+     "bend": 12
     }
    }
   }

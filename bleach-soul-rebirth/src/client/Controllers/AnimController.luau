@@ -207,11 +207,13 @@ local function scanMotors(rig: Rig)
 	end
 end
 
--- Sem o Animate padrão do Roblox (ou com o Animate vazio do projeto, StarterCharacterScripts),
--- a locomoção é toda nossa. O padrão traz valores (idle, walk, run...) como filhos; o nosso, não.
+-- Sem o Animate padrão do Roblox (ou com o Animate do projeto, StarterCharacterScripts), a
+-- locomoção é toda nossa. O do projeto leva o atributo OwnLocomotion (Animate.meta.json): não dá
+-- para confiar só em "sem filhos", porque Humanoid:ApplyDescription pode criar os valores de
+-- animação (idle, walk, run...) dentro dele — e aí ninguém animava o jogador (corpo duro).
 local function usesOwnLocomotion(model: Model): boolean
 	local animate = model:FindFirstChild("Animate")
-	return animate == nil or #animate:GetChildren() == 0
+	return animate == nil or animate:GetAttribute("OwnLocomotion") == true or #animate:GetChildren() == 0
 end
 
 function AnimController.Register(model: Model)
@@ -901,13 +903,16 @@ function AnimController.Start()
 			character:WaitForChild("Humanoid", 10)
 			AnimController.Unregister(character)
 			local rig = AnimController.Register(character)
-			-- O Animate é inserido logo após o spawn
-			task.delay(1, function()
-				if rigs[character] then
-					rig.manual = usesOwnLocomotion(character)
-					scanMotors(rig)
-				end
-			end)
+			-- O Animate é inserido logo após o spawn e o servidor ainda troca o corpo (ApplyDescription):
+			-- reavalia algumas vezes
+			for _, delay in { 0.5, 1.5, 3, 6 } do
+				task.delay(delay, function()
+					if rigs[character] == rig then
+						rig.manual = usesOwnLocomotion(character)
+						scanMotors(rig)
+					end
+				end)
+			end
 		end
 		if player.Character then
 			task.spawn(onCharacter, player.Character)

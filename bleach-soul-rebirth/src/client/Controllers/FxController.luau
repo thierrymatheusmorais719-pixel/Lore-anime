@@ -535,11 +535,8 @@ handlers.TransformStart = function(d)
 		local settings = if getSettings then getSettings() else nil
 		local allowed = not settings or settings.cinematics ~= "Off"
 		if allowed and d.cutscene then
-			local title = table.clone(d)
-			title.channel = d.reveal or 1
-			cutscene = ReleaseCutscene.Play(model, d, function()
-				FxController.ReleaseTitle:Fire(title)
-			end)
+			-- a própria cutscene desenha o título (kanji batendo na tela) na revelação
+			cutscene = ReleaseCutscene.Play(model, d)
 		end
 		if not cutscene then
 			if allowed then

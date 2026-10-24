@@ -48,6 +48,13 @@
     "LeftElbow": {
      "bend": 75
     },
+    "RightHip": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    },
     "LeftHip": {
      "rotation": [
       0,
@@ -55,18 +62,11 @@
       0
      ]
     },
-    "LeftKnee": {
-     "bend": 5
-    },
     "RightKnee": {
      "bend": 5
     },
-    "RightHip": {
-     "rotation": [
-      0,
-      0,
-      0
-     ]
+    "LeftKnee": {
+     "bend": 5
     }
    },
    "easing": {

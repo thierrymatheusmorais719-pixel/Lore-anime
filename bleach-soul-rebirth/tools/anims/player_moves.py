@@ -46,8 +46,8 @@ def neck(yaw=0, pitch=0):
     return {"Neck": {"rotation": [pitch, yaw, 0]}}
 
 
-def stance(width=0.62, front=0.3, back=-0.3, drop=-0.15):
-    return {"Root": {"position": [0, drop, 0]},
+def stance(width=0.62, front=0.3, back=-0.3, drop=-0.15, shift=0.0):
+    return {"Root": {"position": [shift, drop, 0]},
             "RightHip": {"aimAt": [width * 0.85, -2.93, front]}, "LeftHip": {"aimAt": [-width * 0.85, -2.93, back]}}
 
 
@@ -69,14 +69,19 @@ def author(out, manifest, blade_aim):
               ["--locomotion"], ground_speed=True)
 
     # ------------------------------------------------------------------ HERO (embainhada)
-    relaxed_a = merge(stance(drop=-0.08), waist(0, 0), neck(0, 0), arms([0.12, -1, 0.02], 10, [-0.12, -1, 0.02], 12))
-    relaxed_b = merge(stance(drop=-0.14), waist(3, 2), neck(-4, -2), arms([0.16, -1, 0.05], 16, [-0.15, -1, 0.04], 18))
+    # Parado: respira (peito sobe/desce), passa o peso de uma perna para a outra, ombros e cabeça
+    # acompanham; cotovelos soltos e levemente dobrados (nada de braço reto de boneco)
+    relaxed_a = merge(stance(drop=-0.1), waist(0, 0, 0), neck(0, 0), arms([0.2, -1, 0.06], 20, [-0.2, -1, 0.05], 22))
+    relaxed_b = merge(stance(drop=-0.17, shift=0.07), waist(5, 4, -3), neck(-7, -3),
+                      arms([0.24, -1, 0.12], 30, [-0.19, -1, 0.0], 18))
+    relaxed_c = merge(stance(drop=-0.13, shift=-0.07), waist(-4, 2, 3), neck(6, 1),
+                      arms([0.19, -1, 0.0], 18, [-0.24, -1, 0.12], 30))
     write("HeroIdle", {"loop": True, "priority": "Idle", "easing": ease(),
-                       "keyframes": [key(0, relaxed_a), key(1.6, relaxed_b), key(3.2, relaxed_a)]}, [])
+                       "keyframes": [key(0, relaxed_a), key(1.3, relaxed_b), key(2.6, relaxed_a), key(3.9, relaxed_c), key(5.2, relaxed_a)]}, [])
     # Andar (velocidades baixas: analógico parcial, aproximação)
     gait("HeroWalk", 0.5, 1.9, 0.6, 0.3, 0.06,
-         merge(waist(-6, 0), neck(4, 0), arms([0.08, -1, 0.35], 12, [-0.08, -1, -0.3], 14)),
-         merge(waist(6, 0), neck(-4, 0), arms([0.08, -1, -0.3], 14, [-0.08, -1, 0.35], 12)))
+         merge(waist(-9, -3, 2), neck(7, 2), arms([0.12, -1, 0.6], 32, [-0.12, -1, -0.45], 12)),
+         merge(waist(9, -3, -2), neck(-7, 2), arms([0.12, -1, -0.45], 12, [-0.12, -1, 0.6], 32)))
     # Corrida (18 studs/s): tronco inclinado, braços dobrados bombeando, ombros contra o quadril
     gait("HeroRun", 0.36, 2.3, 0.36, 0.38, 0.12,
          merge(waist(-10, -14), neck(8, 10), arms([0.12, -0.75, -0.65], 80, [-0.12, -0.55, 0.8], 95)),

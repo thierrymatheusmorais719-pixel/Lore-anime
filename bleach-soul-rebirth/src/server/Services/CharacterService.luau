@@ -143,6 +143,34 @@ function CharacterService.SpawnCFrame(profile: any): CFrame
 	return CFrame.new(position + Vector3.new(math.random(-4, 4), 3, math.random(-4, 4)))
 end
 
+-- Avatar R6 (configuração do jogo "R6" ou "escolha do jogador"): as animações são todas de R15,
+-- então troca o personagem por um R15 montado com a mesma aparência (roupas, cabelo, rosto).
+local function replaceWithR15(player: Player, character: Model, humanoid: Humanoid): boolean
+	local ok, model = pcall(function()
+		return Players:CreateHumanoidModelFromDescription(humanoid:GetAppliedDescription(), Enum.HumanoidRigType.R15)
+	end)
+	if not ok or not model then
+		log:Warn("Não deu para montar o R15 de", player.Name, model)
+		return false
+	end
+	model.Name = player.Name
+	local defaultAnimate = model:FindFirstChild("Animate")
+	if defaultAnimate then
+		defaultAnimate:Destroy()
+	end
+	local starter = game:GetService("StarterPlayer"):FindFirstChild("StarterCharacterScripts")
+	if starter then
+		for _, item in starter:GetChildren() do
+			item:Clone().Parent = model
+		end
+	end
+	model:PivotTo(character:GetPivot())
+	player.Character = model
+	model.Parent = workspace
+	character:Destroy()
+	return true
+end
+
 local function setupCharacter(player: Player, character: Model)
 	local profile = Registry.DataService.Get(player)
 	if not profile or not profile.faction then
@@ -155,11 +183,10 @@ local function setupCharacter(player: Player, character: Model)
 		return
 	end
 	if humanoid.RigType ~= Enum.HumanoidRigType.R15 then
-		log:Warn(
-			"O avatar de",
-			player.Name,
-			"é R6. Configure Game Settings > Avatar > R15 para animações completas."
-		)
+		log:Warn("O avatar de", player.Name, "é R6: trocando por R15 (Game Settings > Avatar > R15 evita isso).")
+		if replaceWithR15(player, character, humanoid) then
+			return -- o novo personagem dispara CharacterAdded e passa por aqui de novo
+		end
 	end
 	-- Corpo nas proporções do R15 padrão (as animações são compiladas e verificadas nessas medidas:
 	-- pés no chão, alcance dos braços, empunhadura). Mantém rosto, cabelo, roupas e acessórios do
@@ -179,6 +206,14 @@ local function setupCharacter(player: Player, character: Model)
 		description.RightLeg = 0
 		humanoid:ApplyDescription(description)
 	end)
+	-- ApplyDescription pode criar os valores de animação do avatar dentro do Animate do projeto:
+	-- a animação é toda do AnimController, então o Animate fica vazio
+	local animate = character:FindFirstChild("Animate")
+	if animate and animate:GetAttribute("OwnLocomotion") then
+		for _, child in animate:GetChildren() do
+			child:Destroy()
+		end
+	end
 	-- Aguarda o rig montar (mãos e torso) antes de prender armas.
 	character:WaitForChild("RightHand", 5)
 	character:WaitForChild("LowerTorso", 5)
