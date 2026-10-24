@@ -8,6 +8,7 @@ local Elements = require(Shared.Config.Elements)
 local RigBuilder = require(Shared.Builders.RigBuilder)
 local WeaponBuilder = require(Shared.Builders.WeaponBuilder)
 local OutfitBuilder = require(Shared.Builders.OutfitBuilder)
+local NpcStyle = require(Shared.Builders.NpcStyle)
 
 local FactionShowcase = {}
 
@@ -18,6 +19,13 @@ end
 
 local LOOKS = {
 	Shinigami = {
+		-- rosto e cabelo de anime (NpcStyle), como o jogador no jogo
+		style = {
+			skin = Color3.fromRGB(236, 205, 175),
+			hair = { kind = "spiky", color = Color3.fromRGB(255, 120, 40) },
+			eyes = Color3.fromRGB(110, 70, 40),
+			brows = "stern",
+		},
 		look = {
 			skin = Color3.fromRGB(236, 205, 175),
 			outfit = Color3.fromRGB(18, 18, 22),
@@ -50,6 +58,13 @@ local LOOKS = {
 		},
 	},
 	Quincy = {
+		style = {
+			skin = Color3.fromRGB(236, 210, 186),
+			hair = { kind = "slick", color = Color3.fromRGB(30, 35, 60) },
+			eyes = Color3.fromRGB(60, 90, 160),
+			brows = "calm",
+			glasses = true,
+		},
 		look = {
 			skin = Color3.fromRGB(240, 220, 200),
 			outfit = Color3.fromRGB(240, 242, 248),
@@ -74,6 +89,13 @@ local LOOKS = {
 		},
 	},
 	Hollow = {
+		style = {
+			skin = Color3.fromRGB(214, 196, 180),
+			hair = { kind = "wild", color = Color3.fromRGB(80, 200, 190) },
+			eyes = Color3.fromRGB(70, 190, 200),
+			brows = "sly",
+			mask = "jaw",
+		},
 		look = {
 			skin = Color3.fromRGB(30, 28, 34),
 			mask = true,
@@ -81,7 +103,8 @@ local LOOKS = {
 			maskColor = Color3.fromRGB(240, 236, 225),
 			eye = Color3.fromRGB(255, 60, 40),
 		},
-		outfit = nil,
+		-- Arrancar: jaqueta branca com o buraco Hollow (o uniforme que o jogador veste)
+		outfit = { trim = Color3.fromRGB(20, 20, 20), robe = Color3.fromRGB(235, 232, 225), hollowHole = true },
 		weapon = { style = "Claws", length = 3.2, blade = Color3.fromRGB(235, 230, 220), glow = false },
 		element = "Hollow",
 		dual = true,
@@ -100,6 +123,12 @@ local LOOKS = {
 		},
 	},
 	Fullbringer = {
+		style = {
+			skin = Color3.fromRGB(230, 196, 166),
+			hair = { kind = "wild", color = Color3.fromRGB(150, 60, 40) },
+			eyes = Color3.fromRGB(90, 60, 40),
+			brows = "stern",
+		},
 		look = {
 			skin = Color3.fromRGB(225, 190, 160),
 			outfit = Color3.fromRGB(45, 50, 60),
@@ -233,8 +262,17 @@ function FactionShowcase.Build(factionId: string): Model?
 	if humanoid then
 		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	end
+	if def.style then
+		NpcStyle.head(model, def.style)
+		if def.style.mask then
+			NpcStyle.prop(model, "mask", def.style)
+		end
+	end
 	if def.outfit then
-		OutfitBuilder.apply(model, def.outfit)
+		-- mesmo uniforme esculpido que o jogador veste no jogo
+		local outfit = table.clone(def.outfit)
+		outfit.uniform = OutfitBuilder.applyUniform(model, factionId, def.outfit)
+		OutfitBuilder.apply(model, outfit)
 	end
 	local weapon = WeaponBuilder.buildModel(def.weapon, def.element)
 	WeaponBuilder.attach(model, weapon, "RightHand")
@@ -276,6 +314,11 @@ function FactionShowcase.Viewport(factionId: string, accent: Color3): (ViewportF
 	if model then
 		model.Parent = world
 		base = model:GetPivot()
+		-- corpo, rosto, cabelo e roupa lisos (as mesmas malhas dos NPCs e do jogador)
+		local ok, HumanSkin = pcall(require, script.Parent.Parent.Controllers.HumanSkin)
+		if ok then
+			HumanSkin.Apply(model)
+		end
 	end
 	local target = Vector3.new(0, 3.2, 0)
 	local angle = 0

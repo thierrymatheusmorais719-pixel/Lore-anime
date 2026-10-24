@@ -20,6 +20,7 @@ local Log = require(Shared.Util.Log)
 local Builders = Shared.Builders
 local WeaponBuilder = require(Builders.WeaponBuilder)
 local OutfitBuilder = require(Builders.OutfitBuilder)
+local PlayerLook = require(Builders.PlayerLook)
 
 local Registry = require(script.Parent.Parent.Registry)
 
@@ -114,7 +115,9 @@ function CharacterService.RefreshAppearance(actor)
 		if actor.form == "Tier2" and power then
 			coat = power.tier2.coat
 		end
+		local uniform = OutfitBuilder.applyUniform(character, actor.faction, faction.outfit)
 		OutfitBuilder.apply(character, {
+			uniform = uniform,
 			trim = if actor.form ~= "Base" and power then Elements[power.element].primary else faction.outfit.trim,
 			robe = faction.outfit.robe,
 			cape = faction.outfit.cape,
@@ -197,6 +200,7 @@ local function setupCharacter(player: Player, character: Model)
 		description.WidthScale = 1
 		description.DepthScale = 1
 		description.HeadScale = 1
+		description.Head = 0 -- cabeça clássica: o rosto de anime do jogo é montado sobre ela
 		description.BodyTypeScale = 0
 		description.ProportionScale = 0
 		description.Torso = 0
@@ -217,6 +221,8 @@ local function setupCharacter(player: Player, character: Model)
 	-- Aguarda o rig montar (mãos e torso) antes de prender armas.
 	character:WaitForChild("RightHand", 5)
 	character:WaitForChild("LowerTorso", 5)
+	-- visual de anime: rosto e cabelo do jogo (o uniforme da facção vem no RefreshAppearance)
+	pcall(PlayerLook.apply, character, player.UserId, profile.look)
 
 	humanoid.BreakJointsOnDeath = false
 	humanoid.UseJumpPower = false

@@ -1,4 +1,5 @@
--- Peças da cidade de Karakura (noite): prédios comerciais com grade de janelas acesas, letreiros
+-- Peças da cidade de Karakura (de dia, como no anime): prédios médios em tons claros com janelas
+-- de vidro, varandas e caixas d'água no telhado, letreiros
 -- verticais em neon, caixas d'água e ar-condicionado no telhado, lojas térreas com toldo; casas
 -- japonesas com telhado de telha, muro e portão; calçadas com meio-fio, faixas de pedestre,
 -- semáforos, postes de concreto com fiação (a marca de Karakura), máquinas de venda, loja de
@@ -11,6 +12,21 @@ local Town = {}
 local WARM = Color3.fromRGB(255, 214, 150)
 local COOL = Color3.fromRGB(190, 220, 255)
 local DARK_GLASS = Color3.fromRGB(34, 40, 54)
+-- vidro de dia: azul-acinzentado claro que reflete o céu
+local DAY_GLASS = Color3.fromRGB(104, 126, 150)
+-- tons das fachadas de Karakura no anime: branco, bege, azul-acinzentado, amarelo-claro, areia
+local FACADES = {
+	Color3.fromRGB(234, 230, 220),
+	Color3.fromRGB(216, 208, 190),
+	Color3.fromRGB(198, 208, 216),
+	Color3.fromRGB(230, 214, 160),
+	Color3.fromRGB(194, 190, 184),
+	Color3.fromRGB(224, 204, 182),
+	Color3.fromRGB(180, 198, 210),
+	Color3.fromRGB(240, 238, 232),
+}
+Town.Facades = FACADES
+Town.DayGlass = DAY_GLASS
 local CONCRETE = Color3.fromRGB(150, 150, 155)
 local CURB = Color3.fromRGB(175, 175, 172)
 local POLE = Color3.fromRGB(120, 118, 112)
@@ -517,14 +533,9 @@ function Town.building(parent: Instance, cf: CFrame, width: number, depth: numbe
 	model.Name = "Building"
 	local floorH = 9
 	local height = floors * floorH + 2
-	local palettes = {
-		Color3.fromRGB(196, 190, 182),
-		Color3.fromRGB(150, 156, 166),
-		Color3.fromRGB(176, 160, 146),
-		Color3.fromRGB(120, 126, 136),
-		Color3.fromRGB(212, 208, 200),
-	}
-	local wall = palettes[rng:NextInteger(1, #palettes)]
+	local wall = FACADES[rng:NextInteger(1, #FACADES)]
+	-- metade são prédios residenciais (mansion): varanda corrida com guarda-corpo em cada andar
+	local apartment = rng:NextNumber() < 0.5
 	Build.part(
 		model,
 		Vector3.new(width, height, depth),
@@ -570,16 +581,19 @@ function Town.building(parent: Instance, cf: CFrame, width: number, depth: numbe
 		for c = 1, columns do
 			local x = -width / 2 + (c - 0.5) * (width / columns)
 			for _, side in { -1, 1 } do
-				local lit = rng:NextNumber() < 0.42
+				local lit = rng:NextNumber() < 0.06
 				local tint = if rng:NextNumber() < 0.25 then COOL else WARM
 				local win = Build.part(
 					model,
 					Vector3.new(width / columns - 1.6, 4.6, 0.25),
 					cf * CFrame.new(x, y + 4.2, side * (depth / 2 + 0.08)),
-					if lit then tint else DARK_GLASS,
+					if lit then tint else DAY_GLASS:Lerp(Color3.new(1, 1, 1), rng:NextNumber(0, 0.18)),
 					if lit then Enum.Material.Neon else Enum.Material.Glass,
 					"Window"
 				)
+				if not lit then
+					win.Reflectance = 0.18
+				end
 				noCollide(win)
 				-- moldura escura em volta e peitoril saliente embaixo (profundidade na fachada)
 				local frame = Build.part(
@@ -601,6 +615,29 @@ function Town.building(parent: Instance, cf: CFrame, width: number, depth: numbe
 				)
 				noCollide(sill)
 			end
+		end
+		if apartment then
+			-- varanda corrida na frente: laje saliente + guarda-corpo claro (o "listrado" dos prédios do anime)
+			noCollide(
+				Build.part(
+					model,
+					Vector3.new(width - 0.6, 0.45, 2.4),
+					cf * CFrame.new(0, y + 0.5, -depth / 2 - 1.2),
+					wall:Lerp(Color3.new(1, 1, 1), 0.35),
+					Enum.Material.Concrete,
+					"BalconySlab"
+				)
+			)
+			noCollide(
+				Build.part(
+					model,
+					Vector3.new(width - 0.6, 2.6, 0.2),
+					cf * CFrame.new(0, y + 2, -depth / 2 - 2.35),
+					wall:Lerp(Color3.new(1, 1, 1), 0.55),
+					Enum.Material.Concrete,
+					"BalconyWall"
+				)
+			)
 		end
 		-- ar-condicionado pendurado nas laterais e varandinha às vezes
 		for _, side in { -1, 1 } do
@@ -688,7 +725,29 @@ function Town.building(parent: Instance, cf: CFrame, width: number, depth: numbe
 		Enum.Material.Concrete,
 		"Parapet"
 	)
-	if rng:NextNumber() < 0.6 then
+	-- casa de escada e guarda-corpo em volta do terraço
+	local stairW = math.min(8, width * 0.3)
+	Build.part(
+		model,
+		Vector3.new(stairW, 7, math.min(8, depth * 0.35)),
+		cf * CFrame.new(-width / 2 + stairW / 2 + 1.5, height + 4, depth / 4),
+		wall:Lerp(Color3.new(0, 0, 0), 0.08),
+		Enum.Material.Concrete,
+		"StairHouse"
+	)
+	for _, edge in { { width, 0.15, 0, -1 }, { width, 0.15, 0, 1 }, { 0.15, depth, -1, 0 }, { 0.15, depth, 1, 0 } } do
+		noCollide(
+			Build.part(
+				model,
+				Vector3.new(edge[1], 1.6, edge[2]),
+				cf * CFrame.new(edge[3] * width / 2, height + 1.7, edge[4] * depth / 2),
+				Color3.fromRGB(150, 156, 160),
+				Enum.Material.Metal,
+				"RoofRail"
+			)
+		)
+	end
+	if rng:NextNumber() < 0.75 then
 		local tank = cf
 			* CFrame.new(rng:NextNumber(-width / 4, width / 4), height + 4.5, rng:NextNumber(-depth / 5, depth / 5))
 		Build.cylinder(
@@ -771,10 +830,10 @@ end
 -- (uma peça por trecho aceso, não por janela), recuos no topo, faixa de neon na coroa, luzes de
 -- aviação e às vezes heliponto, antena alta ou outdoor no telhado.
 local TOWER_GLASS = {
-	Color3.fromRGB(38, 52, 70),
-	Color3.fromRGB(30, 44, 52),
-	Color3.fromRGB(52, 58, 72),
-	Color3.fromRGB(44, 40, 52),
+	Color3.fromRGB(110, 134, 158),
+	Color3.fromRGB(96, 124, 140),
+	Color3.fromRGB(128, 142, 160),
+	Color3.fromRGB(120, 128, 140),
 }
 function Town.tower(parent: Instance, cf: CFrame, width: number, depth: number, floors: number, rng: Random)
 	local model = Instance.new("Model")
@@ -783,11 +842,7 @@ function Town.tower(parent: Instance, cf: CFrame, width: number, depth: number, 
 	local podiumFloors = 3
 	local podiumH = podiumFloors * floorH
 	local height = floors * floorH
-	local stone = ({
-		Color3.fromRGB(186, 180, 172),
-		Color3.fromRGB(140, 144, 152),
-		Color3.fromRGB(110, 104, 100),
-	})[rng:NextInteger(1, 3)]
+	local stone = FACADES[rng:NextInteger(1, #FACADES)]
 	local glassColor = TOWER_GLASS[rng:NextInteger(1, #TOWER_GLASS)]
 	local accent = NEON[rng:NextInteger(1, #NEON)]
 	local tint = if rng:NextNumber() < 0.35 then COOL else WARM
@@ -860,7 +915,7 @@ function Town.tower(parent: Instance, cf: CFrame, width: number, depth: number, 
 			Enum.Material.Glass,
 			"CurtainWall"
 		)
-		body.Reflectance = 0.12
+		body.Reflectance = 0.25
 		-- montantes verticais nas quatro faces (uma peça cada, da base ao topo do estágio)
 		local cols = { x = math.max(3, math.floor(tw / 4.5)), z = math.max(3, math.floor(td / 4.5)) }
 		for _, face in { { "x", -1 }, { "x", 1 }, { "z", -1 }, { "z", 1 } } do
@@ -876,7 +931,7 @@ function Town.tower(parent: Instance, cf: CFrame, width: number, depth: number, 
 					model,
 					if axis == "x" then Vector3.new(0.35, h, 0.35) else Vector3.new(0.35, h, 0.35),
 					cf * CFrame.new(pos),
-					Color3.fromRGB(70, 74, 82),
+					stone:Lerp(Color3.new(1, 1, 1), 0.3),
 					Enum.Material.Metal,
 					"Mullion"
 				)
@@ -898,14 +953,14 @@ function Town.tower(parent: Instance, cf: CFrame, width: number, depth: number, 
 			)
 			noCollide(slab)
 			-- andar inteiro de escritório aceso às vezes; senão trechos soltos
-			local busy = rng:NextNumber() < 0.12
+			local busy = false
 			for _, face in { { "x", -1 }, { "x", 1 }, { "z", -1 }, { "z", 1 } } do
 				local axis, sign = face[1], face[2]
 				local span = if axis == "x" then tw else td
 				local n = cols[axis]
 				local c = 0
 				while c < n do
-					local lit = busy or rng:NextNumber() < 0.42
+					local lit = busy or rng:NextNumber() < 0.05
 					if lit then
 						local run = if busy then n - c else math.min(n - c, rng:NextInteger(1, 3))
 						local u = -span / 2 + (c + run / 2) * span / n
@@ -1557,6 +1612,171 @@ function Town.railway(parent: Instance, start: Vector3, finish: Vector3, height:
 	end
 	model.Parent = parent
 	return model
+end
+
+-- Cidade até o horizonte (fora da área jogável): o "mar de prédios" de Karakura visto do alto no
+-- anime. Prédios simples e baratos — perto, corpo de vidro com faixas de laje na cor da fachada
+-- (as fitas horizontais de janela) e caixa d'água; longe, só o volume com a casa de escada.
+-- Chão em ladrilhos e morros azulados no fim, que a névoa da Atmosphere apaga aos poucos.
+-- Nada colide nem recebe clique. `avoid` = áreas de outras regiões que precisam ficar livres.
+function Town.skyline(
+	parent: Instance,
+	center: Vector3,
+	half: number,
+	radius: number,
+	avoid: { { position: Vector3, radius: number } },
+	rng: Random
+)
+	local folder = Build.folder(parent, "Skyline")
+	local function blocked(p: Vector3, margin: number): boolean
+		for _, a in avoid do
+			if Vector2.new(p.X - a.position.X, p.Z - a.position.Z).Magnitude < a.radius + margin then
+				return true
+			end
+		end
+		return false
+	end
+	local function quiet(part: BasePart, shadow: boolean)
+		part.CanCollide = false
+		part.CanQuery = false
+		part.CanTouch = false
+		part.CastShadow = shadow
+	end
+	local NEAR = half + 320
+	local count = 0
+	for _, ring in { { step = 32, from = half + 36, to = NEAR }, { step = 56, from = NEAR, to = radius } } do
+		local n = math.ceil(ring.to / ring.step)
+		for gx = -n, n do
+			for gz = -n, n do
+				local local2 = Vector3.new(gx * ring.step, 0, gz * ring.step)
+				local square = math.max(math.abs(local2.X), math.abs(local2.Z))
+				if square < ring.from or square >= ring.to or local2.Magnitude > radius then
+					continue
+				end
+				if rng:NextNumber() > 0.9 then
+					continue
+				end
+				local jitter = Vector3.new(rng:NextNumber(-3, 3), 0, rng:NextNumber(-3, 3))
+				local p = center + local2 + jitter
+				if blocked(p, 40) then
+					continue
+				end
+				local near = ring.step == 32
+				local w = if near then rng:NextNumber(18, 27) else rng:NextNumber(30, 48)
+				local d = if near then rng:NextNumber(18, 27) else rng:NextNumber(30, 48)
+				-- maioria média (3-8 andares), alguns altos
+				local floors = if rng:NextNumber() < 0.12 then rng:NextInteger(10, 17) else rng:NextInteger(3, 8)
+				local h = floors * 9
+				local wall = FACADES[rng:NextInteger(1, #FACADES)]
+				local base = CFrame.new(p) * CFrame.Angles(0, if rng:NextNumber() < 0.5 then 0 else math.pi / 2, 0)
+				if near then
+					local body = Build.part(
+						folder,
+						Vector3.new(w - 0.6, h, d - 0.6),
+						base * CFrame.new(0, h / 2, 0),
+						DAY_GLASS:Lerp(wall, rng:NextNumber(0.1, 0.35)),
+						Enum.Material.Glass,
+						"Body"
+					)
+					body.Reflectance = 0.15
+					quiet(body, true)
+					for f = 0, floors - 1 do
+						local band = Build.part(
+							folder,
+							Vector3.new(w, 4.4, d),
+							base * CFrame.new(0, f * 9 + 2.2, 0),
+							wall,
+							Enum.Material.Concrete,
+							"Band"
+						)
+						quiet(band, false)
+					end
+					local roof = Build.part(
+						folder,
+						Vector3.new(w, 1.2, d),
+						base * CFrame.new(0, h + 0.6, 0),
+						wall:Lerp(Color3.new(0, 0, 0), 0.1),
+						Enum.Material.Concrete,
+						"Roof"
+					)
+					quiet(roof, false)
+					if rng:NextNumber() < 0.6 then
+						local tank = Build.cylinder(
+							folder,
+							3.4,
+							3.2,
+							base
+								* CFrame.new(rng:NextNumber(-w / 4, w / 4), h + 3, rng:NextNumber(-d / 4, d / 4))
+								* CFrame.Angles(0, 0, math.rad(90)),
+							Color3.fromRGB(214, 214, 210),
+							Enum.Material.Metal
+						)
+						quiet(tank, false)
+					end
+				else
+					local body = Build.part(
+						folder,
+						Vector3.new(w, h, d),
+						base * CFrame.new(0, h / 2, 0),
+						wall:Lerp(DAY_GLASS, rng:NextNumber(0.05, 0.3)),
+						Enum.Material.Concrete,
+						"Body"
+					)
+					quiet(body, false)
+				end
+				local stair = Build.part(
+					folder,
+					Vector3.new(w * 0.3, 5, d * 0.3),
+					base * CFrame.new(-w * 0.25, h + 2.5, d * 0.2),
+					wall:Lerp(Color3.new(0, 0, 0), 0.08),
+					Enum.Material.Concrete,
+					"StairHouse"
+				)
+				quiet(stair, false)
+				count += 1
+			end
+		end
+	end
+	-- chão em ladrilhos (fora da cidade jogável e das outras regiões)
+	local tile = 200
+	local tn = math.ceil(radius / tile)
+	for gx = -tn, tn - 1 do
+		for gz = -tn, tn - 1 do
+			local mid = Vector3.new((gx + 0.5) * tile, 0, (gz + 0.5) * tile)
+			local square = math.max(math.abs(mid.X), math.abs(mid.Z))
+			if square - tile / 2 < half or mid.Magnitude > radius + tile or blocked(center + mid, tile * 0.75) then
+				continue
+			end
+			local ground = Build.part(
+				folder,
+				Vector3.new(tile, 1, tile),
+				CFrame.new(center + mid - Vector3.new(0, 0.55, 0)),
+				Color3.fromRGB(118, 120, 124),
+				Enum.Material.Asphalt,
+				"Ground"
+			)
+			quiet(ground, false)
+		end
+	end
+	-- morros no horizonte
+	for i = 1, 30 do
+		local angle = i / 30 * math.pi * 2 + rng:NextNumber(-0.08, 0.08)
+		local dist = radius + rng:NextNumber(150, 400)
+		local size = rng:NextNumber(500, 900)
+		local p = center + Vector3.new(math.cos(angle) * dist, -size * 0.32, math.sin(angle) * dist)
+		if blocked(p, size * 0.6 + 200) then
+			continue
+		end
+		local hill = Build.ball(
+			folder,
+			size,
+			CFrame.new(p),
+			Color3.fromRGB(92, 116, 108):Lerp(Color3.fromRGB(120, 136, 150), rng:NextNumber(0, 0.6)),
+			Enum.Material.Grass
+		)
+		quiet(hill, false)
+	end
+	return count
 end
 
 return Town

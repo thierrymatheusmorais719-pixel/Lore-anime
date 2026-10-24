@@ -5,6 +5,7 @@
 -- • Malha centrada na caixa e soldada à parte; casca dupla com normais suaves (como CreatureSkin)
 -- • Uma EditableMesh por (forma, tamanho), reaproveitada entre NPCs
 local AssetService = game:GetService("AssetService")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local HumanShapes = require(ReplicatedStorage.Shared.Builders.HumanShapes)
@@ -109,15 +110,31 @@ local function skin(base: BasePart, key: string, make: () -> any)
 	base.Transparency = 1
 end
 
-function HumanSkin.Apply(model: Model)
-	if disabled or model:GetAttribute("HumanSkin") then
+-- `outfitOnly` (jogadores): o corpo e a cabeça do avatar ficam como estão; só as peças do uniforme
+-- viram volumes lisos. Pode ser chamado de novo a cada troca de uniforme (peças já lisas são puladas).
+function HumanSkin.Apply(model: Model, outfitOnly: boolean?)
+	if disabled or (not outfitOnly and model:GetAttribute("HumanSkin")) then
 		return
 	end
-	model:SetAttribute("HumanSkin", true)
+	if not outfitOnly then
+		model:SetAttribute("HumanSkin", true)
+	end
 	task.spawn(function()
 		local ok, err = pcall(function()
 			-- peças presas aos braços/mãos acompanham o braço desenhado mais perto do tronco
-			for _, d in model:GetDescendants() do
+			-- (uniforme refeito num corpo já liso: só as peças novas do uniforme)
+			local bodySmooth = outfitOnly and model:GetAttribute("HumanSkin")
+			for _, d in (if outfitOnly and not bodySmooth then {} else model:GetDescendants()) :: { Instance } do
+				if
+					outfitOnly
+					and not (
+						d.Parent
+						and d.Parent:GetAttribute("Uniform")
+						and not d.Parent:FindFirstChild(d.Parent.Name .. "Skin")
+					)
+				then
+					continue
+				end
 				if d:IsA("Weld") and d.Part0 and d.Part0.Parent == model then
 					local inset = HumanShapes.armInset(d.Part0.Name)
 					if inset.Magnitude > 0 and d.Part1 and d.Part1.Parent == d.Part0 then
@@ -131,7 +148,13 @@ function HumanSkin.Apply(model: Model)
 				end
 				local part = d :: BasePart
 				local isBody = part.Parent == model
-				if isBody then
+				if part:FindFirstChild(part.Name .. "Skin") then
+					continue
+				elseif isBody and outfitOnly then
+					continue
+				elseif outfitOnly and not part:GetAttribute("Uniform") then
+					continue -- acessórios do avatar (cabelo, chapéus) ficam como são
+				elseif isBody then
 					local shape = HumanShapes.forPart(part.Name, part.Size)
 					if shape then
 						skin(part, "body/" .. part.Name .. "/" .. sizeKey(part.Size), function()
@@ -176,6 +199,35 @@ function HumanSkin.Start()
 		end
 		folder.ChildAdded:Connect(try)
 	end)
+	-- jogadores: uniforme liso (refeito quando o servidor troca o uniforme)
+	local function watchCharacter(character: Model)
+		local function refresh()
+			task.delay(0.4, function()
+				if not character.Parent then
+					return
+				end
+				if character:GetAttribute("GameLook") and not character:GetAttribute("HumanSkin") then
+					HumanSkin.Apply(character) -- visual do jogo: corpo, cabeça, rosto, cabelo e uniforme lisos
+				else
+					HumanSkin.Apply(character, true)
+				end
+			end)
+		end
+		character:GetAttributeChangedSignal("UniformVersion"):Connect(refresh)
+		if character:GetAttribute("UniformVersion") then
+			refresh()
+		end
+	end
+	local function onPlayer(p: Player)
+		p.CharacterAdded:Connect(watchCharacter)
+		if p.Character then
+			watchCharacter(p.Character)
+		end
+	end
+	for _, p in Players:GetPlayers() do
+		onPlayer(p)
+	end
+	Players.PlayerAdded:Connect(onPlayer)
 end
 
 return HumanSkin

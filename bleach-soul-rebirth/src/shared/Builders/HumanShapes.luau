@@ -487,6 +487,10 @@ HumanShapes.Fit = {
 
 -- Peças de roupa/cabelo em bloco que viram volume macio (nomes do NpcStyle)
 HumanShapes.Soft = {
+	-- traje por cima do uniforme (OutfitBuilder): faixa, gola, friso do sobretudo, ossos Hollow
+	Sash = 4,
+	CoatTrim = 4,
+	Bone = 3,
 	Sleeve = 4,
 	SleeveBell = 4,
 	Hakama = 4,

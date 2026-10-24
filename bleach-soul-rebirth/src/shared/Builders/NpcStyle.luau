@@ -23,6 +23,10 @@ export type Style = {
 	mask: string?, -- "jaw", "horn"
 }
 
+-- Enquanto `dressing`, toda peça criada é marcada "Uniform" (o uniforme do jogador é refeito a
+-- cada troca de forma sem mexer no avatar)
+local dressing = false
+
 local WHITE = Color3.fromRGB(240, 240, 242)
 local BLACK = Color3.fromRGB(16, 16, 20)
 local INK = Color3.fromRGB(28, 22, 24)
@@ -54,6 +58,9 @@ local function piece(
 	weld.Part1 = p
 	weld.C0 = offset
 	weld.Parent = p
+	if dressing then
+		p:SetAttribute("Uniform", true)
+	end
 	p.Parent = base
 	return p
 end
@@ -918,6 +925,68 @@ function PROPS.mask(model: Model, style: Style)
 end
 
 -- ======================================================================= aplicar
+-- Uniforme de facção sobre qualquer R15 (jogadores): só a roupa, sem trocar rosto nem cabelo.
+-- Peças marcadas "Uniform"; chamar de novo troca o uniforme.
+function NpcStyle.dress(model: Model, outfit: string, colors: { [string]: Color3 }?)
+	NpcStyle.undress(model)
+	local builder = OUTFIT[outfit]
+	if not builder then
+		return
+	end
+	dressing = true
+	local ok, err = pcall(
+		builder,
+		model,
+		{
+			skin = Color3.new(1, 1, 1),
+			outfit = outfit,
+			colors = colors,
+		} :: Style
+	)
+	dressing = false
+	if not ok then
+		warn("[NpcStyle] uniforme", outfit, err)
+	end
+end
+
+function NpcStyle.undress(model: Model)
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") and d:GetAttribute("Uniform") then
+			d:Destroy()
+		end
+	end
+end
+
+-- Só rosto e cabelo (jogadores com o visual do jogo, cartões de facção)
+function NpcStyle.head(model: Model, style: Style)
+	local head = part(model, "Head")
+	if not head then
+		return
+	end
+	head.Color = style.skin
+	-- tira o rosto/cabelo de blocos do RigBuilder (e o decal de rosto do avatar)
+	for _, child in head:GetChildren() do
+		if child:IsA("BasePart") or child:IsA("Decal") then
+			child:Destroy()
+		end
+	end
+	face(head, style)
+	if style.hair then
+		local builder = HAIR[style.hair.kind] or HAIR.spiky
+		builder(head, style.hair.color)
+	end
+end
+
+-- Acessório avulso (ex.: "mask" com style.mask = "jaw"/"horn")
+function NpcStyle.prop(model: Model, name: string, style: Style)
+	local builder = (PROPS :: any)[name]
+	if builder then
+		builder(model, style)
+	end
+end
+
+NpcStyle.HairKinds = { "spiky", "long", "ponytail", "bob", "slick", "wild" }
+
 function NpcStyle.apply(model: Model, style: Style)
 	local skin = style.skin
 	for _, n in { "Head", "LeftHand", "RightHand" } do
@@ -926,20 +995,7 @@ function NpcStyle.apply(model: Model, style: Style)
 			p.Color = skin
 		end
 	end
-	local head = part(model, "Head")
-	if head then
-		-- tira o rosto/cabelo de blocos do RigBuilder
-		for _, child in head:GetChildren() do
-			if child:IsA("BasePart") then
-				child:Destroy()
-			end
-		end
-		face(head, style)
-		if style.hair then
-			local builder = HAIR[style.hair.kind] or HAIR.spiky
-			builder(head, style.hair.color)
-		end
-	end
+	NpcStyle.head(model, style)
 	local outfit = OUTFIT[style.outfit] or OUTFIT.shihakusho
 	outfit(model, style)
 	if style.mask then

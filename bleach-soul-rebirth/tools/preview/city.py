@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw, ImageFilter
 here = os.path.dirname(os.path.abspath(__file__))
 root = os.path.abspath(os.path.join(here, "..", ".."))
 LUAU = os.environ.get("LUAU", "luau")
+DAY = os.environ.get("NIGHT") is None  # Karakura é de tarde; NIGHT=1 renderiza à noite
 sys.path.insert(0, here)
 from preview import module, local_polys  # noqa: E402
 
@@ -125,6 +126,8 @@ def render(polys, lights, cam, target, fov, size, out, label):
     up = np.cross(right, fwd)
     focal = (W / 2) / math.tan(math.radians(fov) / 2)
     moon = np.array([-0.4, 0.8, 0.45]); moon /= np.linalg.norm(moon)
+    sun = np.array([0.35, 0.75, -0.55]); sun /= np.linalg.norm(sun)
+    fog = np.array([0.80, 0.85, 0.91])
     L = np.array([l[0] for l in lights]) if lights else np.zeros((0, 3))
     LC = np.array([l[1] for l in lights]) if lights else np.zeros((0, 3))
     LR = np.array([l[2] for l in lights]) if lights else np.zeros(0)
@@ -156,10 +159,18 @@ def render(polys, lights, cam, target, fov, size, out, label):
                 n = n / nn if nn > 0 else np.array([0, 1, 0])
             else:
                 n = np.array([0, 1, 0])
-            diffuse = abs(n @ moon) * 0.22
-            shade = c * (0.16 + diffuse) + c * glow[i] * 0.55 + glow[i] * 0.05
+            if DAY:
+                # tarde: luz do sol + céu; superfícies voltadas para baixo ficam na sombra
+                shade = c * (0.52 + 0.5 * max(0.0, float(n @ sun)) + 0.12 * max(0.0, float(n[1])))
+            else:
+                diffuse = abs(n @ moon) * 0.22
+                shade = c * (0.16 + diffuse) + c * glow[i] * 0.55 + glow[i] * 0.05
             if col == (0.05, 0.12, 0.2):  # água reflete as luzes
                 shade = c + glow[i] * 0.12 + 0.04
+        if DAY:
+            # névoa azulada da Atmosphere: some no horizonte como no anime
+            haze = 1 - math.exp(-max(0.0, float(z.mean()) - 60) / 1100)
+            shade = shade * (1 - haze) + fog * haze
         rgb = tuple(int(255 * min(1, v)) for v in shade)
         items.append((z.mean(), list(zip(sx, sy)), rgb, transp, emissive))
     items.sort(key=lambda q: -q[0])
@@ -168,7 +179,10 @@ def render(polys, lights, cam, target, fov, size, out, label):
     sky = ImageDraw.Draw(img)
     for yy in range(H):
         t = yy / H
-        sky.line([(0, yy), (W, yy)], fill=(int(14 + 30 * t), int(18 + 34 * t), int(40 + 50 * t)))
+        if DAY:
+            sky.line([(0, yy), (W, yy)], fill=(int(150 + 60 * t), int(180 + 40 * t), int(222 + 15 * t)))
+        else:
+            sky.line([(0, yy), (W, yy)], fill=(int(14 + 30 * t), int(18 + 34 * t), int(40 + 50 * t)))
     draw = ImageDraw.Draw(img)
     bloom = Image.new("RGB", (W, H), (0, 0, 0))
     bdraw = ImageDraw.Draw(bloom)
@@ -179,6 +193,8 @@ def render(polys, lights, cam, target, fov, size, out, label):
         # brilho só do que aparece: o que não emite tapa o brilho de trás
         bdraw.polygon(pts, fill=rgb if emissive else (0, 0, 0))
     bloom = bloom.filter(ImageFilter.GaussianBlur(6))
+    if DAY:
+        bloom = Image.eval(bloom, lambda v: v // 4)
     img = Image.blend(img, Image.fromarray(np.clip(np.array(img, int) + np.array(bloom, int) * 0.8, 0, 255).astype("uint8")), 1)
     ImageDraw.Draw(img).text((8, 6), label, fill=(240, 240, 240))
     return img
@@ -193,11 +209,11 @@ if __name__ == "__main__":
             l = part["L"]
             lights.append((part["p"], l[:3], l[3], min(l[4], 3)))
     views = [
+        ("Karakura do alto (como no anime)", (-60, 330, -620), (40, 0, 260), 60),
         ("Vista aérea (sudeste)", (470, 300, -470), (0, 70, 0), 55),
         ("Avenida central (rua)", (4, 6, -215), (0, 8, 40), 70),
         ("Centro: cruzamento e praça", (6, 16, -110), (-10, 4, 10), 70),
         ("Horizonte do centro (da margem do rio)", (-250, 10, -20), (0, 95, 0), 72),
-        ("Trilho elevado (avenida leste)", (143, 7, -222), (150, 20, 20), 70),
         ("Bairro residencial", (-215, 9, -150), (-100, 6, -150), 70),
     ]
     tiles = [render(polys, lights, cam, tgt, fov, (640, 400), None, label) for label, cam, tgt, fov in views]

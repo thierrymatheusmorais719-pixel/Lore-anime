@@ -150,7 +150,33 @@ def run_npcs(ids):
     smooth = os.environ.get("HUMAN", "1") == "1"
     driver = DUMP + "\n"
     if smooth:
-        driver += r'''
+        driver = smooth_driver(driver)
+    for npc in ids:
+        driver += (f'do local n = NPCS["{npc}"]; local m = RigBuilder.build("{npc}", {{ skin = n.look.skin }}, 1); '
+                   f'if n.style then NpcStyle.apply(m, n.style) end; ' + ("SMOOTH(m); " if smooth else "") + 'dump(n.name, m) end\n')
+    src = "\n".join([
+        "game = {}", cframe, mock,
+        "CREATURE_RIGS = " + lua_literal(rigs),
+        "local RigBuilder = (function()\n" + rigbuilder + "\nend)()",
+        "local NpcStyle = (function()\n" + style + "\nend)()",
+        "HumanShapes = (function()\n" + human + "\nend)()",
+        "NPCS = (function()\n" + npcs + "\nend)()",
+        driver,
+    ])
+    path = os.path.join(here, ".npcs.luau")
+    open(path, "w", encoding="utf-8").write(src)
+    res = subprocess.run([LUAU, path], capture_output=True, text=True)
+    if res.returncode != 0 or res.stderr.strip():
+        raise SystemExit(res.stdout[-2000:] + res.stderr[-3000:])
+    models = [json.loads(l) for l in res.stdout.splitlines() if l.startswith("{")]
+    for m in models:
+        for part in m["parts"]:
+            if part.get("lt"):
+                part["mesh_tris"] = part.pop("lt")
+    return models
+
+
+SMOOTH_LUA = r'''
 local function tris(shape)
 	local out = {}
 	for _, t in shape.t do
@@ -190,32 +216,14 @@ function SMOOTH(model)
 	end
 end
 '''
-        driver = driver.replace('"k":"%s"}','"k":"%s","lt":%s}').replace(
-            'tostring(p:GetAttribute("Sculpt") or "")))',
-            'tostring(p:GetAttribute("Sculpt") or ""), p:GetAttribute("Mesh") or "null"))')
-    for npc in ids:
-        driver += (f'do local n = NPCS["{npc}"]; local m = RigBuilder.build("{npc}", {{ skin = n.look.skin }}, 1); '
-                   f'if n.style then NpcStyle.apply(m, n.style) end; ' + ("SMOOTH(m); " if smooth else "") + 'dump(n.name, m) end\n')
-    src = "\n".join([
-        "game = {}", cframe, mock,
-        "CREATURE_RIGS = " + lua_literal(rigs),
-        "local RigBuilder = (function()\n" + rigbuilder + "\nend)()",
-        "local NpcStyle = (function()\n" + style + "\nend)()",
-        "HumanShapes = (function()\n" + human + "\nend)()",
-        "NPCS = (function()\n" + npcs + "\nend)()",
-        driver,
-    ])
-    path = os.path.join(here, ".npcs.luau")
-    open(path, "w", encoding="utf-8").write(src)
-    res = subprocess.run([LUAU, path], capture_output=True, text=True)
-    if res.returncode != 0 or res.stderr.strip():
-        raise SystemExit(res.stdout[-2000:] + res.stderr[-3000:])
-    models = [json.loads(l) for l in res.stdout.splitlines() if l.startswith("{")]
-    for m in models:
-        for part in m["parts"]:
-            if part.get("lt"):
-                part["mesh_tris"] = part.pop("lt")
-    return models
+
+
+def smooth_driver(driver):
+    """Acrescenta SMOOTH(model) (malhas do HumanSkin) e exporta as malhas no dump."""
+    driver += SMOOTH_LUA
+    return driver.replace('"k":"%s"}','"k":"%s","lt":%s}').replace(
+        'tostring(p:GetAttribute("Sculpt") or "")))',
+        'tostring(p:GetAttribute("Sculpt") or ""), p:GetAttribute("Mesh") or "null"))')
 
 
 def run_showcase(factions):
@@ -228,23 +236,31 @@ def run_showcase(factions):
     elements = module("src/shared/Config/Elements.luau", {})
     weapon = module("src/shared/Builders/WeaponBuilder.luau",
                     {r'require\(game:GetService\("ReplicatedStorage"\)\.Shared\.Config\.Elements\)': "ELEMENTS"})
-    outfit = module("src/shared/Builders/OutfitBuilder.luau", {})
+    npcstyle = module("src/shared/Builders/NpcStyle.luau", {})
+    outfit = module("src/shared/Builders/OutfitBuilder.luau", {r"require\(script\.Parent\.NpcStyle\)": "NPCSTYLE"})
     showcase = module("src/client/UI/FactionShowcase.luau", {
         r"require\(Shared\.Config\.Elements\)": "ELEMENTS",
         r"require\(Shared\.Builders\.RigBuilder\)": "RIGBUILDER",
         r"require\(Shared\.Builders\.WeaponBuilder\)": "WEAPONBUILDER",
         r"require\(Shared\.Builders\.OutfitBuilder\)": "OUTFITBUILDER",
+        r"require\(Shared\.Builders\.NpcStyle\)": "NPCSTYLE",
     })
+    human = module("src/shared/Builders/HumanShapes.luau", {})
+    smooth = os.environ.get("HUMAN", "1") == "1"
     driver = DUMP + "\n"
+    if smooth:
+        driver = smooth_driver(driver)
     for f in factions:
-        driver += f'do local m = SHOWCASE.Build("{f}"); dump("{f}", m) end\n'
+        driver += f'do local m = SHOWCASE.Build("{f}"); ' + ("SMOOTH(m); " if smooth else "") + f'dump("{f}", m) end\n'
     src = "\n".join([
         "game = {}", cframe, mock,
         "CREATURE_RIGS = " + lua_literal(rigs),
         "ELEMENTS = (function()\n" + elements + "\nend)()",
         "RIGBUILDER = (function()\n" + rigbuilder + "\nend)()",
         "WEAPONBUILDER = (function()\n" + weapon + "\nend)()",
+        "NPCSTYLE = (function()\n" + npcstyle + "\nend)()",
         "OUTFITBUILDER = (function()\n" + outfit + "\nend)()",
+        "HumanShapes = (function()\n" + human + "\nend)()",
         "SHOWCASE = (function()\n" + showcase + "\nend)()",
         driver,
     ])
@@ -253,7 +269,12 @@ def run_showcase(factions):
     res = subprocess.run([LUAU, path], capture_output=True, text=True)
     if res.returncode != 0 or res.stderr.strip():
         raise SystemExit(res.stdout[-2000:] + res.stderr[-3000:])
-    return [json.loads(l) for l in res.stdout.splitlines() if l.startswith("{")]
+    models = [json.loads(l) for l in res.stdout.splitlines() if l.startswith("{")]
+    for m in models:
+        for part in m["parts"]:
+            if part.get("lt"):
+                part["mesh_tris"] = part.pop("lt")
+    return models
 
 
 def attach_sculpt(models, bodies):

@@ -264,18 +264,18 @@ function Regions.Karakura(folder: Instance)
 		if downtown then
 			local dist = Vector2.new(center.X - c.X, center.Z - c.Z).Magnitude
 			-- horizonte: torres de 20+ andares no miolo, caindo para prédios médios nas bordas
-			local floors = math.clamp(math.floor(27 - dist / 8.5 + rng:NextInteger(-3, 3)), 6, 30)
+			local floors = math.clamp(math.floor(24 - dist / 9 + rng:NextInteger(-4, 3)), 6, 26)
 			if not konbiniDone and dist < 110 and dist > 60 and rng:NextNumber() < 0.25 then
 				konbiniDone = true
 				Town.konbini(buildings, cf, rng)
-			elseif floors >= 11 then
+			elseif floors >= 14 then
 				Town.tower(buildings, cf, frontage - 2, depth, floors, rng)
 			else
 				Town.building(buildings, cf, frontage - 2, depth, floors, rng)
 			end
-		elseif rng:NextNumber() < 0.3 then
-			-- prédios médios misturados às casas fora do centro
-			Town.building(buildings, cf, frontage - 4, depth - 4, rng:NextInteger(4, 8), rng)
+		elseif rng:NextNumber() < 0.6 then
+			-- prédios médios dominam a paisagem (como no anime), com casas entre eles
+			Town.building(buildings, cf, frontage - 4, depth - 4, rng:NextInteger(4, 10), rng)
 		else
 			local w, d = frontage - 6, depth - 8
 			Town.house(houses, cf, w, d, rng)
@@ -324,9 +324,40 @@ function Regions.Karakura(folder: Instance)
 					t += frontage
 				end
 			end
-			-- miolo do quarteirão: gramado com árvores
+			-- miolo do quarteirão: na maioria, mais prédios (Karakura é um mar de prédios); às vezes
+			-- um pátio com gramado e árvores
 			local inner = c + Vector3.new((x0 + x1) / 2, 0, (z0 + z1) / 2)
-			if Build.clear(inner, keepOut) and (x1 - x0) > 60 and (z1 - z0) > 60 then
+			local courtyard = rng:NextNumber() < 0.3
+			if not courtyard then
+				local ix0, ix1 = x0 + depth + 3, x1 - depth - 3
+				local iz0, iz1 = z0 + depth + 3, z1 - depth - 3
+				local cell = 24
+				local nx, nz = math.floor((ix1 - ix0) / cell), math.floor((iz1 - iz0) / cell)
+				for gx = 0, nx - 1 do
+					for gz = 0, nz - 1 do
+						local spanX, spanZ = (ix1 - ix0) / nx, (iz1 - iz0) / nz
+						local p = c + Vector3.new(ix0 + (gx + 0.5) * spanX, 0, iz0 + (gz + 0.5) * spanZ)
+						if Build.clear(p, keepOut) and p.X - c.X >= riverEdge then
+							local facing = ({ Vector3.xAxis, -Vector3.xAxis, Vector3.zAxis, -Vector3.zAxis })[rng:NextInteger(
+								1,
+								4
+							)]
+							local floors = if downtown then rng:NextInteger(7, 14) else rng:NextInteger(4, 9)
+							-- largura é o eixo X local: virado para ±X, a largura corre ao longo de Z
+							local sideways = math.abs(facing.X) > 0.5
+							Town.building(
+								buildings,
+								CFrame.lookAt(p, p + facing),
+								(if sideways then spanZ else spanX) - 4,
+								(if sideways then spanX else spanZ) - 4,
+								floors,
+								rng
+							)
+						end
+					end
+				end
+			end
+			if courtyard and Build.clear(inner, keepOut) and (x1 - x0) > 60 and (z1 - z0) > 60 then
 				workspace.Terrain:FillBlock(
 					CFrame.new(inner.X, -0.6, inner.Z),
 					Vector3.new(30, 1.2, 30),
@@ -414,6 +445,18 @@ function Regions.Karakura(folder: Instance)
 	Town.arcade(folder, CFrame.new(arcadeCenter), 110, rng)
 
 	-- trilho elevado ao longo da avenida leste
+	-- cidade até o horizonte em volta da área jogável (sem invadir as outras regiões)
+	local others = {}
+	for id, other in Zones.List do
+		if id ~= "Karakura" then
+			table.insert(others, {
+				position = other.center,
+				radius = math.max(other.size.X, other.size.Z) * 0.6,
+			})
+		end
+	end
+	Town.skyline(folder, c, math.max(halfX, halfZ), 1500, others, Random.new(2002))
+
 	Town.railway(folder, c + Vector3.new(150, 0, -halfZ + 4), c + Vector3.new(150, 0, halfZ - 4), 26, function(p)
 		return not Build.clear(p, keepOut)
 	end)

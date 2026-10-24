@@ -128,6 +128,9 @@ Inst.__index = function(self, k)
 	if m ~= nil then
 		return m
 	end
+	if k == "Parent" then
+		return rawget(self, "_parent")
+	end
 	local v = rawget(self, "_props")[k]
 	if v ~= nil then
 		return v -- inclusive `false` (Enabled = false)
@@ -192,7 +195,23 @@ function Inst:IsA(class)
 	if class == "BasePart" then
 		return c == "Part" or c == "WedgePart" or c == "MeshPart"
 	end
+	if class == "JointInstance" then
+		return c == "Motor6D" or c == "Weld"
+	end
+	if class == "Constraint" then
+		return c == "AnimationConstraint" or c == "RigidConstraint"
+	end
 	return c == class
+end
+function Inst:IsDescendantOf(ancestor)
+	local p = rawget(self, "_parent")
+	while p do
+		if p == ancestor then
+			return true
+		end
+		p = rawget(p, "_parent")
+	end
+	return false
 end
 function Inst:SetAttribute(k, v)
 	rawget(self, "_attrs")[k] = v

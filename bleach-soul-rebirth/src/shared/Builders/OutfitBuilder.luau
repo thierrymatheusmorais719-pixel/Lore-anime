@@ -1,7 +1,67 @@
 -- Acessórios de facção/forma sobre o avatar: faixa (obi), painéis de tecido nas costas
 -- (haori/capa/sobretudo de Bankai), buraco Hollow e fragmentos de osso.
 -- Painéis de tecido usam Motor6D "Cloth*" que o cliente anima com molas (ClothController).
+local NpcStyle = require(script.Parent.NpcStyle)
+
 local OutfitBuilder = {}
+
+-- Uniforme de cada facção (roupa esculpida do NpcStyle por cima do avatar do jogador)
+local UNIFORMS = {
+	Shinigami = function(o: any)
+		return "shihakusho", { robe = o.robe, obi = o.trim, inner = Color3.fromRGB(240, 240, 242) }
+	end,
+	Quincy = function(o: any)
+		return "quincy", { coat = o.robe, trim = o.trim }
+	end,
+	Hollow = function(o: any)
+		return "arrancar", { coat = o.robe, sash = o.trim }
+	end,
+	Fullbringer = function(o: any)
+		return "fullbring", { jacket = o.robe, glow = o.trim }
+	end,
+}
+
+-- Roupa do avatar (camisa/calça 2D e roupas em camadas) sai para o uniforme aparecer; cabelo,
+-- chapéus, rosto e cor de pele ficam.
+local CLOTHING_TYPES = {
+	"Shirt",
+	"Pants",
+	"Jacket",
+	"Sweater",
+	"Shorts",
+	"DressSkirt",
+	"TShirt",
+	"LeftShoe",
+	"RightShoe",
+}
+function OutfitBuilder.stripClothing(character: Model)
+	for _, child in character:GetChildren() do
+		if child:IsA("Shirt") or child:IsA("Pants") or child:IsA("ShirtGraphic") then
+			child:Destroy()
+		elseif child:IsA("Accessory") then
+			local handle = child:FindFirstChild("Handle")
+			local layered = handle and handle:FindFirstChildOfClass("WrapLayer")
+			local typeName = (child :: any).AccessoryType and (child :: any).AccessoryType.Name
+			if layered or (typeName and table.find(CLOTHING_TYPES, typeName)) then
+				child:Destroy()
+			end
+		end
+	end
+end
+
+-- Veste o uniforme da facção. Devolve true se havia uniforme para ela.
+function OutfitBuilder.applyUniform(character: Model, factionId: string, outfit: any): boolean
+	local make = UNIFORMS[factionId]
+	if not make then
+		NpcStyle.undress(character)
+		return false
+	end
+	OutfitBuilder.stripClothing(character)
+	local name, colors = make(outfit)
+	NpcStyle.dress(character, name, colors)
+	character:SetAttribute("UniformVersion", ((character:GetAttribute("UniformVersion") :: number?) or 0) + 1)
+	return true
+end
 
 local function weldPart(
 	base: BasePart,
@@ -68,6 +128,7 @@ export type OutfitSpec = {
 	coat: Color3?, -- sobretudo longo (Bankai / formas finais)
 	hollowHole: boolean?,
 	bone: boolean?,
+	uniform: boolean?, -- o uniforme esculpido já tem gola, faixa, capa e buraco: não duplica
 }
 
 -- Remove o traje anterior e aplica o novo. Retorna a pasta criada.
@@ -89,16 +150,19 @@ function OutfitBuilder.apply(character: Model, spec: OutfitSpec): Folder?
 	local uw, uh, ud = upper.Size.X, upper.Size.Y, upper.Size.Z
 	local lw, ld = lower.Size.X, lower.Size.Z
 
-	weldPart(lower, "Sash", Vector3.new(lw + 0.08, 0.32, ld + 0.08), CFrame.new(0, 0.05, 0), trim).Parent = folder
-	weldPart(upper, "Collar", Vector3.new(uw * 0.55, 0.25, ud + 0.06), CFrame.new(0, uh / 2 - 0.1, 0), trim).Parent =
-		folder
+	if not spec.uniform then
+		weldPart(lower, "Sash", Vector3.new(lw + 0.08, 0.32, ld + 0.08), CFrame.new(0, 0.05, 0), trim).Parent = folder
+		weldPart(upper, "Collar", Vector3.new(uw * 0.55, 0.25, ud + 0.06), CFrame.new(0, uh / 2 - 0.1, 0), trim).Parent =
+			folder
+	end
 
 	if spec.coat then
 		-- Sobretudo longo: dois painéis traseiros + mangas no ombro
 		for i = -1, 1, 2 do
+			-- nomes com forma esculpida no HumanSkin (tecido curvo em vez de chapa)
 			clothPanel(
 				upper,
-				if i < 0 then "L" else "R",
+				"HaoriBack",
 				Vector3.new(uw * 0.5, 3.4, 0.1),
 				CFrame.new(i * uw * 0.26, uh / 2 - 0.1, ud / 2 + 0.08),
 				spec.coat,
@@ -106,22 +170,26 @@ function OutfitBuilder.apply(character: Model, spec: OutfitSpec): Folder?
 			)
 			weldPart(
 				upper,
-				"Shoulder",
+				"HaoriShoulder",
 				Vector3.new(0.6, 0.3, ud + 0.12),
 				CFrame.new(i * (uw / 2 + 0.2), uh / 2 - 0.05, 0),
 				spec.coat
 			).Parent =
 				folder
 		end
-		weldPart(
-			upper,
-			"CoatTrim",
-			Vector3.new(uw + 0.06, 0.12, ud + 0.06),
-			CFrame.new(0, uh / 2 - 0.3, 0),
-			trim,
-			Enum.Material.Neon
-		).Parent =
-			folder
+		if not spec.uniform then -- o uniforme já tem gola; a faixa neon no peito sobrava
+			weldPart(
+				upper,
+				"CoatTrim",
+				Vector3.new(uw + 0.06, 0.12, ud + 0.06),
+				CFrame.new(0, uh / 2 - 0.3, 0),
+				trim,
+				Enum.Material.Neon
+			).Parent =
+				folder
+		end
+	elseif spec.uniform then
+		-- uniforme esculpido já completo (capa Quincy inclusa)
 	elseif spec.cape then
 		clothPanel(
 			upper,
@@ -136,7 +204,7 @@ function OutfitBuilder.apply(character: Model, spec: OutfitSpec): Folder?
 		for i = -1, 1, 2 do
 			clothPanel(
 				lower,
-				if i < 0 then "L" else "R",
+				"HaoriSkirt",
 				Vector3.new(lw * 0.48, 1.5, 0.1),
 				CFrame.new(i * lw * 0.25, 0, ld / 2 + 0.06),
 				robe,
@@ -145,7 +213,7 @@ function OutfitBuilder.apply(character: Model, spec: OutfitSpec): Folder?
 		end
 	end
 
-	if spec.hollowHole then
+	if spec.hollowHole and not spec.uniform then
 		local hole = weldPart(
 			upper,
 			"HollowHole",
