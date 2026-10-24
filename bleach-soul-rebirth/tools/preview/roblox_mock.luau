@@ -87,6 +87,10 @@ function CF:PointToWorldSpace(v)
 		self.p[3] + r[7] * v.X + r[8] * v.Y + r[9] * v.Z
 	)
 end
+function CF:VectorToWorldSpace(v)
+	local r = self.r
+	return v3(r[1] * v.X + r[2] * v.Y + r[3] * v.Z, r[4] * v.X + r[5] * v.Y + r[6] * v.Z, r[7] * v.X + r[8] * v.Y + r[9] * v.Z)
+end
 function CF:PointToObjectSpace(v)
 	return self:Inverse():PointToWorldSpace(v)
 end

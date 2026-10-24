@@ -145,15 +145,61 @@ def run_npcs(ids):
                         {r"require\(script\.Parent\.Parent\.Config\.CreatureRigs\)": "CREATURE_RIGS"})
     style = module("src/shared/Builders/NpcStyle.luau", {})
     npcs = module("src/shared/Config/NPCs.luau", {})
+    human = module("src/shared/Builders/HumanShapes.luau", {})
+    # HUMAN=1 (padrão): desenha as malhas lisas do HumanSkin no lugar das partes/peças em bloco
+    smooth = os.environ.get("HUMAN", "1") == "1"
     driver = DUMP + "\n"
+    if smooth:
+        driver += r'''
+local function tris(shape)
+	local out = {}
+	for _, t in shape.t do
+		local pts = {}
+		for k = 1, 3 do
+			local v = shape.v[t[k]]
+			table.insert(pts, string.format("[%.3f,%.3f,%.3f]", v.X, v.Y, v.Z))
+		end
+		table.insert(out, "[" .. table.concat(pts, ",") .. "]")
+	end
+	return "[" .. table.concat(out, ",") .. "]"
+end
+function SMOOTH(model)
+	for _, d in model:GetDescendants() do
+		local parent = rawget(d, "_parent")
+		if d:IsA("BasePart") and parent and rawget(parent, "_parent") == model then
+			local inset = HumanShapes.armInset(parent.Name)
+			if inset.Magnitude > 0 then
+				d.CFrame = d.CFrame + parent.CFrame:VectorToWorldSpace(inset)
+			end
+		end
+	end
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
+			local shape = nil
+			if rawget(d, "_parent") == model then
+				shape = HumanShapes.forPart(d.Name, d.Size)
+			elseif rawget(d, "_class") == "Part" and HumanShapes.Soft[d.Name] then
+				shape = HumanShapes.softBox(d.Size, HumanShapes.Soft[d.Name], d.Name)
+			end
+			if shape then
+				d:SetAttribute("Mesh", tris(shape))
+			end
+		end
+	end
+end
+'''
+        driver = driver.replace('"k":"%s"}','"k":"%s","lt":%s}').replace(
+            'tostring(p:GetAttribute("Sculpt") or "")))',
+            'tostring(p:GetAttribute("Sculpt") or ""), p:GetAttribute("Mesh") or "null"))')
     for npc in ids:
         driver += (f'do local n = NPCS["{npc}"]; local m = RigBuilder.build("{npc}", {{ skin = n.look.skin }}, 1); '
-                   f'if n.style then NpcStyle.apply(m, n.style) end; dump(n.name, m) end\n')
+                   f'if n.style then NpcStyle.apply(m, n.style) end; ' + ("SMOOTH(m); " if smooth else "") + 'dump(n.name, m) end\n')
     src = "\n".join([
         "game = {}", cframe, mock,
         "CREATURE_RIGS = " + lua_literal(rigs),
         "local RigBuilder = (function()\n" + rigbuilder + "\nend)()",
         "local NpcStyle = (function()\n" + style + "\nend)()",
+        "HumanShapes = (function()\n" + human + "\nend)()",
         "NPCS = (function()\n" + npcs + "\nend)()",
         driver,
     ])
@@ -162,7 +208,12 @@ def run_npcs(ids):
     res = subprocess.run([LUAU, path], capture_output=True, text=True)
     if res.returncode != 0 or res.stderr.strip():
         raise SystemExit(res.stdout[-2000:] + res.stderr[-3000:])
-    return [json.loads(l) for l in res.stdout.splitlines() if l.startswith("{")]
+    models = [json.loads(l) for l in res.stdout.splitlines() if l.startswith("{")]
+    for m in models:
+        for part in m["parts"]:
+            if part.get("lt"):
+                part["mesh_tris"] = part.pop("lt")
+    return models
 
 
 def attach_sculpt(models, bodies):
