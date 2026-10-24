@@ -106,14 +106,18 @@ def author(out, manifest, blade_aim):
                        "keyframes": [key(0, fall_pose), key(0.6, merge(fall_pose, arms([0.95, 0.3, 0.05], 25, [-0.95, 0.3, 0.0], 30))), key(1.2, fall_pose)]}, [])
 
     # ------------------------------------------------------------------ SWORD (espada na mão)
-    guard_a = blade_aim(merge(stance(width=0.75, front=0.45, back=-0.45, drop=-0.28), waist(-14, -3), neck(12, 0),
-                              arms([0.35, -0.45, 0.8], 65, [-0.25, -0.75, 0.45], 75)), [-0.15, 0.8, 0.55])
-    guard_b = blade_aim(merge(stance(width=0.75, front=0.45, back=-0.45, drop=-0.34), waist(-12, -5), neck(10, -2),
-                              arms([0.35, -0.42, 0.8], 68, [-0.25, -0.72, 0.45], 78)), [-0.15, 0.8, 0.55])
+    # Guarda baixa (wakigamae solta): espada na mão direita ao lado do corpo, lâmina para a frente e
+    # para baixo, bem longe do peito e do rosto; mão esquerda livre e pronta. Antes a guarda era
+    # alta, com as mãos na frente do peito e a lâmina subindo na frente do rosto: vista de trás, a
+    # espada parecia "no peito". Folga conferida em tools/sim/weapon_scenario.luau.
+    guard_a = blade_aim(merge(stance(width=0.75, front=0.45, back=-0.45, drop=-0.28), waist(-16, -4), neck(14, 0),
+                              arms([0.55, -0.7, 0.45], 30, [-0.3, -0.85, 0.35], 40)), [0.45, -0.3, 1])
+    guard_b = blade_aim(merge(stance(width=0.75, front=0.45, back=-0.45, drop=-0.34), waist(-14, -6), neck(12, -2),
+                              arms([0.55, -0.66, 0.48], 34, [-0.3, -0.82, 0.38], 44)), [0.45, -0.26, 1])
     write("SwordIdle", {"loop": True, "priority": "Idle", "easing": ease(),
                         "keyframes": [key(0, guard_a), key(1.2, guard_b), key(2.4, guard_a)]}, ["--grounded"])
-    sw_walk_a = blade_aim(merge(waist(-12, -4), neck(10, 0), arms([0.35, -0.5, 0.75], 60, [-0.2, -1, 0.3], 20)), [-0.1, 0.7, 0.7])
-    sw_walk_b = blade_aim(merge(waist(-6, -4), neck(6, 0), arms([0.35, -0.5, 0.75], 60, [-0.2, -1, -0.3], 20)), [-0.1, 0.7, 0.7])
+    sw_walk_a = blade_aim(merge(waist(-12, -4), neck(10, 0), arms([0.55, -0.72, 0.42], 28, [-0.2, -1, 0.3], 20)), [0.45, -0.3, 1])
+    sw_walk_b = blade_aim(merge(waist(-6, -4), neck(6, 0), arms([0.55, -0.7, 0.45], 30, [-0.2, -1, -0.3], 20)), [0.45, -0.3, 1])
     gait("SwordWalk", 0.5, 1.9, 0.6, 0.3, 0.06, sw_walk_a, sw_walk_b, crouch=0.15)
     # Corrida com a lâmina baixa apontando para trás; braço livre bombeia
     sw_run_a = blade_aim(merge(waist(-8, -16), neck(8, 12), arms([0.35, -0.8, -0.4], 15, [-0.12, -0.55, 0.8], 95)), [0.2, -0.3, -1])

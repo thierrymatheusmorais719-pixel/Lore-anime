@@ -136,6 +136,25 @@ CFM.__eq = function(a, b)
 	return true
 end
 
+Color3 = {
+	new = function(r, g, b)
+		local c = { R = r or 0, G = g or 0, B = b or 0 }
+		function c:Lerp(o, t)
+			return Color3.new(self.R + (o.R - self.R) * t, self.G + (o.G - self.G) * t, self.B + (o.B - self.B) * t)
+		end
+		return c
+	end,
+	fromRGB = function(r, g, b)
+		return Color3.new(r / 255, g / 255, b / 255)
+	end,
+}
+ColorSequence = { new = function(...) return { ... } end }
+ColorSequenceKeypoint = { new = function(...) return { ... } end }
+NumberSequence = { new = function(...) return { ... } end }
+NumberSequenceKeypoint = { new = function(...) return { ... } end }
+NumberRange = { new = function(...) return { ... } end }
+UDim2 = { new = function(...) return { ... } end, fromScale = function(...) return { ... } end, fromOffset = function(...) return { ... } end }
+
 -- sinais
 local function signal()
 	local s = { handlers = {} }
@@ -263,7 +282,10 @@ end
 function Inst:IsA(class)
 	local c = rawget(self, "_class")
 	if class == "BasePart" then
-		return c == "Part" or c == "MeshPart"
+		return c == "Part" or c == "MeshPart" or c == "WedgePart"
+	end
+	if class == "JointInstance" then
+		return c == "Motor6D" or c == "Weld"
 	end
 	return c == class
 end
@@ -284,7 +306,13 @@ function Inst:Destroy()
 end
 Instance = {
 	new = function(class)
-		return setmetatable({ _class = class, _children = {}, _attrs = {}, _props = { Name = class, ClassName = class } }, Inst)
+		local props = { Name = class, ClassName = class }
+		if class == "Part" or class == "MeshPart" or class == "WedgePart" then
+			props.CFrame = CFrame.identity
+			props.Size = Vector3.one
+			props.Transparency = 0
+		end
+		return setmetatable({ _class = class, _children = {}, _attrs = {}, _props = props }, Inst)
 	end,
 }
 

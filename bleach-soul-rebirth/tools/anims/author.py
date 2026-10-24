@@ -246,7 +246,9 @@ clip("BlockHit", [
 ], flags=["--grounded"], defaults=BLOCK)
 
 # Saque: mão direita vai ao cabo no quadril esquerdo, puxa a lâmina num arco e para na guarda.
-DRAW_GRAB = blade(merge(waist(18), neck(-10), arm([-0.55, -0.85, 0.35], 95), left([-0.35, -0.9, 0.1], 30)), [-0.25, -0.45, -1])
+# a mão pega o cabo ao lado do quadril esquerdo (onde fica a bainha, por fora do corpo) e a lâmina
+# aponta para trás e para fora como na bainha (conferido em tools/sim/weapon_scenario.luau)
+DRAW_GRAB = blade(merge(waist(28), neck(-10), arm([-0.8, -0.55, 0.15], 60), left([-0.35, -0.9, 0.1], 30)), [-0.55, -0.35, -1])
 DRAW_OUT = merge(waist(-25), neck(15), arm([0.9, 0.35, 0.3], 10, [-90, 0, 0]), left([-0.3, -0.9, 0], 20))
 clip("Draw", [
     key(0, merge(waist(0), arm([0.1, -1, 0], 5, [0, 0, 0]), left([-0.1, -1, 0], 5)), ease("CubicV2", "Out")),

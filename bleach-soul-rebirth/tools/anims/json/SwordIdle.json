@@ -32,42 +32,42 @@
     },
     "Waist": {
      "rotation": [
-      -3,
-      -14,
+      -4,
+      -16,
       0
      ]
     },
     "Neck": {
      "rotation": [
       0,
-      12,
+      14,
       0
      ]
     },
     "RightShoulder": {
      "aim": [
-      0.35,
-      -0.45,
-      0.8
-     ]
-    },
-    "RightElbow": {
-     "bend": 65
-    },
-    "LeftShoulder": {
-     "aim": [
-      -0.25,
-      -0.75,
+      0.55,
+      -0.7,
       0.45
      ]
     },
+    "RightElbow": {
+     "bend": 30
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.3,
+      -0.85,
+      0.35
+     ]
+    },
     "LeftElbow": {
-     "bend": 75
+     "bend": 40
     },
     "Weapon": {
      "rotation": [
-      -60,
-      -15,
+      -70,
+      0,
       0
      ]
     }
@@ -99,42 +99,42 @@
     },
     "Waist": {
      "rotation": [
-      -5,
-      -12,
+      -6,
+      -14,
       0
      ]
     },
     "Neck": {
      "rotation": [
       -2,
-      10,
+      12,
       0
      ]
     },
     "RightShoulder": {
      "aim": [
-      0.35,
-      -0.42,
-      0.8
+      0.55,
+      -0.66,
+      0.48
      ]
     },
     "RightElbow": {
-     "bend": 68
+     "bend": 34
     },
     "LeftShoulder": {
      "aim": [
-      -0.25,
-      -0.72,
-      0.45
+      -0.3,
+      -0.82,
+      0.38
      ]
     },
     "LeftElbow": {
-     "bend": 78
+     "bend": 44
     },
     "Weapon": {
      "rotation": [
-      -60,
-      -20,
+      -75,
+      0,
       0
      ]
     }
@@ -166,42 +166,42 @@
     },
     "Waist": {
      "rotation": [
-      -3,
-      -14,
+      -4,
+      -16,
       0
      ]
     },
     "Neck": {
      "rotation": [
       0,
-      12,
+      14,
       0
      ]
     },
     "RightShoulder": {
      "aim": [
-      0.35,
-      -0.45,
-      0.8
-     ]
-    },
-    "RightElbow": {
-     "bend": 65
-    },
-    "LeftShoulder": {
-     "aim": [
-      -0.25,
-      -0.75,
+      0.55,
+      -0.7,
       0.45
      ]
     },
+    "RightElbow": {
+     "bend": 30
+    },
+    "LeftShoulder": {
+     "aim": [
+      -0.3,
+      -0.85,
+      0.35
+     ]
+    },
     "LeftElbow": {
-     "bend": 75
+     "bend": 40
     },
     "Weapon": {
      "rotation": [
-      -60,
-      -15,
+      -70,
+      0,
       0
      ]
     }

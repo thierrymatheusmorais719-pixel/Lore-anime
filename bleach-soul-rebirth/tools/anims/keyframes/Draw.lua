@@ -19,33 +19,45 @@ do
 end
 do
 	local k = Instance.new("Keyframe")
-	k.Time = 0.013716
-	P("HumanoidRootPart",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("LowerTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("UpperTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightUpperArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightLowerArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightHand",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("BodyAttach",1,{0,0,0,0.998753,-0.03857,-0.031693,0.02063,0.897012,-0.441525,0.045459,0.440321,0.896689},"Linear","In",{})})})})})})}).Parent = k
+	k.Time = 0.008845
+	P("HumanoidRootPart",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("LowerTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("UpperTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightUpperArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightLowerArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightHand",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("BodyAttach",1,{0,0,0,0.886949,-0.460222,0.038962,0.459996,0.887792,0.015115,-0.041547,0.004516,0.999126},"Linear","In",{})})})})})})}).Parent = k
+	k.Parent = seq
+end
+do
+	local k = Instance.new("Keyframe")
+	k.Time = 0.018963
+	P("HumanoidRootPart",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("LowerTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("UpperTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightUpperArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightLowerArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightHand",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("BodyAttach",1,{0,0,0,0.573359,-0.816599,0.066529,0.815745,0.576544,0.046443,-0.076283,0.027642,0.996703},"Linear","In",{})})})})})})}).Parent = k
 	k.Parent = seq
 end
 do
 	local k = Instance.new("Keyframe")
 	k.Time = 0.030945
-	P("HumanoidRootPart",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("LowerTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("UpperTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightUpperArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightLowerArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightHand",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("BodyAttach",1,{0,0,0,0.995271,-0.087075,-0.043042,0.019039,0.609421,-0.792618,0.095248,0.788051,0.608197},"Linear","In",{})})})})})})}).Parent = k
+	P("HumanoidRootPart",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("LowerTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("UpperTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightUpperArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightLowerArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightHand",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("BodyAttach",1,{0,0,0,0.130144,-0.988542,0.076467,0.986802,0.136637,0.086901,-0.096353,0.064148,0.993278},"Linear","In",{})})})})})})}).Parent = k
 	k.Parent = seq
 end
 do
 	local k = Instance.new("Keyframe")
-	k.Time = 0.055506
-	P("HumanoidRootPart",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("LowerTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("UpperTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightUpperArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightLowerArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightHand",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("BodyAttach",1,{0,0,0,0.990278,-0.135447,-0.031693,-0.004443,0.196917,-0.98041,0.139035,0.971019,0.194401},"Linear","In",{})})})})})})}).Parent = k
+	k.Time = 0.045996
+	P("HumanoidRootPart",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("LowerTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("UpperTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightUpperArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightLowerArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightHand",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("BodyAttach",1,{0,0,0,-0.342471,-0.93717,0.066529,0.934485,-0.33245,0.127338,-0.09722,0.10578,0.989626},"Linear","In",{})})})})})})}).Parent = k
+	k.Parent = seq
+end
+do
+	local k = Instance.new("Keyframe")
+	k.Time = 0.067452
+	P("HumanoidRootPart",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("LowerTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("UpperTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightUpperArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightLowerArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightHand",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("BodyAttach",1,{0,0,0,-0.737612,-0.674099,0.038962,0.670624,-0.724642,0.158611,-0.078686,0.143122,0.986572},"Linear","In",{})})})})})})}).Parent = k
 	k.Parent = seq
 end
 do
 	local k = Instance.new("Keyframe")
 	k.Time = 0.15
 	k.Name = "Grab"
-	P("HumanoidRootPart",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("LowerTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("UpperTorso",1,{0,0,0,0.951057,0,0.309017,0,1,0,-0.309017,0,0.951057},"Linear","In",{P("Head",1,{0,0,0,0.984808,0,-0.173648,0,1,0,0.173648,0,0.984808},"Linear","In",{}),P("LeftUpperArm",1,{0,0,0,0.932005,0.360518,-0.037334,-0.362446,0.927047,-0.096001,0,0.103005,0.994681},"Linear","In",{P("LeftLowerArm",1,{0,0,0,1,0,0,0,0.866025,-0.5,0,0.5,0.866025},"Linear","In",{})}),P("RightUpperArm",1,{0,0,0,0.83957,0.513436,-0.177498,-0.543251,0.793492,-0.274314,0,0.326732,0.945117},"Linear","In",{P("RightLowerArm",1,{0,0,0,1,0,0,0,-0.087156,-0.996195,0,0.996195,-0.087156},"Linear","In",{P("RightHand",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("BodyAttach",1,{0,0,0,0.984808,-0.173648,0,-0.044943,-0.254887,-0.965926,0.167731,0.951251,-0.258819},"Linear","In",{})})})})})})}).Parent = k
+	P("HumanoidRootPart",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("LowerTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("UpperTorso",1,{0,0,0,0.882948,0,0.469472,0,1,0,-0.469472,0,0.882948},"Linear","In",{P("Head",1,{0,0,0,0.984808,0,-0.173648,0,1,0,0.173648,0,0.984808},"Linear","In",{}),P("LeftUpperArm",1,{0,0,0,0.932005,0.360518,-0.037334,-0.362446,0.927047,-0.096001,0,0.103005,0.994681},"Linear","In",{P("LeftLowerArm",1,{0,0,0,1,0,0,0,0.866025,-0.5,0,0.5,0.866025},"Linear","In",{})}),P("RightUpperArm",1,{0,0,0,0.566529,0.814379,-0.125828,-0.824042,0.559885,-0.086507,0,0.152696,0.988273},"Linear","In",{P("RightLowerArm",1,{0,0,0,1,0,0,0,0.5,-0.866025,0,0.866025,0.5},"Linear","In",{P("RightHand",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("BodyAttach",1,{0,0,0,-0.965926,-0.258819,0,0.254887,-0.951251,0.173648,-0.044943,0.167731,0.984808},"Linear","In",{})})})})})})}).Parent = k
 	k.Parent = seq
 end
 do
 	local k = Instance.new("Keyframe")
 	k.Time = 0.215
-	P("HumanoidRootPart",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("LowerTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("UpperTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightUpperArm",1,{0,0,0,0.775195,-0.602962,0.188441,0.631617,0.734347,-0.248585,0.011506,0.311725,0.950103},"Linear","In",{P("RightLowerArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightHand",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("BodyAttach",1,{0,0,0,0.993278,-0.086901,0.076467,-0.096353,-0.986802,0.130144,0.064148,-0.136637,-0.988542},"Linear","In",{})})})})})})}).Parent = k
+	P("HumanoidRootPart",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("LowerTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("UpperTorso",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightUpperArm",1,{0,0,0,0.882016,-0.442482,0.162041,0.4666,0.86814,-0.169167,-0.065821,0.224816,0.972176},"Linear","In",{P("RightLowerArm",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("RightHand",0,{0,0,0,1,0,0,0,1,0,0,0,1},"Linear","In",{P("BodyAttach",1,{0,0,0,0.106388,-0.808099,-0.579359,0.695218,-0.356117,0.624382,-0.710882,-0.469208,0.523918},"Linear","In",{})})})})})})}).Parent = k
 	k.Parent = seq
 end
 do
