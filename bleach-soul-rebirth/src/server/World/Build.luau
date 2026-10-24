@@ -270,16 +270,35 @@ function Build.tree(parent: Instance, position: Vector3, kind: string, rng: Rand
 			Enum.Material.Wood,
 			"Trunk"
 		)
-		local pink = Color3.fromRGB(255, 185, 205):Lerp(Color3.fromRGB(255, 225, 235), rng:NextNumber())
-		for _ = 1, 4 do
-			local offset = Vector3.new(rng:NextNumber(-3, 3), rng:NextNumber(0, 3), rng:NextNumber(-3, 3)) * scale
-			Build.ball(
+		-- galhos abrindo do topo do tronco e copa em muitos tufos pequenos (nada de bolas grandes)
+		local top = position + Vector3.new(0, h, 0)
+		for i = 1, 4 do
+			local angle = i * math.pi / 2 + rng:NextNumber(-0.4, 0.4)
+			local dir = Vector3.new(math.cos(angle), 0.9, math.sin(angle)).Unit
+			local len = rng:NextNumber(3, 4.5) * scale
+			Build.part(
 				model,
-				rng:NextNumber(6, 9) * scale,
-				CFrame.new(position + Vector3.new(0, h, 0) + offset),
-				pink,
+				Vector3.new(0.6, 0.6, len),
+				CFrame.lookAt(top - Vector3.new(0, 1.5, 0) + dir * len / 2, top - Vector3.new(0, 1.5, 0) + dir * len),
+				Color3.fromRGB(70, 45, 40),
+				Enum.Material.Wood,
+				"Branch"
+			)
+		end
+		local base = Color3.fromRGB(255, 180, 202)
+		for _ = 1, 14 do
+			local offset = Vector3.new(rng:NextNumber(-4.5, 4.5), rng:NextNumber(-0.5, 3.5), rng:NextNumber(-4.5, 4.5))
+				* scale
+			local tuft = Build.ball(
+				model,
+				rng:NextNumber(2.6, 4.2) * scale,
+				CFrame.new(top + Vector3.new(0, 1.5, 0) + offset),
+				base:Lerp(Color3.fromRGB(255, 232, 240), rng:NextNumber())
+					:Lerp(Color3.fromRGB(200, 120, 150), rng:NextNumber(0, 0.25)),
 				Enum.Material.Grass
 			)
+			tuft.Size = Vector3.new(tuft.Size.X, tuft.Size.Y * 0.75, tuft.Size.Z)
+			tuft.CanCollide = false
 		end
 	end
 	model.Parent = parent

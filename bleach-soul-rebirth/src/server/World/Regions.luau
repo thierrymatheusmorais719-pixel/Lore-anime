@@ -254,6 +254,7 @@ function Regions.Karakura(folder: Instance)
 	local buildings = Build.folder(folder, "Buildings")
 	local houses = Build.folder(folder, "Houses")
 	local riverEdge = -halfX + 42 -- a oeste disso fica o rio e a margem
+	local props = Build.folder(folder, "StreetProps")
 	local konbiniDone = false
 	local function placeLot(center: Vector3, facing: Vector3, frontage: number, depth: number, downtown: boolean)
 		if not Build.clear(center, keepOut) or center.X - c.X < riverEdge then
@@ -270,7 +271,19 @@ function Regions.Karakura(folder: Instance)
 				Town.building(buildings, cf, frontage - 2, depth, floors, rng)
 			end
 		else
-			Town.house(houses, cf, frontage - 6, depth - 8, rng)
+			local w, d = frontage - 6, depth - 8
+			Town.house(houses, cf, w, d, rng)
+			-- bicicleta encostada no muro e lixo na calçada de alguns
+			if rng:NextNumber() < 0.35 then
+				Town.bicycle(
+					props,
+					cf * CFrame.new(w / 2 - 1.5, 0.3, -d / 2 - 6.2) * CFrame.Angles(0, math.rad(90), 0),
+					rng
+				)
+			end
+			if rng:NextNumber() < 0.25 then
+				Town.trash(props, (cf * CFrame.new(-w / 2 + 1.5, 0.3, -d / 2 - 6.5)).Position, rng)
+			end
 		end
 	end
 	for xi = 1, #cuts - 1 do
@@ -306,9 +319,14 @@ function Regions.Karakura(folder: Instance)
 					t += frontage
 				end
 			end
-			-- miolo do quarteirão: árvores e máquinas de venda
+			-- miolo do quarteirão: gramado com árvores
 			local inner = c + Vector3.new((x0 + x1) / 2, 0, (z0 + z1) / 2)
 			if Build.clear(inner, keepOut) and (x1 - x0) > 60 and (z1 - z0) > 60 then
+				workspace.Terrain:FillBlock(
+					CFrame.new(inner.X, -0.6, inner.Z),
+					Vector3.new(30, 1.2, 30),
+					Enum.Material.Grass
+				)
 				for _ = 1, 3 do
 					local p = inner + Vector3.new(rng:NextNumber(-12, 12), 0, rng:NextNumber(-12, 12))
 					Build.tree(houses, p, if rng:NextNumber() < 0.5 then "cherry" else "pine", rng)
@@ -332,6 +350,58 @@ function Regions.Karakura(folder: Instance)
 		if ok then
 			local face = if alongX then Vector3.new(0, 0, -side) else Vector3.new(-side, 0, 0)
 			Town.vending(lamps, CFrame.lookAt(p, p + face), rng)
+		end
+	end
+
+	-- carros estacionados junto ao meio-fio, poças, bueiros, canteiros com árvores
+	local function nearCrossing(t: number, margin: number): boolean
+		for _, b in avenues do
+			if math.abs(t - b) < margin then
+				return true
+			end
+		end
+		return false
+	end
+	for _, a in avenues do
+		for _, alongX in { false, true } do
+			for _, side in { -1, 1 } do
+				local t = -halfZ + 20 + rng:NextNumber(0, 15)
+				while t < halfZ - 20 do
+					local pos = if alongX
+						then c + Vector3.new(t, 0.4, a + side * 6.2)
+						else c + Vector3.new(a + side * 6.2, 0.4, t)
+					if not nearCrossing(t, 24) and Build.clear(pos, keepOut) and rng:NextNumber() < 0.45 then
+						local forward = if alongX then Vector3.new(side, 0, 0) else Vector3.new(0, 0, side)
+						Town.car(props, CFrame.lookAt(pos, pos + forward), rng)
+					end
+					t += rng:NextNumber(16, 30)
+				end
+			end
+			-- canteiros na calçada (centro e bairros), entre os postes
+			for t = -halfZ + 30, halfZ - 30, 60 do
+				for _, side in { -1, 1 } do
+					local pos = if alongX
+						then c + Vector3.new(t + 15, 0.6, a + side * 11.2)
+						else c + Vector3.new(a + side * 11.2, 0.6, t + 15)
+					if not nearCrossing(t + 15, 20) and Build.clear(pos, keepOut) then
+						local cf = if alongX
+							then CFrame.new(pos) * CFrame.Angles(0, math.rad(90), 0)
+							else CFrame.new(pos)
+						Town.planter(props, cf, rng, rng:NextNumber() < 0.6)
+					end
+				end
+			end
+			for _ = 1, 8 do
+				local t = rng:NextNumber(-halfZ + 15, halfZ - 15)
+				local off = rng:NextNumber(-6, 6)
+				local pos = if alongX then c + Vector3.new(t, 0.42, a + off) else c + Vector3.new(a + off, 0.42, t)
+				Town.puddle(props, pos, rng)
+			end
+			for t = -halfZ + 25, halfZ - 25, 55 do
+				if not nearCrossing(t, 16) then
+					Town.manhole(props, if alongX then c + Vector3.new(t, 0, a + 3) else c + Vector3.new(a - 3, 0, t))
+				end
+			end
 		end
 	end
 

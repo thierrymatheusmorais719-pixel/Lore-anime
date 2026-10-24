@@ -243,6 +243,271 @@ function Town.vending(parent: Instance, cf: CFrame, rng: Random)
 	model.Parent = parent
 end
 
+-- Carro estacionado: carroceria, cabine com vidros, para-brisas inclinados, rodas, faróis e
+-- lanternas acesas, retrovisores, placas. `cf`: centro no chão, frente para -Z.
+local CAR_COLORS = {
+	Color3.fromRGB(220, 222, 226),
+	Color3.fromRGB(30, 32, 38),
+	Color3.fromRGB(150, 20, 28),
+	Color3.fromRGB(40, 70, 130),
+	Color3.fromRGB(170, 172, 178),
+	Color3.fromRGB(230, 200, 70),
+	Color3.fromRGB(60, 95, 70),
+}
+function Town.car(parent: Instance, cf: CFrame, rng: Random)
+	local model = Instance.new("Model")
+	model.Name = "Car"
+	local paint = CAR_COLORS[rng:NextInteger(1, #CAR_COLORS)]
+	local w, l = 6.2, 13
+	local function p(size: Vector3, offset: CFrame, color: Color3, material: Enum.Material?, name: string?): Part
+		local part = Build.part(model, size, cf * offset, color, material or Enum.Material.SmoothPlastic, name)
+		return part
+	end
+	local body = p(Vector3.new(w, 2.1, l), CFrame.new(0, 2.05, 0), paint, Enum.Material.SmoothPlastic, "Body")
+	body.Reflectance = 0.18
+	-- cabine: vidro escuro com teto pintado
+	local cabin = p(
+		Vector3.new(w - 0.6, 1.9, l * 0.48),
+		CFrame.new(0, 4.05, 0.6),
+		Color3.fromRGB(20, 26, 34),
+		Enum.Material.Glass,
+		"Cabin"
+	)
+	cabin.Reflectance = 0.3
+	p(Vector3.new(w - 0.5, 0.25, l * 0.44), CFrame.new(0, 5.1, 0.7), paint, Enum.Material.SmoothPlastic, "Roof").Reflectance =
+		0.18
+	-- para-brisas inclinados (cunhas de vidro)
+	local front = Build.wedge(
+		model,
+		Vector3.new(w - 0.6, 1.9, 1.8),
+		cf * CFrame.new(0, 4.05, -l * 0.24 + 0.6 - 0.9),
+		Color3.fromRGB(20, 26, 34),
+		Enum.Material.Glass
+	)
+	front.Reflectance = 0.35
+	local rear = Build.wedge(
+		model,
+		Vector3.new(w - 0.6, 1.9, 1.4),
+		cf * CFrame.new(0, 4.05, l * 0.24 + 0.6 + 0.7) * CFrame.Angles(0, math.pi, 0),
+		Color3.fromRGB(20, 26, 34),
+		Enum.Material.Glass
+	)
+	rear.Reflectance = 0.35
+	-- rodas com calota
+	for _, x in { -w / 2 + 0.3, w / 2 - 0.3 } do
+		for _, z in { -l * 0.32, l * 0.32 } do
+			Build.cylinder(
+				model,
+				0.9,
+				2.4,
+				cf * CFrame.new(x, 1.2, z),
+				Color3.fromRGB(18, 18, 20),
+				Enum.Material.Rubber
+			)
+			Build.cylinder(
+				model,
+				0.95,
+				1.2,
+				cf * CFrame.new(x, 1.2, z),
+				Color3.fromRGB(170, 172, 176),
+				Enum.Material.Metal
+			)
+		end
+	end
+	-- faróis e lanternas
+	for _, x in { -w / 2 + 0.9, w / 2 - 0.9 } do
+		local head = p(
+			Vector3.new(1.2, 0.5, 0.15),
+			CFrame.new(x, 2.4, -l / 2 - 0.05),
+			Color3.fromRGB(255, 250, 235),
+			Enum.Material.Neon,
+			"Headlight"
+		)
+		noCollide(head)
+		local tail = p(
+			Vector3.new(1.2, 0.5, 0.15),
+			CFrame.new(x, 2.5, l / 2 + 0.05),
+			Color3.fromRGB(220, 20, 30),
+			Enum.Material.Neon,
+			"Taillight"
+		)
+		noCollide(tail)
+		noCollide(
+			p(
+				Vector3.new(0.5, 0.35, 0.6),
+				CFrame.new(x * 1.18, 3.4, -l * 0.2),
+				paint,
+				Enum.Material.SmoothPlastic,
+				"Mirror"
+			)
+		)
+	end
+	for _, z in { -l / 2 - 0.06, l / 2 + 0.06 } do
+		noCollide(
+			p(
+				Vector3.new(1.6, 0.6, 0.06),
+				CFrame.new(0, 1.6, z),
+				Color3.fromRGB(240, 240, 235),
+				Enum.Material.SmoothPlastic,
+				"Plate"
+			)
+		)
+	end
+	p(
+		Vector3.new(w + 0.1, 0.5, l + 0.1),
+		CFrame.new(0, 1.15, 0),
+		Color3.fromRGB(28, 28, 30),
+		Enum.Material.Plastic,
+		"Bumper"
+	)
+	model.Parent = parent
+	return model
+end
+
+-- Poça d'água no chão: manchas sobrepostas, escuras e refletoras
+function Town.puddle(parent: Instance, position: Vector3, rng: Random)
+	for _ = 1, rng:NextInteger(2, 4) do
+		local d = rng:NextNumber(2.5, 6)
+		local p = Build.cylinder(
+			parent,
+			0.04,
+			d,
+			CFrame.new(position + Vector3.new(rng:NextNumber(-2, 2), 0, rng:NextNumber(-2, 2)))
+				* CFrame.Angles(0, rng:NextNumber(0, 6), math.rad(90)),
+			Color3.fromRGB(14, 18, 26),
+			Enum.Material.Glass
+		)
+		p.Name = "Puddle"
+		p.Reflectance = 0.55
+		p.Transparency = 0.15
+		noCollide(p)
+	end
+end
+
+-- Canteiro com arbustos e árvore de rua
+function Town.planter(parent: Instance, cf: CFrame, rng: Random, tree: boolean)
+	local model = Instance.new("Model")
+	model.Name = "Planter"
+	Build.part(
+		model,
+		Vector3.new(3.4, 1.2, 8),
+		cf * CFrame.new(0, 0.6, 0),
+		Color3.fromRGB(150, 146, 140),
+		Enum.Material.Concrete,
+		"Box"
+	)
+	Build.part(
+		model,
+		Vector3.new(3, 0.3, 7.6),
+		cf * CFrame.new(0, 1.15, 0),
+		Color3.fromRGB(70, 52, 38),
+		Enum.Material.Ground,
+		"Soil"
+	)
+	for i = -1, 1 do
+		Build.part(
+			model,
+			Vector3.new(2.6, rng:NextNumber(1.4, 2), 2.4),
+			cf * CFrame.new(0, 2, i * 2.4) * CFrame.Angles(0, rng:NextNumber(0, 6), 0),
+			Color3.fromRGB(46, 84, 50):Lerp(Color3.fromRGB(70, 110, 60), rng:NextNumber()),
+			Enum.Material.Grass,
+			"Shrub"
+		)
+	end
+	if tree then
+		Build.tree(
+			model,
+			(cf * CFrame.new(0, 1.2, 0)).Position,
+			if rng:NextNumber() < 0.5 then "pine" else "cherry",
+			rng
+		)
+	end
+	model.Parent = parent
+end
+
+-- Bicicleta encostada (quadro, rodas, guidão)
+function Town.bicycle(parent: Instance, cf: CFrame, rng: Random)
+	local model = Instance.new("Model")
+	model.Name = "Bicycle"
+	local color = CAR_COLORS[rng:NextInteger(1, #CAR_COLORS)]
+	for _, z in { -1.6, 1.6 } do
+		local wheel = Build.cylinder(
+			model,
+			0.12,
+			2.6,
+			cf * CFrame.new(0, 1.3, z),
+			Color3.fromRGB(20, 20, 22),
+			Enum.Material.Rubber
+		)
+		noCollide(wheel)
+	end
+	noCollide(
+		Build.part(model, Vector3.new(0.15, 0.15, 3.2), cf * CFrame.new(0, 2.2, 0), color, Enum.Material.Metal, "Frame")
+	)
+	noCollide(
+		Build.part(
+			model,
+			Vector3.new(0.15, 1.6, 0.15),
+			cf * CFrame.new(0, 2.1, -1.1) * CFrame.Angles(math.rad(-15), 0, 0),
+			color,
+			Enum.Material.Metal,
+			"Fork"
+		)
+	)
+	noCollide(
+		Build.part(
+			model,
+			Vector3.new(1.6, 0.12, 0.12),
+			cf * CFrame.new(0, 3, -1.3),
+			Color3.fromRGB(40, 40, 44),
+			Enum.Material.Metal,
+			"Bars"
+		)
+	)
+	noCollide(
+		Build.part(
+			model,
+			Vector3.new(0.5, 0.2, 0.9),
+			cf * CFrame.new(0, 2.9, 0.9),
+			Color3.fromRGB(30, 30, 30),
+			Enum.Material.Fabric,
+			"Seat"
+		)
+	)
+	model.Parent = parent
+end
+
+-- Sacos de lixo na calçada
+function Town.trash(parent: Instance, position: Vector3, rng: Random)
+	for _ = 1, rng:NextInteger(2, 4) do
+		local s = rng:NextNumber(1.2, 1.9)
+		local bag = Build.ball(
+			parent,
+			s,
+			CFrame.new(position + Vector3.new(rng:NextNumber(-1.2, 1.2), s * 0.4, rng:NextNumber(-1.2, 1.2))),
+			Color3.fromRGB(70, 90, 130):Lerp(Color3.fromRGB(30, 30, 34), rng:NextNumber()),
+			Enum.Material.Plastic
+		)
+		bag.Size = Vector3.new(s, s * 0.85, s)
+		bag.Name = "TrashBag"
+		noCollide(bag)
+	end
+end
+
+-- Tampa de bueiro no asfalto
+function Town.manhole(parent: Instance, position: Vector3)
+	local m = Build.cylinder(
+		parent,
+		0.05,
+		2.6,
+		CFrame.new(position + Vector3.new(0, 0.42, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Color3.fromRGB(60, 58, 55),
+		Enum.Material.DiamondPlate
+	)
+	m.Name = "Manhole"
+	noCollide(m)
+end
+
 -- ======================================================================= prédios
 -- Prédio comercial: térreo de loja (vidro aceso, toldo), andares com grade de janelas, faixa de
 -- laje por andar, platibanda, caixa d'água e ar-condicionado no telhado, letreiro vertical.
@@ -316,8 +581,103 @@ function Town.building(parent: Instance, cf: CFrame, width: number, depth: numbe
 					"Window"
 				)
 				noCollide(win)
+				-- moldura escura em volta e peitoril saliente embaixo (profundidade na fachada)
+				local frame = Build.part(
+					model,
+					Vector3.new(width / columns - 1.1, 5.1, 0.18),
+					cf * CFrame.new(x, y + 4.2, side * (depth / 2 + 0.03)),
+					wall:Lerp(Color3.new(0, 0, 0), 0.45),
+					Enum.Material.Metal,
+					"WindowFrame"
+				)
+				noCollide(frame)
+				local sill = Build.part(
+					model,
+					Vector3.new(width / columns - 0.9, 0.25, 0.5),
+					cf * CFrame.new(x, y + 1.7, side * (depth / 2 + 0.25)),
+					wall:Lerp(Color3.new(1, 1, 1), 0.2),
+					Enum.Material.Concrete,
+					"Sill"
+				)
+				noCollide(sill)
 			end
 		end
+		-- ar-condicionado pendurado nas laterais e varandinha às vezes
+		for _, side in { -1, 1 } do
+			if rng:NextNumber() < 0.45 then
+				local ac = Build.part(
+					model,
+					Vector3.new(1.4, 1.8, 2.6),
+					cf * CFrame.new(side * (width / 2 + 0.75), y + 2.4, rng:NextNumber(-depth / 3, depth / 3)),
+					Color3.fromRGB(220, 220, 214),
+					Enum.Material.Metal,
+					"WallAC"
+				)
+				noCollide(ac)
+				noCollide(
+					Build.cylinder(
+						model,
+						0.1,
+						1.2,
+						ac.CFrame * CFrame.new(side * 0.72, 0, 0),
+						Color3.fromRGB(60, 60, 64),
+						Enum.Material.Metal
+					)
+				)
+			end
+		end
+		if rng:NextNumber() < 0.25 then
+			local bx = rng:NextNumber(-width / 4, width / 4)
+			Build.part(
+				model,
+				Vector3.new(6, 0.35, 2.2),
+				cf * CFrame.new(bx, y + 0.9, -depth / 2 - 1.1),
+				Color3.fromRGB(150, 150, 152),
+				Enum.Material.Concrete,
+				"Balcony"
+			)
+			noCollide(
+				Build.part(
+					model,
+					Vector3.new(6, 2.4, 0.15),
+					cf * CFrame.new(bx, y + 2.1, -depth / 2 - 2.15),
+					Color3.fromRGB(70, 75, 82),
+					Enum.Material.Metal,
+					"BalconyRail"
+				)
+			)
+		end
+	end
+	-- calha descendo pela quina
+	noCollide(
+		Build.cylinder(
+			model,
+			height,
+			0.35,
+			cf * CFrame.new(width / 2 - 0.2, height / 2, depth / 2 + 0.25) * CFrame.Angles(0, 0, math.rad(90)),
+			Color3.fromRGB(110, 110, 112),
+			Enum.Material.Metal
+		)
+	)
+	-- antena no telhado
+	if rng:NextNumber() < 0.4 then
+		local ax = rng:NextNumber(-width / 3, width / 3)
+		Build.part(
+			model,
+			Vector3.new(0.2, 6, 0.2),
+			cf * CFrame.new(ax, height + 4, -depth / 4),
+			Color3.fromRGB(80, 80, 85),
+			Enum.Material.Metal,
+			"Antenna"
+		)
+		local blink = neonPart(
+			model,
+			Vector3.new(0.4, 0.4, 0.4),
+			cf * CFrame.new(ax, height + 7.1, -depth / 4),
+			Color3.fromRGB(255, 40, 40),
+			"AntennaLight"
+		)
+		noCollide(blink)
 	end
 	-- platibanda e telhado
 	Build.part(
