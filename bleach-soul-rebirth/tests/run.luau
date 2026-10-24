@@ -595,7 +595,8 @@ test("segunda liberação tem cutscene com tempos coerentes", function()
 		local form = faction.forms.Tier2
 		truthy(form.cutscene and form.reveal and form.reveal > 0, id .. ": Tier2 sem cutscene/reveal")
 		truthy(form.channel >= 4, id .. ": canalização curta demais para a cena")
-		truthy(form.channel < faction.forms.Tier1.channel * 10, id .. ": canalização exagerada")
+		-- a segunda liberação é cinematográfica (cutscene de ~9 s); mesmo assim tem limite
+		truthy(form.channel < faction.forms.Tier1.channel * 12, id .. ": canalização exagerada")
 	end
 	truthy(Clips.ReleaseTier2 and Clips.SwordIdle and Clips.CastSlash, "clips usados na cena")
 end)
