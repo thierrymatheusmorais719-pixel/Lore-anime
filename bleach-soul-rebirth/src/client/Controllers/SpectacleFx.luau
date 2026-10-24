@@ -156,9 +156,119 @@ local function groundInfo(position: Vector3): (Vector3, Color3, Enum.Material)
 	return position - Vector3.new(0, 3, 0), Color3.fromRGB(120, 115, 105), Enum.Material.Slate
 end
 
+-- Verdadeiro se houver chão até `maxDistance` abaixo (golpes no ar não arrancam o chão)
+function SpectacleFx.NearGround(position: Vector3, maxDistance: number): boolean
+	local ground = groundInfo(position)
+	return position.Y - ground.Y <= maxDistance
+end
+
+-- Ultra: pedaços com física de verdade — material do próprio chão, colidem, quicam, rolam e
+-- fazem sombra; leves (não empurram ninguém), somem afundando depois de alguns segundos.
+local physicsLive = 0
+local function physicalDebris(position: Vector3, count: number, power: number, color: Color3, material: Enum.Material)
+	local folder = workspace:FindFirstChild("ClientVFX") or workspace
+	local n = math.min(count, 160 - physicsLive)
+	local light = PhysicalProperties.new(0.25, 0.6, 0.25, 1, 1)
+	for _ = 1, n do
+		local size = rng:NextNumber(0.3, 1.5)
+		local part = Instance.new("Part")
+		part.Anchored = false
+		part.CanCollide = true
+		part.CanQuery = false
+		part.CanTouch = false
+		part.CastShadow = true
+		part.Material = if material == Enum.Material.Water or material == Enum.Material.Air
+			then Enum.Material.Slate
+			else material
+		part.Color = color:Lerp(Color3.new(0, 0, 0), rng:NextNumber(0, 0.3))
+		part.Size = Vector3.new(size, size * rng:NextNumber(0.4, 0.9), size * rng:NextNumber(0.6, 1.3))
+		part.CustomPhysicalProperties = light
+		part.CFrame = CFrame.new(
+			position + Vector3.new(rng:NextNumber(-1.2, 1.2), 0.8 + size, rng:NextNumber(-1.2, 1.2))
+		) * CFrame.Angles(rng:NextNumber(0, 6), rng:NextNumber(0, 6), rng:NextNumber(0, 6))
+		part.Parent = folder
+		local angle = rng:NextNumber(0, math.pi * 2)
+		local horizontal = rng:NextNumber(0.3, 1) * power
+		part.AssemblyLinearVelocity =
+			Vector3.new(math.cos(angle) * horizontal, rng:NextNumber(0.6, 1.3) * power, math.sin(angle) * horizontal)
+		part.AssemblyAngularVelocity =
+			Vector3.new(rng:NextNumber(-15, 15), rng:NextNumber(-15, 15), rng:NextNumber(-15, 15))
+		physicsLive += 1
+		local life = rng:NextNumber(4, 6)
+		task.delay(life, function()
+			if part.Parent then
+				part.Anchored = true
+				part.CanCollide = false
+				VFX.tween(part, 1, { Transparency = 1, CFrame = part.CFrame - Vector3.new(0, part.Size.Y, 0) })
+			end
+			task.wait(1.05)
+			part:Destroy()
+			physicsLive -= 1
+		end)
+	end
+end
+
+-- Poeira que rola pelo chão para fora (anel de nuvens iluminadas pela cena)
+function SpectacleFx.DustRing(position: Vector3, radius: number, color: Color3?)
+	if lowQuality() then
+		return
+	end
+	local ground, groundColor = groundInfo(position)
+	local tint = (color or groundColor):Lerp(Color3.fromRGB(150, 145, 138), 0.5)
+	local holder = Instance.new("Part")
+	holder.Anchored = true
+	holder.CanCollide = false
+	holder.CanQuery = false
+	holder.CanTouch = false
+	holder.Transparency = 1
+	holder.Size = Vector3.one
+	holder.CFrame = CFrame.new(ground + Vector3.new(0, 0.6, 0))
+	holder.Parent = workspace:FindFirstChild("ClientVFX") or workspace
+	local count = math.clamp(math.floor(radius * 2.2 * VFX.Scale()), 8, 40)
+	for i = 1, count do
+		local angle = i / count * math.pi * 2
+		local a = Instance.new("Attachment")
+		a.CFrame = CFrame.new(math.cos(angle) * radius * 0.25, 0, math.sin(angle) * radius * 0.25)
+			* CFrame.lookAt(Vector3.zero, Vector3.new(math.cos(angle), 0.12, math.sin(angle)))
+			* CFrame.Angles(-math.pi / 2, 0, 0)
+		a.Parent = holder
+		local e = Instance.new("ParticleEmitter")
+		e.Texture = "rbxasset://textures/particles/smoke_main.dds"
+		e.Rate = 0
+		e.EmissionDirection = Enum.NormalId.Top
+		e.SpreadAngle = Vector2.new(12, 12)
+		e.Speed = NumberRange.new(radius * 1.2, radius * 2.2)
+		e.Drag = 2.2
+		e.Lifetime = NumberRange.new(1.6, 2.8)
+		e.Size = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, radius * 0.35),
+			NumberSequenceKeypoint.new(1, radius * 0.9),
+		})
+		e.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.55),
+			NumberSequenceKeypoint.new(0.3, 0.6),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		e.Color = ColorSequence.new(tint, tint:Lerp(Color3.new(0.5, 0.5, 0.5), 0.4))
+		e.LightInfluence = 1
+		e.LightEmission = 0
+		e.Rotation = NumberRange.new(0, 360)
+		e.RotSpeed = NumberRange.new(-25, 25)
+		e.Acceleration = Vector3.new(0, 1.5, 0)
+		e.Parent = a
+		e:Emit(2)
+	end
+	Debris:AddItem(holder, 3.2)
+end
+
 -- Detritos com trajetória balística simulada (sem física real → baratos e sem empurrar ninguém).
+-- No Ultra viram pedaços com física de verdade (physicalDebris).
 function SpectacleFx.Debris(position: Vector3, count: number, power: number, color: Color3?)
-	local _, groundColor = groundInfo(position)
+	local groundPosition, groundColor, groundMaterial = groundInfo(position)
+	if VFX.Ultra() then
+		physicalDebris(groundPosition, math.floor(count * 1.6), power, color or groundColor, groundMaterial)
+		return
+	end
 	local n = if lowQuality() then math.ceil(count / 3) else count
 	for _ = 1, n do
 		local size = rng:NextNumber(0.4, 1.4)
@@ -267,6 +377,7 @@ function SpectacleFx.Crater(position: Vector3, radius: number, glow: Color3?)
 	end
 	folder.Parent = workspace:FindFirstChild("ClientVFX") or workspace
 	VFX.emit("Dust", ground + Vector3.new(0, 1, 0), color:Lerp(Color3.new(1, 1, 1), 0.4), math.floor(radius * 2))
+	SpectacleFx.DustRing(ground, radius * 1.4, color)
 	SpectacleFx.Debris(ground, math.floor(radius * 1.5), 20 + radius * 2.5)
 	task.delay(3.5, function()
 		for _, p in folder:GetChildren() do

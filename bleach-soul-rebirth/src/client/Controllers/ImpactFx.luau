@@ -180,6 +180,12 @@ function ImpactFx.Hit(position: Vector3, direction: Vector3?, element: string?, 
 	if t >= 3 then
 		MeshFx.Cracks(position, element, 7)
 	end
+	-- golpes pesados perto do chão arrancam pedaços e levantam poeira
+	local SpectacleFx = require(script.Parent.SpectacleFx) :: any
+	if t >= 2 and VFX.Ultra() and SpectacleFx.NearGround(position, 6) then
+		SpectacleFx.Debris(position, if t >= 3 then 10 else 4, if t >= 3 then 34 else 22)
+		SpectacleFx.DustRing(position, if t >= 3 then 9 else 5)
+	end
 	-- 0,00 s: clarão (forma espinhosa que encolhe) + fundo preto + linha de flare + brilho
 	fire("Flash", position, nil, ColorSequence.new(p.core), 1, s)
 	fire("FlashBack", position, nil, ColorSequence.new(BLACK), 1, s)
