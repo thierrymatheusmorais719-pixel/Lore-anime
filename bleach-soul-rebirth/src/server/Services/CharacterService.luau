@@ -97,7 +97,7 @@ function CharacterService.RefreshAppearance(actor)
 		local attached = WeaponBuilder.attach(character, model, "RightHand")
 		if attached then
 			WeaponBuilder.setDrawn(attached, actor.drawn or actor.player == nil)
-			if attached:FindFirstChild("Handle") and attached.Handle:FindFirstChild("HipWeld") then
+			if attached:GetAttribute("Sheathable") then
 				WeaponBuilder.buildSheath(character, spec.length or 4)
 			end
 		end

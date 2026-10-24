@@ -263,13 +263,19 @@ function Regions.Karakura(folder: Instance)
 		local cf = CFrame.lookAt(center, center + facing)
 		if downtown then
 			local dist = Vector2.new(center.X - c.X, center.Z - c.Z).Magnitude
-			local floors = math.clamp(math.floor(8 - dist / 30 + rng:NextInteger(-1, 2)), 3, 9)
+			-- horizonte: torres de 20+ andares no miolo, caindo para prédios médios nas bordas
+			local floors = math.clamp(math.floor(27 - dist / 8.5 + rng:NextInteger(-3, 3)), 6, 30)
 			if not konbiniDone and dist < 110 and dist > 60 and rng:NextNumber() < 0.25 then
 				konbiniDone = true
 				Town.konbini(buildings, cf, rng)
+			elseif floors >= 11 then
+				Town.tower(buildings, cf, frontage - 2, depth, floors, rng)
 			else
 				Town.building(buildings, cf, frontage - 2, depth, floors, rng)
 			end
+		elseif rng:NextNumber() < 0.3 then
+			-- prédios médios misturados às casas fora do centro
+			Town.building(buildings, cf, frontage - 4, depth - 4, rng:NextInteger(4, 8), rng)
 		else
 			local w, d = frontage - 6, depth - 8
 			Town.house(houses, cf, w, d, rng)
@@ -293,7 +299,7 @@ function Regions.Karakura(folder: Instance)
 			local z0, z1 =
 				cuts[zi] + (if zi == 1 then 6 else MARGIN), cuts[zi + 1] - (if zi == #cuts - 1 then 6 else MARGIN)
 			local downtown = xi >= 2 and xi <= 3 and zi >= 2 and zi <= 3
-			local depth = if downtown then rng:NextInteger(20, 26) else 26
+			local depth = if downtown then rng:NextInteger(28, 38) else 26
 			-- frentes: norte/sul (ao longo de X) e leste/oeste (ao longo de Z, encurtadas nas quinas)
 			for _, edge in
 				{
@@ -308,8 +314,7 @@ function Regions.Karakura(folder: Instance)
 				local to = if alongX then x1 else z1 - depth
 				local t = from
 				while to - t > 14 do
-					local frontage =
-						math.min(to - t, rng:NextInteger(if downtown then 20 else 24, if downtown then 30 else 30))
+					local frontage = math.min(to - t, rng:NextInteger(24, if downtown then 36 else 30))
 					local mid = t + frontage / 2
 					local inward = -facing * (depth / 2)
 					local center = if alongX

@@ -213,7 +213,13 @@ Inst.__index = function(self, k)
 	if m then
 		return m
 	end
+	if k == "Parent" then
+		return rawget(self, "_parent")
+	end
 	local props = rawget(self, "_props")
+	if k == "Position" and props.Position == nil and props.CFrame then
+		return props.CFrame.Position
+	end
 	if props[k] ~= nil then
 		return props[k]
 	end
@@ -287,7 +293,20 @@ function Inst:IsA(class)
 	if class == "JointInstance" then
 		return c == "Motor6D" or c == "Weld"
 	end
+	if class == "Constraint" then
+		return c == "AnimationConstraint" or c == "RigidConstraint"
+	end
 	return c == class
+end
+function Inst:IsDescendantOf(ancestor)
+	local p = rawget(self, "_parent")
+	while p do
+		if p == ancestor then
+			return true
+		end
+		p = rawget(p, "_parent")
+	end
+	return false
 end
 function Inst:SetAttribute(k, v)
 	rawget(self, "_attrs")[k] = v
@@ -349,7 +368,17 @@ task = {
 		table.insert(queue, item)
 		return item
 	end,
-	wait = function()
+	-- dentro de uma corrotina, dorme de verdade no relógio simulado (laços com wait não travam)
+	wait = function(t)
+		local co = coroutine.running()
+		if co and coroutine.isyieldable() then
+			local start = CLOCK
+			table.insert(queue, { at = CLOCK + (t or 0), fn = function()
+				coroutine.resume(co)
+			end })
+			coroutine.yield()
+			return CLOCK - start
+		end
 		return 0
 	end,
 	cancel = function(item)
@@ -397,3 +426,4 @@ game = {
 		return SERVICES[name] or Instance.new(name)
 	end,
 }
+warn = warn or function(...) print("[warn]", ...) end

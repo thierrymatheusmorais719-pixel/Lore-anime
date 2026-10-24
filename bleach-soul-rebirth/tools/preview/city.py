@@ -97,6 +97,22 @@ def polys_of(parts, terrain):
         neon = part["m"] == "Neon"
         for poly in local_polys(part):
             pts = np.array(poly) @ R.T + P
+            # faces grandes (fachadas de torre) em ladrilhos: a ordenação por profundidade não deixa
+            # a fachada inteira cobrir as janelas e lajes que estão na frente dela
+            if len(pts) == 4:
+                nu = max(1, int(np.linalg.norm(pts[1] - pts[0]) // 10))
+                nv = max(1, int(np.linalg.norm(pts[3] - pts[0]) // 10))
+                if nu * nv > 1:
+                    for i in range(nu):
+                        for j in range(nv):
+                            def at(u, v):
+                                a = pts[0] + (pts[1] - pts[0]) * u
+                                b = pts[3] + (pts[2] - pts[3]) * u
+                                return a + (b - a) * v
+                            u0, u1, v0, v1 = i / nu, (i + 1) / nu, j / nv, (j + 1) / nv
+                            quad = np.array([at(u0, v0), at(u1, v0), at(u1, v1), at(u0, v1)])
+                            out.append((quad, tuple(part["c"]), neon, part["t"], part.get("L") if i == 0 and j == 0 else None))
+                    continue
             out.append((pts, tuple(part["c"]), neon, part["t"], part.get("L")))
     return out
 
@@ -177,10 +193,10 @@ if __name__ == "__main__":
             l = part["L"]
             lights.append((part["p"], l[:3], l[3], min(l[4], 3)))
     views = [
-        ("Vista aérea (sudeste)", (330, 210, -330), (-20, 0, 30), 55),
+        ("Vista aérea (sudeste)", (470, 300, -470), (0, 70, 0), 55),
         ("Avenida central (rua)", (4, 6, -215), (0, 8, 40), 70),
         ("Centro: cruzamento e praça", (6, 16, -110), (-10, 4, 10), 70),
-        ("Rua comercial coberta", (-75, 7, 22), (-75, 7, 140), 75),
+        ("Horizonte do centro (da margem do rio)", (-250, 10, -20), (0, 95, 0), 72),
         ("Trilho elevado (avenida leste)", (143, 7, -222), (150, 20, 20), 70),
         ("Bairro residencial", (-215, 9, -150), (-100, 6, -150), 70),
     ]

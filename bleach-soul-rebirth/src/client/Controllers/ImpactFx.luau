@@ -188,6 +188,9 @@ function ImpactFx.Hit(position: Vector3, direction: Vector3?, element: string?, 
 	if t >= 2 and VFX.Ultra() and SpectacleFx.NearGround(position, 6) then
 		SpectacleFx.Debris(position, if t >= 3 then 10 else 4, if t >= 3 then 34 else 22)
 		SpectacleFx.DustRing(position, if t >= 3 then 9 else 5)
+		if t >= 3 then
+			SpectacleFx.Scorch(position, p.primary, 5.5)
+		end
 	end
 	-- 0,00 s: clarão (forma espinhosa que encolhe) + fundo preto + linha de flare + brilho
 	fire("Flash", position, nil, ColorSequence.new(p.core), 1, s)
@@ -212,6 +215,8 @@ function ImpactFx.Hit(position: Vector3, direction: Vector3?, element: string?, 
 		)
 	end
 	light(position, p.primary, 10 * s, 0.18)
+	-- faíscas incandescentes com rastro que quicam no chão (mais e mais rápidas nos pesados)
+	SpectacleFx.Sparks(position, dir, p.primary, if t >= 3 then 34 elseif t == 2 then 18 else 8, 26 + 10 * t)
 
 	-- +0,03 s: estilhaços de energia (estouro com arrasto) e cópias que esfriam
 	task.delay(0.03, function()

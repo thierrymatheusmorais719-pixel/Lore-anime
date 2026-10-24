@@ -430,23 +430,51 @@ function WeaponBuilder.buildSheath(character: Model, length: number): BasePart?
 	return sheath
 end
 
--- Prende o modelo à mão (empunhado) e prepara a solda de quadril (embainhado).
--- O atributo "Drawn" no personagem alterna entre as duas soldas.
-function WeaponBuilder.attach(character: Model, model: Model, handName: string?): Model?
-	local hand = character:FindFirstChild(handName or "RightHand") :: BasePart?
-	local lower = character:FindFirstChild("LowerTorso") :: BasePart?
-	local handle = model.PrimaryPart
-	if not hand or not lower or not handle then
-		model:Destroy()
-		return nil
-	end
-	local style = model:GetAttribute("Style")
-	local sheathable = style == "Katana" or style == "Nodachi" or style == "LightBlade"
+local HIP_C0 = CFrame.new(-1.15, -0.1, 0.25) * CFrame.Angles(math.rad(-160), 0, 0)
 
+-- Remove toda junta/constraint que prende o cabo a algo fora do modelo da arma (as
+-- WeldConstraints internas da arma ficam). A atualização de juntas do Roblox pode converter ou
+-- duplicar o Motor6D da empunhadura em AnimationConstraint; só desligar o Motor6D deixava essa
+-- cópia puxando a espada para a mão enquanto a solda do quadril puxava para a cintura — a espada
+-- acabava atravessada no peito. Recriar a junta certa do zero elimina qualquer sobra.
+local function clearHandleJoints(model: Model, handle: BasePart)
+	local character = model.Parent
+	local scope: Instance = if character then character else model
+	for _, d in scope:GetDescendants() do
+		local other: Instance? = nil
+		if d:IsA("JointInstance") then
+			if d.Part0 == handle then
+				other = d.Part1
+			elseif d.Part1 == handle then
+				other = d.Part0
+			end
+		elseif d:IsA("WeldConstraint") then
+			if d.Part0 == handle then
+				other = d.Part1
+			elseif d.Part1 == handle then
+				other = d.Part0
+			end
+		elseif d:IsA("Constraint") then
+			local a0, a1 = d.Attachment0, d.Attachment1
+			local p0 = a0 and a0.Parent
+			local p1 = a1 and a1.Parent
+			if p0 == handle then
+				other = p1
+			elseif p1 == handle then
+				other = p0
+			end
+		end
+		if other and not other:IsDescendantOf(model) then
+			d:Destroy()
+		end
+	end
+end
+
+local function makeGrip(model: Model, handle: BasePart, hand: BasePart): Motor6D
 	-- Empunhadura = Motor6D animável ("Weapon" na mão direita, "OffHand" na esquerda), no mesmo
 	-- referencial das juntas de prop da skill roblox-vfx-animation: C0 no ponto de empunhadura
 	-- girado -90° em X (lâmina = +Y do prop). Com Transform identidade a lâmina sai do punho para frente.
-	local isRight = (handName or "RightHand") == "RightHand"
+	local isRight = hand.Name == "RightHand"
 	local gripAttachment =
 		hand:FindFirstChild(if isRight then "RightGripAttachment" else "LeftGripAttachment") :: Attachment?
 	local gripPosition = if gripAttachment then gripAttachment.Position else Vector3.new(0, -0.158, 0)
@@ -460,36 +488,60 @@ function WeaponBuilder.attach(character: Model, model: Model, handName: string?)
 	grip.C1 = CFrame.new(0, 0, gripOffset) * CFrame.Angles(math.rad(-90), 0, 0)
 	grip:SetAttribute("Grip", true)
 	grip.Parent = handle
+	return grip
+end
 
-	if sheathable and (handName or "RightHand") == "RightHand" then
-		local hip = Instance.new("Weld")
-		hip.Name = "HipWeld"
-		hip.Part0 = lower
-		hip.Part1 = handle
-		hip.C0 = CFrame.new(-1.15, -0.1, 0.25) * CFrame.Angles(math.rad(-160), 0, 0)
-		hip.Enabled = false
-		hip.Parent = handle
+local function makeHip(handle: BasePart, lower: BasePart): Weld
+	local hip = Instance.new("Weld")
+	hip.Name = "HipWeld"
+	hip.Part0 = lower
+	hip.Part1 = handle
+	hip.C0 = HIP_C0
+	hip.Parent = handle
+	return hip
+end
+
+-- Prende o modelo à mão (empunhado). Armas embainháveis na mão direita podem ir ao quadril
+-- (atributo "Sheathable"); setDrawn troca uma junta pela outra.
+function WeaponBuilder.attach(character: Model, model: Model, handName: string?): Model?
+	local hand = character:FindFirstChild(handName or "RightHand") :: BasePart?
+	local lower = character:FindFirstChild("LowerTorso") :: BasePart?
+	local handle = model.PrimaryPart
+	if not hand or not lower or not handle then
+		model:Destroy()
+		return nil
 	end
+	local style = model:GetAttribute("Style")
+	local sheathable = (style == "Katana" or style == "Nodachi" or style == "LightBlade")
+		and (handName or "RightHand") == "RightHand"
 	model:SetAttribute("Hand", handName or "RightHand")
+	model:SetAttribute("Sheathable", sheathable)
+	model:SetAttribute("Drawn", true)
 	model.Parent = character
+	clearHandleJoints(model, handle)
+	makeGrip(model, handle, hand)
 	return model
 end
 
--- Alterna mão/quadril conforme `drawn`.
+-- Mão ou quadril conforme `drawn`: apaga toda junta do cabo com o corpo e cria só a certa.
 function WeaponBuilder.setDrawn(model: Model, drawn: boolean)
 	local handle = model.PrimaryPart
-	if not handle then
+	local character = model.Parent
+	if not handle or not character or not model:GetAttribute("Sheathable") then
 		return
 	end
-	local grip = (handle:FindFirstChild("Weapon") or handle:FindFirstChild("OffHand")) :: Motor6D?
-	local hip = handle:FindFirstChild("HipWeld") :: Weld?
-	if not hip then
+	local hand = character:FindFirstChild((model:GetAttribute("Hand") :: string?) or "RightHand") :: BasePart?
+	local lower = character:FindFirstChild("LowerTorso") :: BasePart?
+	if not hand or not lower then
 		return
 	end
-	if grip then
-		grip.Enabled = drawn
+	clearHandleJoints(model, handle)
+	if drawn then
+		makeGrip(model, handle, hand)
+	else
+		makeHip(handle, lower)
 	end
-	hip.Enabled = not drawn
+	model:SetAttribute("Drawn", drawn)
 end
 
 return WeaponBuilder

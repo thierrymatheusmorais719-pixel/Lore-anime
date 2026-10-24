@@ -327,6 +327,223 @@ local function stepChunks(dt: number)
 	end
 end
 
+-- Faíscas de verdade: gotas incandescentes com rastro (Trail) que voam em arco, quicam no chão
+-- perdendo energia e esfriam do branco-quente para a cor do elemento e depois para brasa escura.
+-- Simuladas à mão (raycast no mapa), sem física: não empurram nada e custam pouco.
+type Spark = {
+	part: Part,
+	trail: Trail,
+	velocity: Vector3,
+	born: number,
+	life: number,
+	bounces: number,
+	hot: Color3,
+	mid: Color3,
+	cold: Color3,
+}
+local sparks: { Spark } = {}
+local MAX_SPARKS = 260
+
+function SpectacleFx.Sparks(position: Vector3, direction: Vector3?, color: Color3, count: number, power: number?)
+	if lowQuality() then
+		return
+	end
+	local n = math.min(math.floor(count * VFX.Scale()), MAX_SPARKS - #sparks)
+	local speed = power or 38
+	local folder = workspace:FindFirstChild("ClientVFX") or workspace
+	local hot = Color3.fromRGB(255, 250, 235)
+	local cold = color:Lerp(Color3.fromRGB(60, 20, 10), 0.75)
+	local bias = if direction and direction.Magnitude > 0.01 then direction.Unit else Vector3.zero
+	for _ = 1, n do
+		local part = Instance.new("Part")
+		part.Name = "Spark"
+		part.Anchored = true
+		part.CanCollide = false
+		part.CanQuery = false
+		part.CanTouch = false
+		part.CastShadow = false
+		part.Material = Enum.Material.Neon
+		part.Color = hot
+		part.Size = Vector3.new(0.12, 0.12, 0.12)
+		part.Shape = Enum.PartType.Ball
+		part.CFrame = CFrame.new(position)
+		local a0 = Instance.new("Attachment")
+		a0.Position = Vector3.new(0, 0.06, 0)
+		a0.Parent = part
+		local a1 = Instance.new("Attachment")
+		a1.Position = Vector3.new(0, -0.06, 0)
+		a1.Parent = part
+		local trail = Instance.new("Trail")
+		trail.Attachment0 = a0
+		trail.Attachment1 = a1
+		trail.FaceCamera = true
+		trail.Lifetime = rng:NextNumber(0.08, 0.18)
+		trail.MinLength = 0
+		trail.LightEmission = 1
+		trail.LightInfluence = 0
+		trail.WidthScale = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(1, 0),
+		})
+		trail.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		trail.Color = ColorSequence.new(hot, color)
+		trail.Parent = part
+		part.Parent = folder
+		local spread = Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(0.1, 1.1), rng:NextNumber(-1, 1))
+		local dir = (spread + bias * 0.9)
+		dir = if dir.Magnitude > 0.01 then dir.Unit else Vector3.yAxis
+		table.insert(sparks, {
+			part = part,
+			trail = trail,
+			velocity = dir * speed * rng:NextNumber(0.35, 1),
+			born = os.clock(),
+			life = rng:NextNumber(0.5, 1.3),
+			bounces = 0,
+			hot = hot,
+			mid = color,
+			cold = cold,
+		})
+	end
+end
+
+local function stepSparks(dt: number)
+	local now = os.clock()
+	for i = #sparks, 1, -1 do
+		local s = sparks[i]
+		local age = (now - s.born) / s.life
+		if age >= 1 or not s.part.Parent then
+			s.part:Destroy()
+			table.remove(sparks, i)
+			continue
+		end
+		-- esfria: branco-quente → cor do elemento → brasa
+		local color = if age < 0.3 then s.hot:Lerp(s.mid, age / 0.3) else s.mid:Lerp(s.cold, (age - 0.3) / 0.7)
+		s.part.Color = color
+		s.trail.Color = ColorSequence.new(color:Lerp(s.hot, 0.4), color)
+		s.part.Transparency = math.max(0, (age - 0.75) * 4)
+		s.velocity += Vector3.new(0, -workspace.Gravity * 0.45 * dt, 0)
+		s.velocity *= math.max(0, 1 - 1.4 * dt)
+		local from = s.part.Position
+		local step = s.velocity * dt
+		local hit = if s.bounces < 3 then workspace:Raycast(from, step, mapParams) else nil
+		if hit then
+			-- quica: reflete na normal e perde boa parte da energia
+			local v = s.velocity
+			s.velocity = (v - 2 * v:Dot(hit.Normal) * hit.Normal) * 0.42
+			s.part.CFrame = CFrame.new(hit.Position + hit.Normal * 0.08)
+			s.bounces += 1
+		else
+			s.part.CFrame = CFrame.new(from + step)
+		end
+	end
+end
+
+-- Marca de queimado: disco escuro no chão com borda incandescente que esfria devagar, brasas
+-- piscando dentro e fumaça fina subindo por alguns segundos depois do golpe.
+function SpectacleFx.Scorch(position: Vector3, color: Color3, radius: number)
+	if lowQuality() then
+		return
+	end
+	local ground = groundInfo(position)
+	if position.Y - ground.Y > 8 then
+		return
+	end
+	local folder = Instance.new("Model")
+	folder.Name = "Scorch"
+	local base = CFrame.new(ground + Vector3.new(0, 0.06, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	local function disc(name: string, diameter: number, height: number, tint: Color3, material: Enum.Material): Part
+		local part = Instance.new("Part")
+		part.Name = name
+		part.Shape = Enum.PartType.Cylinder
+		part.Anchored = true
+		part.CanCollide = false
+		part.CanQuery = false
+		part.CanTouch = false
+		part.CastShadow = false
+		part.Size = Vector3.new(height, diameter, diameter)
+		part.CFrame = base + Vector3.new(0, height / 2, 0)
+		part.Color = tint
+		part.Material = material
+		part.Parent = folder
+		return part
+	end
+	local burn = disc("Burn", radius * 2, 0.06, Color3.fromRGB(18, 14, 12), Enum.Material.Slate)
+	burn.Transparency = 0.15
+	local glow = disc("Glow", radius * 1.55, 0.08, Color3.fromRGB(255, 230, 190), Enum.Material.Neon)
+	glow.Transparency = 0.1
+	local core = disc("Core", radius * 1.25, 0.1, Color3.fromRGB(28, 20, 16), Enum.Material.Slate)
+	local light = Instance.new("PointLight")
+	light.Color = color
+	light.Range = radius * 3
+	light.Brightness = 2.5
+	light.Shadows = VFX.Ultra()
+	light.Parent = glow
+	-- fumaça fina e brasas subindo
+	local smoke = Instance.new("ParticleEmitter")
+	smoke.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	smoke.Rate = 10 * VFX.Scale()
+	smoke.Lifetime = NumberRange.new(2.2, 3.4)
+	smoke.Speed = NumberRange.new(2, 4)
+	smoke.SpreadAngle = Vector2.new(18, 18)
+	smoke.Acceleration = Vector3.new(0.8, 1.5, 0.4)
+	smoke.Drag = 0.6
+	smoke.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, radius * 0.25),
+		NumberSequenceKeypoint.new(1, radius * 0.9),
+	})
+	smoke.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(0.15, 0.72),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	smoke.Color = ColorSequence.new(Color3.fromRGB(70, 66, 62), Color3.fromRGB(110, 108, 106))
+	smoke.LightInfluence = 1
+	smoke.Rotation = NumberRange.new(0, 360)
+	smoke.RotSpeed = NumberRange.new(-20, 20)
+	smoke.EmissionDirection = Enum.NormalId.Right
+	smoke.Shape = Enum.ParticleEmitterShape.Disc
+	smoke.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+	smoke.Parent = core
+	local embers = Instance.new("ParticleEmitter")
+	embers.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	embers.Rate = 14 * VFX.Scale()
+	embers.Lifetime = NumberRange.new(0.8, 1.8)
+	embers.Speed = NumberRange.new(1, 4)
+	embers.SpreadAngle = Vector2.new(35, 35)
+	embers.Acceleration = Vector3.new(0, 3, 0)
+	embers.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.18),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	embers.Color = ColorSequence.new(Color3.fromRGB(255, 220, 160), color)
+	embers.LightEmission = 1
+	embers.LightInfluence = 0
+	embers.EmissionDirection = Enum.NormalId.Right
+	embers.Shape = Enum.ParticleEmitterShape.Disc
+	embers.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+	embers.Parent = core
+	folder.Parent = workspace:FindFirstChild("ClientVFX") or workspace
+	-- esfria: branco-quente → cor do elemento → apaga; depois tudo some
+	VFX.tween(glow, 0.5, { Color = color })
+	task.delay(0.5, function()
+		VFX.tween(glow, 3.5, { Color = color:Lerp(Color3.fromRGB(60, 18, 8), 0.8), Transparency = 0.6 })
+		VFX.tween(light, 3.5, { Brightness = 0 })
+	end)
+	task.delay(3, function()
+		embers.Enabled = false
+	end)
+	task.delay(4.5, function()
+		smoke.Enabled = false
+		for _, part in { burn, glow, core } do
+			VFX.tween(part, 2.5, { Transparency = 1 })
+		end
+	end)
+	Debris:AddItem(folder, 8)
+end
+
 -- Cratera: anel de blocos inclinados + rachaduras + poeira + detritos.
 function SpectacleFx.Crater(position: Vector3, radius: number, glow: Color3?)
 	local ground, color = groundInfo(position)
@@ -863,6 +1080,7 @@ function SpectacleFx.Start()
 	refreshMapFilter()
 	RunService.RenderStepped:Connect(function(dt)
 		stepChunks(dt)
+		stepSparks(dt)
 		stepAuras(dt)
 	end)
 	player.CharacterAdded:Connect(function()

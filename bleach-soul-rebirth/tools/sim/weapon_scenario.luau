@@ -168,3 +168,34 @@ dumpPose("Embainhada — parado")
 STIFF_BODY = true
 report("[corpo duro] sacada parado", step(1.5, Vector3.zero))
 report("[corpo duro] sacada andando", step(1.5, Vector3.new(0, 0, -18)))
+
+-- atualização de juntas do Roblox: uma cópia AnimationConstraint da empunhadura sobrando no cabo
+-- não pode sobreviver a guardar/sacar (era o que deixava a espada atravessada no peito)
+local function handleLinks()
+	local names = {}
+	for _, d in character:GetDescendants() do
+		if d:IsA("JointInstance") and (d.Part0 == handle or d.Part1 == handle) then
+			table.insert(names, d.Name)
+		elseif d:IsA("Constraint") and ((d.Attachment0 and d.Attachment0.Parent == handle) or (d.Attachment1 and d.Attachment1.Parent == handle)) then
+			table.insert(names, d.Name)
+		end
+	end
+	table.sort(names)
+	return table.concat(names, ",")
+end
+for _, drawn in { false, true } do
+	local a0 = Instance.new("Attachment")
+	a0.Parent = character:FindFirstChild("RightHand")
+	local a1 = Instance.new("Attachment")
+	a1.Parent = handle
+	local ghost = Instance.new("AnimationConstraint")
+	ghost.Name = "WeaponCopy"
+	ghost.Attachment0 = a0
+	ghost.Attachment1 = a1
+	ghost.Parent = handle
+	WeaponBuilder.setDrawn(weapon, drawn)
+	local links = handleLinks()
+	local want = if drawn then "Weapon" else "HipWeld"
+	print(string.format("%-5s %-26s juntas no cabo: %s", if links == want then "ok" else "FALHA",
+		if drawn then "sobra removida (sacada)" else "sobra removida (guardada)", links))
+end

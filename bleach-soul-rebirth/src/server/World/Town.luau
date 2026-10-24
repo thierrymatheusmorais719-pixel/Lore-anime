@@ -766,6 +766,354 @@ function Town.building(parent: Instance, cf: CFrame, width: number, depth: numbe
 	return model
 end
 
+-- Arranha-céu do centro: pódio comercial de 3 andares (vitrine, toldo, letreiro) e torre de vidro
+-- recuada por cima, com montantes verticais, lajes em faixa, janelas acesas agrupadas por andar
+-- (uma peça por trecho aceso, não por janela), recuos no topo, faixa de neon na coroa, luzes de
+-- aviação e às vezes heliponto, antena alta ou outdoor no telhado.
+local TOWER_GLASS = {
+	Color3.fromRGB(38, 52, 70),
+	Color3.fromRGB(30, 44, 52),
+	Color3.fromRGB(52, 58, 72),
+	Color3.fromRGB(44, 40, 52),
+}
+function Town.tower(parent: Instance, cf: CFrame, width: number, depth: number, floors: number, rng: Random)
+	local model = Instance.new("Model")
+	model.Name = "Tower"
+	local floorH = 9
+	local podiumFloors = 3
+	local podiumH = podiumFloors * floorH
+	local height = floors * floorH
+	local stone = ({
+		Color3.fromRGB(186, 180, 172),
+		Color3.fromRGB(140, 144, 152),
+		Color3.fromRGB(110, 104, 100),
+	})[rng:NextInteger(1, 3)]
+	local glassColor = TOWER_GLASS[rng:NextInteger(1, #TOWER_GLASS)]
+	local accent = NEON[rng:NextInteger(1, #NEON)]
+	local tint = if rng:NextNumber() < 0.35 then COOL else WARM
+
+	-- pódio
+	Build.part(
+		model,
+		Vector3.new(width, podiumH, depth),
+		cf * CFrame.new(0, podiumH / 2, 0),
+		stone,
+		Enum.Material.Concrete,
+		"Podium"
+	)
+	local glass = Build.part(
+		model,
+		Vector3.new(width - 3, 7, 0.3),
+		cf * CFrame.new(0, 4, -depth / 2 - 0.1),
+		WARM:Lerp(Color3.new(1, 1, 1), 0.35),
+		Enum.Material.Neon,
+		"Storefront"
+	)
+	Build.light(glass, WARM, 18, 1.5)
+	local awning = Build.wedge(
+		model,
+		Vector3.new(width - 1, 1.2, 3.4),
+		cf * CFrame.new(0, 8.2, -depth / 2 - 1.7) * CFrame.Angles(0, math.pi, 0),
+		accent:Lerp(Color3.new(0.25, 0.25, 0.25), 0.4),
+		Enum.Material.Fabric
+	)
+	noCollide(awning)
+	for floor = 1, podiumFloors - 1 do
+		local y = floor * floorH
+		local band = Build.part(
+			model,
+			Vector3.new(width - 2, 4.4, 0.25),
+			cf * CFrame.new(0, y + 4.6, -depth / 2 - 0.08),
+			if rng:NextNumber() < 0.6 then tint else DARK_GLASS,
+			if rng:NextNumber() < 0.6 then Enum.Material.Neon else Enum.Material.Glass,
+			"PodiumWindows"
+		)
+		noCollide(band)
+	end
+	Build.part(
+		model,
+		Vector3.new(width + 0.6, 1.2, depth + 0.6),
+		cf * CFrame.new(0, podiumH + 0.6, 0),
+		stone:Lerp(Color3.new(0, 0, 0), 0.2),
+		Enum.Material.Concrete,
+		"PodiumCornice"
+	)
+
+	-- torre: 1 a 2 recuos no topo
+	local stages = { { inset = 2.5, top = height } }
+	if floors >= 14 then
+		local cut = height - floorH * rng:NextInteger(3, 5)
+		stages = {
+			{ inset = 2.5, top = cut },
+			{ inset = 2.5 + math.min(width, depth) * 0.14, top = height },
+		}
+	end
+	local base = podiumH + 1.2
+	for index, stage in stages do
+		local tw, td = width - stage.inset * 2, depth - stage.inset * 2
+		local h = stage.top - base
+		local body = Build.part(
+			model,
+			Vector3.new(tw, h, td),
+			cf * CFrame.new(0, base + h / 2, 0),
+			glassColor,
+			Enum.Material.Glass,
+			"CurtainWall"
+		)
+		body.Reflectance = 0.12
+		-- montantes verticais nas quatro faces (uma peça cada, da base ao topo do estágio)
+		local cols = { x = math.max(3, math.floor(tw / 4.5)), z = math.max(3, math.floor(td / 4.5)) }
+		for _, face in { { "x", -1 }, { "x", 1 }, { "z", -1 }, { "z", 1 } } do
+			local axis, sign = face[1], face[2]
+			local span = if axis == "x" then tw else td
+			local n = cols[axis]
+			for c = 0, n do
+				local u = -span / 2 + c * span / n
+				local pos = if axis == "x"
+					then Vector3.new(u, base + h / 2, sign * (td / 2 + 0.15))
+					else Vector3.new(sign * (tw / 2 + 0.15), base + h / 2, u)
+				local mullion = Build.part(
+					model,
+					if axis == "x" then Vector3.new(0.35, h, 0.35) else Vector3.new(0.35, h, 0.35),
+					cf * CFrame.new(pos),
+					Color3.fromRGB(70, 74, 82),
+					Enum.Material.Metal,
+					"Mullion"
+				)
+				noCollide(mullion)
+			end
+		end
+		-- lajes e trechos acesos por andar
+		local firstFloor = math.floor((base - 1.2) / floorH + 0.5)
+		local lastFloor = math.floor(stage.top / floorH) - 1
+		for floor = firstFloor, lastFloor do
+			local y = floor * floorH + 1.2
+			local slab = Build.part(
+				model,
+				Vector3.new(tw + 0.5, 0.7, td + 0.5),
+				cf * CFrame.new(0, y, 0),
+				stone:Lerp(Color3.new(0, 0, 0), 0.35),
+				Enum.Material.Concrete,
+				"Slab"
+			)
+			noCollide(slab)
+			-- andar inteiro de escritório aceso às vezes; senão trechos soltos
+			local busy = rng:NextNumber() < 0.12
+			for _, face in { { "x", -1 }, { "x", 1 }, { "z", -1 }, { "z", 1 } } do
+				local axis, sign = face[1], face[2]
+				local span = if axis == "x" then tw else td
+				local n = cols[axis]
+				local c = 0
+				while c < n do
+					local lit = busy or rng:NextNumber() < 0.42
+					if lit then
+						local run = if busy then n - c else math.min(n - c, rng:NextInteger(1, 3))
+						local u = -span / 2 + (c + run / 2) * span / n
+						local len = run * span / n - 0.6
+						local pos = if axis == "x"
+							then Vector3.new(u, y + 4.4, sign * (td / 2 + 0.06))
+							else Vector3.new(sign * (tw / 2 + 0.06), y + 4.4, u)
+						local color = if rng:NextNumber() < 0.2 then COOL else tint
+						local win = Build.part(
+							model,
+							if axis == "x" then Vector3.new(len, 6.2, 0.2) else Vector3.new(0.2, 6.2, len),
+							cf * CFrame.new(pos),
+							color:Lerp(Color3.new(0.1, 0.1, 0.12), rng:NextNumber(0, 0.3)),
+							Enum.Material.Neon,
+							"LitWindows"
+						)
+						noCollide(win)
+						c += run
+					else
+						c += 1
+					end
+				end
+			end
+		end
+		-- coroa do estágio: faixa de neon e cornija
+		local ringY = stage.top - 1.2
+		for _, face in { { "x", -1 }, { "x", 1 }, { "z", -1 }, { "z", 1 } } do
+			local axis, sign = face[1], face[2]
+			local strip = neonPart(
+				model,
+				if axis == "x" then Vector3.new(tw + 0.6, 0.5, 0.3) else Vector3.new(0.3, 0.5, td + 0.6),
+				cf
+					* CFrame.new(
+						if axis == "x"
+							then Vector3.new(0, ringY, sign * (td / 2 + 0.3))
+							else Vector3.new(sign * (tw / 2 + 0.3), ringY, 0)
+					),
+				if index == #stages then accent else accent:Lerp(Color3.new(1, 1, 1), 0.4),
+				"CrownStrip"
+			)
+			noCollide(strip)
+		end
+		Build.part(
+			model,
+			Vector3.new(tw + 0.8, 1.6, td + 0.8),
+			cf * CFrame.new(0, stage.top + 0.8, 0),
+			stone:Lerp(Color3.new(0, 0, 0), 0.25),
+			Enum.Material.Concrete,
+			"Parapet"
+		)
+		base = stage.top + 1.6
+		if index == #stages then
+			-- luzes de aviação nas quinas
+			for _, corner in { { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 } } do
+				local beacon = neonPart(
+					model,
+					Vector3.new(0.6, 0.6, 0.6),
+					cf * CFrame.new(corner[1] * (tw / 2 - 0.4), stage.top + 2, corner[2] * (td / 2 - 0.4)),
+					Color3.fromRGB(255, 40, 40),
+					"AviationLight"
+				)
+				noCollide(beacon)
+			end
+			local top = cf * CFrame.new(0, stage.top + 1.6, 0)
+			local roll = rng:NextNumber()
+			if roll < 0.3 and tw > 16 and td > 16 then
+				-- heliponto
+				local pad = Build.cylinder(
+					model,
+					0.4,
+					math.min(tw, td) - 4,
+					top * CFrame.new(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)),
+					Color3.fromRGB(60, 62, 66),
+					Enum.Material.Concrete
+				)
+				noCollide(pad)
+				for _, piece in
+					{
+						{ Vector3.new(0.8, 0.1, 5), Vector3.new(-1.6, 0.45, 0) },
+						{ Vector3.new(0.8, 0.1, 5), Vector3.new(1.6, 0.45, 0) },
+						{ Vector3.new(2.4, 0.1, 0.8), Vector3.new(0, 0.45, 0) },
+					}
+				do
+					noCollide(
+						Build.part(
+							model,
+							piece[1],
+							top * CFrame.new(piece[2]),
+							Color3.fromRGB(240, 240, 236),
+							Enum.Material.SmoothPlastic,
+							"HeliH"
+						)
+					)
+				end
+				local ring = neonPart(
+					model,
+					Vector3.new(0.12, 0.12, 0.12),
+					top * CFrame.new(0, 0.5, 0),
+					Color3.fromRGB(120, 255, 140),
+					"HeliLight"
+				)
+				Build.light(ring, Color3.fromRGB(120, 255, 140), 20, 0.8)
+			elseif roll < 0.6 then
+				-- antena alta com luz piscando
+				local mastH = rng:NextInteger(18, 34)
+				Build.part(
+					model,
+					Vector3.new(0.6, mastH, 0.6),
+					top * CFrame.new(0, mastH / 2, 0),
+					Color3.fromRGB(150, 150, 156),
+					Enum.Material.Metal,
+					"Spire"
+				)
+				for i = 1, 3 do
+					noCollide(
+						Build.part(
+							model,
+							Vector3.new(2.2 - i * 0.5, 0.25, 2.2 - i * 0.5),
+							top * CFrame.new(0, mastH * i / 4, 0),
+							Color3.fromRGB(120, 120, 126),
+							Enum.Material.Metal,
+							"SpireRing"
+						)
+					)
+				end
+				local tip = neonPart(
+					model,
+					Vector3.new(0.9, 0.9, 0.9),
+					top * CFrame.new(0, mastH + 0.4, 0),
+					Color3.fromRGB(255, 40, 40),
+					"AntennaLight"
+				)
+				noCollide(tip)
+				Build.light(tip, Color3.fromRGB(255, 40, 40), 24, 1.2)
+			else
+				-- outdoor de neon virado para a rua
+				local bw = math.min(tw - 2, 26)
+				local board = Build.part(
+					model,
+					Vector3.new(bw, 9, 0.6),
+					top * CFrame.new(0, 7, -td / 2 + 3),
+					Color3.fromRGB(16, 16, 22),
+					Enum.Material.SmoothPlastic,
+					"Billboard"
+				)
+				for _, leg in { -1, 1 } do
+					Build.part(
+						model,
+						Vector3.new(0.5, 3, 0.5),
+						top * CFrame.new(leg * bw * 0.35, 1.5, -td / 2 + 3),
+						Color3.fromRGB(70, 70, 76),
+						Enum.Material.Metal,
+						"BillboardLeg"
+					)
+				end
+				local glow = neonPart(
+					model,
+					Vector3.new(bw + 0.6, 9.6, 0.2),
+					board.CFrame * CFrame.new(0, 0, 0.32),
+					accent,
+					"BillboardFrame"
+				)
+				noCollide(glow)
+				glow.Transparency = 0.4
+				signText(board, SIGN_TEXT[rng:NextInteger(1, #SIGN_TEXT)], accent, false)
+				Build.light(board, accent, 40, 1.6)
+			end
+		end
+	end
+
+	-- letreiro vertical no pódio
+	local color = NEON[rng:NextInteger(1, #NEON)]
+	local signH = podiumH - 10
+	local side = if rng:NextNumber() < 0.5 then -1 else 1
+	local sign = Build.part(
+		model,
+		Vector3.new(0.6, signH, 3.4),
+		cf
+			* CFrame.new(side * (width / 2 + 0.3), 10 + signH / 2, -depth / 2 + 2)
+			* CFrame.Angles(0, math.rad(90 * side), 0),
+		Color3.fromRGB(18, 18, 24),
+		Enum.Material.SmoothPlastic,
+		"Sign"
+	)
+	local face = neonPart(
+		model,
+		Vector3.new(0.1, signH - 0.6, 3),
+		sign.CFrame * CFrame.new(-0.36 * side, 0, 0),
+		color,
+		"SignGlow"
+	)
+	noCollide(face)
+	face.Transparency = 0.55
+	local boardSign = Build.part(
+		model,
+		Vector3.new(2.8, signH - 1, 0.1),
+		cf * CFrame.new(side * (width / 2 + 0.3), 10 + signH / 2, -depth / 2 + 0.15),
+		Color3.fromRGB(18, 18, 24),
+		Enum.Material.SmoothPlastic,
+		"SignBoard"
+	)
+	noCollide(boardSign)
+	signText(boardSign, SIGN_TEXT[rng:NextInteger(1, #SIGN_TEXT)], color, true)
+	Build.light(face, color, 18, 1.2)
+	model.Parent = parent
+	return model
+end
+
 -- Casa japonesa: térreo + andar de cima recuado às vezes, telhado de telha com cumeeira e beiral,
 -- varanda, muro baixo com portão e luminária na entrada
 function Town.house(parent: Instance, cf: CFrame, width: number, depth: number, rng: Random)

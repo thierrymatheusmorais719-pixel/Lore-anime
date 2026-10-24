@@ -932,16 +932,28 @@ local function watchWeapon(character: Model)
 					if math.abs(l.X) < half.X * 0.8 and math.abs(l.Y) < half.Y * 0.8 and math.abs(l.Z) < half.Z then
 						local grip = handle:FindFirstChild("Weapon") or handle:FindFirstChild("OffHand")
 						local hip = handle:FindFirstChild("HipWeld")
+						local links = {}
+						for _, d in character:GetDescendants() do
+							if d:IsA("JointInstance") and (d.Part0 == handle or d.Part1 == handle) then
+								table.insert(links, d.ClassName .. ":" .. d.Name)
+							elseif d:IsA("AnimationConstraint") then
+								local a0, a1 = d.Attachment0, d.Attachment1
+								if (a0 and a0.Parent == handle) or (a1 and a1.Parent == handle) then
+									table.insert(links, d.ClassName .. ":" .. d.Name)
+								end
+							end
+						end
 						warn(
 							string.format(
-								"[AnimController] espada dentro do tronco: Drawn=%s grip=%s hip=%s local=(%.2f, %.2f, %.2f) mão=%s — mande esta linha",
+								"[AnimController] espada dentro do tronco: Drawn=%s grip=%s hip=%s local=(%.2f, %.2f, %.2f) mão=%s juntas=[%s] — mande esta linha",
 								tostring(character:GetAttribute("Drawn")),
 								if grip then tostring((grip :: any).Enabled) else "nenhum",
 								if hip then tostring((hip :: any).Enabled) else "nenhum",
 								l.X,
 								l.Y,
 								l.Z,
-								tostring(child:GetAttribute("Hand"))
+								tostring(child:GetAttribute("Hand")),
+								table.concat(links, ", ")
 							)
 						)
 						warned = true
