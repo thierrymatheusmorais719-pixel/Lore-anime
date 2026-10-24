@@ -22,6 +22,7 @@ local ORDER = {
 	"BossCinematicController",
 	"FxController",
 	"ZoneController",
+	"GraphicsController",
 	"AmbientController",
 	"HUDController",
 	"DialogueController",
