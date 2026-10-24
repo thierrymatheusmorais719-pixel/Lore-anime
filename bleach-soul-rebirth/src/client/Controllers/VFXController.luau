@@ -694,6 +694,10 @@ function VFX.SpawnProjectile(data: { [string]: any })
 		speed = data.speed,
 		range = data.range,
 		start = os.clock(),
+		shape = data.shape or "Orb",
+		size = data.size or 1,
+		color = color,
+		nextGhost = 0,
 		spin = if data.shape == "Shard" or data.shape == "Arrow" then 0 else 0,
 	}
 	Debris:AddItem(model, data.range / data.speed + 1)
@@ -737,6 +741,7 @@ function VFX.Beam(data: { [string]: any })
 	tween(inner, 0.08, { Size = Vector3.new(length, radius, radius) }, Enum.EasingStyle.Back)
 	VFX.Flash(origin, color, radius * 3, 0.3)
 	local duration = data.duration or 0.5
+	require(script.Parent.MeshFx).BeamFx(origin, dir, length, radius, color, duration)
 	-- Raio: segmentos irregulares
 	if data.shape == "Lightning" and quality ~= "Low" then
 		for _ = 1, 3 do
@@ -788,6 +793,9 @@ function VFX.Burst(data: { [string]: any }, follow: BasePart?)
 		local c = if follow then follow.Position - Vector3.new(0, 2.5, 0) else center
 		VFX.Shockwave(c + Vector3.new(0, 0.5, 0), color, radius, 0.45)
 		if tick == 1 or data.ultimate then
+			if data.ultimate then
+				require(script.Parent.MeshFx).Element(c + Vector3.new(0, 2.5, 0), Vector3.yAxis, data.element, 2.2)
+			end
 			VFX.Pillar(c, color, radius * (if data.ultimate then 0.6 else 0.35), if data.ultimate then 60 else 22, 0.6)
 			VFX.Flash(c + Vector3.new(0, 3, 0), color, radius * 0.8, 0.3)
 		end
@@ -825,6 +833,7 @@ function VFX.Rain(data: { [string]: any })
 			task.delay(0.12, function()
 				VFX.Flash(hit, color, 4, 0.2)
 				VFX.Sparks(hit, color, 5)
+				require(script.Parent.MeshFx).Impact(hit + Vector3.new(0, 0.5, 0), Vector3.yAxis, data.element, 1)
 			end)
 		end
 		task.wait(data.interval)
@@ -971,6 +980,26 @@ function VFX.Start()
 				for _, part in p.model:GetChildren() do
 					if part:IsA("BasePart") then
 						part.CFrame = cf * (part:GetAttribute("Offset") :: CFrame)
+					end
+				end
+				-- rastro de malha: cópias da forma ficando para trás (borrão de movimento)
+				if quality ~= "Low" and now >= p.nextGhost then
+					p.nextGhost = now + (if quality == "Ultra" then 0.03 else 0.06)
+					local MeshFx = require(script.Parent.MeshFx) :: any
+					local s = p.size
+					if p.shape == "Crescent" then
+						MeshFx.Ghost("Crescent", cf * CFrame.Angles(math.pi / 2, 0, 0), 3.6 * s, p.color, 0.22)
+					elseif p.shape == "Arrow" or p.shape == "Bolt" or p.shape == "Shard" then
+						MeshFx.Ghost("Shard", cf * CFrame.Angles(-math.pi / 2, 0, 0), 2.6 * s, p.color, 0.16)
+					else
+						MeshFx.Ghost(
+							if math.random() < 0.5 then "RingThin" else "StarC",
+							cf,
+							1.6 * s,
+							p.color,
+							0.2,
+							true
+						)
 					end
 				end
 			end

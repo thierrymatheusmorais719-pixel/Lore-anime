@@ -305,6 +305,80 @@ function MeshFx.Slash(points: { Vector3 }, pivot: Vector3, color: Color3, width:
 	MeshFx.Play(Recipes.Slash(points, pivot, MeshFx.PaletteOf(color), width or 1.1, duration or 0.28, MeshShapes.strip))
 end
 
+-- Fantasma: uma forma que aparece e some rápido (rastro de projétil, borrão de movimento)
+function MeshFx.Ghost(shape: string, frame: CFrame, size: number, color: Color3, life: number, billboard: boolean?)
+	if limit() == 0 then
+		return
+	end
+	MeshFx.Play({
+		{
+			shape = shape,
+			size = size,
+			frame = frame,
+			billboard = billboard,
+			roll = if billboard then math.random() * 6 else 0,
+			life = life,
+			scale = { { 0, 1 }, { 1, 0.82 } },
+			alpha = { { 0, 0.25 }, { 1, 1 } },
+			color = color,
+			neon = true,
+		},
+	})
+end
+
+-- Raio contínuo (Cero, Getsuga em feixe…): duas espirais em sentidos opostos enrolando o feixe,
+-- anéis correndo ao longo dele e estrela de impacto na boca e na ponta
+function MeshFx.BeamFx(
+	origin: Vector3,
+	direction: Vector3,
+	length: number,
+	radius: number,
+	color: Color3,
+	duration: number
+)
+	if limit() == 0 then
+		return
+	end
+	local palette = MeshFx.PaletteOf(color)
+	local along = CFrame.lookAt(origin, origin + direction) * CFrame.Angles(-math.pi / 2, 0, 0)
+	local layers = {}
+	for i, dir in { 1, -1 } do
+		table.insert(layers, {
+			shape = "Spiral",
+			size = 1,
+			frame = along,
+			roll = i * 1.5,
+			spin = 16 * dir,
+			life = duration,
+			scale = {
+				{ 0, Vector3.new(radius * 0.4, length * 0.2, radius * 0.4) },
+				{ 0.15, Vector3.new(radius * 1.25, length, radius * 1.25) },
+				{ 1, Vector3.new(radius * 0.3, length, radius * 0.3) },
+			},
+			alpha = { { 0, 0.2 }, { 0.7, 0.3 }, { 1, 1 } },
+			color = if i == 1 then palette.core else palette.secondary,
+			neon = true,
+		})
+	end
+	local rings = math.clamp(math.floor(length / 10), 3, 10)
+	for k = 1, rings do
+		table.insert(layers, {
+			shape = "RingThin",
+			size = radius * 1.6,
+			frame = along * CFrame.new(0, length * (k - 0.5) / rings, 0),
+			t0 = (k - 1) / rings * duration * 0.4,
+			life = duration * 0.45,
+			scale = { { 0, 0.4 }, { 1, 1.6 } },
+			alpha = { { 0, 0.1 }, { 1, 1 } },
+			color = palette.primary,
+			neon = true,
+		})
+	end
+	MeshFx.Play(layers)
+	MeshFx.Play(Recipes.Impact(origin, direction, palette, 2))
+	MeshFx.Play(Recipes.Impact(origin + direction * length, -direction, palette, 2))
+end
+
 -- Forma própria do elemento (golpes pesados e liberações) e rachaduras no chão (finalizadores)
 function MeshFx.Element(position: Vector3, direction: Vector3?, element: string?, scale: number?)
 	if limit() == 0 then

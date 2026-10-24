@@ -9,7 +9,31 @@ for i = 0, 12 do
 	local a = math.rad(-75 + 150 * i / 12)
 	table.insert(slashPoints, Vector3.new(math.sin(a) * 4, 1.2 + math.cos(a) * 1.5, -math.cos(a) * 1.5))
 end
+-- rastro de onda crescente (projétil indo para +X): fantasmas deixados a cada 0,03 s
+local trail = {}
+for i = 0, 7 do
+	local pos = Vector3.new(-6 + i * 1.6, 1.5, 0)
+	local cf = CFrame.lookAt(pos, pos + Vector3.new(1, 0, 0)) * CFrame.Angles(math.pi / 2, 0, 0)
+	table.insert(trail, { shape = "Crescent", size = 3.6, frame = cf, t0 = i * 0.03, life = 0.22, scale = { { 0, 1 }, { 1, 0.82 } }, alpha = { { 0, 0.25 }, { 1, 1 } }, color = REIATSU.primary })
+end
+-- feixe (Cero) para +X: espirais e anéis como MeshFx.BeamFx
+local beam = {}
+do
+	local origin, dir, length, radius, duration = Vector3.new(-7, 1.5, 0), Vector3.new(1, 0, 0), 16, 1.6, 0.5
+	local along = CFrame.lookAt(origin, origin + dir) * CFrame.Angles(-math.pi / 2, 0, 0)
+	for i, d in { 1, -1 } do
+		table.insert(beam, { shape = "Spiral", size = 1, frame = along, roll = i * 1.5, spin = 16 * d, life = duration,
+			scale = { { 0, Vector3.new(radius * 0.4, length * 0.2, radius * 0.4) }, { 0.15, Vector3.new(radius * 1.25, length, radius * 1.25) }, { 1, Vector3.new(radius * 0.3, length, radius * 0.3) } },
+			alpha = { { 0, 0.2 }, { 0.7, 0.3 }, { 1, 1 } }, color = if i == 1 then Color3.new(1, 0.7, 0.7) else Color3.new(0.9, 0.15, 0.2) })
+	end
+	for k = 1, 5 do
+		table.insert(beam, { shape = "RingThin", size = radius * 1.6, frame = along * CFrame.new(0, length * (k - 0.5) / 5, 0), t0 = (k - 1) / 5 * duration * 0.4, life = duration * 0.45,
+			scale = { { 0, 0.4 }, { 1, 1.6 } }, alpha = { { 0, 0.1 }, { 1, 1 } }, color = Color3.new(1, 0.3, 0.3) })
+	end
+end
 local EFFECTS = {
+	{ "Rastro do Getsuga", trail },
+	{ "Feixe (Cero)", beam },
 	{ "Impacto leve", Recipes.Impact(Vector3.new(0, 1, 0), Vector3.new(1, 0, 0), REIATSU, 1, 5) },
 	{ "Impacto pesado", Recipes.Impact(Vector3.new(0, 1, 0), Vector3.new(1, 0.2, 0), FIRE, 2, 6) },
 	{ "Finalizador", Recipes.Impact(Vector3.new(0, 1, 0), Vector3.new(1, 0.3, 0), REIATSU, 3, 7) },
