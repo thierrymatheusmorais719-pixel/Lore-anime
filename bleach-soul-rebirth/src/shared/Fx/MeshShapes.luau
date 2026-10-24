@@ -210,6 +210,20 @@ MeshShapes.Library = {
 	Shard = function()
 		return MeshShapes.shard(1, 0.35)
 	end,
+	-- estrela de quatro pontas longas (sagrado) e leque de raios finos
+	StarCross = function()
+		local shape = MeshShapes.star(4, 0.12, 1, 404)
+		-- pontas iguais: refaz os raios fixos (a estrela aleatória varia o comprimento)
+		for i = 2, #shape.v do
+			local p = shape.v[i]
+			local r = if (i - 2) % 2 == 0 then 1 else 0.12
+			shape.v[i] = p.Unit * r
+		end
+		return shape
+	end,
+	StarRays = function()
+		return MeshShapes.star(16, 0.05, 1, 505)
+	end,
 	SpikeBall = function()
 		return MeshShapes.spikeBall(16, 1, 0.07, 9)
 	end,

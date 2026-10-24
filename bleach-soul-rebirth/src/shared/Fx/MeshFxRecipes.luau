@@ -238,6 +238,20 @@ function MeshFxRecipes.Slash(
 		color = palette.primary,
 		neon = true,
 	})
+	-- rastros: duas cópias atrasadas, giradas um pouco para trás no plano do corte (borrão de
+	-- movimento de anime)
+	for k = 1, 2 do
+		table.insert(layers, {
+			shape = band(0.8 - k * 0.15, -0.1 * k, -0.02 * k),
+			frame = CFrame.new(pivot) * CFrame.fromAxisAngle(normal, -0.14 * k),
+			t0 = 0.025 * k,
+			life = duration * (0.8 - k * 0.15),
+			scale = stretch,
+			alpha = { { 0, 0.45 + k * 0.15 }, { 1, 1 } },
+			color = palette.secondary,
+			neon = true,
+		})
+	end
 	table.insert(layers, {
 		shape = band(0.3, 0.04, 0.04),
 		frame = frame,
@@ -248,6 +262,338 @@ function MeshFxRecipes.Slash(
 		color = palette.core,
 		neon = true,
 	})
+	return layers
+end
+
+-- ======================================================================= ASSINATURA POR ELEMENTO
+-- Forma própria de cada poder por cima do impacto (golpes pesados, liberações):
+--   Fogo/Sangue: línguas de fogo (coroas altas e finas) + brasas subindo
+--   Gelo/Areia/Verdant: cristais/espinhos/espinheiros rompendo o chão em anel
+--   Raio: raios ramificados em zigue-zague que piscam
+--   Sagrado/Ouro: estrela de quatro pontas gigante + raios finos
+--   Hollow/Sombra: bola de espinhos preta + anel vermelho escuro + garras em meia-lua
+--   Lua: lua crescente enorme virada para a câmera; Reiatsu: meias-luas em X
+--   Corrente: elos girando em volta; Tempo: mostrador com ponteiros girando
+local function jagged(rng: Random, from: Vector3, to: Vector3, steps: number, amplitude: number): { Vector3 }
+	local pts = { from }
+	local dir = to - from
+	local side = dir:Cross(Vector3.yAxis)
+	if side.Magnitude < 1e-3 then
+		side = Vector3.xAxis
+	end
+	side = side.Unit
+	local up = dir.Unit:Cross(side)
+	for i = 1, steps - 1 do
+		local u = i / steps
+		local off = side * rng:NextNumber(-amplitude, amplitude) + up * rng:NextNumber(-amplitude, amplitude)
+		table.insert(pts, from + dir * u + off * math.sin(math.pi * u))
+	end
+	table.insert(pts, to)
+	return pts
+end
+
+-- Fita fina ao longo de uma polilinha, virada para `facing` (formas dinâmicas: raio, rachadura)
+local function ribbonAlong(points: { Vector3 }, width: number, facing: Vector3, makeStrip: any, taper: boolean?)
+	local outer, inner = {}, {}
+	for i, p in points do
+		local a = points[math.max(1, i - 1)]
+		local b = points[math.min(#points, i + 1)]
+		local tangent = (b - a)
+		tangent = if tangent.Magnitude > 1e-4 then tangent.Unit else Vector3.xAxis
+		local side = tangent:Cross(facing)
+		side = if side.Magnitude > 1e-4 then side.Unit else Vector3.zAxis
+		local w = width * (if taper then 1 - (i - 1) / (#points - 1) * 0.85 else 1)
+		outer[i] = p + side * w / 2
+		inner[i] = p - side * w / 2
+	end
+	return makeStrip(outer, inner)
+end
+
+function MeshFxRecipes.Element(
+	position: Vector3,
+	direction: Vector3?,
+	element: string,
+	palette: Palette,
+	scale: number,
+	makeStrip: any,
+	seed: number?
+): { Layer }
+	local rng = rngFor(seed)
+	local s = scale
+	local ground = position - Vector3.new(0, 2.5 * math.max(1, s * 0.7), 0)
+	local layers: { Layer } = {}
+	local function add(l: Layer)
+		table.insert(layers, l)
+	end
+	if element == "Fire" or element == "Blood" then
+		for i, h in { 1, 0.7 } do
+			add({
+				shape = "Crown",
+				size = 1,
+				frame = CFrame.new(ground),
+				roll = rng:NextNumber(0, 6),
+				spin = 2 * (if i == 1 then 1 else -1),
+				t0 = 0.01 * i,
+				life = 0.45,
+				scale = {
+					{ 0, Vector3.new(1.2 * s, 0.2, 1.2 * s) },
+					{ 0.3, Vector3.new(1.6 * s, 4.2 * s * h, 1.6 * s) },
+					{ 1, Vector3.new(1.9 * s, 0.4, 1.9 * s) },
+				},
+				alpha = { { 0, 0 }, { 0.55, 0.15 }, { 1, 1 } },
+				color = if i == 1 then palette.primary else palette.core,
+				neon = true,
+			})
+		end
+		for _ = 1, 6 do
+			local v = Vector3.new(rng:NextNumber(-8, 8), rng:NextNumber(18, 34), rng:NextNumber(-8, 8))
+				* (0.6 + s * 0.3)
+			add({
+				shape = "Shard",
+				size = 0.45 * s,
+				frame = CFrame.new(position),
+				velocity = v,
+				drag = 3,
+				gravity = -6,
+				spin = rng:NextNumber(-8, 8),
+				life = rng:NextNumber(0.4, 0.7),
+				scale = { { 0, 1 }, { 1, 0.1 } },
+				alpha = { { 0, 0 }, { 1, 1 } },
+				color = palette.secondary,
+				neon = true,
+			})
+		end
+	elseif element == "Ice" or element == "Sand" or element == "Verdant" then
+		local count = 9
+		for i = 1, count do
+			local a = i / count * math.pi * 2 + rng:NextNumber(-0.2, 0.2)
+			local r = rng:NextNumber(1.2, 2.4) * s
+			local base = ground + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
+			local tilt = CFrame.Angles(math.sin(a) * 0.5, 0, -math.cos(a) * 0.5)
+			local len = rng:NextNumber(2.2, 4) * s * (if element == "Sand" then 0.6 else 1)
+			add({
+				shape = "Shard",
+				size = 1,
+				frame = CFrame.new(base) * tilt,
+				t0 = rng:NextNumber(0, 0.06),
+				life = 0.75,
+				scale = {
+					{ 0, Vector3.new(0.6 * s, 0.05, 0.6 * s) },
+					{ 0.12, Vector3.new(1.2 * s, len, 1.2 * s) },
+					{ 0.8, Vector3.new(1.2 * s, len, 1.2 * s) },
+					{ 1, Vector3.new(0.3 * s, len * 0.3, 0.3 * s) },
+				},
+				alpha = { { 0, 0 }, { 0.8, 0.1 }, { 1, 1 } },
+				color = if i % 3 == 0 then palette.core else palette.primary,
+				neon = element ~= "Sand",
+			})
+		end
+	elseif element == "Lightning" then
+		for b = 1, 4 do
+			local dir = Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(-0.4, 1), rng:NextNumber(-1, 1))
+			dir = if dir.Magnitude > 0.1 then dir.Unit else Vector3.yAxis
+			local pts = jagged(rng, Vector3.zero, dir * rng:NextNumber(4, 7) * s, 7, 0.9 * s)
+			local facing = dir:Cross(Vector3.new(0.3, 1, 0.2)).Unit
+			for layer = 1, 2 do
+				add({
+					shape = ribbonAlong(pts, (if layer == 1 then 0.5 else 0.18) * s, facing, makeStrip, true),
+					frame = CFrame.new(position),
+					t0 = (b - 1) * 0.02,
+					life = 0.22,
+					-- pisca: some e volta duas vezes
+					alpha = {
+						{ 0, 0 },
+						{ 0.25, 0.1 },
+						{ 0.35, 0.9 },
+						{ 0.45, 0.05 },
+						{ 0.6, 0.85 },
+						{ 0.7, 0.2 },
+						{ 1, 1 },
+					},
+					color = if layer == 1 then palette.primary else palette.core,
+					neon = true,
+				})
+			end
+		end
+	elseif element == "Holy" or element == "Gold" then
+		add({
+			shape = "StarCross",
+			size = 3.4 * s,
+			frame = CFrame.new(position),
+			billboard = true,
+			roll = math.rad(45) * (if rng:NextNumber() < 0.5 then 1 else 0),
+			life = 0.35,
+			scale = { { 0, 0.2 }, { 0.15, 1.1 }, { 1, 0.6 } },
+			alpha = { { 0, 0 }, { 0.5, 0.2 }, { 1, 1 } },
+			color = palette.core,
+			neon = true,
+			z = 0.3,
+		})
+		add({
+			shape = "StarRays",
+			size = 5 * s,
+			frame = CFrame.new(position),
+			billboard = true,
+			roll = rng:NextNumber(0, 6),
+			spin = 1.5,
+			life = 0.5,
+			scale = { { 0, 0.5 }, { 1, 1.2 } },
+			alpha = { { 0, 0.2 }, { 1, 1 } },
+			color = palette.primary,
+			neon = true,
+		})
+	elseif element == "Hollow" or element == "Shadow" then
+		add({
+			shape = "SpikeBall",
+			size = 3.2 * s,
+			frame = CFrame.new(position) * CFrame.Angles(rng:NextNumber(0, 6), rng:NextNumber(0, 6), 0),
+			life = 0.3,
+			scale = { { 0, 0.3 }, { 0.3, 1 }, { 1, 1.1 } },
+			alpha = { { 0, 0 }, { 0.6, 0.2 }, { 1, 1 } },
+			color = Color3.new(0.02, 0.01, 0.02),
+			neon = false,
+		})
+		add({
+			shape = "Ring",
+			size = 2.2 * s,
+			frame = CFrame.new(position),
+			billboard = true,
+			life = 0.35,
+			scale = { { 0, 0.3 }, { 1, 2 } },
+			alpha = { { 0, 0 }, { 1, 1 } },
+			color = palette.primary,
+			neon = true,
+			z = 0.2,
+		})
+		for k = -1, 1, 2 do
+			add({
+				shape = "Crescent",
+				size = 2.6 * s,
+				frame = CFrame.new(position) * CFrame.Angles(math.rad(80), math.rad(25 * k), math.rad(30 * k)),
+				life = 0.25,
+				scale = { { 0, 0.6 }, { 1, 1.2 } },
+				alpha = { { 0, 0 }, { 1, 1 } },
+				color = palette.secondary,
+				neon = true,
+			})
+		end
+	elseif element == "Moon" then
+		add({
+			shape = "Crescent",
+			size = 4.5 * s,
+			frame = CFrame.new(position),
+			billboard = true,
+			roll = rng:NextNumber(0, 6),
+			life = 0.5,
+			scale = { { 0, 0.4 }, { 0.2, 1 }, { 1, 1.15 } },
+			alpha = { { 0, 0 }, { 0.6, 0.15 }, { 1, 1 } },
+			color = palette.core,
+			neon = true,
+		})
+	elseif element == "Chain" then
+		for i = 1, 8 do
+			local a = i / 8 * math.pi * 2
+			add({
+				shape = "RingThin",
+				size = 0.5 * s,
+				frame = CFrame.new(position + Vector3.new(math.cos(a), 0.2 * math.sin(a * 2), math.sin(a)) * 2.6 * s)
+					* CFrame.Angles(math.rad(90), a, 0),
+				spin = 4,
+				life = 0.45,
+				scale = {
+					{ 0, Vector3.new(0.4, 1, 1) },
+					{ 0.3, Vector3.new(1, 1, 1.8) },
+					{ 1, Vector3.new(1.3, 1, 2.2) },
+				},
+				alpha = { { 0, 0 }, { 0.6, 0.1 }, { 1, 1 } },
+				color = palette.primary,
+				neon = true,
+			})
+		end
+	elseif element == "Time" then
+		add({
+			shape = "Ring",
+			size = 3 * s,
+			frame = CFrame.new(position),
+			billboard = true,
+			life = 0.6,
+			scale = { { 0, 0.5 }, { 0.2, 1 }, { 1, 1.05 } },
+			alpha = { { 0, 0 }, { 0.7, 0.15 }, { 1, 1 } },
+			color = palette.primary,
+			neon = true,
+		})
+		for k, len in { 2.4, 1.6 } do
+			add({
+				shape = ribbonAlong(
+					{ Vector3.zero, Vector3.new(len * s, 0, 0) },
+					0.22 * s,
+					Vector3.yAxis,
+					makeStrip,
+					true
+				),
+				frame = CFrame.new(position),
+				billboard = true,
+				spin = if k == 1 then 9 else 1.5,
+				life = 0.6,
+				alpha = { { 0, 0 }, { 0.7, 0.1 }, { 1, 1 } },
+				color = palette.core,
+				neon = true,
+				z = 0.25,
+			})
+		end
+	else
+		-- Reiatsu (padrão): duas meias-luas cruzadas em X
+		for k = -1, 1, 2 do
+			add({
+				shape = "Crescent",
+				size = 3.2 * s,
+				frame = CFrame.new(position),
+				billboard = true,
+				roll = math.rad(45 * k),
+				life = 0.3,
+				scale = { { 0, 0.5 }, { 0.25, 1 }, { 1, 1.2 } },
+				alpha = { { 0, 0 }, { 0.5, 0.1 }, { 1, 1 } },
+				color = if k < 0 then palette.primary else palette.core,
+				neon = true,
+				z = 0.1 * k,
+			})
+		end
+	end
+	return layers
+end
+
+-- ======================================================================= RACHADURAS NO CHÃO
+-- Golpes finalizadores: rachaduras pretas radiais com fio aceso por dentro, que ficam ~1,5 s
+function MeshFxRecipes.Cracks(
+	position: Vector3,
+	palette: Palette,
+	radius: number,
+	makeStrip: any,
+	seed: number?
+): { Layer }
+	local rng = rngFor(seed)
+	local layers: { Layer } = {}
+	local center = position + Vector3.new(0, 0.06, 0)
+	for i = 1, 7 do
+		local a = i / 7 * math.pi * 2 + rng:NextNumber(-0.3, 0.3)
+		local tip = Vector3.new(math.cos(a), 0, math.sin(a)) * radius * rng:NextNumber(0.6, 1)
+		local pts = jagged(rng, Vector3.zero, tip, 6, radius * 0.08)
+		for k, p in pts do
+			pts[k] = Vector3.new(p.X, 0, p.Z)
+		end
+		for layer = 1, 2 do
+			table.insert(layers, {
+				shape = ribbonAlong(pts, if layer == 1 then 0.5 else 0.14, Vector3.yAxis, makeStrip, true),
+				frame = CFrame.new(center + Vector3.new(0, layer * 0.02, 0)),
+				t0 = 0.02 * i / 7,
+				life = 1.6,
+				scale = { { 0, Vector3.new(0.2, 1, 0.2) }, { 0.08, Vector3.one }, { 1, Vector3.one } },
+				alpha = { { 0, 0 }, { 0.75, if layer == 1 then 0.1 else 0.3 }, { 1, 1 } },
+				color = if layer == 1 then Color3.new(0.03, 0.03, 0.03) else palette.primary,
+				neon = layer == 2,
+			})
+		end
+	end
 	return layers
 end
 

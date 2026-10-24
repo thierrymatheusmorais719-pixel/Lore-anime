@@ -179,6 +179,12 @@ function ImpactFx.Hit(position: Vector3, direction: Vector3?, element: string?, 
 
 	-- silhuetas fortes de malha: estrela tripla com fundo preto, anel, espinhos e estilhaços
 	MeshFx.Impact(position, dir, element, t)
+	if t >= 2 then
+		MeshFx.Element(position, dir, element, if t >= 3 then 1.4 else 0.9)
+	end
+	if t >= 3 then
+		MeshFx.Cracks(position, element, 7)
+	end
 	-- 0,00 s: clarão (forma espinhosa que encolhe) + fundo preto + linha de flare + brilho
 	fire("Flash", position, nil, ColorSequence.new(p.core), 1, s)
 	fire("FlashBack", position, nil, ColorSequence.new(BLACK), 1, s)

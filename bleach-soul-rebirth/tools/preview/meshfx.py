@@ -38,6 +38,13 @@ Random = { new = function(seed)
 	return r end }
 function V3.Min(a, b) return Vector3.new(math.min(a.X, b.X), math.min(a.Y, b.Y), math.min(a.Z, b.Z)) end
 function V3.Max(a, b) return Vector3.new(math.max(a.X, b.X), math.max(a.Y, b.Y), math.max(a.Z, b.Z)) end
+CFrame.fromAxisAngle = function(axis, angle)
+	local u = axis.Unit
+	local c, sn = math.cos(angle), math.sin(angle)
+	local t = 1 - c
+	local x, y, z = u.X, u.Y, u.Z
+	return CFrame.new(0, 0, 0, t * x * x + c, t * x * y - sn * z, t * x * z + sn * y, t * x * y + sn * z, t * y * y + c, t * y * z - sn * x, t * x * z - sn * y, t * y * z + sn * x, t * z * z + c)
+end
 CFrame.lookAt = function(at, target, up)
 	up = up or Vector3.yAxis
 	local z = (at - target).Unit

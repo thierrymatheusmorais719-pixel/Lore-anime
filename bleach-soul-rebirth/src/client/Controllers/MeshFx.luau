@@ -305,6 +305,42 @@ function MeshFx.Slash(points: { Vector3 }, pivot: Vector3, color: Color3, width:
 	MeshFx.Play(Recipes.Slash(points, pivot, MeshFx.PaletteOf(color), width or 1.1, duration or 0.28, MeshShapes.strip))
 end
 
+-- Forma própria do elemento (golpes pesados e liberações) e rachaduras no chão (finalizadores)
+function MeshFx.Element(position: Vector3, direction: Vector3?, element: string?, scale: number?)
+	if limit() == 0 then
+		return
+	end
+	local id = element or "Reiatsu"
+	MeshFx.Play(Recipes.Element(position, direction, id, MeshFx.Palette(id), scale or 1, MeshShapes.strip))
+end
+
+function MeshFx.Cracks(position: Vector3, element: string?, radius: number)
+	if limit() == 0 then
+		return
+	end
+	-- assenta no chão de verdade (ignora personagens e efeitos)
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local ignore: { Instance } = { folder }
+	for _, name in { "Enemies", "Bosses", "NPCs" } do
+		local f = workspace:FindFirstChild(name)
+		if f then
+			table.insert(ignore, f)
+		end
+	end
+	for _, player in game:GetService("Players"):GetPlayers() do
+		if player.Character then
+			table.insert(ignore, player.Character)
+		end
+	end
+	params.FilterDescendantsInstances = ignore
+	local hit = workspace:Raycast(position + Vector3.new(0, 3, 0), Vector3.new(0, -12, 0), params)
+	if not hit then
+		return
+	end
+	MeshFx.Play(Recipes.Cracks(hit.Position, MeshFx.Palette(element), radius, MeshShapes.strip))
+end
+
 function MeshFx.Shockwave(position: Vector3, color: Color3, radius: number, duration: number?)
 	if limit() == 0 then
 		return
