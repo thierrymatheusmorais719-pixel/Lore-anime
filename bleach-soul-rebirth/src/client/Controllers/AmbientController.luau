@@ -143,7 +143,11 @@ function AmbientController.Start()
 		local quality = VFX.Quality()
 		if quality ~= lastQuality then
 			lastQuality = quality
-			local scale = if quality == "Low" then 0.25 elseif quality == "Medium" then 0.6 else 1
+			local scale = if quality == "Low"
+				then 0.25
+				elseif quality == "Medium" then 0.6
+				elseif quality == "Ultra" then 1.6
+				else 1
 			for zone, e in emitters do
 				e.Rate = PRESETS[zone].Rate * scale
 			end

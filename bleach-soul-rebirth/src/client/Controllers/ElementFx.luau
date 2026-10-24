@@ -37,7 +37,7 @@ local rng = Random.new()
 
 local function budget(): number
 	local q = VFX.Quality()
-	return if q == "Low" then 12 elseif q == "Medium" then 30 else 55
+	return if q == "Low" then 12 elseif q == "Medium" then 30 elseif q == "Ultra" then 120 else 55
 end
 
 -- Registra um objeto temporário e o remove depois de `life` segundos.
@@ -109,8 +109,7 @@ local function burstEmitter(
 	if not temp(holder, life) then
 		return
 	end
-	local q = VFX.Quality()
-	e:Emit(if q == "Low" then math.max(1, math.floor(count * 0.4)) else count)
+	e:Emit(math.max(1, math.floor(count * VFX.Scale())))
 end
 
 local function neonPart(

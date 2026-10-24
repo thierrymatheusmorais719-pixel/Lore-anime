@@ -18,7 +18,7 @@ local VFX = {}
 local player = Players.LocalPlayer
 local folder: Folder
 local anchor: Part
-local quality = "High"
+local quality = "Ultra"
 local rng = Random.new()
 
 local SPARK = "rbxasset://textures/particles/sparkles_main.dds"
@@ -31,6 +31,17 @@ end
 
 function VFX.Quality(): string
 	return quality
+end
+
+-- Multiplicador de quantidade (partículas, peças, orçamentos) por nível de qualidade.
+-- Ultra: tudo cheio e mais um pouco — feito para placas de vídeo atuais (luzes com sombra,
+-- muitas partículas, efeitos de malha simultâneos).
+function VFX.Scale(): number
+	return if quality == "Low" then 0.35 elseif quality == "Medium" then 0.65 elseif quality == "Ultra" then 1.7 else 1
+end
+
+function VFX.Ultra(): boolean
+	return quality == "Ultra"
 end
 
 function VFX.Color(element: string?): Color3
@@ -119,11 +130,7 @@ local function emit(name: string, position: Vector3, color: Color3, count: numbe
 	if not e then
 		return
 	end
-	if quality == "Low" then
-		count = math.max(1, math.floor(count * 0.35))
-	elseif quality == "Medium" then
-		count = math.max(1, math.floor(count * 0.65))
-	end
+	count = math.max(1, math.floor(count * VFX.Scale()))
 	local attachment = e.Parent :: Attachment
 	if direction and direction.Magnitude > 0 then
 		attachment.WorldCFrame = CFrame.lookAt(position, position + direction) * CFrame.Angles(-math.pi / 2, 0, 0)

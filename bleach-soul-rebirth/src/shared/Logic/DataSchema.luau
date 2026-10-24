@@ -2,7 +2,7 @@
 -- Esquema do perfil salvo + migração de versões. Mantido puro para testes.
 local DataSchema = {}
 
-DataSchema.Version = 1
+DataSchema.Version = 2
 
 function DataSchema.template(): any
 	return {
@@ -29,13 +29,20 @@ function DataSchema.template(): any
 		},
 		discovered = { KarakuraPlaza = true },
 		lastTravel = "KarakuraPlaza",
-		settings = { shake = 1, vfx = "High", cinematics = "Full", autoFace = true, music = 0.5 },
+		settings = { shake = 1, vfx = "Ultra", cinematics = "Full", autoFace = true, music = 0.5 },
 		record = { kills = 0, deaths = 0, bossKills = 0, playSeconds = 0 },
 	}
 end
 
 -- Migrações: índice = versão de origem. Cada uma leva o perfil à versão seguinte.
-DataSchema.Migrations = {} :: { [number]: (any) -> () }
+DataSchema.Migrations = {
+	-- v1 → v2: nível "Ultra" (acima de "Alta") vira o padrão; quem estava no antigo padrão sobe
+	[1] = function(profile)
+		if profile.settings and (profile.settings.vfx == nil or profile.settings.vfx == "High") then
+			profile.settings.vfx = "Ultra"
+		end
+	end,
+} :: { [number]: (any) -> () }
 
 function DataSchema.migrate(profile: any): any
 	local version = profile.version or 0

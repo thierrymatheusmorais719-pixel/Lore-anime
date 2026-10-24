@@ -6,7 +6,7 @@
 -- • Sem EditableMesh (API indisponível ou sem memória): as mesmas formas desenhadas com pares de
 --   cunhas (triângulos), mais simples mas com o mesmo desenho.
 -- • Por cima das partículas do ImpactFx/ElementFx (que continuam): aqui ficam as silhuetas fortes.
--- • Qualidade: Low desliga; Medium limita a 10 efeitos simultâneos; High a 28.
+-- • Qualidade: Low desliga; Medium limita a 10 efeitos simultâneos; High a 28; Ultra a 64.
 local AssetService = game:GetService("AssetService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -35,7 +35,7 @@ local active: { { layers: { any }, pieces: { Piece }, start: number, length: num
 
 local function limit(): number
 	local q = VFX.Quality()
-	return if q == "Low" then 0 elseif q == "Medium" then 10 else 28
+	return if q == "Low" then 0 elseif q == "Medium" then 10 elseif q == "Ultra" then 64 else 28
 end
 
 -- ======================================================================= malha (EditableMesh)

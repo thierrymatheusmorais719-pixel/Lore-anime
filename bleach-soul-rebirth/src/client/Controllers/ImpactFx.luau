@@ -85,13 +85,7 @@ local function make(name: string, props: { [string]: any }): ParticleEmitter
 end
 
 local function scaleCount(count: number): number
-	local q = qualityOf()
-	if q == "Low" then
-		return math.max(1, math.floor(count * 0.35))
-	elseif q == "Medium" then
-		return math.max(1, math.floor(count * 0.65))
-	end
-	return count
+	return math.max(1, math.floor(count * VFX.Scale()))
 end
 
 -- Dispara a camada `name` em `position`, apontada para `direction`, com cor e escala de tamanho.
@@ -160,8 +154,9 @@ local function light(position: Vector3, color: Color3, range: number, duration: 
 	local l = Instance.new("PointLight")
 	l.Color = color
 	l.Range = range
-	l.Brightness = 4
-	l.Shadows = false
+	l.Brightness = if VFX.Ultra() then 6 else 4
+	-- Ultra: o clarão projeta sombra de verdade nos personagens e prédios em volta
+	l.Shadows = VFX.Ultra()
 	l.Parent = holder
 	TweenService:Create(l, TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Brightness = 0 })
 		:Play()

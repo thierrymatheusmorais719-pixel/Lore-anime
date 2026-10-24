@@ -812,7 +812,12 @@ function Render.Settings(profile)
 			b.Parent = r
 		end
 	end
-	choice(2, "Qualidade dos efeitos", "vfx", { { "Low", "Baixa" }, { "Medium", "Média" }, { "High", "Alta" } })
+	choice(
+		2,
+		"Qualidade dos efeitos",
+		"vfx",
+		{ { "Low", "Baixa" }, { "Medium", "Média" }, { "High", "Alta" }, { "Ultra", "Ultra" } }
+	)
 	choice(3, "Tremor de câmera", "shake", { { 0, "Desligado" }, { 0.5, "Suave" }, { 1, "Normal" }, { 1.5, "Forte" } })
 	choice(4, "Cenas de transformação", "cinematics", { { "Full", "Completas" }, { "Off", "Desligadas" } })
 	Kit.label(
@@ -1097,7 +1102,7 @@ local function applySettings(profile)
 		return
 	end
 	CameraController.SetShakeScale(settings.shake or 1)
-	VFX.SetQuality(settings.vfx or "High")
+	VFX.SetQuality(settings.vfx or "Ultra")
 end
 
 function MenuController.Start()
