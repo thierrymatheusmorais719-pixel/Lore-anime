@@ -218,6 +218,44 @@ end
     return models
 
 
+def run_showcase(factions):
+    """Personagens posados da tela de seleção de facção (UI/FactionShowcase, código real)."""
+    cframe = open(os.path.join(root, "tools", "cframe_stub.luau"), encoding="utf-8").read().split("-- @@FIM_CFRAME@@")[0]
+    mock = open(os.path.join(here, "roblox_mock.luau"), encoding="utf-8").read()
+    rigs = json.load(open(os.path.join(root, "src", "shared", "Config", "CreatureRigs.json")))
+    rigbuilder = module("src/shared/Builders/RigBuilder.luau",
+                        {r"require\(script\.Parent\.Parent\.Config\.CreatureRigs\)": "CREATURE_RIGS"})
+    elements = module("src/shared/Config/Elements.luau", {})
+    weapon = module("src/shared/Builders/WeaponBuilder.luau",
+                    {r'require\(game:GetService\("ReplicatedStorage"\)\.Shared\.Config\.Elements\)': "ELEMENTS"})
+    outfit = module("src/shared/Builders/OutfitBuilder.luau", {})
+    showcase = module("src/client/UI/FactionShowcase.luau", {
+        r"require\(Shared\.Config\.Elements\)": "ELEMENTS",
+        r"require\(Shared\.Builders\.RigBuilder\)": "RIGBUILDER",
+        r"require\(Shared\.Builders\.WeaponBuilder\)": "WEAPONBUILDER",
+        r"require\(Shared\.Builders\.OutfitBuilder\)": "OUTFITBUILDER",
+    })
+    driver = DUMP + "\n"
+    for f in factions:
+        driver += f'do local m = SHOWCASE.Build("{f}"); dump("{f}", m) end\n'
+    src = "\n".join([
+        "game = {}", cframe, mock,
+        "CREATURE_RIGS = " + lua_literal(rigs),
+        "ELEMENTS = (function()\n" + elements + "\nend)()",
+        "RIGBUILDER = (function()\n" + rigbuilder + "\nend)()",
+        "WEAPONBUILDER = (function()\n" + weapon + "\nend)()",
+        "OUTFITBUILDER = (function()\n" + outfit + "\nend)()",
+        "SHOWCASE = (function()\n" + showcase + "\nend)()",
+        driver,
+    ])
+    path = os.path.join(here, ".showcase.luau")
+    open(path, "w", encoding="utf-8").write(src)
+    res = subprocess.run([LUAU, path], capture_output=True, text=True)
+    if res.returncode != 0 or res.stderr.strip():
+        raise SystemExit(res.stdout[-2000:] + res.stderr[-3000:])
+    return [json.loads(l) for l in res.stdout.splitlines() if l.startswith("{")]
+
+
 def attach_sculpt(models, bodies):
     """Troca as partes do corpo pelas malhas esculpidas (o que o cliente monta com EditableMesh)."""
     sys.path.insert(0, os.path.join(root, "tools", "creatures"))
@@ -395,6 +433,11 @@ if __name__ == "__main__":
         if missing:
             print("corpos sem inimigo que os use:", ", ".join(missing))
         sys.exit(1 if bad else 0)
+    elif what == "showcase":
+        # showcase saida.png [Facção ...]: personagens da tela de seleção
+        factions = sys.argv[3:] or ["Shinigami", "Quincy", "Hollow", "Fullbringer"]
+        models = run_showcase(factions)
+        render(models, out, cols=1, cell=(330, 420), views=[("frente", 180), ("3/4", 160), ("lado", 90), ("costas", 0)])
     elif what == "npcs":
         # npcs saida.png [Id ...] (padrão: todos)
         ids = sys.argv[3:] or re.findall(r"^\t(\w+) = \{", open(os.path.join(root, "src", "shared", "Config", "NPCs.luau"), encoding="utf-8").read(), re.M)

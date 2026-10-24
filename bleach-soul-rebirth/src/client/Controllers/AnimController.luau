@@ -916,6 +916,42 @@ function AnimController.Report(character: Model)
 	end
 end
 
+-- Vigia da espada no jogador local: se o cabo cair dentro do tronco (bug visual), avisa uma vez no
+-- Output com o estado das soldas — dá para saber exatamente o que aconteceu no jogo
+local function watchWeapon(character: Model)
+	local warned = false
+	task.spawn(function()
+		while character.Parent and not warned do
+			task.wait(2)
+			local torso = character:FindFirstChild("UpperTorso") :: BasePart?
+			for _, child in character:GetChildren() do
+				local handle = child:IsA("Model") and child.Name == "Weapon" and child.PrimaryPart
+				if torso and handle then
+					local l = torso.CFrame:PointToObjectSpace(handle.Position)
+					local half = torso.Size / 2
+					if math.abs(l.X) < half.X * 0.8 and math.abs(l.Y) < half.Y * 0.8 and math.abs(l.Z) < half.Z then
+						local grip = handle:FindFirstChild("Weapon") or handle:FindFirstChild("OffHand")
+						local hip = handle:FindFirstChild("HipWeld")
+						warn(
+							string.format(
+								"[AnimController] espada dentro do tronco: Drawn=%s grip=%s hip=%s local=(%.2f, %.2f, %.2f) mão=%s — mande esta linha",
+								tostring(character:GetAttribute("Drawn")),
+								if grip then tostring((grip :: any).Enabled) else "nenhum",
+								if hip then tostring((hip :: any).Enabled) else "nenhum",
+								l.X,
+								l.Y,
+								l.Z,
+								tostring(child:GetAttribute("Hand"))
+							)
+						)
+						warned = true
+					end
+				end
+			end
+		end
+	end)
+end
+
 function AnimController.Init() end
 
 function AnimController.Start()
@@ -955,6 +991,7 @@ function AnimController.Start()
 						scanMotors(rig)
 						if delay == 6 and player == Players.LocalPlayer then
 							AnimController.Report(character)
+							watchWeapon(character)
 						end
 					end
 				end)

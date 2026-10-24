@@ -87,6 +87,9 @@ function CF:PointToWorldSpace(v)
 		self.p[3] + r[7] * v.X + r[8] * v.Y + r[9] * v.Z
 	)
 end
+function CF:ToObjectSpace(other)
+	return self:Inverse() * other
+end
 function CF:VectorToWorldSpace(v)
 	local r = self.r
 	return v3(r[1] * v.X + r[2] * v.Y + r[3] * v.Z, r[4] * v.X + r[5] * v.Y + r[6] * v.Z, r[7] * v.X + r[8] * v.Y + r[9] * v.Z)
@@ -121,7 +124,15 @@ Enum = setmetatable({}, {
 ALL_PARTS = {}
 local Inst = {}
 Inst.__index = function(self, k)
-	return rawget(Inst, k) or rawget(self, "_props")[k] or self:FindFirstChild(k)
+	local m = rawget(Inst, k)
+	if m ~= nil then
+		return m
+	end
+	local v = rawget(self, "_props")[k]
+	if v ~= nil then
+		return v -- inclusive `false` (Enabled = false)
+	end
+	return self:FindFirstChild(k)
 end
 Inst.__newindex = function(self, k, v)
 	if k == "Parent" then
@@ -149,6 +160,14 @@ end
 function Inst:FindFirstChild(name)
 	for _, c in rawget(self, "_children") do
 		if rawget(c, "_props").Name == name then
+			return c
+		end
+	end
+	return nil
+end
+function Inst:FindFirstChildOfClass(class)
+	for _, c in rawget(self, "_children") do
+		if rawget(c, "_class") == class then
 			return c
 		end
 	end
@@ -194,6 +213,10 @@ Instance = {
 			_props = { Name = class, Transparency = 0, CFrame = CFrame.new() },
 			_isPart = class == "Part" or class == "WedgePart",
 		}, Inst)
+		if class == "Weld" or class == "Motor6D" then
+			rawget(i, "_props").C0 = CFrame.new()
+			rawget(i, "_props").C1 = CFrame.new()
+		end
 		if rawget(i, "_isPart") then
 			table.insert(ALL_PARTS, i)
 		end
