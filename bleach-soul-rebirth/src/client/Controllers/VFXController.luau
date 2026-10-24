@@ -161,6 +161,8 @@ function VFX.Shockwave(position: Vector3, color: Color3, radius: number, duratio
 		Enum.PartType.Cylinder
 	)
 	tween(ring, d, { Size = Vector3.new(0.1, radius * 2, radius * 2), Transparency = 1 }, Enum.EasingStyle.Quint)
+	-- anel sólido + coroa de espinhos que rompe o chão (malha)
+	require(script.Parent.MeshFx).Shockwave(position, color, radius, d)
 	if quality ~= "Low" then
 		local shell = neon(
 			Vector3.new(1.2, 1, 1),
@@ -194,6 +196,8 @@ function VFX.Pillar(position: Vector3, color: Color3, radius: number, height: nu
 		Enum.PartType.Cylinder
 	)
 	tween(pillar, d * 0.3, { Size = Vector3.new(height, radius * 2, radius * 2) }, Enum.EasingStyle.Back)
+	-- espirais subindo em volta do pilar + onda no chão (malha)
+	require(script.Parent.MeshFx).Pillar(position, color, radius, height, d)
 	task.delay(d * 0.3, function()
 		tween(pillar, d * 0.7, { Size = Vector3.new(height * 1.1, 0.2, 0.2), Transparency = 1 })
 	end)
@@ -269,6 +273,7 @@ function VFX.SlashArc(
 		points[i + 1] = cframe:PointToWorldSpace(Vector3.new(-radius * math.sin(a), 0, -radius * math.cos(a)))
 	end
 	VFX.SweepRibbon(points, color, thickness, d)
+	require(script.Parent.MeshFx).Slash(points, cframe.Position, color, (thickness or 0.35) * 3, d)
 end
 
 -- Fita de energia que se revela ao longo de `points` (do primeiro ao último) e some afinando.
@@ -356,6 +361,8 @@ function VFX.BladePathArc(
 		points[k + 1] = pivot + (p - pivot) * 1.15
 	end
 	VFX.SweepRibbon(points, color, thickness, duration)
+	-- meia-lua sólida (preta atrás, cor, núcleo claro) no mesmo caminho
+	require(script.Parent.MeshFx).Slash(points, pivot, color, (thickness or 0.35) * 3, duration)
 	return true
 end
 

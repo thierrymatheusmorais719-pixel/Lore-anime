@@ -43,9 +43,11 @@ type Rig = {
 	model: Model,
 	humanoid: Humanoid?,
 	root: BasePart?,
-	motors: { [string]: Motor6D },
+	-- Motor6D ou AnimationConstraint (personagens com a atualização de juntas do Roblox): os dois
+	-- têm Transform e o Animator escreve neles do mesmo jeito
+	motors: { [string]: any },
 	cloth: { { motor: Motor6D, pitch: number, vel: number, side: number, sideVel: number } },
-	written: { [Motor6D]: CFrame },
+	written: { [any]: CFrame },
 	hipTurn: number?,
 	locoState: string?,
 	tracks: { Track },
@@ -200,9 +202,11 @@ local function scanMotors(rig: Rig)
 		if d:IsA("Motor6D") then
 			if d.Name:sub(1, 5) == "Cloth" then
 				table.insert(rig.cloth, { motor = d, pitch = 0, vel = 0, side = 0, sideVel = 0 })
-			elseif not rig.motors[d.Name] then
+			elseif not rig.motors[d.Name] or rig.motors[d.Name]:IsA("AnimationConstraint") then
 				rig.motors[d.Name] = d
 			end
+		elseif d:IsA("AnimationConstraint") and not rig.motors[d.Name] then
+			rig.motors[d.Name] = d
 		end
 	end
 end
@@ -259,7 +263,7 @@ function AnimController.Register(model: Model)
 	end
 	local rescanQueued = false
 	local function queueRescan(d: Instance)
-		if d:IsA("Motor6D") and not rescanQueued then
+		if (d:IsA("Motor6D") or d:IsA("AnimationConstraint")) and not rescanQueued then
 			rescanQueued = true
 			task.defer(function()
 				rescanQueued = false
@@ -873,6 +877,45 @@ local function stepRig(rig: Rig, dt: number, now: number)
 	end
 end
 
+-- Diagnóstico no Output (F9 / janela Output do Studio): quantas juntas o jogador tem, de que tipo,
+-- se a locomoção é nossa e se algo escreve nelas. Se o personagem estiver duro, isto diz o porquê.
+function AnimController.Report(character: Model)
+	local rig = rigs[character]
+	if not rig then
+		warn("[AnimController] personagem não registrado:", character:GetFullName())
+		return
+	end
+	local count, kinds = 0, {}
+	for _, m in rig.motors do
+		count += 1
+		kinds[m.ClassName] = (kinds[m.ClassName] or 0) + 1
+	end
+	local kindText = {}
+	for k, n in kinds do
+		table.insert(kindText, k .. "=" .. n)
+	end
+	local humanoid = rig.humanoid
+	local animate = character:FindFirstChild("Animate")
+	local message = string.format(
+		"[AnimController] %s: %d juntas (%s), RigType=%s, locomoção própria=%s, Animate=%s",
+		character.Name,
+		count,
+		table.concat(kindText, ", "),
+		if humanoid then humanoid.RigType.Name else "?",
+		tostring(rig.manual),
+		if animate
+			then (animate.ClassName .. (if animate:GetAttribute("OwnLocomotion")
+				then " (do projeto)"
+				else " (do Roblox)"))
+			else "nenhum"
+	)
+	if count < 10 or not rig.manual then
+		warn(message .. " — o corpo pode ficar duro; mande esta linha")
+	else
+		print(message)
+	end
+end
+
 function AnimController.Init() end
 
 function AnimController.Start()
@@ -910,6 +953,9 @@ function AnimController.Start()
 					if rigs[character] == rig then
 						rig.manual = usesOwnLocomotion(character)
 						scanMotors(rig)
+						if delay == 6 and player == Players.LocalPlayer then
+							AnimController.Report(character)
+						end
 					end
 				end)
 			end

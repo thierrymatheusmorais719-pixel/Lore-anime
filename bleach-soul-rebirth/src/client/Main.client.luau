@@ -12,6 +12,7 @@ local ORDER = {
 	"VFXController",
 	"SpectacleFx",
 	"ElementFx",
+	"MeshFx",
 	"ImpactFx",
 	"ReleaseCutscene",
 	"AnimController",
@@ -32,7 +33,13 @@ local loaded = {}
 for _, name in ORDER do
 	local module = Controllers:FindFirstChild(name)
 	if module then
-		loaded[name] = require(module)
+		-- um módulo que quebra ao carregar não derruba os outros (animação, HUD...)
+		local ok, result = pcall(require, module)
+		if ok then
+			loaded[name] = result
+		else
+			warn("[Client] " .. name .. " não carregou: " .. tostring(result))
+		end
 	end
 end
 

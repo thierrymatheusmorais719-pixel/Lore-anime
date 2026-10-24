@@ -15,6 +15,7 @@ local TweenService = game:GetService("TweenService")
 local Elements = require(ReplicatedStorage.Shared.Config.Elements)
 local VFX = require(script.Parent.VFXController)
 local ElementFx = require(script.Parent.ElementFx)
+local MeshFx = require(script.Parent.MeshFx)
 
 local ImpactFx = {}
 
@@ -176,6 +177,8 @@ function ImpactFx.Hit(position: Vector3, direction: Vector3?, element: string?, 
 	local s = if t >= 3 then 2.4 elseif t == 2 then 1.6 else 1
 	local dir = if direction and direction.Magnitude > 0.01 then direction.Unit else nil
 
+	-- silhuetas fortes de malha: estrela tripla com fundo preto, anel, espinhos e estilhaços
+	MeshFx.Impact(position, dir, element, t)
 	-- 0,00 s: clarão (forma espinhosa que encolhe) + fundo preto + linha de flare + brilho
 	fire("Flash", position, nil, ColorSequence.new(p.core), 1, s)
 	fire("FlashBack", position, nil, ColorSequence.new(BLACK), 1, s)
@@ -214,6 +217,8 @@ end
 -- pequeno que pulsa e, no fim, um anel que implode — em vez de uma esfera neon que só cresce.
 -- Devolve uma função para cancelar.
 function ImpactFx.Charge(host: BasePart, offset: CFrame, element: string?, duration: number, big: boolean?): () -> ()
+	-- espirais de malha apertando em volta do ponto de carga
+	MeshFx.Charge(host.CFrame * offset, element, duration, big)
 	local p = ImpactFx.Palette(element)
 	local scale = if big then 1.8 else 1
 	local attachment = Instance.new("Attachment")
@@ -339,6 +344,9 @@ end
 -- Liberação: ~10× o núcleo da carga, num quadro; o corpo do efeito vem da habilidade em si.
 function ImpactFx.Release(position: Vector3, direction: Vector3?, element: string?, big: boolean?)
 	ImpactFx.Hit(position, direction, element, if big then 3 else 2)
+	if big then
+		MeshFx.Burst(position, element, 0.8)
+	end
 end
 
 function ImpactFx.Init()
