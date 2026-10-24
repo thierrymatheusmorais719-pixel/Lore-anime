@@ -25,6 +25,37 @@ Vector3Meta = {
 		return v3(-a.X, -a.Y, -a.Z)
 	end,
 }
+Vector3Meta.__index = function(self, k)
+	if k == "Magnitude" then
+		return math.sqrt(self.X * self.X + self.Y * self.Y + self.Z * self.Z)
+	elseif k == "Unit" then
+		local m = math.sqrt(self.X * self.X + self.Y * self.Y + self.Z * self.Z)
+		return v3(self.X / m, self.Y / m, self.Z / m)
+	elseif k == "Dot" then
+		return function(a, b)
+			return a.X * b.X + a.Y * b.Y + a.Z * b.Z
+		end
+	elseif k == "Cross" then
+		return function(a, b)
+			return v3(a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X)
+		end
+	elseif k == "Lerp" then
+		return function(a, b, t)
+			return v3(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t, a.Z + (b.Z - a.Z) * t)
+		end
+	end
+	return nil
+end
+CFrame.lookAt = function(at, target, up)
+	up = up or v3(0, 1, 0)
+	local z = (at - target).Unit
+	if math.abs(z.X * up.X + z.Y * up.Y + z.Z * up.Z) > 0.999 then
+		up = v3(1, 0, 0)
+	end
+	local x = v3(up.Y * z.Z - up.Z * z.Y, up.Z * z.X - up.X * z.Z, up.X * z.Y - up.Y * z.X).Unit
+	local y = v3(z.Y * x.Z - z.Z * x.Y, z.Z * x.X - z.X * x.Z, z.X * x.Y - z.Y * x.X)
+	return CFrame.new(at.X, at.Y, at.Z, x.X, y.X, z.X, x.Y, y.Y, z.Y, x.Z, y.Z, z.Z)
+end
 Vector3 = { new = v3, one = v3(1, 1, 1), zero = v3(0, 0, 0), xAxis = v3(1, 0, 0), yAxis = v3(0, 1, 0), zAxis = v3(0, 0, 1) }
 CF.__add = function(a, b)
 	return new(a.p[1] + b.X, a.p[2] + b.Y, a.p[3] + b.Z, a.r)

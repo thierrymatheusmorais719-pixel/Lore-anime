@@ -11,6 +11,7 @@ local World = script.Parent.Parent.World
 local Build = require(World.Build)
 local Regions = require(World.Regions)
 local RigBuilder = require(ReplicatedStorage.Shared.Builders.RigBuilder)
+local NpcStyle = require(ReplicatedStorage.Shared.Builders.NpcStyle)
 local OutfitBuilder = require(ReplicatedStorage.Shared.Builders.OutfitBuilder)
 local Registry = require(script.Parent.Parent.Registry)
 
@@ -231,7 +232,12 @@ local function buildNpc(parent: Instance, npcId: string, npc)
 		)
 	)
 	model.PrimaryPart.Anchored = true
-	OutfitBuilder.apply(model, { trim = npc.look.haori, robe = npc.look.haori, cape = false })
+	if npc.style then
+		-- visual próprio do personagem (rosto, cabelo, roupa por arquétipo, acessórios)
+		NpcStyle.apply(model, npc.style)
+	else
+		OutfitBuilder.apply(model, { trim = npc.look.haori, robe = npc.look.haori, cape = false })
+	end
 	model:SetAttribute("NPC", true)
 	model:SetAttribute("DisplayName", npc.name)
 	model:SetAttribute("Title", npc.title)

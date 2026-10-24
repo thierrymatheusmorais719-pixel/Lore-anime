@@ -136,6 +136,35 @@ def run_creatures(bodies, enemies):
     return [json.loads(l) for l in res.stdout.splitlines() if l.startswith("{")]
 
 
+def run_npcs(ids):
+    """NPCs de missão: RigBuilder.build + NpcStyle.apply (código real), com o estilo de Config/NPCs."""
+    cframe = open(os.path.join(root, "tools", "cframe_stub.luau"), encoding="utf-8").read().split("-- @@FIM_CFRAME@@")[0]
+    mock = open(os.path.join(here, "roblox_mock.luau"), encoding="utf-8").read()
+    rigs = json.load(open(os.path.join(root, "src", "shared", "Config", "CreatureRigs.json")))
+    rigbuilder = module("src/shared/Builders/RigBuilder.luau",
+                        {r"require\(script\.Parent\.Parent\.Config\.CreatureRigs\)": "CREATURE_RIGS"})
+    style = module("src/shared/Builders/NpcStyle.luau", {})
+    npcs = module("src/shared/Config/NPCs.luau", {})
+    driver = DUMP + "\n"
+    for npc in ids:
+        driver += (f'do local n = NPCS["{npc}"]; local m = RigBuilder.build("{npc}", {{ skin = n.look.skin }}, 1); '
+                   f'if n.style then NpcStyle.apply(m, n.style) end; dump(n.name, m) end\n')
+    src = "\n".join([
+        "game = {}", cframe, mock,
+        "CREATURE_RIGS = " + lua_literal(rigs),
+        "local RigBuilder = (function()\n" + rigbuilder + "\nend)()",
+        "local NpcStyle = (function()\n" + style + "\nend)()",
+        "NPCS = (function()\n" + npcs + "\nend)()",
+        driver,
+    ])
+    path = os.path.join(here, ".npcs.luau")
+    open(path, "w", encoding="utf-8").write(src)
+    res = subprocess.run([LUAU, path], capture_output=True, text=True)
+    if res.returncode != 0 or res.stderr.strip():
+        raise SystemExit(res.stdout[-2000:] + res.stderr[-3000:])
+    return [json.loads(l) for l in res.stdout.splitlines() if l.startswith("{")]
+
+
 def attach_sculpt(models, bodies):
     """Troca as partes do corpo pelas malhas esculpidas (o que o cliente monta com EditableMesh)."""
     sys.path.insert(0, os.path.join(root, "tools", "creatures"))
@@ -313,6 +342,13 @@ if __name__ == "__main__":
         if missing:
             print("corpos sem inimigo que os use:", ", ".join(missing))
         sys.exit(1 if bad else 0)
+    elif what == "npcs":
+        # npcs saida.png [Id ...] (padrão: todos)
+        ids = sys.argv[3:] or re.findall(r"^\t(\w+) = \{", open(os.path.join(root, "src", "shared", "Config", "NPCs.luau"), encoding="utf-8").read(), re.M)
+        models = run_npcs(ids)
+        render(models, out, cols=1, cell=(330, 420), views=[("frente", 180), ("3/4", 145), ("lado", 90), ("costas", 0)])
+        for m in models:
+            print(m["label"], len(m["parts"]), "peças")
     elif what == "creatures":
         # creatures saida.png Corpo:Inimigo [Corpo:Inimigo ...]
         pairs = [a.split(":") for a in sys.argv[3:]]
