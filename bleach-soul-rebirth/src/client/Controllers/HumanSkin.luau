@@ -138,6 +138,10 @@ function HumanSkin.Apply(model: Model)
 							return HumanShapes.forPart(part.Name, part.Size)
 						end)
 					end
+				elseif HumanShapes.accessory(part.Name, part.Size) then
+					skin(part, "acc/" .. part.Name .. "/" .. sizeKey(part.Size), function()
+						return HumanShapes.accessory(part.Name, part.Size)
+					end)
 				elseif part.ClassName == "Part" and HumanShapes.Soft[part.Name] then
 					local roundness = HumanShapes.Soft[part.Name]
 					skin(part, "soft/" .. part.Name .. "/" .. roundness .. "/" .. sizeKey(part.Size), function()

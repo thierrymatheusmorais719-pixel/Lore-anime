@@ -316,6 +316,161 @@ function HumanShapes.forPart(name: string, size: Vector3): Shape?
 	return shape
 end
 
+-- ======================================================================= acessórios esculpidos
+-- Formas próprias para peças do NpcStyle (substituem cunhas/caixas pela forma de verdade).
+-- Cada construtor recebe o tamanho da peça e devolve a geometria no espaço dela.
+local function grid(nu: number, nv: number, point: (number, number) -> Vector3): Shape
+	local shape: Shape = { v = {}, t = {} }
+	for j = 0, nv do
+		for i = 0, nu do
+			table.insert(shape.v, point(i / nu, j / nv))
+		end
+	end
+	local row = nu + 1
+	for j = 0, nv - 1 do
+		for i = 0, nu - 1 do
+			local a = j * row + i + 1
+			local b = a + 1
+			local c = a + row
+			local d = c + 1
+			table.insert(shape.t, { a, b, c })
+			table.insert(shape.t, { b, d, c })
+		end
+	end
+	return shape
+end
+
+-- Tecido curvo: folha que envolve o corpo (bordas curvam para dentro, `wrap` > 0 = atrás do
+-- corpo), abre embaixo (`flare`) e ondula de leve na barra
+local function cloth(size: Vector3, wrap: number, flare: number, wave: number?): Shape
+	local w, h = size.X, size.Y
+	local thick = math.max(size.Z, 0.06)
+	local front = grid(16, 12, function(u: number, v: number): Vector3
+		local x = (u - 0.5) * w * (1 + flare * v)
+		local y = h / 2 - v * h
+		local z = -wrap * ((u - 0.5) * 2) ^ 2 * (0.25 + 0.2 * v) + (wave or 0) * v * v * math.sin(u * math.pi * 5)
+		return Vector3.new(x, y, z)
+	end)
+	-- espessura: segunda folha atrás (as bordas ficam abertas, como tecido)
+	local back = grid(16, 12, function(u: number, v: number): Vector3
+		local x = (u - 0.5) * w * (1 + flare * v)
+		local y = h / 2 - v * h
+		local z = -wrap * ((u - 0.5) * 2) ^ 2 * (0.25 + 0.2 * v)
+			+ (wave or 0) * v * v * math.sin(u * math.pi * 5)
+			+ thick * 0.6
+		return Vector3.new(x, y, z)
+	end)
+	return merge(front, back)
+end
+
+local ACC: { [string]: (Vector3) -> Shape } = {}
+
+-- Chapéu-balde (estilo lojista): copa macia com topo em domo e vinco, aba caída e ondulada
+function ACC.HatTop(size: Vector3): Shape
+	local h = size.Y
+	return loft(h / 2 + 0.05, -h / 2 - 0.02, {
+		{ 0, size.X * 0.4, size.Z * 0.4 },
+		{ 0.25, size.X * 0.46, size.Z * 0.46 },
+		{ 1, size.X * 0.5, size.Z * 0.5 },
+	}, 2.2, 0.35)
+end
+
+function ACC.HatBrim(size: Vector3): Shape
+	local rIn, rOut = size.X * 0.3, size.X * 0.5
+	local top = grid(40, 5, function(u: number, v: number): Vector3
+		local a = u * math.pi * 2
+		local r = lerp(rIn, rOut, v)
+		local droop = -0.22 * v ^ 1.4 - 0.03 * math.sin(a * 3) * v
+		-- aba um pouco mais baixa na frente (-Z), sombreando o rosto
+		droop -= 0.06 * v * math.max(0, -math.sin(a))
+		return Vector3.new(math.cos(a) * r, droop, math.sin(a) * r)
+	end)
+	local under = grid(40, 5, function(u: number, v: number): Vector3
+		local a = u * math.pi * 2
+		local r = lerp(rIn, rOut, v)
+		local droop = -0.22 * v ^ 1.4 - 0.03 * math.sin(a * 3) * v - 0.06 * v * math.max(0, -math.sin(a))
+		return Vector3.new(math.cos(a) * r, droop - 0.035, math.sin(a) * r)
+	end)
+	return merge(top, under)
+end
+
+function ACC.HatStripe(size: Vector3): Shape
+	local r = size.X * 0.505
+	return grid(40, 1, function(u: number, v: number): Vector3
+		local a = u * math.pi * 2
+		return Vector3.new(math.cos(a) * r, (v - 0.5) * size.Y, math.sin(a) * r)
+	end)
+end
+
+-- Mecha de cabelo: lâmina achatada que afina até a ponta, com curva suave. Mesma caixa da
+-- WedgePart que ela substitui: raiz em +Z (altura cheia), ponta em -Z na aresta de baixo.
+ACC.Hair = function(size: Vector3): Shape
+	local w, t, l = size.X, size.Y, size.Z
+	return grid(10, 14, function(u: number, v: number): Vector3
+		local a = u * math.pi * 2
+		local k = (1 - v) ^ 0.75 -- afina para a ponta
+		local z = l / 2 - v * l
+		local y = -t / 2 * v * v + math.sin(v * math.pi) * t * 0.15
+		return Vector3.new(math.cos(a) * w / 2 * k, y + math.sin(a) * t / 2 * k, z)
+	end)
+end
+
+ACC.HaoriBack = function(size: Vector3): Shape
+	return cloth(size, -0.12, 0.05)
+end
+ACC.HaoriSkirt = function(size: Vector3): Shape
+	return cloth(size, -0.18, 0.18, 0.05)
+end
+ACC.Cape = function(size: Vector3): Shape
+	return cloth(size, -0.22, 0.25, 0.06)
+end
+ACC.HaoriFront = function(size: Vector3): Shape
+	return cloth(size, 0.04, 0.04)
+end
+ACC.CoatSkirt = function(size: Vector3): Shape
+	return cloth(size, 0.12, 0.2, 0.04)
+end
+ACC.CoatFlap = function(size: Vector3): Shape
+	return cloth(size, 0.1, 0.15, 0.03)
+end
+ACC.SailorBack = function(size: Vector3): Shape
+	return cloth(size, -0.1, 0.08)
+end
+-- Cauda do haori (cunha): aba de tecido que afina e ondula
+ACC.HaoriTail = function(size: Vector3): Shape
+	local h, l = size.Y, size.Z
+	return grid(8, 14, function(u: number, v: number): Vector3
+		local z = (u - 0.5) * l * (1 - 0.6 * v)
+		local y = h / 2 - v * h
+		local x = 0.08 * math.sin(v * math.pi * 1.5) + (u - 0.5) * 0.02
+		return Vector3.new(x, y, z + l * 0.25 * v)
+	end)
+end
+
+-- Barba: volume arredondado que desce do queixo e afina (a cunha era um bloco)
+ACC.Beard = function(size: Vector3): Shape
+	return blob(size.X * 0.5, size.Y * 0.55, size.Z * 0.6, 2.4, 10, 18, function(p: Vector3): Vector3
+		-- a cunha está de cabeça para baixo (180° em X): a ponta da barba fica em +Y local
+		local k = math.clamp((p.Y / (size.Y * 0.55) + 1) / 2, 0, 1)
+		return Vector3.new(p.X * (1 - 0.55 * k), p.Y, p.Z * (1 - 0.3 * k))
+	end)
+end
+
+-- Caimento da manga larga do quimono: bolsa de tecido arredondada pendurada
+ACC.SleeveDrape = function(size: Vector3): Shape
+	return blob(size.X * 0.42, size.Y * 0.5, size.Z * 0.48, 2.6, 10, 18, function(p: Vector3): Vector3
+		-- mais cheia embaixo (+Y local, a cunha está invertida), presa em cima
+		local k = math.clamp((p.Y / (size.Y * 0.5) + 1) / 2, 0, 1)
+		return Vector3.new(p.X * (0.8 + 0.25 * k), p.Y, p.Z * (0.85 + 0.2 * k) + 0.1 * k)
+	end)
+end
+
+-- Forma esculpida para a peça de acessório `name` (nil se não houver)
+function HumanShapes.accessory(name: string, size: Vector3): Shape?
+	local builder = ACC[name]
+	return if builder then builder(size) else nil
+end
+
 -- Ajustes de peças sobre o corpo liso: escala e deslocamento no espaço da peça
 HumanShapes.Fit = {
 	HairCap = { scale = Vector3.new(0.88, 0.9, 0.9), offset = Vector3.new(0, -0.03, 0) },

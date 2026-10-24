@@ -187,7 +187,8 @@ local function hairCap(head: BasePart, color: Color3, back: number?)
 			head,
 			"HairSide",
 			Vector3.new(0.14, s.Y * 0.55, s.Z * 0.85),
-			CFrame.new(side * (s.X / 2 + 0.05), s.Y * 0.2, 0.06),
+			-- rente ao crânio (o corpo liso tem a cabeça mais estreita que o bloco)
+			CFrame.new(side * (s.X * 0.42), s.Y * 0.2, 0.06),
 			color
 		)
 	end
@@ -273,7 +274,7 @@ function HAIR.bob(head: BasePart, color: Color3)
 	local s = head.Size
 	-- corte reto na altura do queixo, franja reta
 	for _, side in { -1, 1 } do
-		piece(head, "HairBob", Vector3.new(0.18, 0.95, s.Z * 0.9), CFrame.new(side * (s.X / 2 + 0.07), 0, 0.05), color)
+		piece(head, "HairBob", Vector3.new(0.2, 0.95, s.Z * 0.9), CFrame.new(side * (s.X * 0.45), 0, 0.05), color)
 	end
 	piece(head, "Fringe", Vector3.new(s.X + 0.1, 0.28, 0.12), CFrame.new(0, s.Y / 2 - 0.08, -s.Z / 2 - 0.04), color)
 end
@@ -701,28 +702,16 @@ function OUTFIT.shopkeeper(model: Model, style: Style)
 	local head = part(model, "Head")
 	if head then
 		local hat = Color3.fromRGB(60, 90, 60)
-		piece(
-			head,
-			"HatBrim",
-			Vector3.new(1.9, 0.08, 1.9),
-			CFrame.new(0, 0.5, 0) * deg(-6, 0, 0),
-			hat,
-			Enum.Material.Fabric
-		)
-		piece(
-			head,
-			"HatTop",
-			Vector3.new(1.3, 0.5, 1.3),
-			CFrame.new(0, 0.78, 0.04) * deg(-6, 0, 0),
-			hat,
-			Enum.Material.Fabric
-		)
-		for i = 0, 1 do
+		-- chapéu-balde listrado: aba caída (esculpida no HumanSkin), copa macia, duas listras
+		local tilt = CFrame.new(0, 0.42, 0.02) * deg(-7, 0, 0)
+		piece(head, "HatBrim", Vector3.new(2.1, 0.08, 2.1), tilt, hat, Enum.Material.Fabric)
+		piece(head, "HatTop", Vector3.new(1.28, 0.62, 1.28), tilt * CFrame.new(0, 0.3, 0), hat, Enum.Material.Fabric)
+		for i, y in { 0.12, 0.3 } do
 			piece(
 				head,
 				"HatStripe",
-				Vector3.new(1.33, 0.07, 1.33),
-				CFrame.new(0, 0.66 + i * 0.18, 0.04) * deg(-6, 0, 0),
+				Vector3.new(1.32 - i * 0.04, 0.08, 1.32 - i * 0.04),
+				tilt * CFrame.new(0, y, 0),
 				WHITE,
 				Enum.Material.Fabric
 			)

@@ -178,6 +178,8 @@ function SMOOTH(model)
 			local shape = nil
 			if rawget(d, "_parent") == model then
 				shape = HumanShapes.forPart(d.Name, d.Size)
+			elseif HumanShapes.accessory(d.Name, d.Size) then
+				shape = HumanShapes.accessory(d.Name, d.Size)
 			elseif rawget(d, "_class") == "Part" and HumanShapes.Soft[d.Name] then
 				shape = HumanShapes.softBox(d.Size, HumanShapes.Soft[d.Name], d.Name)
 			end
