@@ -21,6 +21,9 @@ local ImpactFx = {}
 
 local SPARK = "rbxasset://textures/particles/sparkles_main.dds"
 local SMOKE = "rbxasset://textures/particles/smoke_main.dds"
+local IMPLOSION = "rbxasset://textures/particles/explosion01_implosion_main.dds"
+local SHOCKWAVE = "rbxasset://textures/particles/explosion01_shockwave_main.dds"
+local CORE = "rbxasset://textures/particles/explosion01_core_main.dds"
 
 local WHITE = Color3.new(1, 1, 1)
 local BLACK = Color3.new(0, 0, 0)
@@ -191,6 +194,23 @@ function ImpactFx.Hit(position: Vector3, direction: Vector3?, element: string?, 
 	fire("FlashBack", position, nil, ColorSequence.new(BLACK), 1, s)
 	fire("Flare", position, nil, ColorSequence.new(WHITE), if t >= 2 then 2 else 1, s)
 	fire("Glow", position, nil, ColorSequence.new(p.primary), 1, s)
+	fire("SoftGlow", position, nil, ColorSequence.new(p.core, p.primary), if t >= 2 then 2 else 1, s)
+	fire("SoftShock", position, nil, ColorSequence.new(p.secondary), 1, s)
+	if t >= 2 then
+		-- calor: núcleo branco-quente que esfria para a cor do elemento e depois para fumaça
+		fire(
+			"Fireball",
+			position,
+			nil,
+			ColorSequence.new({
+				ColorSequenceKeypoint.new(0, p.core),
+				ColorSequenceKeypoint.new(0.35, p.primary),
+				ColorSequenceKeypoint.new(1, p.dark),
+			}),
+			if t >= 3 then 9 else 5,
+			s
+		)
+	end
 	light(position, p.primary, 10 * s, 0.18)
 
 	-- +0,03 s: estilhaços de energia (estouro com arrasto) e cópias que esfriam
@@ -497,6 +517,54 @@ function ImpactFx.Init()
 		Size = seq({ { 0, 0.25 }, { 1, 0 } }),
 		Transparency = seq({ { 0, 0.1 }, { 1, 1 } }),
 	})
+
+	-- Texturas realistas que vêm com o Roblox (efeitos clássicos de explosão):
+	-- brilho suave redondo (núcleo de energia), anel macio de onda de choque, bola de fogo
+	-- Brilho volumétrico: esfera de luz que estoura e se dissolve (dá corpo ao clarão)
+	define(
+		"SoftGlow",
+		sized({
+			Texture = IMPLOSION,
+			LightEmission = 1,
+			Brightness = 6,
+			Lifetime = NumberRange.new(0.18, 0.24),
+			Speed = NumberRange.new(0),
+			Rotation = NumberRange.new(0, 360),
+			Transparency = seq({ { 0, 0.05 }, { 0.4, 0.35 }, { 1, 1 } }),
+			ZOffset = 1,
+		}, { { 0, 2 }, { 0.3, 6 }, { 1, 7.5 } })
+	)
+	-- Onda de choque macia no ar (anel que abre, de frente para a câmera)
+	define(
+		"SoftShock",
+		sized({
+			Texture = SHOCKWAVE,
+			LightEmission = 1,
+			Brightness = 3,
+			Lifetime = NumberRange.new(0.3),
+			Speed = NumberRange.new(0),
+			Transparency = seq({ { 0, 0.15 }, { 1, 1 } }),
+			ZOffset = 0.5,
+		}, { { 0, 1 }, { 1, 12 } })
+	)
+	-- Bola de fogo/plasma: puffs quentes que sobem iluminados (tingidos pelo elemento)
+	define(
+		"Fireball",
+		sized({
+			Texture = CORE,
+			LightEmission = 0.7,
+			LightInfluence = 0.2,
+			Brightness = 2.5,
+			Lifetime = NumberRange.new(0.45, 0.8),
+			Speed = NumberRange.new(6, 14),
+			Drag = 4,
+			SpreadAngle = Vector2.new(180, 180),
+			Acceleration = Vector3.new(0, 7, 0),
+			Rotation = NumberRange.new(0, 360),
+			RotSpeed = NumberRange.new(-60, 60),
+			Transparency = seq({ { 0, 0.1 }, { 0.5, 0.35 }, { 1, 1 } }),
+		}, { { 0, 1.5 }, { 0.4, 4 }, { 1, 5.5 } })
+	)
 end
 
 return ImpactFx
