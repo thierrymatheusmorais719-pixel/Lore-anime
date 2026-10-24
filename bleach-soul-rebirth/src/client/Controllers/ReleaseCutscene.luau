@@ -23,6 +23,7 @@ local TweenService = game:GetService("TweenService")
 local AnimController = require(script.Parent.AnimController)
 local CameraController = require(script.Parent.CameraController)
 local ImpactFx = require(script.Parent.ImpactFx)
+local MeshFx = require(script.Parent.MeshFx)
 local SoundController = require(script.Parent.SoundController)
 local VFX = require(script.Parent.VFXController)
 
@@ -35,23 +36,26 @@ local STAGE = Vector3.new(0, 4000, 0) -- palco longe do mapa, escondido pela atm
 local WHITE = Color3.new(1, 1, 1)
 local BLACK = Color3.new(0, 0, 0)
 
--- Linha do tempo de referência (channel = 7,2 s): escalada pelo channel real
-local REFERENCE = 7.2
+-- Linha do tempo de referência (channel = 9 s): escalada pelo channel real
+local REFERENCE = 9
 local BEAT = {
 	wipe = 1.15, -- corte branco começa
 	swap = 1.35, -- troca para o palco por baixo do branco
 	eyes = 3.0, -- close nos olhos
 	flare = 3.2, -- olhos acendem (quadro de impacto)
-	pillar = 3.75, -- pilar sobe
-	burst = 5.6, -- explosão
-	whiteIn = 6.35, -- branco cresce até `channel`
+	montage = 3.32, -- painéis de mangá (olho / mão no cabo / corpo inteiro)
+	pillar = 4.5, -- painéis estouram, pilar sobe com o redemoinho
+	stamp1 = 5.75, -- "卍" carimbado
+	stamp2 = 6.15, -- "解" carimbado
+	burst = 6.6, -- explosão: o céu racha
+	whiteIn = 8.0, -- branco cresce até `channel`
 }
--- Revelação (segundos depois do branco, escalados por `reveal` / 3,4)
-local REVEAL_REFERENCE = 3.4
+-- Revelação (segundos depois do branco, escalados por `reveal` / 4,6)
+local REVEAL_REFERENCE = 4.6
 local AFTER = {
-	open = 0.32, -- o branco abre: tinta, título
-	slash = 1.45, -- golpe final
-	color = 2.15, -- a cor volta, plano heroico
+	open = 0.35, -- o branco abre: tinta, título
+	slash = 1.9, -- golpe final
+	color = 2.7, -- a cor volta, plano heroico com aura contínua
 }
 
 local active: any = nil
@@ -1058,6 +1062,303 @@ local function colorBleed(s, palette)
 	ImpactFx.Hit(STAGE, Vector3.yAxis, s.element, 2)
 end
 
+-- ======================================================================= montagem de mangá
+-- Cópia congelada do personagem na pose exata deste quadro (peças ancoradas nos CFrames atuais)
+local function snapshot(actor: Model): Model?
+	local wasArchivable = actor.Archivable
+	actor.Archivable = true
+	local ok, copy = pcall(function()
+		return actor:Clone()
+	end)
+	actor.Archivable = wasArchivable
+	if not ok or not copy then
+		return nil
+	end
+	local source = actor:GetDescendants()
+	local target = copy:GetDescendants()
+	for i, d in target do
+		local original = source[i]
+		if d:IsA("JointInstance") or d:IsA("Constraint") or d:IsA("LuaSourceContainer") then
+			d:Destroy()
+		elseif d:IsA("BasePart") and original and original:IsA("BasePart") then
+			d.Anchored = true
+			d.CFrame = original.CFrame
+		end
+	end
+	return copy
+end
+
+-- Três painéis lado a lado com a mesma pose vista de três câmeras (olho, mão no cabo, corpo
+-- inteiro de baixo), bordas brancas grossas e contorno preto; entram alternando de cima/baixo e
+-- estouram para fora no fim
+local function mangaMontage(s, palette, hold: number)
+	local actor = s.actor
+	if not actor then
+		return
+	end
+	local head = actor:FindFirstChild("Head") :: BasePart?
+	local hand = actor:FindFirstChild("RightHand") :: BasePart?
+	local root = actor:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not head or not hand or not root then
+		return
+	end
+	local shots = {
+		{
+			CFrame.lookAt(
+				head.Position + head.CFrame.LookVector * 1.7 + Vector3.new(0.25, 0.08, 0),
+				head.Position + Vector3.new(0, 0.08, 0)
+			),
+			28,
+		},
+		{ CFrame.lookAt(hand.Position + Vector3.new(-1.4, 0.6, -2), hand.Position), 40 },
+		{ CFrame.lookAt(root.Position + Vector3.new(2.5, -2.4, -7.5), root.Position + Vector3.new(0, 1.5, 0)), 55 },
+	}
+	local holder = Instance.new("Frame")
+	holder.Size = UDim2.fromScale(1, 1)
+	holder.BackgroundTransparency = 1
+	holder.ZIndex = 7
+	holder.Parent = s.gui
+	local panels = {}
+	for i, shot in shots do
+		local x0 = (i - 1) / 3
+		local panel = Instance.new("Frame")
+		panel.AnchorPoint = Vector2.new(0.5, 0.5)
+		panel.Size = UDim2.new(1 / 3, -14, 1, -40)
+		local final = UDim2.new(x0 + 1 / 6, 0, 0.5, 0)
+		panel.Position = UDim2.new(x0 + 1 / 6, 0, if i % 2 == 1 then -0.6 else 1.6, 0)
+		panel.BackgroundColor3 = WHITE
+		panel.BorderSizePixel = 0
+		panel.ZIndex = 7
+		panel.Parent = holder
+		local stroke = Instance.new("UIStroke")
+		stroke.Color = BLACK
+		stroke.Thickness = 4
+		stroke.Parent = panel
+		local view = Instance.new("ViewportFrame")
+		view.Size = UDim2.new(1, -12, 1, -12)
+		view.Position = UDim2.fromOffset(6, 6)
+		view.BackgroundColor3 = palette.dark:Lerp(BLACK, 0.3)
+		view.BorderSizePixel = 0
+		view.Ambient = palette.primary:Lerp(Color3.fromRGB(90, 90, 100), 0.5)
+		view.LightColor = palette.core
+		view.LightDirection = Vector3.new(-0.4, -0.6, 0.7)
+		view.ZIndex = 8
+		view.Parent = panel
+		local gradient = Instance.new("UIGradient")
+		gradient.Color = ColorSequence.new(palette.dark:Lerp(BLACK, 0.4), palette.primary:Lerp(BLACK, 0.45))
+		gradient.Rotation = 90
+		gradient.Parent = view
+		local copy = snapshot(actor)
+		if copy then
+			copy.Parent = view
+		end
+		local camera = Instance.new("Camera")
+		camera.CFrame = shot[1]
+		camera.FieldOfView = shot[2]
+		camera.Parent = view
+		view.CurrentCamera = camera
+		-- traços de velocidade dentro do painel
+		for k = 1, 10 do
+			local line = Instance.new("Frame")
+			line.AnchorPoint = Vector2.new(0.5, 0.5)
+			line.Position = UDim2.fromScale(s.rng:NextNumber(0, 1), s.rng:NextNumber(0, 1))
+			line.Size = UDim2.new(s.rng:NextNumber(0.4, 0.9), 0, 0, 2)
+			line.Rotation = -70 + (k % 3) * 4
+			line.BackgroundColor3 = palette.core
+			line.BackgroundTransparency = 0.55
+			line.BorderSizePixel = 0
+			line.ZIndex = 9
+			line.Parent = view
+		end
+		task.delay((i - 1) * 0.07, function()
+			tween(panel, 0.16, { Position = final }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+			SoundController.Play("Slash", s.anchor, 1)
+		end)
+		panels[i] = panel
+	end
+	task.delay(hold, function()
+		for i, panel in panels do
+			local away =
+				UDim2.new((i - 1) / 3 + 1 / 6 + (i - 2) * 0.5, 0, 0.5 + (if i % 2 == 1 then -1 else 1) * 0.2, 0)
+			tween(
+				panel,
+				0.22,
+				{ Position = away, Size = UDim2.new(0.5, 0, 1.3, 0), BackgroundTransparency = 1 },
+				Enum.EasingStyle.Quart,
+				Enum.EasingDirection.In
+			)
+			local view = panel:FindFirstChildOfClass("ViewportFrame")
+			if view then
+				tween(view, 0.22, { ImageTransparency = 1, BackgroundTransparency = 1 })
+			end
+		end
+		task.delay(0.25, function()
+			holder:Destroy()
+		end)
+	end)
+end
+
+-- Kanji carimbado na tela (um por vez: 卍 … 解), preto com contorno grosso na cor do elemento
+local function stampKanji(s, palette, text: string, x: number)
+	local label = Instance.new("TextLabel")
+	label.AnchorPoint = Vector2.new(0.5, 0.5)
+	label.Position = UDim2.fromScale(x, 0.48)
+	label.Size = UDim2.fromScale(0.42, 0.62)
+	label.BackgroundTransparency = 1
+	label.Text = text
+	label.TextScaled = true
+	label.Font = Enum.Font.GothamBlack
+	label.TextColor3 = BLACK
+	label.Rotation = if x < 0.5 then -8 else 6
+	label.ZIndex = 6
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 9
+	stroke.Color = palette.primary
+	stroke.Parent = label
+	local scale = Instance.new("UIScale")
+	scale.Scale = 3.2
+	scale.Parent = label
+	label.Parent = s.gui
+	tween(scale, 0.11, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	task.spawn(function()
+		local t0 = os.clock()
+		while os.clock() - t0 < 0.3 and label.Parent do
+			local a = 1 - (os.clock() - t0) / 0.3
+			label.Position = UDim2.new(x, s.rng:NextNumber(-16, 16) * a, 0.48, s.rng:NextNumber(-12, 12) * a)
+			task.wait()
+		end
+	end)
+	table.insert(s.stamps, label)
+end
+
+local function clearStamps(s)
+	for _, label in s.stamps do
+		tween(label, 0.25, { TextTransparency = 1 })
+		local stroke = label:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			tween(stroke, 0.25, { Transparency = 1 })
+		end
+		task.delay(0.3, function()
+			label:Destroy()
+		end)
+	end
+	table.clear(s.stamps)
+end
+
+-- O céu racha: fenda de luz em zigue-zague atravessando o fundo do palco, com ramos, que alarga
+local function skyCrack(s, palette)
+	local rng = s.rng
+	local origin = STAGE + Vector3.new(0, 34, 75)
+	local function crackLine(from: Vector3, dir: Vector3, steps: number, length: number, width: number)
+		local p = from
+		for i = 1, steps do
+			local jitter = Vector3.new(rng:NextNumber(-0.4, 0.4), rng:NextNumber(-0.5, 0.5), 0)
+			local nextP = p + (dir + jitter).Unit * (length / steps)
+			local mid = (p + nextP) / 2
+			local w = width * (1 - i / (steps + 2))
+			local seg = newPart(
+				s.folder,
+				Vector3.new(0.1, 0.1, (nextP - p).Magnitude + 0.3),
+				CFrame.lookAt(mid, nextP),
+				palette.core,
+				Enum.Material.Neon
+			)
+			tween(seg, 0.25 + i * 0.02, { Size = Vector3.new(w, w, seg.Size.Z) }, Enum.EasingStyle.Quart)
+			local glow =
+				newPart(s.folder, Vector3.new(0.1, 0.1, seg.Size.Z), seg.CFrame, palette.primary, Enum.Material.Neon)
+			glow.Transparency = 0.6
+			tween(glow, 0.35 + i * 0.02, { Size = Vector3.new(w * 3, w * 3, seg.Size.Z) }, Enum.EasingStyle.Quart)
+			p = nextP
+		end
+	end
+	crackLine(origin, Vector3.new(1, 0.15, 0), 9, 70, 2.4)
+	crackLine(origin, Vector3.new(-1, -0.1, 0), 9, 70, 2.4)
+	for _ = 1, 6 do
+		local start = origin + Vector3.new(rng:NextNumber(-45, 45), rng:NextNumber(-4, 4), 0)
+		crackLine(
+			start,
+			Vector3.new(rng:NextNumber(-0.5, 0.5), if rng:NextNumber() < 0.5 then 1 else -1, 0),
+			5,
+			rng:NextNumber(12, 26),
+			1.1
+		)
+	end
+	local light = Instance.new("PointLight")
+	light.Color = palette.core
+	light.Range = 60
+	light.Brightness = 0
+	light.Shadows = VFX.Ultra()
+	local holder = newPart(s.folder, Vector3.one, CFrame.new(origin - Vector3.new(0, 0, 8)), WHITE)
+	holder.Transparency = 1
+	light.Parent = holder
+	tween(light, 0.4, { Brightness = 8 })
+end
+
+-- Reflexo de lente: risco horizontal na tela + círculos fantasmas na diagonal
+local function lensStreak(s, palette)
+	local streak = Instance.new("Frame")
+	streak.AnchorPoint = Vector2.new(0.5, 0.5)
+	streak.Position = UDim2.fromScale(0.5, 0.46)
+	streak.Size = UDim2.new(0, 0, 0, 6)
+	streak.BackgroundColor3 = palette.core
+	streak.BorderSizePixel = 0
+	streak.ZIndex = 4
+	local g = Instance.new("UIGradient")
+	g.Transparency = seq({ { 0, 1 }, { 0.3, 0.4 }, { 0.5, 0 }, { 0.7, 0.4 }, { 1, 1 } })
+	g.Parent = streak
+	streak.Parent = s.gui
+	tween(streak, 0.18, { Size = UDim2.new(1.6, 0, 0, 10) }, Enum.EasingStyle.Quart)
+	task.delay(0.35, function()
+		tween(streak, 0.5, { BackgroundTransparency = 1, Size = UDim2.new(1.8, 0, 0, 2) })
+	end)
+	for i = 1, 4 do
+		local ghost = Instance.new("Frame")
+		ghost.AnchorPoint = Vector2.new(0.5, 0.5)
+		local u = i / 5
+		ghost.Position = UDim2.fromScale(0.5 + (u - 0.5) * 0.9, 0.46 + (u - 0.5) * 0.5)
+		local size = 40 + i * 18
+		ghost.Size = UDim2.fromOffset(size, size)
+		ghost.BackgroundColor3 = palette.secondary
+		ghost.BackgroundTransparency = 0.82
+		ghost.BorderSizePixel = 0
+		ghost.ZIndex = 4
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(1, 0)
+		corner.Parent = ghost
+		ghost.Parent = s.gui
+		tween(ghost, 0.8, { BackgroundTransparency = 1 })
+		task.delay(0.85, function()
+			ghost:Destroy()
+		end)
+	end
+	task.delay(0.9, function()
+		streak:Destroy()
+	end)
+end
+
+-- Partículas de reishi caindo devagar (como cinza acesa) durante a revelação
+local function reishiFall(s, palette)
+	local box = newPart(s.folder, Vector3.new(60, 1, 60), CFrame.new(STAGE + Vector3.new(0, 24, 0)), WHITE)
+	box.Transparency = 1
+	local e = Instance.new("ParticleEmitter")
+	e.Texture = SPARK
+	e.Shape = Enum.ParticleEmitterShape.Box
+	e.EmissionDirection = Enum.NormalId.Bottom
+	e.Speed = NumberRange.new(2, 5)
+	e.Acceleration = Vector3.new(0, -1.5, 0)
+	e.Lifetime = NumberRange.new(5, 8)
+	e.Rate = 70 * VFX.Scale()
+	e.Size = seq({ { 0, 0 }, { 0.1, 0.18 }, { 0.9, 0.12 }, { 1, 0 } })
+	e.LightEmission = 1
+	e.Brightness = 3
+	e.Color = ColorSequence.new(WHITE, palette.secondary)
+	e.Rotation = NumberRange.new(0, 360)
+	e.RotSpeed = NumberRange.new(-90, 90)
+	e.Parent = box
+	e:Emit(math.floor(140 * VFX.Scale()))
+	s.reishi = e
+end
+
 -- ======================================================================= câmera
 local function actorPoint(s, part: string, fallback: Vector3): Vector3
 	local p = s.actor and s.actor:FindFirstChild(part) :: BasePart?
@@ -1251,6 +1552,7 @@ function ReleaseCutscene.Play(model: Model, d: { [string]: any }, onReveal: (() 
 		threads = {},
 		rocks = {},
 		worldRocks = {},
+		stamps = {},
 		done = false,
 		rng = Random.new(),
 	}
@@ -1346,8 +1648,14 @@ function ReleaseCutscene.Play(model: Model, d: { [string]: any }, onReveal: (() 
 		s.shakeUntil = os.clock() - start + 0.3
 		SoundController.Play("Parry", s.anchor, 1)
 	end)
+	at(s, BEAT.montage * k, function()
+		mangaMontage(s, palette, (BEAT.pillar - BEAT.montage) * k - 0.22)
+	end)
 	at(s, BEAT.pillar * k, function()
 		raisePillar(s, palette)
+		-- redemoinho de reiatsu: espirais de malha subindo com o pilar + rachaduras no chão
+		MeshFx.Pillar(STAGE - Vector3.new(0, s.hip, 0), palette.primary, 4, 120, (BEAT.burst - BEAT.pillar) * k)
+		MeshFx.Cracks(STAGE - Vector3.new(0, s.hip - 0.05, 0), s.element, 16, true)
 		blastRocks(s, s.rocks, STAGE)
 		s.lineColor = WHITE
 		s.shakeUntil = os.clock() - start + 0.7
@@ -1355,10 +1663,25 @@ function ReleaseCutscene.Play(model: Model, d: { [string]: any }, onReveal: (() 
 			tween(s.backdrop, 0.3, { TextTransparency = 0.35 })
 		end
 	end)
+	at(s, BEAT.stamp1 * k, function()
+		stampKanji(s, palette, "卍", 0.3)
+		SoundController.Play("HitHeavy", s.anchor, 1)
+		s.shakeUntil = os.clock() - start + 0.3
+	end)
+	at(s, BEAT.stamp2 * k, function()
+		stampKanji(s, palette, "解", 0.7)
+		SoundController.Play("HitHeavy", s.anchor, 1)
+		s.shakeUntil = os.clock() - start + 0.3
+	end)
 	at(s, BEAT.burst * k, function()
+		clearStamps(s)
 		burst(s, palette)
+		skyCrack(s, palette)
+		lensStreak(s, palette)
+		MeshFx.Burst(STAGE, s.element, 3)
+		MeshFx.Element(STAGE, Vector3.yAxis, s.element, 3)
 		impactFrames(s, { true, false, true }, 0.045)
-		s.shakeUntil = os.clock() - start + 1
+		s.shakeUntil = os.clock() - start + 1.2
 	end)
 	at(s, BEAT.whiteIn * k, function()
 		tween(
@@ -1396,6 +1719,7 @@ function ReleaseCutscene.Play(model: Model, d: { [string]: any }, onReveal: (() 
 		end
 		monochromeLighting(s)
 		startWind(s)
+		reishiFall(s, palette)
 	end)
 	-- se o TransformComplete não chegar a tempo, revela com o que houver
 	at(s, channel + AFTER.open * r - 0.02, function()
@@ -1432,7 +1756,15 @@ function ReleaseCutscene.Play(model: Model, d: { [string]: any }, onReveal: (() 
 	at(s, channel + AFTER.color * r, function()
 		hideTitle(s)
 		colorBleed(s, palette)
+		lensStreak(s, palette)
 		SoundController.Play("Boom", s.anchor, 1)
+		-- aura contínua: chamas de reiatsu subindo em volta do personagem até o fim
+		task.spawn(function()
+			while not s.done do
+				MeshFx.Pillar(STAGE - Vector3.new(0, s.hip, 0), palette.primary, 1.4, 9, 0.7)
+				task.wait(0.4)
+			end
+		end)
 	end)
 
 	CameraController.PlayScripted(channel + reveal, function(t)

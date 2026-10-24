@@ -314,8 +314,13 @@ function MeshFx.Element(position: Vector3, direction: Vector3?, element: string?
 	MeshFx.Play(Recipes.Element(position, direction, id, MeshFx.Palette(id), scale or 1, MeshShapes.strip))
 end
 
-function MeshFx.Cracks(position: Vector3, element: string?, radius: number)
+-- `exact`: `position` já é o chão (pula o raio para baixo)
+function MeshFx.Cracks(position: Vector3, element: string?, radius: number, exact: boolean?)
 	if limit() == 0 then
+		return
+	end
+	if exact then
+		MeshFx.Play(Recipes.Cracks(position, MeshFx.Palette(element), radius, MeshShapes.strip))
 		return
 	end
 	-- assenta no chão de verdade (ignora personagens e efeitos)
