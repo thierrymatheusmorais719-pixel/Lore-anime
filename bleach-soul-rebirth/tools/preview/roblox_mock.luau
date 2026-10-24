@@ -196,6 +196,36 @@ Instance = {
 		return i
 	end,
 }
+Random = {
+	new = function(seed)
+		local state = (seed or 12345) % 2147483647
+		if state <= 0 then
+			state += 2147483646
+		end
+		local r = {}
+		local function nxt()
+			state = (state * 16807) % 2147483647
+			return state / 2147483647
+		end
+		function r:NextNumber(a, b)
+			if a == nil then
+				return nxt()
+			end
+			return a + (b - a) * nxt()
+		end
+		function r:NextInteger(a, b)
+			return math.floor(a + (b - a + 1) * nxt())
+		end
+		return r
+	end,
+}
+Vector2 = {
+	new = function(x, y)
+		return { X = x, Y = y, Magnitude = math.sqrt(x * x + y * y) }
+	end,
+}
+UDim2 = { new = function(...) return { ... } end, fromScale = function(...) return { ... } end, fromOffset = function(...) return { ... } end }
+TERRAIN = {}
 function game.GetService()
 	return { Shared = { Config = { Elements = "ELEMENTS" } } }
 end

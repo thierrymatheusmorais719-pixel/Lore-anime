@@ -5,6 +5,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Zones = require(ReplicatedStorage.Shared.Config.Zones)
 local Build = require(script.Parent.Build)
+local Town = require(script.Parent.Town)
+local NPCs = require(ReplicatedStorage.Shared.Config.NPCs)
 
 local Regions = {}
 
@@ -64,50 +66,144 @@ local function boundary(folder: Instance, center: Vector3, size: Vector3)
 end
 
 -- ===================== KARAKURA =====================
+-- Cidade à noite: centro comercial (prédios de vários andares, letreiros, loja de conveniência,
+-- rua comercial coberta) cercado por bairros residenciais (casas japonesas com muro e portão),
+-- avenidas com calçada, faixas, semáforos e postes com fiação, trilho elevado a leste, rio com
+-- margem e ponte a oeste, escola ao norte (arena do chefe). Áreas de spawn, chefes, portais,
+-- pontos de viagem e NPCs ficam livres.
 function Regions.Karakura(folder: Instance)
 	local zone = Zones.List.Karakura
 	local c = zone.center
 	local rng = Random.new(1001)
 	local size = Vector2.new(zone.size.X, zone.size.Z)
+	local halfX, halfZ = size.X / 2, size.Y / 2
 	Build.ground(c, size, Enum.Material.Concrete)
 	boundary(folder, c, zone.size)
 
+	-- áreas livres
+	local extra = { { position = c, radius = 45 } }
+	for _, npc in NPCs do
+		if npc.zone == "Karakura" then
+			table.insert(extra, { position = c + npc.position, radius = 9 })
+		end
+	end
+	-- rua comercial (a oeste-norte do centro)
+	local arcadeCenter = c + Vector3.new(-75, 0, 75)
+	for dz = -50, 50, 20 do
+		table.insert(extra, { position = arcadeCenter + Vector3.new(0, 0, dz), radius = 22 })
+	end
+	local keepOut = keepOutFor("Karakura", extra)
+
+	-- ruas: asfalto, faixa central, calçadas com meio-fio, faixas de pedestre, semáforos
 	local roads = Build.folder(folder, "Roads")
-	local asphalt = Color3.fromRGB(48, 50, 56)
-	local stripe = Color3.fromRGB(230, 230, 220)
+	local asphalt = Color3.fromRGB(44, 46, 52)
+	local stripe = Color3.fromRGB(230, 220, 160)
 	local avenues = { -150, 0, 150 }
-	for _, x in avenues do
+	local ROAD = 18
+	for _, a in avenues do
 		Build.part(
 			roads,
-			Vector3.new(18, 0.4, size.Y),
-			CFrame.new(c + Vector3.new(x, 0.2, 0)),
+			Vector3.new(ROAD, 0.4, size.Y),
+			CFrame.new(c + Vector3.new(a, 0.2, 0)),
 			asphalt,
 			Enum.Material.Asphalt,
 			"Road"
 		)
-		for z = -size.Y / 2 + 10, size.Y / 2 - 10, 16 do
-			Build.part(
+		Build.part(
+			roads,
+			Vector3.new(size.X, 0.4, ROAD),
+			CFrame.new(c + Vector3.new(0, 0.21, a)),
+			asphalt,
+			Enum.Material.Asphalt,
+			"Road"
+		)
+		Town.sidewalks(roads, c + Vector3.new(a, 0, 0), size.Y, ROAD, false)
+		Town.sidewalks(roads, c + Vector3.new(0, 0, a), size.X, ROAD, true)
+		for t = -halfZ + 10, halfZ - 10, 14 do
+			local nearCross = false
+			for _, b in avenues do
+				if math.abs(t - b) < 16 then
+					nearCross = true
+				end
+			end
+			if not nearCross then
+				Build.part(
+					roads,
+					Vector3.new(0.5, 0.42, 6),
+					CFrame.new(c + Vector3.new(a, 0.22, t)),
+					stripe,
+					Enum.Material.SmoothPlastic,
+					"Stripe"
+				)
+				Build.part(
+					roads,
+					Vector3.new(6, 0.43, 0.5),
+					CFrame.new(c + Vector3.new(t, 0.23, a)),
+					stripe,
+					Enum.Material.SmoothPlastic,
+					"Stripe"
+				)
+			end
+		end
+	end
+	for _, ax in avenues do
+		for _, az in avenues do
+			local corner = c + Vector3.new(ax, 0, az)
+			for _, s in { -1, 1 } do
+				Town.crosswalk(roads, corner + Vector3.new(s * 13, 0, 0), ROAD, false)
+				Town.crosswalk(roads, corner + Vector3.new(0, 0, s * 13), ROAD, true)
+			end
+			Town.trafficLight(
 				roads,
-				Vector3.new(0.5, 0.42, 6),
-				CFrame.new(c + Vector3.new(x, 0.22, z)),
-				stripe,
-				Enum.Material.SmoothPlastic,
-				"Stripe"
+				CFrame.new(corner + Vector3.new(11.5, 0.6, 11.5)) * CFrame.Angles(0, math.rad(-90), 0)
+			)
+			Town.trafficLight(
+				roads,
+				CFrame.new(corner + Vector3.new(-11.5, 0.6, -11.5)) * CFrame.Angles(0, math.rad(90), 0)
 			)
 		end
 	end
-	for _, z in avenues do
-		Build.part(
-			roads,
-			Vector3.new(size.X, 0.4, 18),
-			CFrame.new(c + Vector3.new(0, 0.21, z)),
-			asphalt,
-			Enum.Material.Asphalt,
-			"Road"
-		)
+
+	-- postes de concreto com fiação ao longo de todas as avenidas (lado de fora da calçada)
+	local poles = Build.folder(folder, "Poles")
+	for _, a in avenues do
+		for _, alongX in { false, true } do
+			local last: Vector3? = nil
+			for t = -halfZ + 12, halfZ - 12, 30 do
+				local onCross = false
+				for _, b in avenues do
+					if math.abs(t - b) < 14 then
+						onCross = true
+					end
+				end
+				local pos = if alongX then c + Vector3.new(t, 0.6, a + 12.4) else c + Vector3.new(a - 12.4, 0.6, t)
+				if onCross or not Build.clear(pos, keepOut) then
+					last = nil
+				else
+					local top = Town.utilityPole(poles, pos, rng)
+					if last then
+						for k, dy in { 0, -0.7, -1.4 } do
+							Town.wire(poles, last + Vector3.new(0, dy, 0), top + Vector3.new(0, dy, 0), 1.2 + k * 0.2)
+						end
+					end
+					last = top
+				end
+			end
+		end
+	end
+	-- postes de luz alternados com os de fiação
+	local lamps = Build.folder(folder, "Lamps")
+	for _, a in avenues do
+		for t = -halfZ + 27, halfZ - 27, 60 do
+			for _, p in { c + Vector3.new(a + 12.4, 0.6, t), c + Vector3.new(t, 0.6, a - 12.4) } do
+				if Build.clear(p, keepOut) then
+					Build.lamp(lamps, p)
+				end
+			end
+		end
 	end
 
-	-- Praça central
+	-- praça central (cristal espiritual, postes e cerejeiras)
 	local plaza = Build.folder(folder, "Plaza")
 	Build.cylinder(
 		plaza,
@@ -115,6 +211,14 @@ function Regions.Karakura(folder: Instance)
 		70,
 		CFrame.new(c + Vector3.new(0, 0.3, 0)) * CFrame.Angles(0, 0, math.rad(90)),
 		Color3.fromRGB(175, 170, 160),
+		Enum.Material.Pavement
+	)
+	Build.cylinder(
+		plaza,
+		0.62,
+		52,
+		CFrame.new(c + Vector3.new(0, 0.31, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Color3.fromRGB(150, 146, 140),
 		Enum.Material.Pavement
 	)
 	Build.cylinder(
@@ -144,83 +248,178 @@ function Regions.Karakura(folder: Instance)
 		end
 	end
 
-	-- Bairros
-	local extra = {
-		{ position = c, radius = 45 },
-	}
-	local keepOut = keepOutFor("Karakura", extra)
+	-- lotes nas bordas de cada quarteirão, de frente para a rua
+	local cuts = { -halfX, -150, 0, 150, halfX }
+	local MARGIN = 14.5
+	local buildings = Build.folder(folder, "Buildings")
 	local houses = Build.folder(folder, "Houses")
-	for gx = -200, 200, 36 do
-		for gz = -200, 200, 36 do
-			local point = c + Vector3.new(gx, 0, gz)
-			local nearRoad = false
-			for _, a in avenues do
-				if math.abs(gx - a) < 24 or math.abs(gz - a) < 24 then
-					nearRoad = true
+	local riverEdge = -halfX + 42 -- a oeste disso fica o rio e a margem
+	local konbiniDone = false
+	local function placeLot(center: Vector3, facing: Vector3, frontage: number, depth: number, downtown: boolean)
+		if not Build.clear(center, keepOut) or center.X - c.X < riverEdge then
+			return
+		end
+		local cf = CFrame.lookAt(center, center + facing)
+		if downtown then
+			local dist = Vector2.new(center.X - c.X, center.Z - c.Z).Magnitude
+			local floors = math.clamp(math.floor(8 - dist / 30 + rng:NextInteger(-1, 2)), 3, 9)
+			if not konbiniDone and dist < 110 and dist > 60 and rng:NextNumber() < 0.25 then
+				konbiniDone = true
+				Town.konbini(buildings, cf, rng)
+			else
+				Town.building(buildings, cf, frontage - 2, depth, floors, rng)
+			end
+		else
+			Town.house(houses, cf, frontage - 6, depth - 8, rng)
+		end
+	end
+	for xi = 1, #cuts - 1 do
+		for zi = 1, #cuts - 1 do
+			local x0, x1 =
+				cuts[xi] + (if xi == 1 then 6 else MARGIN), cuts[xi + 1] - (if xi == #cuts - 1 then 6 else MARGIN)
+			local z0, z1 =
+				cuts[zi] + (if zi == 1 then 6 else MARGIN), cuts[zi + 1] - (if zi == #cuts - 1 then 6 else MARGIN)
+			local downtown = xi >= 2 and xi <= 3 and zi >= 2 and zi <= 3
+			local depth = if downtown then rng:NextInteger(20, 26) else 26
+			-- frentes: norte/sul (ao longo de X) e leste/oeste (ao longo de Z, encurtadas nas quinas)
+			for _, edge in
+				{
+					{ z0, Vector3.new(0, 0, -1), true },
+					{ z1, Vector3.new(0, 0, 1), true },
+					{ x0, Vector3.new(-1, 0, 0), false },
+					{ x1, Vector3.new(1, 0, 0), false },
+				}
+			do
+				local fixed, facing, alongX = edge[1], edge[2], edge[3]
+				local from = if alongX then x0 else z0 + depth
+				local to = if alongX then x1 else z1 - depth
+				local t = from
+				while to - t > 14 do
+					local frontage =
+						math.min(to - t, rng:NextInteger(if downtown then 20 else 24, if downtown then 30 else 30))
+					local mid = t + frontage / 2
+					local inward = -facing * (depth / 2)
+					local center = if alongX
+						then c + Vector3.new(mid, 0, fixed) + inward
+						else c + Vector3.new(fixed, 0, mid) + inward
+					placeLot(center, facing, frontage, depth, downtown)
+					t += frontage
 				end
 			end
-			if not nearRoad and Build.clear(point, keepOut) and rng:NextNumber() < 0.85 then
-				local w, d = rng:NextInteger(16, 24), rng:NextInteger(14, 22)
-				local floors = if rng:NextNumber() < 0.25 then 3 elseif rng:NextNumber() < 0.6 then 2 else 1
-				local facing = if rng:NextNumber() < 0.5 then 0 else math.pi
-				Build.house(houses, CFrame.new(point) * CFrame.Angles(0, facing, 0), w, d, floors, rng)
+			-- miolo do quarteirão: árvores e máquinas de venda
+			local inner = c + Vector3.new((x0 + x1) / 2, 0, (z0 + z1) / 2)
+			if Build.clear(inner, keepOut) and (x1 - x0) > 60 and (z1 - z0) > 60 then
+				for _ = 1, 3 do
+					local p = inner + Vector3.new(rng:NextNumber(-12, 12), 0, rng:NextNumber(-12, 12))
+					Build.tree(houses, p, if rng:NextNumber() < 0.5 then "cherry" else "pine", rng)
+				end
 			end
 		end
 	end
-
-	-- Postes ao longo das avenidas
-	local lamps = Build.folder(folder, "Lamps")
-	for _, a in avenues do
-		for t = -210, 210, 42 do
-			local p1 = c + Vector3.new(a + 11, 0, t)
-			local p2 = c + Vector3.new(t, 0, a + 11)
-			if Build.clear(p1, { { position = c, radius = 36 } }) then
-				Build.lamp(lamps, p1)
+	-- máquinas de venda nas calçadas
+	for _ = 1, 22 do
+		local a = avenues[rng:NextInteger(1, 3)]
+		local t = rng:NextNumber(-halfZ + 20, halfZ - 20)
+		local side = if rng:NextNumber() < 0.5 then -1 else 1
+		local alongX = rng:NextNumber() < 0.5
+		local p = if alongX then c + Vector3.new(t, 0.6, a + side * 13.6) else c + Vector3.new(a + side * 13.6, 0.6, t)
+		local ok = Build.clear(p, keepOut)
+		for _, b in avenues do
+			if math.abs(t - b) < 16 then
+				ok = false
 			end
-			if Build.clear(p2, { { position = c, radius = 36 } }) then
-				Build.lamp(lamps, p2)
-			end
+		end
+		if ok then
+			local face = if alongX then Vector3.new(0, 0, -side) else Vector3.new(-side, 0, 0)
+			Town.vending(lamps, CFrame.lookAt(p, p + face), rng)
 		end
 	end
 
-	-- Rio a oeste com ponte
+	-- rua comercial coberta
+	Town.arcade(folder, CFrame.new(arcadeCenter), 110, rng)
+
+	-- trilho elevado ao longo da avenida leste
+	Town.railway(folder, c + Vector3.new(150, 0, -halfZ + 4), c + Vector3.new(150, 0, halfZ - 4), 26, function(p)
+		return not Build.clear(p, keepOut)
+	end)
+
+	-- rio a oeste: água, margens em rampa de grama, calçadão, ponte com guarda-corpo e postes
+	local river = Build.folder(folder, "River")
+	local riverX = -halfX + 25
 	workspace.Terrain:FillBlock(
-		CFrame.new(c + Vector3.new(-205, -2, 0)),
-		Vector3.new(26, 6, zone.size.Z - 4),
+		CFrame.new(c + Vector3.new(riverX, -2.5, 0)),
+		Vector3.new(26, 7, zone.size.Z - 4),
 		Enum.Material.Water
 	)
+	for _, s in { -1, 1 } do
+		Build.wedge(
+			river,
+			Vector3.new(zone.size.Z - 4, 4, 6),
+			CFrame.new(c + Vector3.new(riverX + s * 16, -1, 0))
+				* CFrame.Angles(0, math.rad(if s < 0 then -90 else 90), 0),
+			Color3.fromRGB(70, 100, 60),
+			Enum.Material.Grass
+		)
+	end
 	Build.part(
-		folder,
-		Vector3.new(30, 1.2, 14),
-		CFrame.new(c + Vector3.new(-205, 1, 150)),
-		Color3.fromRGB(120, 85, 60),
-		Enum.Material.Wood,
+		river,
+		Vector3.new(6, 0.5, zone.size.Z - 4),
+		CFrame.new(c + Vector3.new(riverX + 22, 0.25, 0)),
+		Color3.fromRGB(150, 130, 105),
+		Enum.Material.Pavement,
+		"Promenade"
+	)
+	for z = -halfZ + 20, halfZ - 20, 40 do
+		local p = c + Vector3.new(riverX + 24.5, 0.5, z)
+		if Build.clear(p, keepOut) then
+			Build.lamp(river, p, Color3.fromRGB(200, 220, 255))
+		end
+	end
+	local bridgeZ = 150
+	local bridge = Build.part(
+		river,
+		Vector3.new(44, 1.4, 16),
+		CFrame.new(c + Vector3.new(riverX + 8, 1, bridgeZ)),
+		Color3.fromRGB(150, 150, 155),
+		Enum.Material.Concrete,
 		"Bridge"
 	)
+	for _, s in { -1, 1 } do
+		Build.part(
+			river,
+			Vector3.new(44, 2.2, 0.5),
+			bridge.CFrame * CFrame.new(0, 1.8, s * 7.6),
+			Color3.fromRGB(190, 60, 50),
+			Enum.Material.Metal,
+			"Railing"
+		)
+		for x = -18, 18, 12 do
+			Build.part(
+				river,
+				Vector3.new(0.6, 3.4, 0.6),
+				bridge.CFrame * CFrame.new(x, 2.4, s * 7.6),
+				Color3.fromRGB(190, 60, 50),
+				Enum.Material.Metal,
+				"Post"
+			)
+		end
+	end
 
-	-- Escola (arena do chefe ao norte)
+	-- escola ao norte (arena do chefe): prédio com janelas, relógio, quadra, grade
 	local boss = Zones.Bosses[1]
 	local arena = c + boss.position
 	local school = Build.folder(folder, "School")
-	Build.part(
+	local schoolCf = CFrame.new(arena + Vector3.new(0, 0, 75))
+	Town.building(school, schoolCf * CFrame.Angles(0, math.pi, 0), 90, 20, 3, Random.new(77))
+	local clock = Build.cylinder(
 		school,
-		Vector3.new(90, 26, 20),
-		CFrame.new(arena + Vector3.new(0, 13, 75)),
-		Color3.fromRGB(225, 222, 210),
-		Enum.Material.Concrete,
-		"SchoolBuilding"
+		0.6,
+		6,
+		schoolCf * CFrame.new(0, 24, -10.4) * CFrame.Angles(0, math.rad(90), 0),
+		Color3.fromRGB(240, 240, 235),
+		Enum.Material.SmoothPlastic
 	)
-	for x = -40, 40, 8 do
-		local w = Build.part(
-			school,
-			Vector3.new(4, 4, 0.3),
-			CFrame.new(arena + Vector3.new(x, 18, 64.8)),
-			Color3.fromRGB(40, 50, 70),
-			Enum.Material.Glass,
-			"Window"
-		)
-		w.Transparency = 0.2
-	end
+	clock.Name = "Clock"
 	Build.part(
 		school,
 		Vector3.new(120, 0.3, 110),
