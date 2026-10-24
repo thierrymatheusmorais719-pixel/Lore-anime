@@ -3,3 +3,4 @@ sourcemap.json
 *.rbxl
 *.rbxlx
 tools/preview/.*.luau
+tools/sim/.anim_sim.luau
