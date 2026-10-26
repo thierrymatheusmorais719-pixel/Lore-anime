@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Zones = require(ReplicatedStorage.Shared.Config.Zones)
 local Build = require(script.Parent.Build)
 local Town = require(script.Parent.Town)
+local Seireitei = require(script.Parent.Seireitei)
 local NPCs = require(ReplicatedStorage.Shared.Config.NPCs)
 
 local Regions = {}
@@ -707,148 +708,382 @@ function Regions.Training(folder: Instance)
 end
 
 -- ===================== SOUL SOCIETY =====================
+-- Seireitei planejado como no anime: o Portão (sul) abre na avenida principal, que corta a
+-- praça central (lago com ponte arqueada) e termina no pagode de cinco andares (norte). Dos dois
+-- lados, quarteirões murados das divisões (muros brancos com telha, portão com estandarte,
+-- salões em pódio). Leste: campo de treino (bonecos). Noroeste: colina do Sōkyoku e o pátio em
+-- ruínas onde os Hollows invadem. Nordeste: torre Senzaikyū e o pátio de chegada do Rukongai.
+-- Fora dos muros, um mar de telhados até as montanhas. Spawns, portais, viagem e NPCs ficam livres.
 function Regions.SoulSociety(folder: Instance)
 	local zone = Zones.List.SoulSociety
 	local c = zone.center
 	local rng = Random.new(3003)
+	local half = zone.size.X / 2
 	Build.ground(c, Vector2.new(zone.size.X, zone.size.Z), Enum.Material.Pavement)
 	boundary(folder, c, zone.size)
-	local white = Color3.fromRGB(238, 234, 226)
-	local roof = Color3.fromRGB(45, 48, 60)
-	local wood = Color3.fromRGB(110, 60, 45)
-	local keepOut = keepOutFor("SoulSociety", { { position = c, radius = 50 } })
+	local extra = { { position = c, radius = 52 } }
+	for _, npc in NPCs do
+		if npc.zone == "SoulSociety" then
+			table.insert(extra, { position = c + npc.position, radius = 9 })
+		end
+	end
+	local keepOut = keepOutFor("SoulSociety", extra)
+	local function at(x: number, z: number): Vector3
+		return c + Vector3.new(x, 0, z)
+	end
 
-	-- Muros brancos do Seireitei com telhas (labirinto em grade)
+	-- ruas de pedra: avenida principal (N-S) e duas transversais
+	local streets = Build.folder(folder, "Streets")
+	local paving = Color3.fromRGB(196, 190, 178)
+	local function road(center: Vector3, size: Vector2)
+		local p = Build.part(
+			streets,
+			Vector3.new(size.X, 0.3, size.Y),
+			CFrame.new(center + Vector3.new(0, 0.15, 0)),
+			paving,
+			Enum.Material.Cobblestone,
+			"Road"
+		)
+		p.CanQuery = true
+		-- meio-fio escuro dos dois lados
+		local alongZ = size.Y > size.X
+		for _, s in { -1, 1 } do
+			Build.part(
+				streets,
+				if alongZ then Vector3.new(0.8, 0.5, size.Y) else Vector3.new(size.X, 0.5, 0.8),
+				CFrame.new(
+					center
+						+ (
+							if alongZ
+								then Vector3.new(s * size.X / 2, 0.25, 0)
+								else Vector3.new(0, 0.25, s * size.Y / 2)
+						)
+				),
+				Color3.fromRGB(120, 116, 108),
+				Enum.Material.Granite,
+				"Curb"
+			)
+		end
+	end
+	road(at(0, -60), Vector2.new(26, 330))
+	road(at(0, -110), Vector2.new(2 * half - 16, 18))
+	road(at(0, 60), Vector2.new(2 * half - 16, 18))
+
+	-- muro externo (com a abertura do portão)
 	local walls = Build.folder(folder, "Walls")
-	local function wall(from: Vector3, to: Vector3)
-		local mid = (from + to) / 2
-		local length = (to - from).Magnitude
-		local frame = CFrame.lookAt(mid, to)
-		Build.part(walls, Vector3.new(3, 14, length), frame * CFrame.new(0, 7, 0), white, Enum.Material.Plaster, "Wall")
-		Build.part(
-			walls,
-			Vector3.new(6, 1.2, length + 2),
-			frame * CFrame.new(0, 14.4, 0),
-			roof,
-			Enum.Material.Slate,
-			"WallRoof"
-		)
-	end
-	for _, x in { -170, -90, 90, 170 } do
-		for z = -190, 150, 85 do
-			local a = c + Vector3.new(x, 0, z)
-			local b = c + Vector3.new(x, 0, z + 60)
-			if Build.clear((a + b) / 2, keepOut) then
-				wall(a, b)
-			end
-		end
-	end
-	for _, z in { -110, 60 } do
-		for x = -200, 160, 90 do
-			local a = c + Vector3.new(x, 0, z)
-			local b = c + Vector3.new(x + 60, 0, z)
-			if Build.clear((a + b) / 2, keepOut) then
-				wall(a, b)
-			end
-		end
-	end
+	local edge = half - 8
+	Seireitei.wall(walls, at(-edge, edge), at(edge, edge), 18)
+	Seireitei.wall(walls, at(-edge, -edge), at(-edge, edge), 18)
+	Seireitei.wall(walls, at(edge, -edge), at(edge, edge), 18)
+	Seireitei.wall(walls, at(-edge, -edge), at(-33, -edge), 18)
+	Seireitei.wall(walls, at(33, -edge), at(edge, -edge), 18)
+	Seireitei.gate(walls, CFrame.new(at(0, -edge)), 26, "瀞霊門")
 
-	-- Portão principal (sul)
-	local gate = Build.folder(folder, "Gate")
-	local gp = c + Vector3.new(0, 0, -195)
-	for _, x in { -16, 16 } do
+	-- quarteirões das divisões: muro em volta, portão com estandarte voltado para a rua
+	local divisions = {
+		"一番隊",
+		"二番隊",
+		"三番隊",
+		"四番隊",
+		"五番隊",
+		"六番隊",
+		"七番隊",
+		"八番隊",
+		"九番隊",
+		"十番隊",
+		"十一番隊",
+		"十二番隊",
+		"十三番隊",
+	}
+	local nextDivision = 1
+	local compounds = Build.folder(folder, "Divisions")
+	local function compound(x0: number, x1: number, z0: number, z1: number, gateSide: string, fill: string?)
+		local model = Instance.new("Model")
+		model.Name = "Compound"
+		local gateW = 14
+		local corners = { at(x0, z0), at(x1, z0), at(x1, z1), at(x0, z1) }
+		local sides = { south = { 1, 2 }, east = { 2, 3 }, north = { 3, 4 }, west = { 4, 1 } }
+		for name, idx in sides do
+			local a, b = corners[idx[1]], corners[idx[2]]
+			if name == gateSide then
+				local mid = (a + b) / 2
+				local dir = (b - a).Unit
+				Seireitei.wall(model, a, mid - dir * gateW / 2, 12)
+				Seireitei.wall(model, mid + dir * gateW / 2, b, 12)
+				-- portãozinho: dois pilares, viga e telhado
+				local outward = Vector3.new(dir.Z, 0, -dir.X)
+				local toCenter = at((x0 + x1) / 2, (z0 + z1) / 2) - mid
+				if outward:Dot(toCenter) > 0 then
+					outward = -outward
+				end
+				local gcf = CFrame.lookAt(mid, mid + outward)
+				for _, s in { -1, 1 } do
+					Build.part(
+						model,
+						Vector3.new(1.6, 14, 1.6),
+						gcf * CFrame.new(s * (gateW / 2 + 0.6), 7, 0),
+						Seireitei.Colors.wood,
+						Enum.Material.Wood,
+						"GatePost"
+					)
+				end
+				Build.part(
+					model,
+					Vector3.new(gateW + 3, 1.4, 2),
+					gcf * CFrame.new(0, 13.6, 0),
+					Seireitei.Colors.wood,
+					Enum.Material.Wood,
+					"GateBeam"
+				)
+				Seireitei.roof(model, gcf * CFrame.new(0, 14.4, 0), gateW + 3, 4, 2.4, 1.6)
+				if not fill and divisions[nextDivision] then
+					Seireitei.banner(model, gcf * CFrame.new(gateW / 2 + 3, 0, -2), divisions[nextDivision])
+					nextDivision += 1
+				end
+			else
+				Seireitei.wall(model, a, b, 12)
+			end
+		end
+		-- pátio de cascalho claro
 		Build.part(
-			gate,
-			Vector3.new(4, 34, 4),
-			CFrame.new(gp + Vector3.new(x, 17, 0)),
-			wood,
+			model,
+			Vector3.new(x1 - x0 - 4, 0.2, z1 - z0 - 4),
+			CFrame.new(at((x0 + x1) / 2, (z0 + z1) / 2) + Vector3.new(0, 0.1, 0)),
+			Color3.fromRGB(214, 208, 192),
+			Enum.Material.Sand,
+			"Yard"
+		)
+		local w, d = x1 - x0, z1 - z0
+		local mid = at((x0 + x1) / 2, (z0 + z1) / 2)
+		-- frente dos salões para o portão
+		local facing = ({
+			south = Vector3.new(0, 0, -1),
+			north = Vector3.new(0, 0, 1),
+			east = Vector3.new(1, 0, 0),
+			west = Vector3.new(-1, 0, 0),
+		})[gateSide]
+		local depthAxis = if math.abs(facing.Z) > 0 then d else w
+		local spanAxis = if math.abs(facing.Z) > 0 then w else d
+		if fill ~= "open" then
+			-- salão principal no fundo, frente para o portão
+			local hw = math.min(spanAxis - 22, 46)
+			local hd = math.min(depthAxis * 0.4, 24)
+			local hallPos = mid - facing * (depthAxis / 2 - hd / 2 - 9)
+			if Build.clear(hallPos, keepOut) then
+				Seireitei.hall(model, CFrame.lookAt(hallPos, hallPos + facing), hw, hd, {
+					floors = if rng:NextNumber() < 0.45 then 2 else 1,
+					height = rng:NextNumber(11, 14),
+				})
+			end
+			-- salão menor de lado
+			local side = Vector3.new(facing.Z, 0, -facing.X)
+			local smallPos = mid + side * (spanAxis / 2 - 13) + facing * 4
+			if spanAxis > 60 and Build.clear(smallPos, keepOut) then
+				Seireitei.hall(model, CFrame.lookAt(smallPos, smallPos - side), 16, 12, { height = 10, podium = 1.6 })
+			end
+		end
+		-- lanternas junto ao caminho do portão e árvores
+		for _, s in { -1, 1 } do
+			local side = Vector3.new(facing.Z, 0, -facing.X)
+			local p = mid + facing * (depthAxis / 2 - 10) + side * s * 6
+			if Build.clear(p, keepOut) then
+				Seireitei.lantern(model, p)
+			end
+		end
+		for _ = 1, rng:NextInteger(2, 4) do
+			local p = mid + Vector3.new(rng:NextNumber(-w / 2 + 8, w / 2 - 8), 0, rng:NextNumber(-d / 2 + 8, d / 2 - 8))
+			if Build.clear(p, keepOut) then
+				Build.tree(model, p, if rng:NextNumber() < 0.65 then "cherry" else "pine", rng)
+			end
+		end
+		model.Parent = compounds
+	end
+	-- sul (entre o portão e a transversal sul)
+	compound(-edge + 4, -118, -edge + 4, -121, "north")
+	compound(-114, -46, -edge + 4, -121, "east")
+	compound(16, 110, -edge + 4, -121, "west")
+	compound(114, edge - 4, -edge + 4, -121, "north")
+	-- meio (a praça central fica livre)
+	compound(-edge + 4, -136, -99, 49, "east")
+	compound(-132, -58, -99, 49, "east")
+	-- leste-meio: campo de treino (bonecos), salão do dojo ao fundo
+	compound(58, edge - 4, -99, 49, "west", "open")
+	Seireitei.hall(compounds, CFrame.lookAt(at(150, 30), at(150, 0)), 44, 20, { height = 14, floors = 1 })
+	for i = 0, 5 do
+		local p = at(80 + i * 22, -88)
+		Build.part(
+			compounds,
+			Vector3.new(1.2, 6, 1.2),
+			CFrame.new(p + Vector3.new(0, 3, 0)),
+			Seireitei.Colors.wood,
 			Enum.Material.Wood,
-			"Pillar"
-		)
-	end
-	Build.part(gate, Vector3.new(44, 3, 6), CFrame.new(gp + Vector3.new(0, 34, 0)), wood, Enum.Material.Wood, "Beam")
-	Build.part(
-		gate,
-		Vector3.new(52, 2, 9),
-		CFrame.new(gp + Vector3.new(0, 37, 0)),
-		roof,
-		Enum.Material.Slate,
-		"GateRoof"
-	)
-
-	-- Torre central (Pagode) e pátio de treino
-	local tower = Build.folder(folder, "Tower")
-	local tp = c + Vector3.new(0, 0, 120)
-	for i = 0, 4 do
-		local s = 40 - i * 6
-		local y = i * 14
-		Build.part(
-			tower,
-			Vector3.new(s, 12, s),
-			CFrame.new(tp + Vector3.new(0, y + 6, 0)),
-			white,
-			Enum.Material.Plaster,
-			"Floor"
+			"TrainingPost"
 		)
 		Build.part(
-			tower,
-			Vector3.new(s + 8, 1.5, s + 8),
-			CFrame.new(tp + Vector3.new(0, y + 12.75, 0)),
-			roof,
-			Enum.Material.Slate,
-			"Eave"
+			compounds,
+			Vector3.new(3, 0.8, 0.8),
+			CFrame.new(p + Vector3.new(0, 4.6, 0)),
+			Seireitei.Colors.wood,
+			Enum.Material.Wood,
+			"TrainingArm"
 		)
 	end
-	local spire = Build.part(
-		tower,
-		Vector3.new(2, 14, 2),
-		CFrame.new(tp + Vector3.new(0, 82, 0)),
-		Color3.fromRGB(230, 190, 90),
-		Enum.Material.Neon,
-		"Spire"
-	)
-	Build.light(spire, Color3.fromRGB(255, 220, 140), 60, 1.5)
+	-- norte (a praça do pagode fica no eixo)
+	compound(-100, -34, 71, edge - 4, "east")
+	compound(34, 100, 71, 150, "west")
+	compound(104, edge - 4, 150, edge - 4, "south", "open")
 
-	-- Pátio central com cerejeiras e lanternas
-	local garden = Build.folder(folder, "Garden")
-	Build.cylinder(
-		garden,
-		0.4,
-		80,
-		CFrame.new(c + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-		Color3.fromRGB(205, 195, 175),
-		Enum.Material.Sand
+	-- praça central: lajes, lago com ponte arqueada, cerejeiras e lanternas
+	local plaza = Build.folder(folder, "Plaza")
+	workspace.Terrain:FillBlock(
+		CFrame.new(at(0, 0) + Vector3.new(0, -2.4, 0)),
+		Vector3.new(30, 4, 40),
+		Enum.Material.Water
 	)
+	for _, s in { -1, 1 } do
+		Build.part(
+			plaza,
+			Vector3.new(2, 1, 42),
+			CFrame.new(at(s * 16, 0) + Vector3.new(0, 0.5, 0)),
+			Color3.fromRGB(130, 126, 118),
+			Enum.Material.Rock,
+			"PondRim"
+		)
+		Build.part(
+			plaza,
+			Vector3.new(30, 1, 2),
+			CFrame.new(at(0, s * 21) + Vector3.new(0, 0.5, 0)),
+			Color3.fromRGB(130, 126, 118),
+			Enum.Material.Rock,
+			"PondRim"
+		)
+	end
+	-- lajes em volta do lago (o chão da praça não cobre a água)
+	for _, strip in
+		{
+			{ Vector3.new(100, 0.3, 29), at(0, -35.5) },
+			{ Vector3.new(100, 0.3, 29), at(0, 35.5) },
+			{ Vector3.new(34, 0.3, 42), at(-33, 0) },
+			{ Vector3.new(34, 0.3, 42), at(33, 0) },
+		}
+	do
+		Build.part(
+			plaza,
+			strip[1],
+			CFrame.new(strip[2] + Vector3.new(0, 0.16, 0)),
+			Color3.fromRGB(206, 200, 188),
+			Enum.Material.Granite,
+			"Plaza"
+		)
+	end
+	Seireitei.archBridge(plaza, at(0, -22) + Vector3.new(0, 0.4, 0), at(0, 22) + Vector3.new(0, 0.4, 0), 7, 4.5)
 	for i = 0, 9 do
-		local angle = i / 10 * math.pi * 2
-		Build.tree(garden, c + Vector3.new(math.cos(angle) * 44, 0, math.sin(angle) * 44), "cherry", rng)
+		local angle = i / 10 * math.pi * 2 + 0.3
+		Build.tree(plaza, at(math.cos(angle) * 44, math.sin(angle) * 44), "cherry", rng)
 	end
-	for _ = 1, 25 do
-		local p = c + Vector3.new(rng:NextNumber(-200, 200), 0, rng:NextNumber(-200, 200))
-		if Build.clear(p, keepOut) then
-			Build.tree(garden, p, "cherry", rng)
+	for _, p in { at(-22, -26), at(22, -26), at(-22, 26), at(22, 26) } do
+		Seireitei.lantern(plaza, p, 1.3)
+	end
+	-- avenida: lanternas e cerejeiras alternadas dos dois lados
+	for z = -200, 40, 24 do
+		for _, s in { -1, 1 } do
+			local p = at(s * 11, z)
+			if math.abs(z) > 55 and Build.clear(p, keepOut) then
+				if (z / 24) % 2 == 0 then
+					Seireitei.lantern(streets, p)
+				else
+					Build.tree(streets, p, "cherry", rng)
+				end
+			end
 		end
 	end
-	for i = 0, 7 do
-		local angle = i / 8 * math.pi * 2 + 0.2
-		local p = c + Vector3.new(math.cos(angle) * 28, 0, math.sin(angle) * 28)
-		Build.part(
-			garden,
-			Vector3.new(1.6, 4, 1.6),
-			CFrame.new(p + Vector3.new(0, 2, 0)),
-			Color3.fromRGB(130, 130, 125),
-			Enum.Material.Slate,
-			"LanternBase"
+
+	-- pagode no fim da avenida
+	local landmarks = Build.folder(folder, "Landmarks")
+	Seireitei.pagoda(landmarks, CFrame.new(at(0, 150)), 26)
+	-- Sōkyoku (noroeste) e Senzaikyū (nordeste)
+	Seireitei.sokyoku(landmarks, CFrame.new(at(-176, 192)), 26, rng)
+	Seireitei.whiteTower(landmarks, CFrame.lookAt(at(186, 196), at(186, 100)), 120)
+	-- pátio invadido (noroeste): muros quebrados, entulho e a fenda por onde os Hollows entram
+	local breach = Build.folder(folder, "Breach")
+	for i = 1, 7 do
+		local angle = i / 7 * math.pi * 2
+		local p = at(-150 + math.cos(angle) * 46, 120 + math.sin(angle) * 46)
+		local a = p + Vector3.new(math.sin(angle) * 6, 0, -math.cos(angle) * 6)
+		local b = p - Vector3.new(math.sin(angle) * 6, 0, -math.cos(angle) * 6)
+		Seireitei.wall(breach, a, b, rng:NextNumber(5, 10))
+		for _ = 1, 3 do
+			local chunk = Build.part(
+				breach,
+				Vector3.new(rng:NextNumber(1, 3), rng:NextNumber(0.8, 2), rng:NextNumber(1, 3)),
+				CFrame.new(p + Vector3.new(rng:NextNumber(-6, 6), 0.6, rng:NextNumber(-6, 6)))
+					* CFrame.Angles(rng:NextNumber(0, 1), rng:NextNumber(0, 3), rng:NextNumber(0, 1)),
+				Seireitei.Colors.plaster:Lerp(Color3.fromRGB(80, 76, 70), rng:NextNumber(0, 0.4)),
+				Enum.Material.Plaster,
+				"Rubble"
+			)
+			chunk.CanCollide = false
+		end
+	end
+	local rift = Build.part(
+		breach,
+		Vector3.new(30, 0.3, 4),
+		CFrame.new(at(-150, 150) + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0.4, 0),
+		Color3.fromRGB(40, 8, 30),
+		Enum.Material.Neon,
+		"Rift"
+	)
+	rift.CanCollide = false
+	Build.light(rift, Color3.fromRGB(180, 40, 120), 30, 1.4)
+
+	-- além dos muros: mar de telhados do Seireitei até as montanhas (sem colisão)
+	local beyond = Build.folder(folder, "Beyond")
+	local brng = Random.new(3010)
+	for gx = -22, 22 do
+		for gz = -22, 22 do
+			local p = Vector3.new(gx * 40, 0, gz * 40)
+			local square = math.max(math.abs(p.X), math.abs(p.Z))
+			if square > half + 30 and p.Magnitude < 880 and brng:NextNumber() < 0.85 then
+				local w, d = brng:NextNumber(18, 30), brng:NextNumber(14, 24)
+				local h = brng:NextNumber(8, 16)
+				local base = CFrame.new(c + p + Vector3.new(brng:NextNumber(-5, 5), 0, brng:NextNumber(-5, 5)))
+					* CFrame.Angles(0, if brng:NextNumber() < 0.5 then 0 else math.pi / 2, 0)
+				local body = Build.part(
+					beyond,
+					Vector3.new(w, h, d),
+					base * CFrame.new(0, h / 2, 0),
+					Seireitei.Colors.plaster,
+					Enum.Material.Plaster,
+					"Far"
+				)
+				body.CanCollide = false
+				body.CastShadow = false
+				for _, side in { 0, math.pi } do
+					local r = Build.wedge(
+						beyond,
+						Vector3.new(w + 4, d * 0.35, d / 2 + 2),
+						base * CFrame.Angles(0, side, 0) * CFrame.new(0, h + d * 0.175, -(d / 2 + 2) / 2),
+						Seireitei.Colors.roof,
+						Enum.Material.Slate
+					)
+					r.CanCollide = false
+					r.CastShadow = false
+				end
+			end
+		end
+	end
+	for i = 1, 22 do
+		local angle = i / 22 * math.pi * 2
+		local size = brng:NextNumber(500, 800)
+		local hill = Build.ball(
+			beyond,
+			size,
+			CFrame.new(c + Vector3.new(math.cos(angle) * 1150, -size * 0.3, math.sin(angle) * 1150)),
+			Color3.fromRGB(80, 110, 90):Lerp(Color3.fromRGB(130, 150, 170), brng:NextNumber(0, 0.5)),
+			Enum.Material.Grass
 		)
-		local l = Build.part(
-			garden,
-			Vector3.new(2.4, 2.4, 2.4),
-			CFrame.new(p + Vector3.new(0, 5.2, 0)),
-			Color3.fromRGB(255, 220, 160),
-			Enum.Material.Neon,
-			"Lantern"
-		)
-		Build.light(l, Color3.fromRGB(255, 210, 150), 18, 1)
+		hill.CanCollide = false
+		hill.CastShadow = false
 	end
 end
 

@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw, ImageFilter
 here = os.path.dirname(os.path.abspath(__file__))
 root = os.path.abspath(os.path.join(here, "..", ".."))
 LUAU = os.environ.get("LUAU", "luau")
+REGION = os.environ.get("REGION", "Karakura")  # REGION=SoulSociety para o Seireitei
 DAY = os.environ.get("NIGHT") is None  # Karakura é de tarde; NIGHT=1 renderiza à noite
 sys.path.insert(0, here)
 from preview import module, local_polys  # noqa: E402
@@ -22,11 +23,13 @@ def run():
     npcs = module("src/shared/Config/NPCs.luau", {})
     build = module("src/server/World/Build.luau", {})
     town = module("src/server/World/Town.luau", {r"require\(script\.Parent\.Build\)": "BUILD"})
+    seireitei = module("src/server/World/Seireitei.luau", {r"require\(script\.Parent\.Build\)": "BUILD"})
     regions = module("src/server/World/Regions.luau", {
         r"require\(ReplicatedStorage\.Shared\.Config\.Zones\)": "ZONES",
         r"require\(ReplicatedStorage\.Shared\.Config\.NPCs\)": "NPCS",
         r"require\(script\.Parent\.Build\)": "BUILD",
         r"require\(script\.Parent\.Town\)": "TOWN",
+        r"require\(script\.Parent\.Seireitei\)": "SEIREITEI",
     })
     driver = r'''
 workspace = Instance.new("Workspace")
@@ -34,7 +37,7 @@ workspace.Terrain = { FillBlock = function(_, cf, size, material)
 	print(string.format('{"terrain":"%s","p":[%.2f,%.2f,%.2f],"s":[%.2f,%.2f,%.2f]}', material.Name, cf.p[1], cf.p[2], cf.p[3], size.X, size.Y, size.Z))
 end }
 local folder = Instance.new("Folder")
-REGIONS.Karakura(folder)
+REGIONS["@@REGION@@"](folder)
 local function num(n) return string.format("%.3f", n) end
 for _, p in folder:GetDescendants() do
 	if p:IsA("BasePart") and (p.Transparency or 0) < 0.99 then
@@ -55,11 +58,13 @@ for _, p in folder:GetDescendants() do
 	end
 end
 '''
+    driver = driver.replace("@@REGION@@", REGION)
     src = "\n".join(["game = {}", cframe, mock,
                      "ZONES = (function()\n" + zones + "\nend)()",
                      "NPCS = (function()\n" + npcs + "\nend)()",
                      "BUILD = (function()\n" + build + "\nend)()",
                      "TOWN = (function()\n" + town + "\nend)()",
+                     "SEIREITEI = (function()\n" + seireitei + "\nend)()",
                      "REGIONS = (function()\n" + regions + "\nend)()", driver])
     path = os.path.join(here, ".city.luau")
     open(path, "w", encoding="utf-8").write(src)
@@ -90,7 +95,7 @@ def polys_of(parts, terrain):
             for gz in np.arange(z - sz / 2, z + sz / 2, step):
                 x1, z1 = min(gx + step, x + sx / 2), min(gz + step, z + sz / 2)
                 quad = [(gx, top, gz), (x1, top, gz), (x1, top, z1), (gx, top, z1)]
-                out.append((np.array(quad), col, t["terrain"] == "Water", 0, None))
+                out.append((np.array(quad), col, t["terrain"] == "Water", 0, "terrain"))
     for part in parts:
         r, p = part["r"], part["p"]
         R = np.array(r).reshape(3, 3)
@@ -172,7 +177,9 @@ def render(polys, lights, cam, target, fov, size, out, label):
             haze = 1 - math.exp(-max(0.0, float(z.mean()) - 60) / 1100)
             shade = shade * (1 - haze) + fog * haze
         rgb = tuple(int(255 * min(1, v)) for v in shade)
-        items.append((z.mean(), list(zip(sx, sy)), rgb, transp, emissive))
+        # o chão do Terrain fica sempre atrás do que está apoiado nele (calçadas, pátios, ruas)
+        key = z.mean() + (4.0 if polys[i][4] == "terrain" else 0.0)
+        items.append((key, list(zip(sx, sy)), rgb, transp, emissive))
     items.sort(key=lambda q: -q[0])
     img = Image.new("RGB", (W, H), (10, 14, 30))
     # céu noturno em degradê
@@ -216,6 +223,16 @@ if __name__ == "__main__":
         ("Horizonte do centro (da margem do rio)", (-250, 10, -20), (0, 95, 0), 72),
         ("Bairro residencial", (-215, 9, -150), (-100, 6, -150), 70),
     ]
+    if REGION == "SoulSociety":
+        o = 3000
+        views = [
+            ("Seireitei do alto", (o - 80, 230, -430), (o, 0, 30), 60),
+            ("Portao do Seireitei (de dentro)", (o + 6, 12, -150), (o, 18, -226), 70),
+            ("Avenida rumo ao pagode", (o + 4, 9, -190), (o, 34, 150), 68),
+            ("Lago e ponte da praça", (o + 34, 12, -46), (o, 3, 6), 70),
+            ("Sokyoku e Senzaikyu", (o + 10, 110, -40), (o, 70, 190), 70),
+            ("Quarteirao de divisao", (o - 30, 34, -150), (o - 150, 6, -185), 70),
+        ]
     tiles = [render(polys, lights, cam, tgt, fov, (640, 400), None, label) for label, cam, tgt, fov in views]
     sheet = Image.new("RGB", (1280, 1200))
     for i, t in enumerate(tiles):
