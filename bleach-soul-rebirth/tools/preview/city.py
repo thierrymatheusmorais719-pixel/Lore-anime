@@ -24,18 +24,32 @@ def run():
     build = module("src/server/World/Build.luau", {})
     town = module("src/server/World/Town.luau", {r"require\(script\.Parent\.Build\)": "BUILD"})
     seireitei = module("src/server/World/Seireitei.luau", {r"require\(script\.Parent\.Build\)": "BUILD"})
+    hueco = module("src/server/World/Hueco.luau", {r"require\(script\.Parent\.Build\)": "BUILD"})
     regions = module("src/server/World/Regions.luau", {
         r"require\(ReplicatedStorage\.Shared\.Config\.Zones\)": "ZONES",
         r"require\(ReplicatedStorage\.Shared\.Config\.NPCs\)": "NPCS",
         r"require\(script\.Parent\.Build\)": "BUILD",
         r"require\(script\.Parent\.Town\)": "TOWN",
         r"require\(script\.Parent\.Seireitei\)": "SEIREITEI",
+        r"require\(script\.Parent\.Hueco\)": "HUECO",
     })
     driver = r'''
 workspace = Instance.new("Workspace")
 workspace.Terrain = { FillBlock = function(_, cf, size, material)
 	print(string.format('{"terrain":"%s","p":[%.2f,%.2f,%.2f],"s":[%.2f,%.2f,%.2f]}', material.Name, cf.p[1], cf.p[2], cf.p[3], size.X, size.Y, size.Z))
 end }
+local TERRAIN_COLORS = { Sand = "0.86,0.84,0.78", Sandstone = "0.74,0.66,0.56", Rock = "0.48,0.46,0.45", Basalt = "0.26,0.25,0.28", Grass = "0.3,0.45,0.25" }
+local function terrainPart(shape, size, p, r, material)
+	print(string.format('{"n":"Terrain","shape":"%s","s":[%.2f,%.2f,%.2f],"p":[%.2f,%.2f,%.2f],"r":[%s],"c":[%s],"t":0,"m":"%s"}',
+		shape, size.X, size.Y, size.Z, p.X, p.Y, p.Z, r, TERRAIN_COLORS[material.Name] or "0.5,0.5,0.5", material.Name))
+end
+workspace.Terrain.FillBall = function(_, center, radius, material)
+	terrainPart("Ball", Vector3.new(radius * 2, radius * 2, radius * 2), center, "1,0,0,0,1,0,0,0,1", material)
+end
+workspace.Terrain.FillCylinder = function(_, cf, height, radius, material)
+	local p = Vector3.new(cf.p[1], cf.p[2], cf.p[3])
+	terrainPart("Cylinder", Vector3.new(height, radius * 2, radius * 2), p, "0,-1,0,1,0,0,0,0,1", material)
+end
 local folder = Instance.new("Folder")
 REGIONS["@@REGION@@"](folder)
 local function num(n) return string.format("%.3f", n) end
@@ -65,6 +79,7 @@ end
                      "BUILD = (function()\n" + build + "\nend)()",
                      "TOWN = (function()\n" + town + "\nend)()",
                      "SEIREITEI = (function()\n" + seireitei + "\nend)()",
+                     "HUECO = (function()\n" + hueco + "\nend)()",
                      "REGIONS = (function()\n" + regions + "\nend)()", driver])
     path = os.path.join(here, ".city.luau")
     open(path, "w", encoding="utf-8").write(src)
@@ -223,6 +238,16 @@ if __name__ == "__main__":
         ("Horizonte do centro (da margem do rio)", (-250, 10, -20), (0, 95, 0), 72),
         ("Bairro residencial", (-215, 9, -150), (-100, 6, -150), 70),
     ]
+    if REGION == "HuecoMundo":
+        o = -3000
+        views = [
+            ("Deserto rumo a Las Noches", (o + 10, 18, -250), (o, 70, 300), 70),
+            ("Hueco Mundo do alto", (o + 320, 250, -430), (o, 0, 60), 60),
+            ("Carcaca de Hollow", (o + 140, 16, -20), (o + 205, 12, 60), 70),
+            ("Fenda dos Menos", (o + 45, 24, -80), (o, 0, -20), 70),
+            ("Arena diante de Las Noches", (o + 6, 26, 110), (o, 50, 330), 72),
+            ("Floresta de quartzo", (o + 110, 9, -270), (o + 220, 12, -200), 70),
+        ]
     if REGION == "SoulSociety":
         o = 3000
         views = [

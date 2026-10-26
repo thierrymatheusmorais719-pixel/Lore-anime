@@ -7,6 +7,7 @@ local Zones = require(ReplicatedStorage.Shared.Config.Zones)
 local Build = require(script.Parent.Build)
 local Town = require(script.Parent.Town)
 local Seireitei = require(script.Parent.Seireitei)
+local Hueco = require(script.Parent.Hueco)
 local NPCs = require(ReplicatedStorage.Shared.Config.NPCs)
 
 local Regions = {}
@@ -1088,36 +1089,94 @@ function Regions.SoulSociety(folder: Instance)
 end
 
 -- ===================== HUECO MUNDO =====================
+-- Deserto noturno sem fim: dunas, agulhas e mesas de rocha, cânion a oeste, floresta de quartzo
+-- a sudeste, carcaças de Hollows gigantes semienterradas, a fenda dos Menos no meio, a Garganta
+-- ao sul (saída para Karakura) e, ao norte, as ruínas da arena diante da muralha de Las Noches,
+-- com a cúpula e as torres sob a lua crescente. Spawns, portais, viagem, NPC e arena ficam livres.
 function Regions.HuecoMundo(folder: Instance)
 	local zone = Zones.List.HuecoMundo
 	local c = zone.center
 	local rng = Random.new(4004)
+	local half = zone.size.X / 2
 	Build.ground(c, Vector2.new(zone.size.X, zone.size.Z), Enum.Material.Sand)
 	boundary(folder, c, zone.size)
-	local keepOut = keepOutFor("HuecoMundo", {})
+	local extra = {}
+	for _, npc in NPCs do
+		if npc.zone == "HuecoMundo" then
+			table.insert(extra, { position = c + npc.position, radius = 10 })
+		end
+	end
+	local keepOut = keepOutFor("HuecoMundo", extra)
+	local function at(x: number, z: number): Vector3
+		return c + Vector3.new(x, 0, z)
+	end
+	local function clearFor(p: Vector3, r: number): boolean
+		for _, k in keepOut do
+			if Vector2.new(p.X - k.position.X, p.Z - k.position.Z).Magnitude < k.radius + r then
+				return false
+			end
+		end
+		return true
+	end
 
-	-- Dunas (bolas de areia parcialmente enterradas)
-	for _ = 1, 26 do
-		local p = c + Vector3.new(rng:NextNumber(-290, 290), 0, rng:NextNumber(-290, 290))
-		if Build.clear(p, keepOut) then
-			workspace.Terrain:FillBall(
-				p - Vector3.new(0, rng:NextNumber(14, 22), 0),
-				rng:NextNumber(22, 40),
-				Enum.Material.Sand
+	-- dunas (terreno liso)
+	for _ = 1, 40 do
+		local p = at(rng:NextNumber(-300, 300), rng:NextNumber(-300, 300))
+		local r = rng:NextNumber(22, 44)
+		if clearFor(p, r * 0.5) then
+			workspace.Terrain:FillBall(p - Vector3.new(0, r * rng:NextNumber(0.62, 0.8), 0), r, Enum.Material.Sand)
+		end
+	end
+	-- cânion a oeste: dois paredões de rocha
+	Hueco.ridge(at(-245, -110), at(-245, 150), 22, 46, rng)
+	Hueco.ridge(at(-305, -150), at(-305, 300), 26, 70, rng)
+	-- agulhas e mesas de rocha
+	local placed = 0
+	for _ = 1, 60 do
+		if placed >= 16 then
+			break
+		end
+		local p = at(rng:NextNumber(-280, 290), rng:NextNumber(-280, 140))
+		local r = rng:NextNumber(7, 16)
+		if clearFor(p, r + 8) then
+			Hueco.rock(p, r, rng:NextNumber(24, 70), rng)
+			placed += 1
+		end
+	end
+
+	-- carcaças de Hollow gigantes
+	local bones = Build.folder(folder, "Carcasses")
+	Hueco.carcass(bones, CFrame.new(at(205, 62)), 1.2, rng)
+	Hueco.carcass(bones, CFrame.lookAt(at(-100, -150), at(-20, -150)), 0.8, rng)
+
+	-- floresta de quartzo (sudeste) e árvores soltas
+	local trees = Build.folder(folder, "QuartzTrees")
+	for _ = 1, 70 do
+		local p = if rng:NextNumber() < 0.65
+			then at(rng:NextNumber(90, 300), rng:NextNumber(-300, -150))
+			else at(rng:NextNumber(-300, 300), rng:NextNumber(-300, 140))
+		if clearFor(p, 4) then
+			Hueco.quartzTree(trees, p, rng)
+		end
+	end
+
+	-- fenda dos Menos (onde as sombras de Menos surgem)
+	for _, s in Zones.Spawners do
+		if s.zone == "HuecoMundo" and s.enemy == "MenosShade" then
+			Hueco.menosRift(folder, c + s.position, 22, rng)
+		end
+	end
+	-- Garganta: arco de pedra atrás do portal de volta
+	for _, portal in Zones.Portals do
+		if portal.zone == "HuecoMundo" then
+			Hueco.gargantaArch(
+				folder,
+				CFrame.lookAt(c + portal.position - Vector3.new(0, 0, 13), c + portal.position + Vector3.new(0, 0, 10))
 			)
 		end
 	end
 
-	-- Árvores de quartzo
-	local trees = Build.folder(folder, "QuartzTrees")
-	for _ = 1, 60 do
-		local p = c + Vector3.new(rng:NextNumber(-300, 300), 0, rng:NextNumber(-300, 300))
-		if Build.clear(p, keepOut) then
-			Build.tree(trees, p, "dead", rng)
-		end
-	end
-
-	-- Ruínas do palácio (arena do Rei)
+	-- ruínas da arena diante de Las Noches
 	local boss = nil
 	for _, b in Zones.Bosses do
 		if b.zone == "HuecoMundo" then
@@ -1135,11 +1194,31 @@ function Regions.HuecoMundo(folder: Instance)
 			Color3.fromRGB(235, 232, 225),
 			Enum.Material.Marble
 		)
+		Build.cylinder(
+			ruins,
+			0.4,
+			boss.arena * 1.2,
+			CFrame.new(p + Vector3.new(0, 1.1, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+			Color3.fromRGB(214, 210, 202),
+			Enum.Material.Marble
+		)
+		-- degraus da entrada (sul)
+		for i = 1, 3 do
+			Build.part(
+				ruins,
+				Vector3.new(40 - i * 4, i * 0.4, 3),
+				CFrame.new(p + Vector3.new(0, i * 0.2, -boss.arena * 1.1 - 6 + i * 3)),
+				Color3.fromRGB(226, 222, 214),
+				Enum.Material.Marble,
+				"Step"
+			)
+		end
 		for i = 0, 11 do
 			local angle = i / 12 * math.pi * 2
 			local radius = boss.arena + 6
 			local pos = p + Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
-			local h = if i % 3 == 0 then rng:NextNumber(10, 18) else rng:NextNumber(28, 46)
+			local broken = i % 3 == 0
+			local h = if broken then rng:NextNumber(10, 18) else rng:NextNumber(30, 48)
 			Build.part(
 				ruins,
 				Vector3.new(6, h, 6),
@@ -1148,29 +1227,54 @@ function Regions.HuecoMundo(folder: Instance)
 				Enum.Material.Marble,
 				"Pillar"
 			)
+			Build.part(
+				ruins,
+				Vector3.new(8, 2, 8),
+				CFrame.new(pos + Vector3.new(0, 1, 0)) * CFrame.Angles(0, angle, 0),
+				Color3.fromRGB(220, 216, 208),
+				Enum.Material.Marble,
+				"PillarBase"
+			)
+			if broken then
+				-- pedaço caído ao lado
+				local fall = pos + Vector3.new(math.cos(angle + 0.6), 0, math.sin(angle + 0.6)) * 12
+				Build.part(
+					ruins,
+					Vector3.new(6, 6, rng:NextNumber(14, 22)),
+					CFrame.new(fall + Vector3.new(0, 3, 0))
+						* CFrame.Angles(0, angle + rng:NextNumber(-0.6, 0.6), math.rad(rng:NextNumber(-8, 8))),
+					Color3.fromRGB(232, 230, 222),
+					Enum.Material.Marble,
+					"FallenPillar"
+				)
+			else
+				Build.part(
+					ruins,
+					Vector3.new(9, 2.4, 9),
+					CFrame.new(pos + Vector3.new(0, h + 1.2, 0)) * CFrame.Angles(0, angle, 0),
+					Color3.fromRGB(226, 222, 214),
+					Enum.Material.Marble,
+					"Capital"
+				)
+			end
 		end
-		-- Cúpula quebrada ao fundo
-		Build.ball(
-			ruins,
-			150,
-			CFrame.new(p + Vector3.new(0, -20, 150)),
-			Color3.fromRGB(240, 238, 232),
-			Enum.Material.Marble
-		)
 	end
+	-- Las Noches ao fundo (além do limite norte)
+	Hueco.lasNoches(folder, CFrame.lookAt(at(0, half + 45), at(0, 0)), 760)
 
-	-- Lua crescente gigante no horizonte
+	-- lua crescente gigante (mais segmentos: curva lisa) com halo
 	local sky = Build.folder(folder, "Sky")
-	local moonCenter = c + Vector3.new(0, 260, 520)
-	for i = -6, 6 do
-		local a = i / 6 * math.rad(70)
-		local pos = moonCenter + Vector3.new(math.sin(a) * 80, math.cos(a) * 80, 0)
-		local thickness = 22 * (1 - math.abs(i) / 7.5)
+	local moonCenter = c + Vector3.new(-420, 420, 1150)
+	local radius = 150
+	for i = -14, 14 do
+		local a = i / 14 * math.rad(78)
+		local pos = moonCenter + Vector3.new(math.sin(a) * radius, math.cos(a) * radius, 0)
+		local thickness = 46 * (1 - math.abs(i) / 15.5)
 		local piece = Build.part(
 			sky,
-			Vector3.new(thickness, 26, 4),
+			Vector3.new(thickness, radius * 0.12, 6),
 			CFrame.new(pos) * CFrame.Angles(0, 0, -a),
-			Color3.fromRGB(245, 245, 235),
+			Color3.fromRGB(248, 248, 238),
 			Enum.Material.Neon,
 			"Moon"
 		)
