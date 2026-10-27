@@ -51,7 +51,15 @@ workspace.Terrain.FillCylinder = function(_, cf, height, radius, material)
 	terrainPart("Cylinder", Vector3.new(height, radius * 2, radius * 2), p, "0,-1,0,1,0,0,0,0,1", material)
 end
 local folder = Instance.new("Folder")
-REGIONS["@@REGION@@"](folder)
+if "@@REGION@@" == "Trees" then
+	local rng = Random.new(7)
+	for i, kind in { "cherry", "broadleaf", "pine", "cherry", "pine", "broadleaf" } do
+		BUILD.tree(folder, Vector3.new((i - 3.5) * 16, 0, (i % 2) * 10), kind, rng)
+	end
+	workspace.Terrain:FillBlock(CFrame.new(0, -4, 0), Vector3.new(200, 8, 200), Enum.Material.Grass)
+else
+	REGIONS["@@REGION@@"](folder)
+end
 local function num(n) return string.format("%.3f", n) end
 for _, p in folder:GetDescendants() do
 	if p:IsA("BasePart") and (p.Transparency or 0) < 0.99 then
@@ -238,6 +246,11 @@ if __name__ == "__main__":
         ("Horizonte do centro (da margem do rio)", (-250, 10, -20), (0, 95, 0), 72),
         ("Bairro residencial", (-215, 9, -150), (-100, 6, -150), 70),
     ]
+    if REGION == "Trees":
+        views = [
+            ("Arvores: cerejeira, de rua, pinheiro", (0, 12, -55), (0, 8, 0), 70),
+            ("Arvores de perto", (-14, 9, -22), (-22, 9, 0), 70),
+        ]
     if REGION == "HuecoMundo":
         o = -3000
         views = [

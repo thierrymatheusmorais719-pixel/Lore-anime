@@ -4,7 +4,8 @@ local NPCs = {
 		name = "Capitã Ayame Shirogane",
 		title = "Mentora Shinigami",
 		zone = "Karakura",
-		position = Vector3.new(12, 0, 22),
+		-- na borda da praça, perto de onde o jogador nasce
+		position = Vector3.new(18, 0, -38),
 		look = {
 			skin = Color3.fromRGB(240, 210, 180),
 			robe = Color3.fromRGB(18, 18, 22),
@@ -34,7 +35,9 @@ local NPCs = {
 		name = "Vex Oscura",
 		title = "Arrancar Renegada",
 		zone = "Karakura",
-		position = Vector3.new(-14, 0, 22),
+		-- calçada da avenida oeste, perto da margem do rio
+		position = Vector3.new(-138.8, 0.6, 112),
+		facing = Vector3.new(-1, 0, 0),
 		look = {
 			skin = Color3.fromRGB(235, 225, 210),
 			robe = Color3.fromRGB(240, 238, 232),
@@ -123,7 +126,9 @@ local NPCs = {
 		name = "Velho Sōma",
 		title = "Lojista e Ferreiro",
 		zone = "Karakura",
-		position = Vector3.new(40, 0, -20),
+		-- dentro da rua comercial coberta
+		position = Vector3.new(-75, 0, 60),
+		facing = Vector3.new(0, 0, -1), -- de frente para a entrada da rua coberta
 		look = {
 			skin = Color3.fromRGB(220, 190, 160),
 			robe = Color3.fromRGB(70, 90, 70),
@@ -148,7 +153,9 @@ local NPCs = {
 		name = "Akane",
 		title = "Estudante Médium",
 		zone = "Karakura",
-		position = Vector3.new(-40, 0, -20),
+		-- calçada da avenida central, no portão da escola
+		position = Vector3.new(11.2, 0.6, 104),
+		facing = Vector3.new(-1, 0, 0),
 		look = {
 			skin = Color3.fromRGB(245, 215, 190),
 			robe = Color3.fromRGB(40, 50, 90),

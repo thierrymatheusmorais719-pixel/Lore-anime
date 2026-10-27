@@ -420,21 +420,26 @@ function Town.planter(parent: Instance, cf: CFrame, rng: Random, tree: boolean)
 		Enum.Material.Ground,
 		"Soil"
 	)
+	-- arbustos redondos de folhagem
 	for i = -1, 1 do
-		Build.part(
-			model,
-			Vector3.new(2.6, rng:NextNumber(1.4, 2), 2.4),
-			cf * CFrame.new(0, 2, i * 2.4) * CFrame.Angles(0, rng:NextNumber(0, 6), 0),
-			Color3.fromRGB(46, 84, 50):Lerp(Color3.fromRGB(70, 110, 60), rng:NextNumber()),
-			Enum.Material.Grass,
-			"Shrub"
-		)
+		for _ = 1, 2 do
+			local shrub = Build.ball(
+				model,
+				rng:NextNumber(1.8, 2.6),
+				cf * CFrame.new(rng:NextNumber(-0.5, 0.5), 2.1, i * 2.4 + rng:NextNumber(-0.6, 0.6)),
+				Color3.fromRGB(46, 84, 50):Lerp(Color3.fromRGB(80, 120, 62), rng:NextNumber()),
+				Enum.Material.LeafyGrass
+			)
+			shrub.Name = "Shrub"
+			shrub.CanCollide = false
+		end
 	end
 	if tree then
+		local roll = rng:NextNumber()
 		Build.tree(
 			model,
 			(cf * CFrame.new(0, 1.2, 0)).Position,
-			if rng:NextNumber() < 0.5 then "pine" else "cherry",
+			if roll < 0.45 then "broadleaf" elseif roll < 0.75 then "cherry" else "pine",
 			rng
 		)
 	end

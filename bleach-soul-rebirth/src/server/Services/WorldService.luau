@@ -223,7 +223,8 @@ local function buildNpc(parent: Instance, npcId: string, npc)
 	local model = RigBuilder.build(npcId, look, 1)
 	local position = Zones.worldPosition(npc.zone, npc.position)
 	local center = Zones.List[npc.zone].center
-	local faceDir = (center - position) * Vector3.new(1, 0, 1)
+	-- `facing` no NPC escolhe para onde ele olha (ex.: a rua); senão olha o centro da região
+	local faceDir = (npc.facing or (center - position)) * Vector3.new(1, 0, 1)
 	local target = if faceDir.Magnitude > 1 then position + faceDir else position + Vector3.new(0, 0, -1)
 	model:PivotTo(
 		CFrame.lookAt(
