@@ -2,7 +2,7 @@
 -- Esquema do perfil salvo + migração de versões. Mantido puro para testes.
 local DataSchema = {}
 
-DataSchema.Version = 2
+DataSchema.Version = 3
 
 function DataSchema.template(): any
 	return {
@@ -40,6 +40,15 @@ DataSchema.Migrations = {
 	[1] = function(profile)
 		if profile.settings and (profile.settings.vfx == nil or profile.settings.vfx == "High") then
 			profile.settings.vfx = "Ultra"
+		end
+	end,
+	-- v2 → v3: só duas classes (Humano → Shinigami e Hollow). Quincy e Fullbringer viram o caminho
+	-- humano mantendo nível e itens; o poder antigo era da classe removida e sai (o servidor dá o
+	-- poder inicial da nova classe no próximo spawn)
+	[2] = function(profile)
+		if profile.faction == "Quincy" or profile.faction == "Fullbringer" then
+			profile.faction = "Shinigami"
+			profile.power = nil
 		end
 	end,
 } :: { [number]: (any) -> () }

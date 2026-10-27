@@ -491,6 +491,11 @@ HumanShapes.Soft = {
 	Sash = 4,
 	CoatTrim = 4,
 	Bone = 3,
+	-- estágios do jogador (Humano/Hollow)
+	MaskFull = 3,
+	BonePlate = 3,
+	Lapel = 5,
+	ShirtV = 5,
 	Sleeve = 4,
 	SleeveBell = 4,
 	Hakama = 4,

@@ -33,7 +33,14 @@ local CombatService
 function CharacterService.ComputeDerived(profile: any)
 	local power = profile.power and Powers.get(profile.power)
 	local rarity = power and Powers.Rarities[power.rarity].multiplier or 1
-	return Stats.compute(profile, Progression, SkillTrees.get(profile.faction), Items.List, rarity)
+	local derived = Stats.compute(profile, Progression, SkillTrees.get(profile.faction), Items.List, rarity)
+	-- cada estágio da classe (Humano → Shinigami, Hollow → Arrancar) deixa o personagem mais forte
+	local stage = Factions.stage(profile.faction, profile.level)
+	local boost = stage and stage.power or 1
+	derived.maxHealth = math.floor(derived.maxHealth * boost)
+	derived.meleeMultiplier *= boost
+	derived.abilityMultiplier *= boost
+	return derived
 end
 
 function CharacterService.RefreshStats(player: Player)
@@ -44,6 +51,26 @@ function CharacterService.RefreshStats(player: Player)
 	end
 	actor.level = profile.level
 	actor.model:SetAttribute("Level", profile.level)
+	-- evoluiu de estágio (ex.: Humano → Shinigami, Menos → Adjuchas): troca traje, arma e habilidades
+	local stage = Factions.stage(actor.faction, profile.level)
+	local stageId = stage and stage.id
+	if stageId and actor.model:GetAttribute("Stage") ~= stageId then
+		local previous = actor.model:GetAttribute("Stage")
+		actor.model:SetAttribute("Stage", stageId)
+		if previous ~= nil then
+			CharacterService.RefreshAppearance(actor)
+			Registry.UIService.Notify(player, string.upper(stage.title or stage.name) .. "!", "awaken")
+			-- mesmo espetáculo de uma liberação (pilar de energia, kanji no mundo, título na tela)
+			CombatService.Broadcast("TransformStart", {
+				actor = actor.model,
+				form = "Tier1",
+				formKanji = stage.kanji,
+				formName = stage.name,
+				element = Factions.get(actor.faction) and Factions.get(actor.faction).element or "Reiatsu",
+				channel = 1.5,
+			}, actor.root.Position)
+		end
+	end
 	CombatService.SetDerived(actor, CharacterService.ComputeDerived(profile))
 end
 
@@ -82,7 +109,7 @@ function CharacterService.RefreshAppearance(actor)
 	local element = actor.extra.element
 	local faction = Factions.get(actor.faction)
 	if actor.player and faction then
-		spec = Loadout.weapon(Factions, Powers.List, actor.faction, actor.power, actor.form)
+		spec = Loadout.weapon(Factions, Powers.List, actor.faction, actor.power, actor.form, actor.level)
 		local power = actor.power and Powers.get(actor.power)
 		element = if power and actor.form ~= "Base" then power.element else faction.element
 	end
@@ -98,7 +125,9 @@ function CharacterService.RefreshAppearance(actor)
 		local attached = WeaponBuilder.attach(character, model, "RightHand")
 		if attached then
 			WeaponBuilder.setDrawn(attached, actor.drawn or actor.player == nil)
-			if attached:GetAttribute("Sheathable") then
+			local stage = actor.player and Factions.stage(actor.faction, actor.level)
+			-- o humano carrega a espada de madeira sem bainha
+			if attached:GetAttribute("Sheathable") and not (stage and stage.id == "Human") then
 				WeaponBuilder.buildSheath(character, spec.length or 4)
 			end
 		end
@@ -115,7 +144,8 @@ function CharacterService.RefreshAppearance(actor)
 		if actor.form == "Tier2" and power then
 			coat = power.tier2.coat
 		end
-		local uniform = OutfitBuilder.applyUniform(character, actor.faction, faction.outfit)
+		local stage = Factions.stage(actor.faction, actor.level)
+		local uniform = OutfitBuilder.applyUniform(character, actor.faction, faction.outfit, stage and stage.outfit)
 		OutfitBuilder.apply(character, {
 			uniform = uniform,
 			trim = if actor.form ~= "Base" and power then Elements[power.element].primary else faction.outfit.trim,
@@ -178,6 +208,15 @@ local function setupCharacter(player: Player, character: Model)
 	local profile = Registry.DataService.Get(player)
 	if not profile or not profile.faction then
 		return
+	end
+	-- poder que não é da classe (perfil migrado de Quincy/Fullbringer): volta ao inicial dela
+	local current = profile.power and Powers.get(profile.power)
+	if not current or current.faction ~= profile.faction then
+		local starter = Powers.Starter[profile.faction]
+		if starter then
+			profile.power = starter
+			profile.gacha.owned[starter] = true
+		end
 	end
 	local humanoid = character:WaitForChild("Humanoid", 10) :: Humanoid?
 	local root = character:WaitForChild("HumanoidRootPart", 10) :: BasePart?
@@ -242,6 +281,8 @@ local function setupCharacter(player: Player, character: Model)
 	if not actor then
 		return
 	end
+	local stage = Factions.stage(profile.faction, profile.level)
+	character:SetAttribute("Stage", stage and stage.id or nil)
 	CharacterService.RefreshAppearance(actor)
 	character:PivotTo(CharacterService.SpawnCFrame(profile))
 

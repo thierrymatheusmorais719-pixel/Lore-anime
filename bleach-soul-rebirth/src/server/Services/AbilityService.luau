@@ -493,7 +493,7 @@ end
 -- Conjuração
 -- ============================================================
 function AbilityService.ResolveSlots(actor)
-	return Loadout.resolve(Factions, Powers.List, actor.faction, actor.power, actor.form, actor.mask)
+	return Loadout.resolve(Factions, Powers.List, actor.faction, actor.power, actor.form, actor.mask, actor.level)
 end
 
 -- Conjura a habilidade `abilityId` (já validada como pertencente ao ator).

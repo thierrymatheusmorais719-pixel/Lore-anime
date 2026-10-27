@@ -5,21 +5,40 @@ local NpcStyle = require(script.Parent.NpcStyle)
 
 local OutfitBuilder = {}
 
--- Uniforme de cada facção (roupa esculpida do NpcStyle por cima do avatar do jogador)
+-- Traje de cada arquétipo (estágio da classe: Humano, Shinigami, Hollow → Arrancar); legado:
+-- Quincy e Fullbringer (perfis antigos)
 local UNIFORMS = {
-	Shinigami = function(o: any)
+	human = function(_o: any)
+		return "human", nil
+	end,
+	shihakusho = function(o: any)
 		return "shihakusho", { robe = o.robe, obi = o.trim, inner = Color3.fromRGB(240, 240, 242) }
 	end,
-	Quincy = function(o: any)
-		return "quincy", { coat = o.robe, trim = o.trim }
-	end,
-	Hollow = function(o: any)
+	arrancar = function(o: any)
 		return "arrancar", { coat = o.robe, sash = o.trim }
 	end,
-	Fullbringer = function(o: any)
+	hollowSpawn = function()
+		return "hollowSpawn", nil
+	end,
+	menos = function()
+		return "menos", nil
+	end,
+	adjuchas = function()
+		return "adjuchas", nil
+	end,
+	vastoLorde = function()
+		return "vastoLorde", nil
+	end,
+	quincy = function(o: any)
+		return "quincy", { coat = o.robe, trim = o.trim }
+	end,
+	fullbring = function(o: any)
 		return "fullbring", { jacket = o.robe, glow = o.trim }
 	end,
 }
+-- arquétipo padrão de cada facção quando não há estágio
+local DEFAULT_ARCHETYPE =
+	{ Shinigami = "shihakusho", Hollow = "arrancar", Quincy = "quincy", Fullbringer = "fullbring" }
 
 -- Roupa do avatar (camisa/calça 2D e roupas em camadas) sai para o uniforme aparecer; cabelo,
 -- chapéus, rosto e cor de pele ficam.
@@ -50,8 +69,12 @@ function OutfitBuilder.stripClothing(character: Model)
 end
 
 -- Veste o uniforme da facção. Devolve true se havia uniforme para ela.
-function OutfitBuilder.applyUniform(character: Model, factionId: string, outfit: any): boolean
-	local make = UNIFORMS[factionId]
+function OutfitBuilder.applyUniform(character: Model, factionId: string, outfit: any, archetype: string?): boolean
+	local key = archetype or DEFAULT_ARCHETYPE[factionId]
+	if key == "school" then
+		key = "human"
+	end
+	local make = key and UNIFORMS[key]
 	if not make then
 		NpcStyle.undress(character)
 		return false
@@ -59,6 +82,10 @@ function OutfitBuilder.applyUniform(character: Model, factionId: string, outfit:
 	OutfitBuilder.stripClothing(character)
 	local name, colors = make(outfit)
 	NpcStyle.dress(character, name, colors)
+	-- trajes de Hollow (máscara inteira) e Arrancar (mandíbula) usam máscara própria
+	if key == "arrancar" then
+		NpcStyle.dressProp(character, "mask", { skin = Color3.new(1, 1, 1), outfit = key, mask = "jaw" })
+	end
 	character:SetAttribute("UniformVersion", ((character:GetAttribute("UniformVersion") :: number?) or 0) + 1)
 	return true
 end

@@ -251,6 +251,13 @@ def run_showcase(factions):
     if smooth:
         driver = smooth_driver(driver)
     for f in factions:
+        if ":" in f:
+            # Facção:arquétipo — mesmo cartão vestido com o traje de outro estágio (ex.: Hollow:menos)
+            fid, arche = f.split(":")
+            driver += (f'do local m = SHOWCASE.Build("{fid}"); OUTFITBUILDER.applyUniform(m, "{fid}", '
+                       f'{{ robe = Color3.fromRGB(235, 232, 225), trim = Color3.fromRGB(20, 20, 20) }}, "{arche}"); '
+                       + ("SMOOTH(m); " if smooth else "") + f'dump("{arche}", m) end\n')
+            continue
         driver += f'do local m = SHOWCASE.Build("{f}"); ' + ("SMOOTH(m); " if smooth else "") + f'dump("{f}", m) end\n'
     src = "\n".join([
         "game = {}", cframe, mock,

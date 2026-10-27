@@ -555,6 +555,260 @@ function OUTFIT.arrancar(model: Model, style: Style)
 	paint(model, FEET, BLACK)
 end
 
+-- Humano (estágio inicial do jogador): uniforme do colégio de Karakura — blazer cinza, camisa
+-- branca com gola e gravata vermelha, calça cinza-escuro e sapato marrom
+function OUTFIT.human(model: Model, style: Style)
+	local c = style.colors or {}
+	local blazer = c.blazer or Color3.fromRGB(118, 118, 126)
+	local pants = c.pants or Color3.fromRGB(62, 62, 70)
+	paint(model, { "UpperTorso" }, blazer, Enum.Material.Fabric)
+	paint(model, ARMS, blazer, Enum.Material.Fabric)
+	paint(model, FOREARMS, blazer, Enum.Material.Fabric)
+	paint(model, { "LowerTorso" }, pants, Enum.Material.Fabric)
+	paint(model, THIGHS, pants, Enum.Material.Fabric)
+	paint(model, SHINS, pants, Enum.Material.Fabric)
+	paint(model, FEET, Color3.fromRGB(70, 44, 30))
+	local upper = part(model, "UpperTorso")
+	if upper then
+		local w, h, d = upper.Size.X, upper.Size.Y, upper.Size.Z
+		local z = -d / 2 - 0.02
+		-- camisa aparecendo no V do blazer, gravata, lapelas e botões
+		piece(upper, "ShirtV", Vector3.new(0.5, 0.75, 0.03), CFrame.new(0, h / 2 - 0.38, z), WHITE)
+		piece(
+			upper,
+			"Tie",
+			Vector3.new(0.14, 0.62, 0.03),
+			CFrame.new(0, h / 2 - 0.42, z - 0.01),
+			Color3.fromRGB(170, 30, 40)
+		)
+		for _, side in { -1, 1 } do
+			piece(
+				upper,
+				"Lapel",
+				Vector3.new(0.12, 0.85, 0.04),
+				CFrame.new(0.27 * side, h / 2 - 0.42, z - 0.015) * deg(0, 0, -20 * side),
+				blazer:Lerp(BLACK, 0.25)
+			)
+		end
+		for k = 0, 1 do
+			piece(
+				upper,
+				"Button",
+				Vector3.new(0.08, 0.08, 0.03),
+				CFrame.new(0.12, -0.15 - k * 0.3, z - 0.01),
+				Color3.fromRGB(40, 40, 44)
+			)
+		end
+		piece(upper, "Collar", Vector3.new(w * 0.5, 0.2, d + 0.06), CFrame.new(0, h / 2 - 0.05, 0), WHITE)
+	end
+	for _, side in { "Left", "Right" } do
+		local fore = part(model, side .. "LowerArm")
+		if fore then
+			piece(fore, "Cuff", Vector3.new(1.06, 0.1, 1.06), CFrame.new(0, -0.5, 0), WHITE)
+		end
+	end
+end
+
+-- ===================================================================== estágios Hollow
+-- Corpo de Hollow: pele quase preta, buraco no peito (atravessa o tronco)
+local SHADOW = Color3.fromRGB(26, 24, 30)
+local BONE = Color3.fromRGB(238, 232, 218)
+local function hollowBody(model: Model, skin: Color3)
+	for _, names in { { "UpperTorso", "LowerTorso" }, ARMS, FOREARMS, THIGHS, SHINS, FEET, { "LeftHand", "RightHand" } } do
+		paint(model, names, skin, Enum.Material.SmoothPlastic)
+	end
+	local upper = part(model, "UpperTorso")
+	if upper then
+		local hole = piece(
+			upper,
+			"HollowHole",
+			Vector3.new(upper.Size.Z + 0.06, 0.62, 0.62),
+			CFrame.new(0, -0.1, 0) * deg(0, 90, 0),
+			Color3.fromRGB(4, 4, 6)
+		);
+		(hole :: Part).Shape = Enum.PartType.Cylinder
+	end
+end
+
+-- Máscara de Hollow no rosto: placa óssea com olhos vazados em brilho e fileira de dentes
+local function hollowMask(model: Model, eye: Color3, opts: { nose: boolean?, horns: number?, stripes: boolean? }?)
+	local head = part(model, "Head")
+	if not head then
+		return
+	end
+	local o = opts or {}
+	local hs = head.Size
+	local z = -hs.Z / 2
+	piece(head, "MaskFull", Vector3.new(hs.X * 1.08, hs.Y * 1.02, 0.24), CFrame.new(0, 0.02, z - 0.06), BONE)
+	for _, side in { -1, 1 } do
+		piece(
+			head,
+			"MaskEye",
+			Vector3.new(0.26, 0.11, 0.04),
+			CFrame.new(side * 0.24, 0.1, z - 0.2) * deg(0, 0, -12 * side),
+			eye,
+			Enum.Material.Neon
+		)
+		if o.stripes then
+			piece(
+				head,
+				"MaskStripe",
+				Vector3.new(0.06, hs.Y * 0.7, 0.03),
+				CFrame.new(side * 0.36, -0.05, z - 0.2),
+				Color3.fromRGB(200, 20, 40),
+				Enum.Material.Neon
+			)
+		end
+	end
+	for k = -3, 3 do
+		piece(
+			head,
+			"MaskTooth",
+			Vector3.new(0.07, 0.15, 0.04),
+			CFrame.new(k * 0.11, -0.32, z - 0.2),
+			Color3.fromRGB(250, 248, 240)
+		)
+	end
+	if o.nose then
+		-- nariz comprido dos Menos
+		wedge(head, "MaskNose", Vector3.new(0.3, 0.3, 1.3), CFrame.new(0, -0.02, z - 0.75) * deg(-8, 180, 0), BONE)
+	end
+	for i = 1, (o.horns or 0) do
+		local side = if i % 2 == 1 then -1 else 1
+		local len = if i <= 2 then 1.1 else 0.7
+		wedge(
+			head,
+			"MaskHorn",
+			Vector3.new(0.16, 0.5, len),
+			CFrame.new(side * 0.45, hs.Y / 2 + 0.1 + (if i > 2 then -0.3 else 0), 0.1) * deg(-55, 20 * side, -25 * side),
+			BONE
+		)
+	end
+end
+
+local function boneSpikes(model: Model, count: number, length: number)
+	local upper = part(model, "UpperTorso")
+	if not upper then
+		return
+	end
+	local w, h = upper.Size.X, upper.Size.Y
+	for _, side in { -1, 1 } do
+		for k = 1, count do
+			wedge(
+				upper,
+				"BoneSpike",
+				Vector3.new(0.18, 0.2, length * (1 - k * 0.18)),
+				CFrame.new(side * (w / 2 - 0.1 - k * 0.12), h / 2 + 0.05, 0.1 + k * 0.12) * deg(-50, 30 * side, 0),
+				BONE
+			)
+		end
+	end
+end
+
+-- 1. Hollow: sombra com máscara inteira e espinhos de osso nos ombros
+function OUTFIT.hollowSpawn(model: Model, style: Style)
+	hollowBody(model, SHADOW)
+	hollowMask(model, Color3.fromRGB(255, 200, 60))
+	boneSpikes(model, 2, 0.9)
+end
+
+-- 2. Menos: manto preto longo até os pés, gola de espinhos, máscara de nariz comprido
+function OUTFIT.menos(model: Model, style: Style)
+	hollowBody(model, Color3.fromRGB(14, 13, 18))
+	hollowMask(model, Color3.fromRGB(255, 60, 60), { nose = true })
+	local upper = part(model, "UpperTorso")
+	if upper then
+		local w, h, d = upper.Size.X, upper.Size.Y, upper.Size.Z
+		piece(
+			upper,
+			"Cape",
+			Vector3.new(w + 0.3, 3.4, 0.12),
+			CFrame.new(0, -1.1, d / 2 + 0.12),
+			Color3.fromRGB(10, 10, 14),
+			Enum.Material.Fabric
+		)
+		for k = 0, 9 do
+			local a = k / 10 * math.pi * 2
+			wedge(
+				upper,
+				"BoneSpike",
+				Vector3.new(0.12, 0.14, 0.42),
+				CFrame.new(math.cos(a) * w * 0.32, h / 2 + 0.12, math.sin(a) * d * 0.55)
+					* deg(-70, -math.deg(a) + 90, 0),
+				BONE
+			)
+		end
+	end
+end
+
+-- 3. Adjuchas: placas de osso no peito, antebraços e canelas; máscara com dois chifres
+function OUTFIT.adjuchas(model: Model, style: Style)
+	hollowBody(model, Color3.fromRGB(32, 28, 34))
+	hollowMask(model, Color3.fromRGB(255, 120, 40), { horns = 2 })
+	local upper = part(model, "UpperTorso")
+	if upper then
+		local w, h, d = upper.Size.X, upper.Size.Y, upper.Size.Z
+		for _, side in { -1, 1 } do
+			piece(
+				upper,
+				"BonePlate",
+				Vector3.new(w * 0.42, h * 0.45, 0.16),
+				CFrame.new(side * w * 0.22, h * 0.18, -d / 2 - 0.06),
+				BONE
+			)
+		end
+	end
+	for _, names in { FOREARMS, SHINS } do
+		for _, n in names do
+			local limb = part(model, n)
+			if limb then
+				piece(
+					limb,
+					"BonePlate",
+					Vector3.new(limb.Size.X + 0.1, limb.Size.Y * 0.7, 0.18),
+					CFrame.new(0, 0, -limb.Size.Z / 2 - 0.05),
+					BONE
+				)
+			end
+		end
+	end
+	boneSpikes(model, 3, 1.1)
+end
+
+-- 4. Vasto Lorde: armadura de osso branca no corpo todo com juntas escuras, gola de pelo,
+-- chifres longos e listras vermelhas na máscara
+function OUTFIT.vastoLorde(model: Model, style: Style)
+	hollowBody(model, BONE)
+	paint(model, { "LowerTorso", "LeftHand", "RightHand" }, Color3.fromRGB(30, 26, 30), Enum.Material.SmoothPlastic)
+	hollowMask(model, Color3.fromRGB(255, 40, 60), { horns = 4, stripes = true })
+	local upper = part(model, "UpperTorso")
+	if upper then
+		local w, h, d = upper.Size.X, upper.Size.Y, upper.Size.Z
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			local fur = piece(
+				upper,
+				"Fur",
+				Vector3.new(0.5, 0.5, 0.5),
+				CFrame.new(math.cos(a) * w * 0.4, h / 2 + 0.05, math.sin(a) * d * 0.6),
+				Color3.fromRGB(70, 20, 26),
+				Enum.Material.Fabric
+			);
+			(fur :: Part).Shape = Enum.PartType.Ball
+		end
+		for _, side in { -1, 1 } do
+			piece(
+				upper,
+				"RedLine",
+				Vector3.new(0.06, h * 0.8, 0.03),
+				CFrame.new(side * w * 0.3, 0, -d / 2 - 0.02),
+				Color3.fromRGB(200, 20, 40),
+				Enum.Material.Neon
+			)
+		end
+	end
+end
+
 -- Quincy: sobretudo branco longo com friso azul, capa curta, cruz no peito
 function OUTFIT.quincy(model: Model, style: Style)
 	local c = style.colors or {}
@@ -947,6 +1201,17 @@ function NpcStyle.dress(model: Model, outfit: string, colors: { [string]: Color3
 	if not ok then
 		warn("[NpcStyle] uniforme", outfit, err)
 	end
+end
+
+-- Acessório marcado como uniforme (some ao trocar de estágio)
+function NpcStyle.dressProp(model: Model, name: string, style: Style)
+	local builder = (PROPS :: any)[name]
+	if not builder then
+		return
+	end
+	dressing = true
+	pcall(builder, model, style)
+	dressing = false
 end
 
 function NpcStyle.undress(model: Model)

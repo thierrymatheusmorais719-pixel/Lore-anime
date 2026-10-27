@@ -4,15 +4,138 @@
 -- `reveal` = revelação em preto e branco depois dela. Invulnerável nos dois trechos.
 local Factions = {}
 
-Factions.Order = { "Shinigami", "Hollow", "Quincy", "Fullbringer" }
+-- Só duas classes para escolher: Humano (evolui para Shinigami) e Hollow (evolui até Arrancar).
+-- Quincy e Fullbringer continuam definidos (poderes antigos, perfis migrados), mas não aparecem.
+Factions.Order = { "Shinigami", "Hollow" }
+
+-- Estágios por nível dentro de cada classe. Cada estágio pode trocar o nome/kanji mostrado, as
+-- habilidades de base (as travadas ficam vazias), a arma e o traje (`outfit` = arquétipo do
+-- NpcStyle). Bônus de atributos (`power`) multiplicam dano e vida derivados.
+Factions.Stages = {
+	Shinigami = {
+		{
+			id = "Human",
+			level = 1,
+			name = "Humano",
+			kanji = "人",
+			title = "Humano com Reiatsu",
+			base = { C = "ReiatsuBurst" },
+			weapon = {
+				style = "Katana",
+				length = 3.6,
+				blade = Color3.fromRGB(176, 132, 86),
+				guard = Color3.fromRGB(70, 46, 32),
+			},
+			outfit = "school",
+			power = 1,
+		},
+		{
+			id = "Shinigami",
+			level = 5,
+			name = "Shinigami",
+			kanji = "死神",
+			title = "Despertou como Shinigami",
+			outfit = "shihakusho",
+			power = 1.15,
+		},
+	},
+	Hollow = {
+		{
+			id = "Hollow",
+			level = 1,
+			name = "Hollow",
+			kanji = "虚",
+			title = "Alma faminta",
+			base = { C = "HierroRoar" },
+			weapon = {
+				style = "Claws",
+				length = 1.8,
+				blade = Color3.fromRGB(236, 230, 214),
+				guard = Color3.fromRGB(30, 10, 10),
+			},
+			outfit = "hollowSpawn",
+			power = 1,
+		},
+		{
+			id = "Menos",
+			level = 5,
+			name = "Menos Grande",
+			kanji = "大虚",
+			title = "Evoluiu para Menos",
+			base = { Z = "Cero", C = "HierroRoar" },
+			weapon = {
+				style = "Claws",
+				length = 2.1,
+				blade = Color3.fromRGB(236, 230, 214),
+				guard = Color3.fromRGB(30, 10, 10),
+			},
+			outfit = "menos",
+			power = 1.1,
+		},
+		{
+			id = "Adjuchas",
+			level = 10,
+			name = "Adjuchas",
+			kanji = "中級",
+			title = "Evoluiu para Adjuchas",
+			weapon = {
+				style = "Claws",
+				length = 2.4,
+				blade = Color3.fromRGB(240, 236, 225),
+				guard = Color3.fromRGB(30, 10, 10),
+			},
+			outfit = "adjuchas",
+			power = 1.2,
+		},
+		{
+			id = "VastoLorde",
+			level = 15,
+			name = "Vasto Lorde",
+			kanji = "最上級",
+			title = "Evoluiu para Vasto Lorde",
+			weapon = {
+				style = "Claws",
+				length = 2.8,
+				blade = Color3.fromRGB(246, 244, 238),
+				guard = Color3.fromRGB(120, 10, 20),
+			},
+			outfit = "vastoLorde",
+			power = 1.3,
+		},
+		{
+			id = "Arrancar",
+			level = 20,
+			name = "Arrancar",
+			kanji = "破面",
+			title = "Arrancou a máscara: Arrancar",
+			outfit = "arrancar",
+			power = 1.35,
+		},
+	},
+}
+
+-- Estágio atual da classe `id` no nível `level` (e o índice dele)
+function Factions.stage(id: string?, level: number?): (any, number)
+	local stages = id and Factions.Stages[id]
+	if not stages then
+		return nil, 0
+	end
+	local current, index = stages[1], 1
+	for i, stage in stages do
+		if (level or 1) >= stage.level then
+			current, index = stage, i
+		end
+	end
+	return current, index
+end
 
 Factions.Shinigami = {
 	id = "Shinigami",
-	displayName = "Shinigami",
+	displayName = "Humano",
 	kanji = "死神",
 	element = "Reiatsu",
 	color = Color3.fromRGB(120, 190, 255),
-	description = "Guardiões das almas. Zanpakutō com Shikai e Bankai, Kidō e Shunpo.",
+	description = "Começa como humano com Reiatsu e desperta como Shinigami no nível 5: Zanpakutō, Shikai, Bankai, Kidō e Shunpo.",
 	base = { Z = "Raika", X = "SenkaStrike", C = "ReiatsuBurst" },
 	weapon = {
 		style = "Katana",
@@ -40,11 +163,11 @@ Factions.Shinigami = {
 
 Factions.Hollow = {
 	id = "Hollow",
-	displayName = "Hollow / Arrancar",
+	displayName = "Hollow",
 	kanji = "虚",
 	element = "Hollow",
 	color = Color3.fromRGB(225, 40, 60),
-	description = "Almas famintas que evoluem até Arrancar. Cero, Sonído e Resurrección.",
+	description = "Alma faminta que evolui com o tempo: Hollow → Menos → Adjuchas → Vasto Lorde → Arrancar.",
 	base = { Z = "Cero", X = "Sonido", C = "HierroRoar" },
 	weapon = {
 		style = "Claws",
@@ -59,11 +182,12 @@ Factions.Hollow = {
 		hollowHole = true,
 	},
 	forms = {
-		Tier1 = { name = "Resurrección", kanji = "帰刃", requiredLevel = 5, drainPerSecond = 1.4, channel = 0.9 },
+		-- só o Arrancar (nível 20) libera a Resurrección; a Segunda Etapa vem depois
+		Tier1 = { name = "Resurrección", kanji = "帰刃", requiredLevel = 20, drainPerSecond = 1.4, channel = 0.9 },
 		Tier2 = {
 			name = "Segunda Etapa",
 			kanji = "第二",
-			requiredLevel = 15,
+			requiredLevel = 30,
 			drainPerSecond = 3.2,
 			channel = 9,
 			reveal = 4.6,

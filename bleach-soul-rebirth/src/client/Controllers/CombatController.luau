@@ -94,7 +94,8 @@ function CombatController.Slots(): { [string]: string }
 		c:GetAttribute("Faction"),
 		c:GetAttribute("Power"),
 		c:GetAttribute("Form"),
-		c:GetAttribute("Mask")
+		c:GetAttribute("Mask"),
+		c:GetAttribute("Level")
 	) :: any
 end
 

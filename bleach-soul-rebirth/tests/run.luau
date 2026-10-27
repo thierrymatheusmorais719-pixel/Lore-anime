@@ -445,19 +445,60 @@ end)
 -- ======================= Loadout =======================
 local Loadout = MODULE("Logic/Loadout")
 test("loadout por forma e máscara", function()
-	local base = Loadout.resolve(Factions, Powers.List, "Shinigami", "Tsukikage", "Base", false)
+	local base = Loadout.resolve(Factions, Powers.List, "Shinigami", "Tsukikage", "Base", false, 10)
 	eq(base.Z, "Raika")
 	eq(base.V, nil)
-	local t1 = Loadout.resolve(Factions, Powers.List, "Shinigami", "Tsukikage", "Tier1", false)
+	local t1 = Loadout.resolve(Factions, Powers.List, "Shinigami", "Tsukikage", "Tier1", false, 10)
 	eq(t1.Z, "Gekko")
 	eq(t1.C, "ReiatsuBurst")
-	local t2 = Loadout.resolve(Factions, Powers.List, "Shinigami", "Tsukikage", "Tier2", true)
+	local t2 = Loadout.resolve(Factions, Powers.List, "Shinigami", "Tsukikage", "Tier2", true, 20)
 	eq(t2.Z, "MaskCero")
 	eq(t2.X, "TsukiNoWa")
 	eq(t2.V, "MoonlessHunt")
-	local wrong = Loadout.resolve(Factions, Powers.List, "Hollow", "Tsukikage", "Tier2", false)
+	local wrong = Loadout.resolve(Factions, Powers.List, "Hollow", "Tsukikage", "Tier2", false, 20)
 	eq(wrong.Z, "Cero", "poder de outra facção é ignorado")
-	eq(Loadout.weapon(Factions, Powers.List, "Shinigami", "Enjin", "Tier2").style, "Nodachi")
+	eq(Loadout.weapon(Factions, Powers.List, "Shinigami", "Enjin", "Tier2", 20).style, "Nodachi")
+end)
+
+test("duas classes que evoluem com o nível", function()
+	eq(#Factions.Order, 2)
+	-- Humano: só a explosão de Reiatsu e espada de madeira; desperta como Shinigami no nível 5
+	eq(Factions.stage("Shinigami", 1).id, "Human")
+	eq(Factions.stage("Shinigami", 4).id, "Human")
+	eq(Factions.stage("Shinigami", 5).id, "Shinigami")
+	local human = Loadout.resolve(Factions, Powers.List, "Shinigami", nil, "Base", false, 1)
+	eq(human.C, "ReiatsuBurst")
+	eq(human.Z, nil, "habilidade travada até despertar")
+	eq(Loadout.weapon(Factions, Powers.List, "Shinigami", nil, "Base", 1).length, 3.6)
+	eq(Loadout.weapon(Factions, Powers.List, "Shinigami", nil, "Base", 5).length, 4.2)
+	-- Hollow: Hollow → Menos → Adjuchas → Vasto Lorde → Arrancar
+	local ids = {}
+	for _, level in { 1, 5, 10, 15, 20, 50 } do
+		table.insert(ids, Factions.stage("Hollow", level).id)
+	end
+	eq(table.concat(ids, ","), "Hollow,Menos,Adjuchas,VastoLorde,Arrancar,Arrancar")
+	eq(Loadout.resolve(Factions, Powers.List, "Hollow", nil, "Base", false, 1).Z, nil)
+	eq(Loadout.resolve(Factions, Powers.List, "Hollow", nil, "Base", false, 5).Z, "Cero")
+	eq(Loadout.resolve(Factions, Powers.List, "Hollow", nil, "Base", false, 10).X, "Sonido")
+	-- a Resurrección só vem com o Arrancar
+	eq(Factions.Hollow.forms.Tier1.requiredLevel, 20)
+	-- habilidades de cada estágio existem e cada estágio fica mais forte que o anterior
+	for fid, stages in Factions.Stages do
+		local last = 0
+		for _, stage in stages do
+			for slot, aid in (stage.base or {}) do
+				truthy(Abilities[aid], fid .. "." .. stage.id .. "." .. slot)
+			end
+			truthy(stage.power >= last, stage.id .. " mais fraco que o anterior")
+			last = stage.power
+		end
+	end
+	-- perfis antigos de Quincy/Fullbringer migram para o caminho humano
+	local old = { version = 2, faction = "Quincy", power = "Kranich", level = 12 }
+	local migrated = DataSchema.normalize(old)
+	eq(migrated.faction, "Shinigami")
+	eq(migrated.power, nil)
+	eq(migrated.level, 12)
 end)
 
 -- ======================= Animações compiladas =======================

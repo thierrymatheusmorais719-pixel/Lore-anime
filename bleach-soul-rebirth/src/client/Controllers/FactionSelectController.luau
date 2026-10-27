@@ -1,6 +1,6 @@
--- Tela de seleção de facção no estilo "escolha seu time": quatro cartões grandes lado a lado
--- (Shinigami, Quincy, Hollow, Fullbringer), cada um com personagem 3D posado, cor da facção,
--- nome gigante, kanji de fundo, etiquetas de estilo de luta e animações de foco/clique.
+-- Tela de seleção de classe no estilo "escolha seu time": dois cartões grandes lado a lado
+-- (Humano, que desperta como Shinigami, e Hollow, que evolui até Arrancar), cada um com
+-- personagem 3D posado, cor, nome gigante, kanji de fundo, etiquetas e a trilha de evolução.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -8,7 +8,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 local Factions = require(Shared.Config.Factions)
-local Powers = require(Shared.Config.Powers)
 
 local Kit = require(script.Parent.Parent.UI.Kit)
 local FactionShowcase = require(script.Parent.Parent.UI.FactionShowcase)
@@ -24,31 +23,23 @@ local orbit: RBXScriptConnection? = nil
 local viewportUpdaters: { (number) -> () } = {}
 local busy = false
 
--- Ordem e textos dos cartões (equivalente a Piratas/Marinha, com quatro caminhos)
+-- Ordem e textos dos cartões: duas classes que evoluem com o nível
 local CARDS = {
 	{
 		id = "Shinigami",
-		tagline = "GUARDIÕES DAS ALMAS",
+		title = "HUMANO",
+		kanji = "人",
+		tagline = "DESPERTA COMO SHINIGAMI",
 		tags = { "Espada", "Kidō", "Bankai" },
-		difficulty = 2,
-	},
-	{
-		id = "Quincy",
-		tagline = "ARQUEIROS DO REISHI",
-		tags = { "Arco", "Distância", "Vollständig" },
-		difficulty = 3,
+		path = "Humano → Shinigami (nv 5) → Bankai (nv 15)",
 	},
 	{
 		id = "Hollow",
-		tagline = "PREDADORES DO VAZIO",
+		title = "HOLLOW",
+		kanji = "虚",
+		tagline = "EVOLUI ATÉ ARRANCAR",
 		tags = { "Garras", "Cero", "Resurrección" },
-		difficulty = 1,
-	},
-	{
-		id = "Fullbringer",
-		tagline = "A ALMA DOS OBJETOS",
-		tags = { "Punhos", "Correntes", "Fullbring" },
-		difficulty = 2,
+		path = "Hollow → Menos → Adjuchas → Vasto Lorde → Arrancar",
 	},
 }
 
@@ -72,10 +63,6 @@ local function stopOrbit()
 		orbit = nil
 	end
 	workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
-end
-
-local function difficultyText(level: number): string
-	return string.rep("★", level) .. string.rep("☆", 3 - level)
 end
 
 local function choose(factionId: string, button: TextButton)
@@ -105,7 +92,7 @@ local function buildCard(parent: Instance, info, order: number)
 		AutoButtonColor = false,
 		Text = "",
 		BackgroundColor3 = dark,
-		Size = UDim2.fromOffset(250, 470),
+		Size = UDim2.fromOffset(300, 470),
 		LayoutOrder = order,
 		ClipsDescendants = true,
 		Parent = parent,
@@ -130,7 +117,7 @@ local function buildCard(parent: Instance, info, order: number)
 	local scale = Kit.new("UIScale", { Parent = card })
 
 	-- Kanji gigante de fundo
-	Kit.label(faction.kanji, 150, {
+	Kit.label(info.kanji or faction.kanji, 150, {
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 10),
 		Size = UDim2.new(1.4, 0, 0, 170),
@@ -197,7 +184,7 @@ local function buildCard(parent: Instance, info, order: number)
 		TextColor3 = color,
 		Parent = bottom,
 	})
-	Kit.label(string.upper(faction.id), 38, {
+	Kit.label(info.title or string.upper(faction.id), 38, {
 		Position = UDim2.fromOffset(0, 44),
 		Size = UDim2.new(1, 0, 0, 42),
 		TextXAlignment = Enum.TextXAlignment.Center,
@@ -232,10 +219,8 @@ local function buildCard(parent: Instance, info, order: number)
 		}, { Kit.corner(10) })
 	end
 	Kit.label(
-		"Dificuldade  "
-			.. difficultyText(info.difficulty)
-			.. "  ·  Início: "
-			.. Powers.List[Powers.Starter[info.id]].name,
+		-- trilha de evolução da classe (o que o jogador vai virar com o tempo)
+		info.path,
 		11,
 		{
 			Position = UDim2.fromOffset(8, 116),
@@ -388,7 +373,7 @@ function FactionSelectController.Init()
 		buildCard(row, info, i)
 	end
 	Kit.label(
-		"Toque ou clique em um cartão para escolher. A facção define suas habilidades, transformações e mentor.",
+		"Toque ou clique em um cartão para escolher. Sua classe evolui com o nível: novas formas, habilidades e visual.",
 		14,
 		{
 			AnchorPoint = Vector2.new(0, 1),

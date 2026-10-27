@@ -32,12 +32,18 @@ local LOOKS = {
 			pants = Color3.fromRGB(18, 18, 22),
 			hair = Color3.fromRGB(255, 120, 40),
 		},
+		-- o cartão mostra o começo do caminho: humano de uniforme do colégio com espada de madeira
+		archetype = "human",
 		outfit = {
 			trim = Color3.fromRGB(235, 235, 240),
 			robe = Color3.fromRGB(18, 18, 22),
-			coat = Color3.fromRGB(240, 240, 245),
 		},
-		weapon = { style = "Katana", length = 5, blade = Color3.fromRGB(215, 225, 240), glow = true },
+		weapon = {
+			style = "Katana",
+			length = 3.6,
+			blade = Color3.fromRGB(176, 132, 86),
+			guard = Color3.fromRGB(70, 46, 32),
+		},
 		element = "Reiatsu",
 		-- katana descansando no ombro direito (lâmina para trás, por cima do ombro, longe do
 		-- peito), mão esquerda solta, peso numa perna, cabeça virada para a câmera
@@ -94,7 +100,6 @@ local LOOKS = {
 			hair = { kind = "wild", color = Color3.fromRGB(80, 200, 190) },
 			eyes = Color3.fromRGB(70, 190, 200),
 			brows = "sly",
-			mask = "jaw",
 		},
 		look = {
 			skin = Color3.fromRGB(30, 28, 34),
@@ -103,9 +108,10 @@ local LOOKS = {
 			maskColor = Color3.fromRGB(240, 236, 225),
 			eye = Color3.fromRGB(255, 60, 40),
 		},
-		-- Arrancar: jaqueta branca com o buraco Hollow (o uniforme que o jogador veste)
-		outfit = { trim = Color3.fromRGB(20, 20, 20), robe = Color3.fromRGB(235, 232, 225), hollowHole = true },
-		weapon = { style = "Claws", length = 3.2, blade = Color3.fromRGB(235, 230, 220), glow = false },
+		-- primeiro estágio: sombra com máscara inteira e espinhos de osso (evolui até Arrancar)
+		archetype = "hollowSpawn",
+		outfit = { trim = Color3.fromRGB(20, 20, 20), robe = Color3.fromRGB(235, 232, 225) },
+		weapon = { style = "Claws", length = 1.8, blade = Color3.fromRGB(236, 230, 214), glow = false },
 		element = "Hollow",
 		dual = true,
 		pose = {
@@ -271,7 +277,7 @@ function FactionShowcase.Build(factionId: string): Model?
 	if def.outfit then
 		-- mesmo uniforme esculpido que o jogador veste no jogo
 		local outfit = table.clone(def.outfit)
-		outfit.uniform = OutfitBuilder.applyUniform(model, factionId, def.outfit)
+		outfit.uniform = OutfitBuilder.applyUniform(model, factionId, def.outfit, def.archetype)
 		OutfitBuilder.apply(model, outfit)
 	end
 	local weapon = WeaponBuilder.buildModel(def.weapon, def.element)

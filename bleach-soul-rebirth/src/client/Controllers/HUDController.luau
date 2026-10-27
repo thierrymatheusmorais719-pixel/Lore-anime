@@ -837,7 +837,9 @@ local function onProfile(profile)
 		string.format("%s Kan  ·  %s ✦", Kit.number(profile.currency.Kan), Kit.number(profile.currency.Shards))
 	local faction = Factions.get(profile.faction)
 	if faction then
-		refs.kanji.Text = faction.kanji:sub(1, 3)
+		-- kanji do estágio atual (人 humano, 死 Shinigami, 虚 Hollow, 大 Menos...)
+		local stage = Factions.stage(profile.faction, profile.level)
+		refs.kanji.Text = ((stage and stage.kanji) or faction.kanji):sub(1, 3)
 		refs.kanji.TextColor3 = faction.color
 		if refs.badgeStroke then
 			refs.badgeStroke.Color = faction.color
@@ -1028,7 +1030,7 @@ function HUDController.Start()
 	end
 
 	local function onCharacter(character: Model)
-		for _, attr in { "Form", "Mask", "Power", "Faction" } do
+		for _, attr in { "Form", "Mask", "Power", "Faction", "Stage" } do
 			character:GetAttributeChangedSignal(attr):Connect(HUDController.RefreshSlots)
 		end
 		HUDController.RefreshSlots()
@@ -1066,6 +1068,11 @@ function HUDController.Start()
 			end
 			if character:GetAttribute("Mask") then
 				formText = formText .. "  仮面"
+			end
+			if formText == "" and faction then
+				-- sem forma liberada: mostra o estágio da classe (Humano, Menos Grande, Arrancar...)
+				local stage = Factions.stage(character:GetAttribute("Faction"), character:GetAttribute("Level"))
+				formText = if stage then string.upper(stage.name) else ""
 			end
 			refs.form.Text = formText
 		end

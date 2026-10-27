@@ -12,14 +12,17 @@ function Loadout.resolve(
 	faction: string?,
 	powerId: string?,
 	form: string?,
-	mask: boolean?
+	mask: boolean?,
+	level: number?
 ): Slots
 	local slots: { [string]: string } = {}
 	local f = faction and factions[faction]
 	if not f or type(f) ~= "table" or not f.base then
 		return slots :: any
 	end
-	for slot, id in f.base do
+	-- estágio da classe (Humano/Shinigami, Hollow → Arrancar): habilidades ainda travadas ficam vazias
+	local stage = if factions.stage then factions.stage(faction, level) else nil
+	for slot, id in (if stage and stage.base then stage.base else f.base) do
 		slots[slot] = id
 	end
 	local power = powerId and powers[powerId]
@@ -44,11 +47,19 @@ function Loadout.resolve(
 end
 
 -- Arma visível conforme a forma atual.
-function Loadout.weapon(factions: any, powers: any, faction: string?, powerId: string?, form: string?): any
+function Loadout.weapon(
+	factions: any,
+	powers: any,
+	faction: string?,
+	powerId: string?,
+	form: string?,
+	level: number?
+): any
 	local f = faction and factions[faction]
 	if not f or type(f) ~= "table" or not f.weapon then
 		return nil
 	end
+	local stage = if factions.stage then factions.stage(faction, level) else nil
 	local power = powerId and powers[powerId]
 	if power and power.faction == faction then
 		if form == "Tier2" then
@@ -57,7 +68,7 @@ function Loadout.weapon(factions: any, powers: any, faction: string?, powerId: s
 			return power.tier1.weapon
 		end
 	end
-	return f.weapon
+	return if stage and stage.weapon then stage.weapon else f.weapon
 end
 
 return Loadout
