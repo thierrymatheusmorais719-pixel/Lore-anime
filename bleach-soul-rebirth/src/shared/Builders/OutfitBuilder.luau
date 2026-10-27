@@ -14,6 +14,9 @@ local UNIFORMS = {
 	ichigo = function(_o: any)
 		return "ichigo", nil
 	end,
+	ichigoShirt = function(_o: any)
+		return "ichigoShirt", nil
+	end,
 	shihakusho = function(o: any)
 		return "shihakusho", { robe = o.robe, obi = o.trim, inner = Color3.fromRGB(240, 240, 242) }
 	end,

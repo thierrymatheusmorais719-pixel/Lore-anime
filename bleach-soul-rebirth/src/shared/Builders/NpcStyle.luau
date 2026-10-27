@@ -20,6 +20,7 @@ export type Style = {
 	props: { string }?,
 	glasses: boolean?,
 	beard: Color3?,
+	nose: boolean?,
 	mask: string?, -- "jaw", "horn"
 }
 
@@ -140,6 +141,16 @@ local function face(head: BasePart, style: Style)
 		)
 	end
 	piece(head, "Mouth", Vector3.new(0.2, 0.03, 0.02), CFrame.new(0, -0.27, z - 0.008), Color3.fromRGB(120, 60, 60))
+	if style.nose then
+		-- risco do nariz (traço de anime) entre os olhos e a boca
+		piece(
+			head,
+			"Nose",
+			Vector3.new(0.03, 0.14, 0.02),
+			CFrame.new(0.02, -0.1, z - 0.008),
+			Color3.fromRGB(150, 95, 70)
+		)
+	end
 	if style.glasses then
 		for _, side in { -1, 1 } do
 			piece(
@@ -247,6 +258,57 @@ function HAIR.ichigo(head: BasePart, color: Color3)
 	}
 	for _, sp in extra do
 		lock(head, sp[1] * Vector3.new(s.X / 1.16, s.Y / 1.18, s.Z / 1.16), sp[2], 0.36, 0.26, color)
+	end
+end
+
+-- Ichigo (cartão da escolha): volume grande, espetos em volta da cabeça toda, coroa alta e franja
+-- pontuda caindo até as sobrancelhas; tons levemente diferentes por mecha (leitura de volume)
+function HAIR.ichigoFull(head: BasePart, color: Color3)
+	local s = head.Size
+	local hx, hy, hz = s.X / 2, s.Y / 2, s.Z / 2
+	piece(head, "HairCap", Vector3.new(s.X + 0.18, 0.42, s.Z + 0.18), CFrame.new(0, hy + 0.12, 0.02), color)
+	piece(
+		head,
+		"HairBack",
+		Vector3.new(s.X + 0.16, s.Y * 0.8, 0.22),
+		CFrame.new(0, hy - s.Y * 0.4 + 0.12, hz + 0.08),
+		color
+	)
+	for _, side in { -1, 1 } do
+		piece(
+			head,
+			"HairSide",
+			Vector3.new(0.16, s.Y * 0.5, s.Z * 0.9),
+			CFrame.new(side * (hx + 0.06), s.Y * 0.22, 0.06),
+			color
+		)
+	end
+	local function tone(k: number): Color3
+		return color:Lerp(Color3.new(1, 1, 1), (k % 3) * 0.04):Lerp(Color3.new(0, 0, 0), (k % 2) * 0.06)
+	end
+	-- anel de espetos em volta (para os lados e para trás, um pouco para cima)
+	for k = 0, 13 do
+		local a = k / 14 * math.pi * 2
+		local dir = Vector3.new(math.sin(a), 0, math.cos(a))
+		if dir.Z < -0.55 then
+			continue -- a frente fica para a franja
+		end
+		local root = Vector3.new(dir.X * hx * 0.8, hy * 0.75, dir.Z * hz * 0.8)
+		local tip = root + dir * 0.75 + Vector3.new(0, 0.32 + (k % 3) * 0.1, 0)
+		lock(head, root, tip, 0.42, 0.3, tone(k))
+	end
+	-- coroa: espetos altos
+	for k = 0, 6 do
+		local a = k / 7 * math.pi * 2
+		local root = Vector3.new(math.sin(a) * 0.25, hy + 0.25, math.cos(a) * 0.25 + 0.05)
+		local tip = root + Vector3.new(math.sin(a) * 0.45, 0.75 + (k % 2) * 0.2, math.cos(a) * 0.45)
+		lock(head, root, tip, 0.4, 0.3, tone(k + 1))
+	end
+	-- franja: pontas caindo na testa até a linha das sobrancelhas
+	for k = -2, 2 do
+		local root = Vector3.new(k * 0.22, hy + 0.12, -hz + 0.05)
+		local tip = Vector3.new(k * 0.26 + (if k == 0 then 0.05 else 0), 0.3 + math.abs(k) * 0.04, -hz - 0.12)
+		lock(head, root, tip, 0.3, 0.14, tone(k + 3))
 	end
 end
 
@@ -702,6 +764,104 @@ function OUTFIT.ichigo(model: Model, style: Style)
 		local foot = part(model, n)
 		if foot then
 			piece(foot, "Sole", Vector3.new(1.05, 0.1, 1.05), CFrame.new(0, -0.15, 0), Color3.fromRGB(60, 60, 66))
+		end
+	end
+end
+
+-- Ichigo do modelo de referência: camisa branca de manga curta aberta (gola de lapela, bolso
+-- no peito, manga dobrada com etiqueta vermelha, para fora da calça) sobre camiseta preta, calça
+-- cinza larga e sapato preto; antebraços à mostra
+function OUTFIT.ichigoShirt(model: Model, style: Style)
+	local shirt = Color3.fromRGB(236, 238, 246)
+	local fold = Color3.fromRGB(206, 210, 228)
+	local pants = Color3.fromRGB(142, 142, 150)
+	-- antebraço com a cor da cabeça (pele já aplicada pelo rosto)
+	local head = part(model, "Head")
+	local skin = if head then head.Color else style.skin
+	paint(model, { "UpperTorso" }, shirt, Enum.Material.Fabric)
+	paint(model, ARMS, shirt, Enum.Material.Fabric)
+	paint(model, FOREARMS, skin)
+	paint(model, { "LowerTorso" }, pants, Enum.Material.Fabric)
+	paint(model, THIGHS, pants, Enum.Material.Fabric)
+	paint(model, SHINS, pants, Enum.Material.Fabric)
+	paint(model, FEET, Color3.fromRGB(28, 28, 32))
+	local upper = part(model, "UpperTorso")
+	if upper then
+		local h, d = upper.Size.Y, upper.Size.Z
+		local z = -d / 2 - 0.02
+		-- camiseta preta no decote em V
+		wedge(
+			upper,
+			"TeeV",
+			Vector3.new(0.5, 0.42, 0.03),
+			CFrame.new(0, h / 2 - 0.21, z) * deg(0, 0, 180),
+			Color3.fromRGB(20, 20, 24)
+		)
+		for _, side in { -1, 1 } do
+			-- lapelas da gola e a borda da camisa aberta
+			piece(
+				upper,
+				"Lapel",
+				Vector3.new(0.3, 0.42, 0.05),
+				CFrame.new(side * 0.3, h / 2 - 0.2, z - 0.01) * deg(0, 0, -28 * side),
+				shirt
+			)
+			piece(upper, "PlacketLine", Vector3.new(0.03, h * 0.62, 0.02), CFrame.new(0.02, -h * 0.17, z - 0.01), fold)
+		end
+		-- bolso no peito (lado esquerdo do personagem = -X do R15)
+		piece(upper, "Pocket", Vector3.new(0.42, 0.38, 0.03), CFrame.new(-0.5, 0.05, z - 0.01), shirt:Lerp(fold, 0.35))
+		piece(upper, "PocketFlap", Vector3.new(0.44, 0.06, 0.04), CFrame.new(-0.5, 0.25, z - 0.02), fold)
+		-- vincos de tecido
+		for _, k in { -1, 1 } do
+			piece(
+				upper,
+				"Crease",
+				Vector3.new(0.4, 0.03, 0.02),
+				CFrame.new(k * 0.45, -0.45, z - 0.005) * deg(0, 0, 20 * k),
+				fold
+			)
+		end
+	end
+	-- barra da camisa para fora, cobrindo o quadril
+	local lower = part(model, "LowerTorso")
+	if lower then
+		piece(
+			lower,
+			"ShirtHem",
+			Vector3.new(lower.Size.X + 0.06, 0.5, lower.Size.Z + 0.06),
+			CFrame.new(0, 0.05, 0),
+			shirt,
+			Enum.Material.Fabric
+		)
+	end
+	-- manga dobrada com a etiqueta vermelha no braço esquerdo
+	for _, side in { "Left", "Right" } do
+		local arm = part(model, side .. "UpperArm")
+		if arm then
+			piece(
+				arm,
+				"SleeveFold",
+				Vector3.new(arm.Size.X + 0.08, 0.26, arm.Size.Z + 0.08),
+				CFrame.new(0, -arm.Size.Y / 2 + 0.12, 0),
+				fold:Lerp(shirt, 0.5),
+				Enum.Material.Fabric
+			)
+			if side == "Left" then
+				piece(
+					arm,
+					"SleeveTag",
+					Vector3.new(0.05, 0.2, 0.14),
+					CFrame.new(arm.Size.X / 2 + 0.05, -arm.Size.Y / 2 + 0.12, 0),
+					Color3.fromRGB(210, 30, 40)
+				)
+			end
+		end
+	end
+	-- sapato com sola mais clara
+	for _, n in FEET do
+		local foot = part(model, n)
+		if foot then
+			piece(foot, "Sole", Vector3.new(1.06, 0.1, 1.06), CFrame.new(0, -0.15, 0), Color3.fromRGB(70, 70, 76))
 		end
 	end
 end

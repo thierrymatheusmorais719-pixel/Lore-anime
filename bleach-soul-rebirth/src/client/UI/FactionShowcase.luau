@@ -19,48 +19,36 @@ end
 
 local LOOKS = {
 	Shinigami = {
-		-- boneco do Roblox com a skin do Ichigo humano: cabelo laranja espetado, cara fechada
+		-- boneco do Roblox igual ao modelo de referência do Ichigo humano: cabelo laranja volumoso,
+		-- cara fechada, camisa branca aberta de manga curta sobre camiseta preta, calça cinza
 		style = {
-			skin = Color3.fromRGB(236, 205, 175),
-			hair = { kind = "ichigo", color = Color3.fromRGB(255, 122, 36) },
-			eyes = Color3.fromRGB(110, 70, 40),
+			skin = Color3.fromRGB(232, 166, 118),
+			hair = { kind = "ichigoFull", color = Color3.fromRGB(250, 128, 32) },
+			eyes = Color3.fromRGB(96, 62, 40),
 			brows = "stern",
+			nose = true,
 		},
 		look = {
-			skin = Color3.fromRGB(236, 205, 175),
-			outfit = Color3.fromRGB(18, 18, 22),
-			pants = Color3.fromRGB(18, 18, 22),
-			hair = Color3.fromRGB(255, 120, 40),
+			skin = Color3.fromRGB(232, 166, 118),
+			outfit = Color3.fromRGB(236, 238, 246),
+			pants = Color3.fromRGB(120, 120, 128),
+			hair = Color3.fromRGB(250, 128, 32),
 		},
-		-- o cartão mostra o começo do caminho: Ichigo de uniforme do colégio, espada de madeira
-		archetype = "ichigo",
+		archetype = "ichigoShirt",
 		outfit = {
 			trim = Color3.fromRGB(235, 235, 240),
 			robe = Color3.fromRGB(18, 18, 22),
 		},
-		weapon = {
-			style = "Katana",
-			length = 3.6,
-			blade = Color3.fromRGB(176, 132, 86),
-			guard = Color3.fromRGB(70, 46, 32),
-		},
+		weapon = nil,
 		element = "Reiatsu",
-		-- katana descansando no ombro direito (lâmina para trás, por cima do ombro, longe do
-		-- peito), mão esquerda solta, peso numa perna, cabeça virada para a câmera
+		-- em pé, braços soltos ao lado do corpo, olhando para a câmera (como na foto)
 		pose = {
-			RightShoulder = J(70, 0, 25),
-			RightElbow = J(115),
-			RightWrist = J(0),
-			Weapon = J(-12, 0, 0),
-			LeftShoulder = J(10, 0, -12),
-			LeftElbow = J(20),
-			Waist = J(0, 20),
-			Neck = J(-5, -15),
-			RightHip = J(10, 0, 8),
-			RightKnee = J(-8),
-			LeftHip = J(-8, 0, -12),
-			LeftKnee = J(-15),
-			Root = CFrame.new(0, -0.1, 0),
+			RightShoulder = J(0, 0, 4),
+			LeftShoulder = J(0, 0, -4),
+			RightElbow = J(4),
+			LeftElbow = J(4),
+			RightHip = J(0, 0, 3),
+			LeftHip = J(0, 0, -3),
 		},
 	},
 	Quincy = {
@@ -280,9 +268,11 @@ function FactionShowcase.Build(factionId: string): Model?
 		outfit.uniform = OutfitBuilder.applyUniform(model, factionId, def.outfit, def.archetype)
 		OutfitBuilder.apply(model, outfit)
 	end
-	local weapon = WeaponBuilder.buildModel(def.weapon, def.element)
-	WeaponBuilder.attach(model, weapon, "RightHand")
-	if def.dual then
+	if def.weapon then
+		local weapon = WeaponBuilder.buildModel(def.weapon, def.element)
+		WeaponBuilder.attach(model, weapon, "RightHand")
+	end
+	if def.weapon and def.dual then
 		local left = WeaponBuilder.buildModel(def.weapon, def.element)
 		WeaponBuilder.attach(model, left, "LeftHand")
 	end
