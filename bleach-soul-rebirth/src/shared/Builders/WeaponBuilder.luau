@@ -339,20 +339,50 @@ function WeaponBuilder.buildModel(spec: any, elementId: string?): Model
 	if style == "Katana" or style == "Nodachi" or style == "LightBlade" then
 		WeaponBuilder.buildBlade(model, handle, spec, style, glowColor)
 	elseif style == "Claws" then
-		-- bodyClaws: a criatura já tem garras no corpo; só o hospedeiro invisível do rastro é criado
+		-- Garras curvas: base de osso redonda e lâmina em três segmentos que curvam para baixo,
+		-- afinando até uma ponta de cunha. bodyClaws: a criatura já tem garras no corpo; só o
+		-- hospedeiro invisível do rastro é criado.
 		for i = -1, if spec.bodyClaws then -2 else 1 do
-			local claw = newPart(
+			local base = newPart(
 				model,
-				"Claw",
-				Vector3.new(0.12, 0.12, length),
-				origin * CFrame.new(i * 0.28, -0.05, -0.2 - length / 2) * CFrame.Angles(0, math.rad(i * 6), 0),
-				bladeColor,
+				"ClawBase",
+				Vector3.new(0.34, 0.34, 0.34),
+				origin * CFrame.new(i * 0.28, -0.05, -0.2),
+				bladeColor:Lerp(Color3.new(0, 0, 0), 0.15),
 				Enum.Material.SmoothPlastic
 			)
-			if spec.glow then
-				claw.Material = Enum.Material.Neon
-				claw.Color = bladeColor:Lerp(glowColor, 0.5)
+			base.Shape = Enum.PartType.Ball
+			local segLen = length / 3
+			local frame = origin * CFrame.new(i * 0.28, -0.05, -0.25) * CFrame.Angles(0, math.rad(i * 6), 0)
+			for k = 1, 3 do
+				frame = frame * CFrame.Angles(math.rad(-9), 0, 0)
+				local thick = 0.17 - k * 0.03
+				local claw = newPart(
+					model,
+					"Claw",
+					Vector3.new(thick, thick * 1.3, segLen + 0.05),
+					frame * CFrame.new(0, 0, -segLen / 2),
+					bladeColor,
+					Enum.Material.SmoothPlastic
+				)
+				if spec.glow then
+					claw.Material = Enum.Material.Neon
+					claw.Color = bladeColor:Lerp(glowColor, 0.5)
+				end
+				frame = frame * CFrame.new(0, 0, -segLen)
 			end
+			local tip = Instance.new("WedgePart")
+			tip.Name = "ClawTip"
+			tip.Size = Vector3.new(0.09, 0.12, 0.42)
+			tip.CFrame = frame * CFrame.Angles(math.rad(-9), 0, 0) * CFrame.new(0, 0, -0.2)
+			tip.Color = if spec.glow then bladeColor:Lerp(glowColor, 0.5) else bladeColor
+			tip.Material = if spec.glow then Enum.Material.Neon else Enum.Material.SmoothPlastic
+			tip.CanCollide = false
+			tip.CanQuery = false
+			tip.CanTouch = false
+			tip.Massless = true
+			tip.CastShadow = false
+			tip.Parent = model
 		end
 		handle.Transparency = 1
 		local trailHost = newPart(
@@ -365,32 +395,70 @@ function WeaponBuilder.buildModel(spec: any, elementId: string?): Model
 		trailHost.Transparency = 1
 		trailAttachments(trailHost, length)
 	elseif style == "Gauntlet" then
+		-- Manopla Fullbring: carcaça redonda sobre o punho, quatro nós de metal na frente, anel de
+		-- energia no pulso, braçadeira cobrindo o antebraço com filete aceso e três espigões.
 		handle.Transparency = 1
-		newPart(
+		local up = CFrame.Angles(0, 0, math.rad(90)) -- eixo do cilindro (X) vira o eixo do braço (Y)
+		local shell = newPart(
 			model,
 			"Gauntlet",
-			Vector3.new(1.15, 0.6, 1.15),
-			origin * CFrame.new(0, 0.15, 0),
+			Vector3.new(0.62, 1.12, 1.12),
+			origin * CFrame.new(0, 0.12, 0) * up,
 			bladeColor,
 			Enum.Material.Metal
 		)
-		newPart(
+		shell.Shape = Enum.PartType.Cylinder
+		for k = 0, 3 do
+			local knuckle = newPart(
+				model,
+				"Knuckle",
+				Vector3.new(0.3, 0.3, 0.3),
+				origin * CFrame.new(-0.36 + k * 0.24, 0.02, -0.52),
+				bladeColor:Lerp(Color3.new(1, 1, 1), 0.25),
+				Enum.Material.Metal
+			)
+			knuckle.Shape = Enum.PartType.Ball
+		end
+		local cuff = newPart(
 			model,
 			"Cuff",
-			Vector3.new(1.2, 0.35, 1.2),
-			origin * CFrame.new(0, 0.6, 0),
+			Vector3.new(0.22, 1.18, 1.18),
+			origin * CFrame.new(0, 0.6, 0) * up,
 			guardColor,
 			Enum.Material.Neon
 		)
+		cuff.Shape = Enum.PartType.Cylinder
+		local bracer = newPart(
+			model,
+			"Bracer",
+			Vector3.new(0.9, 1.1, 1.1),
+			origin * CFrame.new(0, 1.2, 0) * up,
+			bladeColor:Lerp(Color3.new(0, 0, 0), 0.25),
+			Enum.Material.Metal
+		)
+		bracer.Shape = Enum.PartType.Cylinder
+		local line = newPart(
+			model,
+			"BracerLine",
+			Vector3.new(0.08, 1.13, 1.13),
+			origin * CFrame.new(0, 1.55, 0) * up,
+			guardColor,
+			Enum.Material.Neon
+		)
+		line.Shape = Enum.PartType.Cylinder
 		for i = -1, 1 do
-			newPart(
-				model,
-				"Spike",
-				Vector3.new(0.15, 0.15, 0.5),
-				origin * CFrame.new(i * 0.32, 0.1, -0.7),
-				guardColor,
-				Enum.Material.Neon
-			)
+			local spike = Instance.new("WedgePart")
+			spike.Name = "Spike"
+			spike.Size = Vector3.new(0.16, 0.16, 0.55)
+			spike.CFrame = origin * CFrame.new(i * 0.26, 0.06, -0.8)
+			spike.Color = guardColor
+			spike.Material = Enum.Material.Neon
+			spike.CanCollide = false
+			spike.CanQuery = false
+			spike.CanTouch = false
+			spike.Massless = true
+			spike.CastShadow = false
+			spike.Parent = model
 		end
 		local trailHost =
 			newPart(model, "TrailHost", Vector3.new(0.05, 0.05, length), origin * CFrame.new(0, 0, -0.3), bladeColor)
