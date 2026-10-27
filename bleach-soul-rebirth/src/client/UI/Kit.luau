@@ -1,5 +1,6 @@
 -- Kit de UI: tema visual (estética de anime/tinta), construtor de instâncias e componentes.
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local Kit = {}
 
@@ -14,6 +15,10 @@ Kit.Theme = {
 	Danger = Color3.fromRGB(235, 60, 70),
 	Health = Color3.fromRGB(80, 220, 100),
 	Success = Color3.fromRGB(110, 230, 150),
+	-- identidade Soul Rebirth: tinta preta, carmesim de destaque, linhas finas claras
+	Ink = Color3.fromRGB(8, 8, 12),
+	Crimson = Color3.fromRGB(214, 38, 58),
+	Bone = Color3.fromRGB(236, 230, 214),
 	FontTitle = Enum.Font.GothamBlack,
 	FontBold = Enum.Font.GothamBold,
 	Font = Enum.Font.GothamMedium,
@@ -89,24 +94,26 @@ function Kit.label(text: string, size: number, props: { [string]: any }?, childr
 	return Kit.new("TextLabel", base, children)
 end
 
--- Barra com preenchimento suave e "rastro" de dano.
-function Kit.bar(props: { [string]: any }, color: Color3, height: number)
+-- Barra com preenchimento suave, "rastro" de dano, brilho no topo e marcações a cada 10%.
+-- `textRight`: valor alinhado à direita dentro da barra (vida, Reiatsu).
+function Kit.bar(props: { [string]: any }, color: Color3, height: number, textRight: boolean?)
+	local radius = math.max(2, height // 2)
 	local frame = Kit.new("Frame", {
-		BackgroundColor3 = Color3.fromRGB(20, 20, 28),
-		BackgroundTransparency = 0.15,
+		BackgroundColor3 = Color3.fromRGB(14, 14, 20),
+		BackgroundTransparency = 0.1,
 		BorderSizePixel = 0,
 		Size = UDim2.new(1, 0, 0, height),
-	}, { Kit.corner(height // 2), Kit.stroke(Color3.new(0, 0, 0), 1.5, 0.3) })
+	}, { Kit.corner(radius), Kit.stroke(Color3.new(0, 0, 0), 1.5, 0.2) })
 	for k, v in props do
 		(frame :: any)[k] = v
 	end
 	local trail = Kit.new("Frame", {
 		Name = "Trail",
-		BackgroundColor3 = Color3.fromRGB(255, 240, 220),
+		BackgroundColor3 = Color3.fromRGB(255, 236, 214),
 		BorderSizePixel = 0,
 		Size = UDim2.fromScale(1, 1),
 		Parent = frame,
-	}, { Kit.corner(height // 2) })
+	}, { Kit.corner(radius) })
 	local fill = Kit.new("Frame", {
 		Name = "Fill",
 		BackgroundColor3 = color,
@@ -114,17 +121,50 @@ function Kit.bar(props: { [string]: any }, color: Color3, height: number)
 		Size = UDim2.fromScale(1, 1),
 		Parent = frame,
 	}, {
-		Kit.corner(height // 2),
+		Kit.corner(radius),
 		Kit.new("UIGradient", {
-			Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(200, 200, 200)),
+			Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+				ColorSequenceKeypoint.new(0.45, Color3.fromRGB(235, 235, 235)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 150, 150)),
+			}),
 			Rotation = 90,
 		}),
 	})
-	local label = Kit.label("", math.max(10, height - 4), {
-		Size = UDim2.fromScale(1, 1),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		TextStrokeTransparency = 0.5,
-		ZIndex = 3,
+	if height >= 8 then
+		-- brilho fino no topo do preenchimento
+		Kit.new("Frame", {
+			Name = "Shine",
+			BackgroundColor3 = Color3.new(1, 1, 1),
+			BackgroundTransparency = 0.55,
+			BorderSizePixel = 0,
+			Position = UDim2.new(0, radius, 0, 1),
+			Size = UDim2.new(1, -radius * 2, 0, math.max(1, height // 6)),
+			ZIndex = 2,
+			Parent = fill,
+		})
+	end
+	if height >= 12 then
+		for i = 1, 9 do
+			Kit.new("Frame", {
+				Name = "Tick",
+				BackgroundColor3 = Color3.new(0, 0, 0),
+				BackgroundTransparency = 0.55,
+				BorderSizePixel = 0,
+				Position = UDim2.new(i / 10, 0, 0.5, 0),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Size = UDim2.new(0, 1, 0.55, 0),
+				ZIndex = 3,
+				Parent = frame,
+			})
+		end
+	end
+	local label = Kit.label("", math.max(10, height - 5), {
+		Position = UDim2.fromOffset(if textRight then 0 else 0, 0),
+		Size = UDim2.new(1, if textRight then -8 else 0, 1, 0),
+		TextXAlignment = if textRight then Enum.TextXAlignment.Right else Enum.TextXAlignment.Center,
+		TextStrokeTransparency = 0.35,
+		ZIndex = 4,
 		Parent = frame,
 	})
 	local api = { frame = frame, fill = fill, label = label, last = 1 }
@@ -148,6 +188,56 @@ function Kit.bar(props: { [string]: any }, color: Color3, height: number)
 		fill.BackgroundColor3 = c
 	end
 	return api
+end
+
+-- 12850 → "12.850" (separador de milhar como no Brasil)
+function Kit.number(n: number): string
+	local text = tostring(math.floor(n))
+	local sign, digits = text:match("^(-?)(%d+)$")
+	if not digits then
+		return text
+	end
+	return sign .. digits:reverse():gsub("(%d%d%d)", "%1."):reverse():gsub("^%.", "")
+end
+
+-- Tecla (keycap): pílula escura com o atalho
+function Kit.keycap(text: string, props: { [string]: any }?): TextLabel
+	local base = {
+		BackgroundColor3 = Color3.fromRGB(4, 4, 6),
+		BackgroundTransparency = 0.05,
+		Text = text,
+		TextSize = 10,
+		Font = Kit.Theme.FontTitle,
+		TextColor3 = Kit.Theme.Text,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Size = UDim2.fromOffset(18, 14),
+	}
+	for k, v in (props or {}) :: any do
+		base[k] = v
+	end
+	return Kit.new("TextLabel", base, { Kit.corner(4), Kit.stroke(Color3.new(1, 1, 1), 1, 0.7) })
+end
+
+-- Pílula com texto (tags de forma, nível, carteira)
+function Kit.pill(text: string, color: Color3, props: { [string]: any }?): TextLabel
+	local base = {
+		BackgroundColor3 = Kit.Theme.Ink,
+		BackgroundTransparency = 0.2,
+		Text = text,
+		TextSize = 12,
+		Font = Kit.Theme.FontTitle,
+		TextColor3 = color,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Size = UDim2.fromOffset(60, 18),
+	}
+	for k, v in (props or {}) :: any do
+		base[k] = v
+	end
+	return Kit.new(
+		"TextLabel",
+		base,
+		{ Kit.new("UICorner", { CornerRadius = UDim.new(1, 0) }), Kit.stroke(color, 1, 0.55) }
+	)
 end
 
 function Kit.button(text: string, props: { [string]: any }?, onClick: (() -> ())?): TextButton
@@ -180,9 +270,10 @@ function Kit.button(text: string, props: { [string]: any }?, onClick: (() -> ())
 end
 
 function Kit.panel(props: { [string]: any }?): Frame
+	-- painel de tinta: fundo quase preto, borda fina clara, leve degradê e filete carmesim no topo
 	local base = {
-		BackgroundColor3 = Kit.Theme.Panel,
-		BackgroundTransparency = 0.08,
+		BackgroundColor3 = Color3.fromRGB(12, 12, 18),
+		BackgroundTransparency = 0.04,
 		BorderSizePixel = 0,
 	}
 	for k, v in (props or {}) :: any do
@@ -190,10 +281,18 @@ function Kit.panel(props: { [string]: any }?): Frame
 	end
 	return Kit.new("Frame", base, {
 		Kit.corner(12),
-		Kit.stroke(Color3.new(1, 1, 1), 1, 0.85),
+		Kit.stroke(Color3.new(1, 1, 1), 1, 0.86),
 		Kit.new("UIGradient", {
-			Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(190, 190, 205)),
+			Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(175, 175, 195)),
 			Rotation = 90,
+		}),
+		Kit.new("Frame", {
+			Name = "Accent",
+			BackgroundColor3 = Kit.Theme.Crimson,
+			BorderSizePixel = 0,
+			Position = UDim2.fromOffset(24, 0),
+			Size = UDim2.new(0.3, 0, 0, 2),
+			ZIndex = 2,
 		}),
 	})
 end
@@ -204,7 +303,9 @@ function Kit.autoScale(gui: ScreenGui)
 	local function update()
 		local camera = workspace.CurrentCamera
 		local size = camera and camera.ViewportSize or Vector2.new(1280, 720)
-		scale.Scale = math.clamp(math.min(size.X / 1280, size.Y / 720) * 1.05, 0.55, 1.4)
+		-- celular: piso maior para o texto não ficar ilegível (a tela é pequena mas fica perto do rosto)
+		local touchOnly = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+		scale.Scale = math.clamp(math.min(size.X / 1280, size.Y / 720), if touchOnly then 0.72 else 0.55, 1.4)
 	end
 	update()
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(update)

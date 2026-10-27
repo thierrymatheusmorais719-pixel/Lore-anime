@@ -85,22 +85,30 @@ function HUDController.Notify(text: string, kind: string?, extra: any?)
 	end
 	local big = kind == "level" or kind == "awaken"
 	local toast = Kit.new("Frame", {
-		BackgroundColor3 = T.Background,
-		BackgroundTransparency = 0.25,
-		Size = UDim2.fromOffset(if big then 420 else 320, if big then 46 else 30),
+		BackgroundColor3 = T.Ink,
+		BackgroundTransparency = 0.18,
+		Size = UDim2.fromOffset(if big then 440 else 340, if big then 48 else 32),
 		LayoutOrder = -math.floor(os.clock() * 100),
 		Parent = list,
 	}, {
-		Kit.corner(6),
-		Kit.new(
-			"Frame",
-			{ BackgroundColor3 = color, BorderSizePixel = 0, Size = UDim2.new(0, 4, 1, 0) },
-			{ Kit.corner(2) }
-		),
+		Kit.corner(8),
+		Kit.stroke(color, 1, 0.7),
+		Kit.new("UIGradient", {
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0),
+				NumberSequenceKeypoint.new(1, 0.35),
+			}),
+		}),
+		Kit.new("Frame", {
+			BackgroundColor3 = color,
+			BorderSizePixel = 0,
+			Position = UDim2.fromOffset(6, 6),
+			Size = UDim2.new(0, 3, 1, -12),
+		}, { Kit.corner(2) }),
 	})
-	local label = Kit.label(text, if big then 22 else 15, {
-		Position = UDim2.fromOffset(12, 0),
-		Size = UDim2.new(1, -16, 1, 0),
+	local label = Kit.label(text, if big then 22 else 14, {
+		Position = UDim2.fromOffset(18, 0),
+		Size = UDim2.new(1, -26, 1, 0),
 		TextColor3 = color,
 		Font = if big then T.FontTitle else T.FontBold,
 		TextTruncate = Enum.TextTruncate.AtEnd,
@@ -141,47 +149,90 @@ end
 -- Construção
 -- ============================================================
 local function buildStatus()
+	-- Painel de status (canto inferior esquerdo): emblema da facção com nível, nome e forma, vida,
+	-- Reiatsu, guarda e XP. Placa de tinta que esmaece para a direita com filete carmesim no topo.
 	local root = Kit.new("Frame", {
 		Name = "Status",
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 24, 1, -24),
-		Size = UDim2.fromOffset(380, 110),
+		Position = UDim2.new(0, 20, 1, -20),
+		Size = UDim2.fromOffset(332, 98),
 		Parent = gui,
 	})
-	-- Emblema de nível
-	local badge = Kit.new("Frame", {
-		BackgroundColor3 = T.Background,
-		BackgroundTransparency = 0.1,
-		Size = UDim2.fromOffset(74, 74),
-		Position = UDim2.fromOffset(0, 18),
+	Kit.new("Frame", {
+		Name = "Plate",
+		BackgroundColor3 = T.Ink,
+		BackgroundTransparency = 0.18,
+		BorderSizePixel = 0,
+		Position = UDim2.fromOffset(36, 12),
+		Size = UDim2.fromOffset(296, 86),
 		Parent = root,
-	}, { Kit.new("UICorner", { CornerRadius = UDim.new(1, 0) }), Kit.stroke(T.Accent, 2.5, 0.1) })
+	}, {
+		Kit.corner(10),
+		Kit.new("UIGradient", {
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0),
+				NumberSequenceKeypoint.new(0.7, 0.15),
+				NumberSequenceKeypoint.new(1, 0.6),
+			}),
+		}),
+		Kit.new("Frame", {
+			Name = "Accent",
+			BackgroundColor3 = T.Crimson,
+			BorderSizePixel = 0,
+			Position = UDim2.fromOffset(44, 0),
+			Size = UDim2.new(0.55, 0, 0, 2),
+		}),
+	})
+	-- Emblema
+	local badge = Kit.new("Frame", {
+		Name = "Emblem",
+		BackgroundColor3 = T.Ink,
+		BackgroundTransparency = 0.02,
+		Position = UDim2.fromOffset(0, 6),
+		Size = UDim2.fromOffset(78, 78),
+		ZIndex = 2,
+		Parent = root,
+	}, {
+		Kit.new("UICorner", { CornerRadius = UDim.new(1, 0) }),
+		Kit.stroke(T.Accent, 3, 0),
+		Kit.new("UIGradient", {
+			Color = ColorSequence.new(Color3.fromRGB(70, 70, 90), Color3.fromRGB(255, 255, 255)),
+			Rotation = 90,
+		}),
+	})
 	refs.badgeStroke = badge:FindFirstChildOfClass("UIStroke")
-	refs.kanji = Kit.label("霊", 30, {
-		Size = UDim2.new(1, 0, 0.62, 0),
+	refs.kanji = Kit.label("霊", 36, {
+		Position = UDim2.fromOffset(0, 6),
+		Size = UDim2.new(1, 0, 0, 52),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Font = T.FontTitle,
+		TextStrokeTransparency = 0.5,
+		ZIndex = 3,
 		Parent = badge,
 	})
-	refs.level = Kit.label("Nv 1", 14, {
-		Position = UDim2.fromScale(0, 0.58),
-		Size = UDim2.new(1, 0, 0.35, 0),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		TextColor3 = T.Gold,
+	local levelPill = Kit.pill("Nv 1", T.Gold, {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 1, -2),
+		Size = UDim2.fromOffset(54, 20),
+		TextSize = 12,
+		BackgroundTransparency = 0,
+		ZIndex = 4,
 		Parent = badge,
 	})
+	refs.level = levelPill
 
-	refs.name = Kit.label(player.DisplayName, 16, {
-		Position = UDim2.fromOffset(86, 4),
-		Size = UDim2.fromOffset(200, 20),
+	refs.name = Kit.label(player.DisplayName, 15, {
+		Position = UDim2.fromOffset(90, 18),
+		Size = UDim2.fromOffset(130, 18),
 		Font = T.FontTitle,
 		TextStrokeTransparency = 0.6,
+		TextTruncate = Enum.TextTruncate.AtEnd,
 		Parent = root,
 	})
-	refs.form = Kit.label("", 14, {
-		Position = UDim2.fromOffset(200, 4),
-		Size = UDim2.fromOffset(180, 20),
+	refs.form = Kit.label("", 12, {
+		Position = UDim2.fromOffset(212, 18),
+		Size = UDim2.fromOffset(112, 18),
 		TextXAlignment = Enum.TextXAlignment.Right,
 		Font = T.FontTitle,
 		TextColor3 = T.Gold,
@@ -189,72 +240,98 @@ local function buildStatus()
 		Parent = root,
 	})
 
-	bars.health =
-		Kit.bar({ Position = UDim2.fromOffset(86, 28), Size = UDim2.fromOffset(294, 18), Parent = root }, T.Health, 18)
-	bars.reiatsu =
-		Kit.bar({ Position = UDim2.fromOffset(86, 52), Size = UDim2.fromOffset(260, 14), Parent = root }, T.Accent, 14)
+	bars.health = Kit.bar(
+		{ Position = UDim2.fromOffset(90, 40), Size = UDim2.fromOffset(232, 17), Parent = root },
+		T.Health,
+		17,
+		true
+	)
+	bars.reiatsu = Kit.bar(
+		{ Position = UDim2.fromOffset(90, 61), Size = UDim2.fromOffset(232, 11), Parent = root },
+		T.Accent,
+		11,
+		true
+	)
 	bars.guard = Kit.bar(
-		{ Position = UDim2.fromOffset(86, 70), Size = UDim2.fromOffset(140, 6), Parent = root },
+		{ Position = UDim2.fromOffset(90, 76), Size = UDim2.fromOffset(110, 4), Parent = root },
 		Color3.fromRGB(230, 230, 240),
-		6
+		4
 	)
 	bars.xp =
-		Kit.bar({ Position = UDim2.fromOffset(86, 82), Size = UDim2.fromOffset(294, 6), Parent = root }, T.Gold, 6)
+		Kit.bar({ Position = UDim2.fromOffset(90, 86), Size = UDim2.fromOffset(232, 4), Parent = root }, T.Gold, 4)
+	-- carteira no canto superior direito (não disputa espaço com as barras)
+	local wallet = Kit.new("Frame", {
+		Name = "Wallet",
+		BackgroundColor3 = T.Ink,
+		BackgroundTransparency = 0.25,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -16, 0, 10),
+		Size = UDim2.fromOffset(210, 26),
+		Parent = gui,
+	}, { Kit.new("UICorner", { CornerRadius = UDim.new(1, 0) }), Kit.stroke(T.Gold, 1, 0.65) })
 	refs.currency = Kit.label("", 13, {
-		Position = UDim2.fromOffset(232, 66),
-		Size = UDim2.fromOffset(148, 14),
+		Position = UDim2.fromOffset(12, 0),
+		Size = UDim2.new(1, -24, 1, 0),
 		TextXAlignment = Enum.TextXAlignment.Right,
-		TextColor3 = T.Muted,
-		Parent = root,
+		TextColor3 = Color3.fromRGB(255, 226, 150),
+		Font = T.FontTitle,
+		Parent = wallet,
 	})
 end
 
 local function makeSlot(parent: Instance, key: string, size: number, order: number)
 	local frame = Kit.new("Frame", {
 		Name = key,
-		BackgroundColor3 = T.Background,
-		BackgroundTransparency = 0.15,
+		BackgroundColor3 = T.Ink,
+		BackgroundTransparency = 0.12,
 		Size = UDim2.fromOffset(size, size),
 		LayoutOrder = order,
 		Parent = parent,
-	}, { Kit.corner(10), Kit.stroke(Color3.new(1, 1, 1), 1.5, 0.7) })
-	local icon = Kit.label("", size * 0.48, {
-		Size = UDim2.fromScale(1, 0.8),
+	}, {
+		Kit.corner(10),
+		Kit.stroke(Color3.new(1, 1, 1), 1.5, 0.72),
+		Kit.new("UIGradient", {
+			Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(120, 120, 140)),
+			Rotation = 90,
+		}),
+	})
+	local icon = Kit.label("", size * 0.5, {
+		Position = UDim2.fromOffset(0, 2),
+		Size = UDim2.fromScale(1, 0.9),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Font = T.FontTitle,
+		TextStrokeTransparency = 0.6,
 		Parent = frame,
 	})
+	-- sombra de recarga desce do topo e recua conforme a habilidade volta
 	local shade = Kit.new("Frame", {
 		BackgroundColor3 = Color3.new(0, 0, 0),
-		BackgroundTransparency = 0.35,
+		BackgroundTransparency = 0.3,
 		BorderSizePixel = 0,
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.fromScale(0, 1),
 		Size = UDim2.fromScale(1, 0),
 		ZIndex = 2,
 		Parent = frame,
 	}, { Kit.corner(10) })
-	local timer = Kit.label("", size * 0.32, {
+	local timer = Kit.label("", size * 0.36, {
 		Size = UDim2.fromScale(1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Font = T.FontTitle,
 		ZIndex = 3,
-		TextStrokeTransparency = 0.3,
+		TextStrokeTransparency = 0.2,
 		Parent = frame,
 	})
-	local keyLabel = Kit.label(key, 12, {
-		Position = UDim2.new(0, 5, 1, -16),
-		Size = UDim2.fromOffset(30, 14),
-		TextColor3 = T.Muted,
-		ZIndex = 3,
+	local keyLabel = Kit.keycap(key, {
+		Position = UDim2.fromOffset(-4, -5),
+		ZIndex = 4,
 		Parent = frame,
 	})
-	local name = Kit.label("", 11, {
+	local name = Kit.label("", 10, {
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 1, 3),
-		Size = UDim2.fromOffset(size + 30, 14),
+		Position = UDim2.new(0.5, 0, 1, 4),
+		Size = UDim2.fromOffset(size + 6, 12),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextColor3 = T.Muted,
+		TextStrokeTransparency = 0.6,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 		Parent = frame,
 	})
@@ -270,19 +347,20 @@ local function makeSlot(parent: Instance, key: string, size: number, order: numb
 end
 
 local function buildSkillBar()
+	-- Movimentos (Q/E/R) | quatro habilidades | liberação (G), com espaçadores entre os grupos
 	local bar = Kit.new("Frame", {
 		Name = "SkillBar",
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -30),
-		Size = UDim2.fromOffset(520, 70),
+		Position = UDim2.new(0.5, 0, 1, -36),
+		Size = UDim2.fromOffset(500, 66),
 		Parent = gui,
 	}, {
 		Kit.new("UIListLayout", {
 			FillDirection = Enum.FillDirection.Horizontal,
 			HorizontalAlignment = Enum.HorizontalAlignment.Center,
 			VerticalAlignment = Enum.VerticalAlignment.Bottom,
-			Padding = UDim.new(0, 10),
+			Padding = UDim.new(0, 8),
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
 	})
@@ -290,11 +368,22 @@ local function buildSkillBar()
 	makeSlot(bar, "Dash", 46, 1)
 	makeSlot(bar, "Heavy", 46, 2)
 	makeSlot(bar, "Launcher", 46, 3)
-	makeSlot(bar, "Z", 62, 4)
-	makeSlot(bar, "X", 62, 5)
-	makeSlot(bar, "C", 62, 6)
-	makeSlot(bar, "V", 62, 7)
-	makeSlot(bar, "Transform", 46, 8)
+	for _, order in { 4, 9 } do
+		Kit.new("Frame", {
+			Name = "Divider" .. order,
+			BackgroundColor3 = T.Crimson,
+			BackgroundTransparency = 0.3,
+			BorderSizePixel = 0,
+			Size = UDim2.fromOffset(2, 34),
+			LayoutOrder = order,
+			Parent = bar,
+		})
+	end
+	makeSlot(bar, "Z", 62, 5)
+	makeSlot(bar, "X", 62, 6)
+	makeSlot(bar, "C", 62, 7)
+	makeSlot(bar, "V", 62, 8)
+	makeSlot(bar, "Transform", 46, 10)
 	slotFrames.Dash.icon.Text = "瞬"
 	slotFrames.Heavy.icon.Text = "重"
 	slotFrames.Launcher.icon.Text = "昇"
@@ -417,44 +506,85 @@ local function buildCenter()
 		Parent = gui,
 	})
 
-	-- Barra de chefe
+	-- Barra de chefe: placa escura, nome com kanji 虚 em carmesim, barra larga com marcações
 	local boss = Kit.new("Frame", {
 		Name = "BossBar",
-		BackgroundTransparency = 1,
+		BackgroundColor3 = T.Ink,
+		BackgroundTransparency = 0.3,
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 40),
-		Size = UDim2.fromOffset(560, 48),
+		Position = UDim2.new(0.5, 0, 0, 44),
+		Size = UDim2.fromOffset(640, 56),
 		Visible = false,
 		Parent = gui,
+	}, {
+		Kit.corner(10),
+		Kit.stroke(T.Crimson, 1.2, 0.5),
+		Kit.new("UIGradient", {
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.7),
+				NumberSequenceKeypoint.new(0.5, 0),
+				NumberSequenceKeypoint.new(1, 0.7),
+			}),
+		}),
 	})
-	refs.bossName = Kit.label("", 18, {
-		Size = UDim2.new(1, 0, 0, 22),
+	Kit.label("虚", 20, {
+		Position = UDim2.fromOffset(14, 5),
+		Size = UDim2.fromOffset(24, 24),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Font = T.FontTitle,
+		TextColor3 = T.Crimson,
 		TextStrokeTransparency = 0.4,
 		Parent = boss,
 	})
+	refs.bossName = Kit.label("", 17, {
+		Position = UDim2.fromOffset(0, 6),
+		Size = UDim2.new(1, 0, 0, 22),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Font = T.FontTitle,
+		TextStrokeTransparency = 0.3,
+		Parent = boss,
+	})
 	bars.boss = Kit.bar(
-		{ Position = UDim2.fromOffset(0, 24), Size = UDim2.new(1, 0, 0, 16), Parent = boss },
-		Color3.fromRGB(170, 40, 60),
-		16
+		{ Position = UDim2.fromOffset(14, 32), Size = UDim2.new(1, -28, 0, 16), Parent = boss },
+		Color3.fromRGB(196, 36, 58),
+		16,
+		true
 	)
 	refs.bossBar = boss
 
-	-- Missão rastreada
+	-- Missão rastreada (abaixo da carteira)
 	local quest = Kit.new("Frame", {
 		Name = "Quest",
-		BackgroundColor3 = T.Background,
-		BackgroundTransparency = 0.35,
+		BackgroundColor3 = T.Ink,
+		BackgroundTransparency = 0.3,
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -20, 0, 70),
-		Size = UDim2.fromOffset(280, 40),
+		Position = UDim2.new(1, -16, 0, 46),
+		Size = UDim2.fromOffset(270, 40),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		Parent = gui,
 	}, {
-		Kit.corner(8),
-		Kit.padding(10),
+		Kit.corner(10),
+		Kit.stroke(Color3.new(1, 1, 1), 1, 0.85),
+		Kit.new("UIPadding", {
+			PaddingTop = UDim.new(0, 8),
+			PaddingBottom = UDim.new(0, 10),
+			PaddingLeft = UDim.new(0, 12),
+			PaddingRight = UDim.new(0, 12),
+		}),
 		Kit.new("UIListLayout", { Padding = UDim.new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder }),
+		-- cabeçalho fica num Frame (updateQuest só recria os TextLabels diretos)
+		Kit.new("Frame", {
+			Name = "Header",
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, 0, 0, 14),
+			LayoutOrder = -1,
+		}, {
+			Kit.label("MISSÃO", 11, {
+				Size = UDim2.fromScale(1, 1),
+				Font = T.FontTitle,
+				TextColor3 = T.Crimson,
+			}),
+		}),
 	})
 	refs.quest = quest
 end
@@ -528,8 +658,11 @@ local function buildTouch()
 	touchButton(pad, "Charge", "気", 46, UDim2.fromOffset(310, 40))
 	touchButton(pad, "Mask", "仮", 46, UDim2.fromOffset(310, 100))
 	refs.touch = pad
+	-- no toque a barra de habilidades sai: os botões redondos já trazem as habilidades
+	refs.skillBar.Visible = InputController.Mode() ~= "Touch"
 	InputController.ModeChanged:Connect(function(mode)
 		pad.Visible = mode == "Touch"
+		refs.skillBar.Visible = mode ~= "Touch"
 		HUDController.RefreshSlots()
 	end)
 end
@@ -635,6 +768,12 @@ function HUDController.RefreshSlots()
 		slot.icon.Text = def and def.kanji or "—"
 		slot.icon.TextColor3 = if def then color else T.Muted
 		slot.name.Text = def and def.name or (if key == "V" then "Requer Tier 2" else "")
+		-- botão de toque da mesma habilidade mostra o kanji dela
+		local touchButton = refs.touch and refs.touch:FindFirstChild(key)
+		if touchButton and touchButton:IsA("TextButton") then
+			touchButton.Text = def and def.kanji or key
+			touchButton.TextColor3 = if def then color else T.Muted
+		end
 		slot.frame.BackgroundTransparency = if def then 0.15 else 0.6
 		if slot.stroke then
 			slot.stroke.Color = if def and def.ultimate then T.Gold else Color3.new(1, 1, 1)
@@ -694,7 +833,8 @@ local function onProfile(profile)
 	local need = Progression.xpToNext(profile.level)
 	bars.xp.set(profile.xp, need, "")
 	refs.level.Text = "Nv " .. profile.level
-	refs.currency.Text = string.format("%d Kan · %d ✦", profile.currency.Kan, profile.currency.Shards)
+	refs.currency.Text =
+		string.format("%s Kan  ·  %s ✦", Kit.number(profile.currency.Kan), Kit.number(profile.currency.Shards))
 	local faction = Factions.get(profile.faction)
 	if faction then
 		refs.kanji.Text = faction.kanji:sub(1, 3)
@@ -945,12 +1085,14 @@ function HUDController.Start()
 			local remaining, total = CombatController.CooldownRemaining(cdKey)
 			if remaining > 0 then
 				slot.shade.Size = UDim2.fromScale(1, math.clamp(remaining / math.max(total, 0.01), 0, 1))
+				slot.icon.TextTransparency = 0.55
 				slot.timer.Text = if remaining >= 1
 					then tostring(math.ceil(remaining))
 					else string.format("%.1f", remaining)
 			else
 				slot.shade.Size = UDim2.fromScale(1, 0)
 				slot.timer.Text = ""
+				slot.icon.TextTransparency = 0
 			end
 		end
 		-- Combo some após 2s sem acertos

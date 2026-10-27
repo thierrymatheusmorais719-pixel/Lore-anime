@@ -38,6 +38,7 @@ local panel: Frame
 local content: ScrollingFrame
 local tabButtons: { [string]: TextButton } = {}
 local header: TextLabel
+local watermark: TextLabel
 local status: TextLabel
 local openTab: string? = nil
 
@@ -882,11 +883,18 @@ local function render()
 	end
 	clear()
 	for id, b in tabButtons do
-		b.BackgroundColor3 = if id == openTab then Color3.fromRGB(45, 60, 95) else T.PanelLight
+		local active = id == openTab
+		b.BackgroundColor3 = if active then Color3.fromRGB(46, 26, 34) else T.PanelLight
+		b.TextColor3 = if active then T.Text else T.Muted
+		local marker = b:FindFirstChild("Marker")
+		if marker then
+			marker.Visible = active
+		end
 	end
 	for _, tab in TABS do
 		if tab.id == openTab then
-			header.Text = tab.kanji .. "  " .. tab.label
+			header.Text = string.format('<font color="#D6263A">%s</font>  %s', tab.kanji, tab.label)
+			watermark.Text = tab.kanji
 		end
 	end
 	local renderer = Render[openTab]
@@ -953,11 +961,25 @@ function MenuController.Init()
 		Size = UDim2.fromOffset(960, 580),
 		Parent = gui,
 	})
-	header = Kit.label(
-		"",
-		24,
-		{ Position = UDim2.fromOffset(190, 14), Size = UDim2.new(1, -260, 0, 30), Font = T.FontTitle, Parent = panel }
-	)
+	-- kanji grande da aba como marca d'água no canto
+	watermark = Kit.label("", 230, {
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, -10, 1, 20),
+		Size = UDim2.fromOffset(260, 260),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Font = T.FontTitle,
+		TextColor3 = Color3.new(1, 1, 1),
+		TextTransparency = 0.95,
+		ZIndex = 0,
+		Parent = panel,
+	})
+	header = Kit.label("", 24, {
+		Position = UDim2.fromOffset(190, 14),
+		Size = UDim2.new(1, -260, 0, 30),
+		Font = T.FontTitle,
+		RichText = true,
+		Parent = panel,
+	})
 	status = Kit.label("", 14, {
 		AnchorPoint = Vector2.new(0, 1),
 		Position = UDim2.new(0, 190, 1, -10),
@@ -993,6 +1015,18 @@ function MenuController.Init()
 			end
 		)
 		Kit.padding(12).Parent = b
+		b.TextColor3 = T.Muted
+		-- marcador carmesim da aba ativa
+		Kit.new("Frame", {
+			Name = "Marker",
+			BackgroundColor3 = T.Crimson,
+			BorderSizePixel = 0,
+			AnchorPoint = Vector2.new(0, 0.5),
+			Position = UDim2.new(0, -12, 0.5, 0),
+			Size = UDim2.new(0, 3, 0.6, 0),
+			Visible = false,
+			Parent = b,
+		}, { Kit.corner(2) })
 		b.Visible = not tab.hidden
 		b.Parent = tabs
 		tabButtons[tab.id] = b

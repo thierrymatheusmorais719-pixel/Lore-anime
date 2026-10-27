@@ -234,17 +234,20 @@ local function buildCard(parent: Instance, info, order: number)
 	Kit.label(
 		"Dificuldade  "
 			.. difficultyText(info.difficulty)
-			.. "   ·   Poder inicial: "
+			.. "  ·  Início: "
 			.. Powers.List[Powers.Starter[info.id]].name,
 		11,
 		{
-			Position = UDim2.fromOffset(0, 116),
-			Size = UDim2.new(1, 0, 0, 14),
+			Position = UDim2.fromOffset(8, 116),
+			Size = UDim2.new(1, -16, 0, 14),
 			TextXAlignment = Enum.TextXAlignment.Center,
 			TextColor3 = T.Muted,
 			Font = T.Font,
+			-- cabe na largura do cartão em qualquer tela (encolhe se o nome do poder for longo)
+			TextScaled = true,
 			Parent = bottom,
-		}
+		},
+		{ Kit.new("UITextSizeConstraint", { MaxTextSize = 11 }) }
 	)
 	local play = Kit.new("TextButton", {
 		AnchorPoint = Vector2.new(0.5, 1),
