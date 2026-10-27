@@ -19,10 +19,10 @@ end
 
 local LOOKS = {
 	Shinigami = {
-		-- rosto e cabelo de anime (NpcStyle), como o jogador no jogo
+		-- boneco do Roblox com a skin do Ichigo humano: cabelo laranja espetado, cara fechada
 		style = {
 			skin = Color3.fromRGB(236, 205, 175),
-			hair = { kind = "spiky", color = Color3.fromRGB(255, 120, 40) },
+			hair = { kind = "ichigo", color = Color3.fromRGB(255, 122, 36) },
 			eyes = Color3.fromRGB(110, 70, 40),
 			brows = "stern",
 		},
@@ -32,8 +32,8 @@ local LOOKS = {
 			pants = Color3.fromRGB(18, 18, 22),
 			hair = Color3.fromRGB(255, 120, 40),
 		},
-		-- o cartão mostra o começo do caminho: humano de uniforme do colégio com espada de madeira
-		archetype = "human",
+		-- o cartão mostra o começo do caminho: Ichigo de uniforme do colégio, espada de madeira
+		archetype = "ichigo",
 		outfit = {
 			trim = Color3.fromRGB(235, 235, 240),
 			robe = Color3.fromRGB(18, 18, 22),
@@ -95,11 +95,11 @@ local LOOKS = {
 		},
 	},
 	Hollow = {
+		-- skin de Hollow: criatura de pele negra, sem cabelo, só a máscara de osso no rosto
 		style = {
-			skin = Color3.fromRGB(214, 196, 180),
-			hair = { kind = "wild", color = Color3.fromRGB(80, 200, 190) },
-			eyes = Color3.fromRGB(70, 190, 200),
-			brows = "sly",
+			skin = Color3.fromRGB(26, 24, 30),
+			eyes = Color3.fromRGB(255, 200, 60),
+			brows = "stern",
 		},
 		look = {
 			skin = Color3.fromRGB(30, 28, 34),
@@ -320,11 +320,8 @@ function FactionShowcase.Viewport(factionId: string, accent: Color3): (ViewportF
 	if model then
 		model.Parent = world
 		base = model:GetPivot()
-		-- corpo, rosto, cabelo e roupa lisos (as mesmas malhas dos NPCs e do jogador)
-		local ok, HumanSkin = pcall(require, script.Parent.Parent.Controllers.HumanSkin)
-		if ok then
-			HumanSkin.Apply(model)
-		end
+		-- fica como boneco do Roblox (peças nativas, sem malhas EditableMesh): aparece igual em
+		-- qualquer aparelho dentro do ViewportFrame
 	end
 	local target = Vector3.new(0, 3.2, 0)
 	local angle = 0

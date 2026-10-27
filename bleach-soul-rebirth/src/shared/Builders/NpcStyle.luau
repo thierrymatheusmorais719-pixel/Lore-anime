@@ -232,6 +232,24 @@ function HAIR.spiky(head: BasePart, color: Color3)
 	end
 end
 
+-- Ichigo: o espetado com mais mechas, mais altas e jogadas para trás, franja pontuda na testa
+function HAIR.ichigo(head: BasePart, color: Color3)
+	HAIR.spiky(head, color)
+	local s = head.Size
+	local extra = {
+		{ Vector3.new(-0.15, 0.62, -0.1), Vector3.new(-0.35, 1.35, 0.15) },
+		{ Vector3.new(0.18, 0.62, -0.05), Vector3.new(0.42, 1.3, 0.2) },
+		{ Vector3.new(0, 0.55, 0.3), Vector3.new(0, 1.15, 0.85) },
+		-- franja pontuda para a frente, acima das sobrancelhas (o rosto fica à mostra)
+		{ Vector3.new(-0.3, 0.55, -0.4), Vector3.new(-0.45, 0.48, -0.95) },
+		{ Vector3.new(0.3, 0.55, -0.4), Vector3.new(0.48, 0.5, -0.95) },
+		{ Vector3.new(0, 0.58, -0.42), Vector3.new(0.05, 0.52, -1.0) },
+	}
+	for _, sp in extra do
+		lock(head, sp[1] * Vector3.new(s.X / 1.16, s.Y / 1.18, s.Z / 1.16), sp[2], 0.36, 0.26, color)
+	end
+end
+
 function HAIR.long(head: BasePart, color: Color3)
 	hairCap(head, color, 0.9)
 	bangs(head, color, 5, 0.5)
@@ -609,6 +627,85 @@ function OUTFIT.human(model: Model, style: Style)
 	end
 end
 
+-- Ichigo humano: uniforme do colégio de Karakura do jeito dele — blazer cinza aberto, camisa
+-- branca para fora da calça e aberta no colarinho, sem gravata, calça cinza e tênis
+function OUTFIT.ichigo(model: Model, style: Style)
+	local blazer = Color3.fromRGB(112, 114, 124)
+	local pants = Color3.fromRGB(84, 86, 96)
+	paint(model, { "UpperTorso" }, WHITE, Enum.Material.Fabric)
+	paint(model, ARMS, blazer, Enum.Material.Fabric)
+	paint(model, FOREARMS, blazer, Enum.Material.Fabric)
+	paint(model, { "LowerTorso" }, pants, Enum.Material.Fabric)
+	paint(model, THIGHS, pants, Enum.Material.Fabric)
+	paint(model, SHINS, pants, Enum.Material.Fabric)
+	paint(model, FEET, Color3.fromRGB(235, 235, 238))
+	local upper = part(model, "UpperTorso")
+	if upper then
+		local w, h, d = upper.Size.X, upper.Size.Y, upper.Size.Z
+		-- blazer aberto: costas e as duas frentes, deixando a camisa à mostra no meio
+		piece(
+			upper,
+			"JacketPanel",
+			Vector3.new(w + 0.08, h + 0.05, 0.1),
+			CFrame.new(0, 0, d / 2 + 0.02),
+			blazer,
+			Enum.Material.Fabric
+		)
+		for _, side in { -1, 1 } do
+			piece(
+				upper,
+				"JacketFront",
+				Vector3.new(w * 0.3, h + 0.05, 0.1),
+				CFrame.new(side * w * 0.36, 0, -d / 2 - 0.03),
+				blazer,
+				Enum.Material.Fabric
+			)
+			piece(
+				upper,
+				"Lapel",
+				Vector3.new(0.14, 0.9, 0.05),
+				CFrame.new(side * w * 0.22, h / 2 - 0.45, -d / 2 - 0.07) * deg(0, 0, -16 * side),
+				blazer:Lerp(BLACK, 0.2)
+			)
+			piece(
+				upper,
+				"JacketSide",
+				Vector3.new(0.1, h + 0.05, d + 0.1),
+				CFrame.new(side * (w / 2 + 0.03), 0, 0),
+				blazer,
+				Enum.Material.Fabric
+			)
+		end
+		-- colarinho aberto e a barra da camisa para fora
+		for _, side in { -1, 1 } do
+			piece(
+				upper,
+				"Collar",
+				Vector3.new(0.3, 0.14, 0.3),
+				CFrame.new(side * 0.2, h / 2 - 0.02, -d / 2 + 0.05) * deg(0, 0, 25 * side),
+				WHITE
+			)
+		end
+	end
+	local lower = part(model, "LowerTorso")
+	if lower then
+		piece(
+			lower,
+			"ShirtHem",
+			Vector3.new(lower.Size.X * 0.55, 0.3, 0.06),
+			CFrame.new(0, -0.05, -lower.Size.Z / 2 - 0.03),
+			WHITE,
+			Enum.Material.Fabric
+		)
+	end
+	for _, n in FEET do
+		local foot = part(model, n)
+		if foot then
+			piece(foot, "Sole", Vector3.new(1.05, 0.1, 1.05), CFrame.new(0, -0.15, 0), Color3.fromRGB(60, 60, 66))
+		end
+	end
+end
+
 -- ===================================================================== estágios Hollow
 -- Corpo de Hollow: pele quase preta, buraco no peito (atravessa o tronco)
 local SHADOW = Color3.fromRGB(26, 24, 30)
@@ -710,6 +807,37 @@ function OUTFIT.hollowSpawn(model: Model, style: Style)
 	hollowBody(model, SHADOW)
 	hollowMask(model, Color3.fromRGB(255, 200, 60))
 	boneSpikes(model, 2, 0.9)
+	-- marcas pretas na máscara (testa e bochechas) e cauda de osso segmentada
+	local head = part(model, "Head")
+	if head then
+		local z = -head.Size.Z / 2 - 0.2
+		piece(head, "MaskMark", Vector3.new(0.08, 0.32, 0.03), CFrame.new(0, 0.34, z), BLACK)
+		for _, side in { -1, 1 } do
+			piece(
+				head,
+				"MaskMark",
+				Vector3.new(0.07, 0.3, 0.03),
+				CFrame.new(side * 0.3, -0.12, z) * deg(0, 0, 20 * side),
+				BLACK
+			)
+		end
+	end
+	local lower = part(model, "LowerTorso")
+	if lower then
+		local frame = CFrame.new(0, -0.1, lower.Size.Z / 2 + 0.1) * deg(35, 0, 0)
+		for k = 1, 5 do
+			local size = 0.5 - k * 0.07
+			piece(
+				lower,
+				"TailSegment",
+				Vector3.new(size, size, 0.7),
+				frame * CFrame.new(0, 0, 0.35),
+				if k % 2 == 0 then BONE else SHADOW
+			)
+			frame = frame * CFrame.new(0, 0, 0.62) * deg(-14, 0, 0)
+		end
+		wedge(lower, "TailTip", Vector3.new(0.14, 0.2, 0.5), frame * CFrame.new(0, 0, 0.3), BONE)
+	end
 end
 
 -- 2. Menos: manto preto longo até os pés, gola de espinhos, máscara de nariz comprido
