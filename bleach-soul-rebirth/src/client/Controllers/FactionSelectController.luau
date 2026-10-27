@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 local Factions = require(Shared.Config.Factions)
+local CardArt = require(Shared.Config.CardArt)
 
 local Kit = require(script.Parent.Parent.UI.Kit)
 local FactionShowcase = require(script.Parent.Parent.UI.FactionShowcase)
@@ -151,10 +152,84 @@ local function buildCard(parent: Instance, info, order: number)
 		Size = UDim2.new(1, 0, 0, 300),
 		Parent = card,
 	})
-	local ok, viewport, update = pcall(FactionShowcase.Viewport, info.id, color)
-	if ok and viewport then
-		viewport.Parent = viewHolder
-		table.insert(viewportUpdaters, update)
+	-- arte 2D (PNG enviada ao Roblox, ver Config/CardArt) ou, sem ela, o boneco 3D
+	local art = CardArt[info.id]
+	local artHover: ((boolean) -> ())? = nil
+	if art and art.image ~= "" then
+		-- brilho redondo na cor da classe atrás do personagem
+		local glow = Kit.new("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.55),
+			Size = UDim2.fromOffset(250, 250),
+			BackgroundColor3 = color,
+			BackgroundTransparency = 0.55,
+			Parent = viewHolder,
+		}, {
+			Kit.new("UICorner", { CornerRadius = UDim.new(1, 0) }),
+			Kit.new("UIGradient", {
+				Transparency = NumberSequence.new({
+					NumberSequenceKeypoint.new(0, 0.2),
+					NumberSequenceKeypoint.new(0.6, 0.75),
+					NumberSequenceKeypoint.new(1, 1),
+				}),
+			}),
+		})
+		local image = Kit.new("ImageLabel", {
+			Name = "Art",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(1, 1.05),
+			BackgroundTransparency = 1,
+			Image = art.image,
+			ScaleType = Enum.ScaleType.Fit,
+			Parent = viewHolder,
+		})
+		local imageScale = Kit.new("UIScale", { Parent = image })
+		-- reflexo de luz que atravessa a arte quando o mouse entra
+		local shine = Kit.new("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(-0.4, 0.5),
+			Size = UDim2.new(0.35, 0, 1.6, 0),
+			Rotation = 18,
+			BackgroundColor3 = Color3.new(1, 1, 1),
+			BackgroundTransparency = 1,
+			ZIndex = 3,
+			Parent = viewHolder,
+		}, {
+			Kit.new("UIGradient", {
+				Transparency = NumberSequence.new({
+					NumberSequenceKeypoint.new(0, 1),
+					NumberSequenceKeypoint.new(0.5, 0.55),
+					NumberSequenceKeypoint.new(1, 1),
+				}),
+			}),
+		})
+		local hovered = false
+		local t = math.random() * 3
+		-- flutuação parada e inclinação/subida ao passar o mouse
+		table.insert(viewportUpdaters, function(dt: number)
+			t += dt
+			local lift = if hovered then -10 else 0
+			image.Position = UDim2.new(0.5, 0, 0.5, lift + math.sin(t * 1.6) * 4)
+			image.Rotation = (if hovered then 2 else 0) + math.sin(t * 0.9) * 0.6
+			glow.Size = UDim2.fromOffset(250 + math.sin(t * 2.2) * 10, 250 + math.sin(t * 2.2) * 10)
+		end)
+		artHover = function(on: boolean)
+			hovered = on
+			Kit.tween(imageScale, 0.25, { Scale = if on then 1.08 else 1 }, Enum.EasingStyle.Back)
+			Kit.tween(glow, 0.25, { BackgroundTransparency = if on then 0.25 else 0.55 })
+			if on then
+				shine.Position = UDim2.fromScale(-0.4, 0.5)
+				shine.BackgroundTransparency = 0
+				Kit.tween(shine, 0.55, { Position = UDim2.fromScale(1.4, 0.5) }, Enum.EasingStyle.Quad)
+			end
+		end
+	else
+		local ok, viewport, update = pcall(FactionShowcase.Viewport, info.id, color)
+		if ok and viewport then
+			viewport.Parent = viewHolder
+			table.insert(viewportUpdaters, update)
+		end
 	end
 
 	-- Faixa inferior com nome
@@ -251,6 +326,9 @@ local function buildCard(parent: Instance, info, order: number)
 	local function hover(on: boolean)
 		Kit.tween(scale, 0.18, { Scale = if on then 1.05 else 1 }, Enum.EasingStyle.Back)
 		Kit.tween(stroke, 0.18, { Transparency = if on then 0 else 0.55, Thickness = if on then 3.5 else 2 })
+		if artHover then
+			artHover(on)
+		end
 		if on then
 			SoundController.Play("UIClick")
 		end

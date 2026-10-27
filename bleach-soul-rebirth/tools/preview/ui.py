@@ -137,6 +137,9 @@ ADVANCE(0.2)
 DUMP_GUI("hud-boss")
 ''',
     "faction": r'''
+-- prévia da arte 2D do cartão (no jogo o campo recebe o rbxassetid da imagem enviada)
+local CardArt = require(PATH_PROXY("RS/Shared/Config/CardArt"))
+CardArt.Shinigami.image = "assets/cards/ichigo_humano.png"
 local FS = require(PATH_PROXY("Client/Controllers/FactionSelectController"))
 FS.Init(); FS.Start()
 local p = DEMO_PROFILE()
@@ -144,6 +147,24 @@ p.faction = nil
 SET_PROFILE(p)
 ADVANCE(1.5)
 DUMP_GUI("faction")
+''',
+    "faction-hover": r'''
+local CardArt = require(PATH_PROXY("RS/Shared/Config/CardArt"))
+CardArt.Shinigami.image = "assets/cards/ichigo_humano.png"
+local FS = require(PATH_PROXY("Client/Controllers/FactionSelectController"))
+FS.Init(); FS.Start()
+local p = DEMO_PROFILE()
+p.faction = nil
+SET_PROFILE(p)
+ADVANCE(1.5)
+-- mouse em cima do cartão do Humano
+for _, d in PLAYER_GUI:GetDescendants() do
+	if d.Name == "Shinigami" and d:IsA("TextButton") then
+		d.MouseEnter:Fire()
+	end
+end
+ADVANCE(0.4)
+DUMP_GUI("faction-hover")
 ''',
     "dialogue": r'''
 local D = require(PATH_PROXY("Client/Controllers/DialogueController"))
@@ -530,7 +551,14 @@ def draw_node(canvas, node, origin, scale, clip=None, alpha=1.0):
             layer.alpha_composite(g, (int(X), int(Y)))
         else:
             d.rounded_rectangle((X, Y, X + W, Y + H), radius=r, fill=rgba(node["bg"], node["bgt"]))
-    if node["c"] in ("ImageLabel", "ImageButton") and node.get("img") and node.get("it", 1) < 0.99:
+    local_img = os.path.join(root, node.get("img") or "") if node["c"] in ("ImageLabel", "ImageButton") else ""
+    if node.get("img") and os.path.isfile(local_img):
+        # prévia: caminho local no lugar do rbxassetid (ScaleType Fit, centralizada)
+        art = Image.open(local_img).convert("RGBA")
+        k = min(W / art.width, H / art.height)
+        art = art.resize((max(1, int(art.width * k)), max(1, int(art.height * k))), Image.LANCZOS)
+        layer.alpha_composite(art, (int(X + (W - art.width) / 2), int(Y + (H - art.height) / 2)))
+    elif node["c"] in ("ImageLabel", "ImageButton") and node.get("img") and node.get("it", 1) < 0.99:
         # imagens de asset não são carregadas: área tracejada com a cor da imagem
         d.rounded_rectangle((X, Y, X + W, Y + H), radius=r, outline=rgba(node.get("ic", [1, 1, 1]), 0.6), width=SS)
     if node["c"] == "ViewportFrame":
