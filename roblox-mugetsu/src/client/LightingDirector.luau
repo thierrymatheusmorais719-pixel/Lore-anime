@@ -26,8 +26,8 @@ local PRESETS = {
 		haze = { Density = 0.38, Color = Color3.fromRGB(90, 104, 130) },
 	},
 	Night = {
-		ClockTime = 0.5, Brightness = 0.6, ExposureCompensation = -0.8,
-		Ambient = Color3.fromRGB(20, 40, 90), OutdoorAmbient = Color3.fromRGB(26, 52, 110),
+		ClockTime = 0.5, Brightness = 0.9, ExposureCompensation = -0.5,
+		Ambient = Color3.fromRGB(44, 72, 135), OutdoorAmbient = Color3.fromRGB(50, 84, 155),
 		ColorShift_Top = Color3.fromRGB(80, 150, 255),
 		cc = { Saturation = -0.1, Contrast = 0.35, Brightness = -0.1, TintColor = Color3.fromRGB(170, 200, 255) },
 		bloom = { Intensity = 0.9, Size = 32, Threshold = 0.9 },

@@ -114,27 +114,29 @@ local function buildIchigo(char: Model, kit: Folder)
 	weld(lower, sash, CF(0, 0.15, 0))
 	local collar = makePart("Collar", Vector3.new(2.1, 0.5, 1.05), black, Enum.Material.Fabric, kit)
 	weld(upper, collar, CF(0, 0.55, 0.05))
+	local backUpper = makePart("CoatBackUpper", Vector3.new(2.1, 1.1, 0.12), black, Enum.Material.Fabric, kit)
+	weld(upper, backUpper, CF(0, 0.2, 0.56))
 
 	-- braço direito enfaixado
 	local wrap = makePart("ArmWrap", Vector3.new(1.15, 1.3, 1.15), Color3.fromRGB(215, 205, 190), Enum.Material.Fabric, kit)
 	weld(rUpper, wrap, CF(0, 0, 0))
 
 	-- Tensa Zangetsu (Bankai): lâmina negra
-	local handle = makePart("SwordHandle", Vector3.new(0.28, 0.28, 1.1), black, Enum.Material.Metal, kit)
-	weld(rHand, handle, CF(0, -0.2, 0) * ANG(rad(-67), 0, 0))
-	local blade = makePart("Blade", Vector3.new(0.12, 0.55, 4.6), Color3.fromRGB(10, 10, 12), Enum.Material.Metal, kit)
-	weld(handle, blade, CF(0, 0, -(0.55 + 2.3)))
+	local handle = makePart("SwordHandle", Vector3.new(0.28, 0.28, 0.9), black, Enum.Material.Metal, kit)
+	weld(rHand, handle, CF(0, -0.2, 0) * ANG(rad(-50), 0, 0))
+	local blade = makePart("Blade", Vector3.new(0.12, 0.55, 3.6), Color3.fromRGB(10, 10, 12), Enum.Material.Metal, kit)
+	weld(handle, blade, CF(0, 0, -(0.45 + 1.8)))
 	local edgeA = Instance.new("Attachment")
 	edgeA.Name = "TrailA"
-	edgeA.Position = Vector3.new(0, 0.27, -2.2)
+	edgeA.Position = Vector3.new(0, 0.27, -1.7)
 	edgeA.Parent = blade
 	local edgeB = Instance.new("Attachment")
 	edgeB.Name = "TrailB"
-	edgeB.Position = Vector3.new(0, -0.27, -2.2)
+	edgeB.Position = Vector3.new(0, -0.27, -1.7)
 	edgeB.Parent = blade
 	local tip = Instance.new("Attachment")
 	tip.Name = "Tip"
-	tip.Position = Vector3.new(0, 0, -2.3)
+	tip.Position = Vector3.new(0, 0, -1.8)
 	tip.Parent = blade
 end
 
@@ -149,13 +151,13 @@ local function buildMugetsu(char: Model, kit: Folder)
 
 	-- cabelo longo: cortina frontal + mechas laterais + cascata traseira
 	local strands = {
-		{ "BackA", CF(0, 0.55, 0.38) * ANG(0, 0, 0) * ANG(rad(-40), 0, 0), { 1.3, 1.5, 1.7, 1.9 }, 0.55, -6 },
-		{ "BackB", CF(0.3, 0.5, 0.35) * ANG(0, rad(-25), 0) * ANG(rad(-38), 0, 0), { 1.2, 1.5, 1.8, 1.8 }, 0.45, -7 },
-		{ "BackC", CF(-0.3, 0.5, 0.35) * ANG(0, rad(25), 0) * ANG(rad(-38), 0, 0), { 1.2, 1.5, 1.8, 1.8 }, 0.45, -7 },
-		{ "BackD", CF(0.5, 0.4, 0.25) * ANG(0, rad(-60), 0) * ANG(rad(-30), 0, 0), { 1.0, 1.3, 1.6 }, 0.4, -6 },
-		{ "BackE", CF(-0.5, 0.4, 0.25) * ANG(0, rad(60), 0) * ANG(rad(-30), 0, 0), { 1.0, 1.3, 1.6 }, 0.4, -6 },
-		{ "SideR", CF(0.55, 0.25, -0.1) * ANG(0, rad(-90), 0) * ANG(rad(-8), 0, 0), { 0.9, 1.1, 1.3 }, 0.3, -4 },
-		{ "SideL", CF(-0.55, 0.25, -0.1) * ANG(0, rad(90), 0) * ANG(rad(-8), 0, 0), { 0.9, 1.1, 1.3 }, 0.3, -4 },
+		{ "BackA", CF(0, 0.55, 0.38) * ANG(0, 0, 0) * ANG(rad(-40), 0, 0), { 1.3, 1.5, 1.7, 1.9 }, 1.3, -6 },
+		{ "BackB", CF(0.3, 0.5, 0.35) * ANG(0, rad(-25), 0) * ANG(rad(-38), 0, 0), { 1.2, 1.5, 1.8, 1.8 }, 0.95, -7 },
+		{ "BackC", CF(-0.3, 0.5, 0.35) * ANG(0, rad(25), 0) * ANG(rad(-38), 0, 0), { 1.2, 1.5, 1.8, 1.8 }, 0.95, -7 },
+		{ "BackD", CF(0.5, 0.4, 0.25) * ANG(0, rad(-60), 0) * ANG(rad(-30), 0, 0), { 1.0, 1.3, 1.6 }, 0.8, -6 },
+		{ "BackE", CF(-0.5, 0.4, 0.25) * ANG(0, rad(60), 0) * ANG(rad(-30), 0, 0), { 1.0, 1.3, 1.6 }, 0.8, -6 },
+		{ "SideR", CF(0.55, 0.25, -0.1) * ANG(0, rad(-90), 0) * ANG(rad(-8), 0, 0), { 0.9, 1.1, 1.3 }, 0.55, -4 },
+		{ "SideL", CF(-0.55, 0.25, -0.1) * ANG(0, rad(90), 0) * ANG(rad(-8), 0, 0), { 0.9, 1.1, 1.3 }, 0.55, -4 },
 		{ "BangR", CF(0.3, 0.6, -0.45) * ANG(rad(8), 0, rad(-6)), { 0.8, 0.9 }, 0.26, -3 },
 		{ "BangL", CF(-0.3, 0.6, -0.45) * ANG(rad(8), 0, rad(6)), { 0.8, 0.9 }, 0.26, -3 },
 	}
@@ -201,28 +203,28 @@ local function buildMugetsu(char: Model, kit: Folder)
 	weld(lower, belt, CF(0, 0.15, 0))
 
 	-- Tensa Zangetsu (Mugetsu): katana negra com corrente no pomo
-	local handle = makePart("SwordHandle", Vector3.new(0.26, 0.26, 1.2), black, Enum.Material.Metal, kit)
-	weld(rHand, handle, CF(0, -0.2, 0) * ANG(rad(-67), 0, 0))
+	local handle = makePart("SwordHandle", Vector3.new(0.26, 0.26, 0.9), black, Enum.Material.Metal, kit)
+	weld(rHand, handle, CF(0, -0.2, 0) * ANG(rad(-50), 0, 0))
 	local guard = makePart("Guard", Vector3.new(0.55, 0.55, 0.12), Color3.fromRGB(25, 25, 28), Enum.Material.Metal, kit)
-	weld(handle, guard, CF(0, 0, -0.66))
-	local blade = makePart("Blade", Vector3.new(0.1, 0.5, 4.2), black, Enum.Material.Metal, kit)
-	weld(handle, blade, CF(0, 0, -(0.7 + 2.1)))
+	weld(handle, guard, CF(0, 0, -0.5))
+	local blade = makePart("Blade", Vector3.new(0.1, 0.5, 3.4), black, Enum.Material.Metal, kit)
+	weld(handle, blade, CF(0, 0, -(0.55 + 1.7)))
 	local a = Instance.new("Attachment")
 	a.Name = "TrailA"
-	a.Position = Vector3.new(0, 0.25, -2.0)
+	a.Position = Vector3.new(0, 0.25, -1.6)
 	a.Parent = blade
 	local b = Instance.new("Attachment")
 	b.Name = "TrailB"
-	b.Position = Vector3.new(0, -0.25, -2.0)
+	b.Position = Vector3.new(0, -0.25, -1.6)
 	b.Parent = blade
 	local tip = Instance.new("Attachment")
 	tip.Name = "Tip"
-	tip.Position = Vector3.new(0, 0, -2.1)
+	tip.Position = Vector3.new(0, 0, -1.7)
 	tip.Parent = blade
 	local prev: BasePart = handle
 	for i = 1, 4 do
 		local link = makePart(`Chain{i}`, Vector3.new(0.14, 0.14, 0.34), Color3.fromRGB(60, 60, 66), Enum.Material.Metal, kit)
-		weld(prev, link, CF(0.0, -0.05 * i, (i == 1 and 0.78 or 0.3)) * ANG(rad(14), 0, 0))
+		weld(prev, link, CF(0.0, -0.05 * i, (i == 1 and 0.6 or 0.3)) * ANG(rad(14), 0, 0))
 		prev = link
 	end
 end

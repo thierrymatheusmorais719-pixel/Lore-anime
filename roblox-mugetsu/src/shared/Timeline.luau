@@ -42,51 +42,52 @@ Timeline.Phases = {
 } :: { Phase }
 
 -- Planos de câmera. "look" e "pos" são relativos ao HumanoidRootPart (CFrame do personagem).
+-- Referências R15 relativas ao HRP: pés -3, quadril 0, peito +1.0, olhos +2.4, topo da cabeça +2.9.
 Timeline.Shots = {
 	-- FASE 1: aproximação lenta por trás, espada baixa
 	{ t = 0, duration = 2.6, ease = "Sine",
-		from = { pos = V(2.5, 3.2, 14), look = V(0, 2.4, 0), fov = 55 },
-		to = { pos = V(1.2, 3.0, 8.5), look = V(0, 2.8, 0), fov = 48 } },
-	-- corte para a lâmina (close na espada)
+		from = { pos = V(2.5, 1.2, 14), look = V(0, 0.6, 0), fov = 55 },
+		to = { pos = V(1.2, 1.0, 8.5), look = V(0, 1.0, 0), fov = 48 } },
+	-- corte para a lâmina (close na espada, que desce da mão direita para frente/baixo)
 	{ t = 2.6, duration = 2.4, ease = "Quad",
-		from = { pos = V(-3.5, 1.2, -4.5), look = V(1.6, 1.0, -1.2), fov = 38 },
-		to = { pos = V(-2.0, 2.4, -3.6), look = V(1.6, 2.8, -1.2), fov = 34 } },
-	-- FASE 2: pose frontal + órbita ascendente
+		from = { pos = V(4.2, -0.4, -5.2), look = V(1.6, -1.6, -0.8), fov = 36 },
+		to = { pos = V(3.0, -1.1, -3.6), look = V(1.6, -2.3, -1.0), fov = 30 } },
+	-- FASE 2: pose frontal + órbita
 	{ t = 5, duration = 4.2, ease = "Orbit",
-		from = { pos = V(0, 3.4, -11), look = V(0, 3, 0), fov = 52 },
-		to = { pos = V(0, 3.4, -11), look = V(0, 3, 0), fov = 44 },
-		orbit = { degrees = 110, radius = 11, height = 3.4 } },
+		from = { pos = V(0, 1.4, -11), look = V(0, 1.0, 0), fov = 52 },
+		to = { pos = V(0, 1.4, -11), look = V(0, 1.0, 0), fov = 44 },
+		orbit = { degrees = 110, radius = 11, height = 1.4 } },
 	-- close dos olhos
 	{ t = 9.2, duration = 2.8, ease = "Expo",
-		from = { pos = V(0.4, 4.15, -4.2), look = V(0, 4.15, 0), fov = 40 },
-		to = { pos = V(0.2, 4.2, -1.7), look = V(0, 4.2, 0), fov = 26 } },
+		from = { pos = V(0.4, 2.4, -4.2), look = V(0, 2.35, 0), fov = 40 },
+		to = { pos = V(0.2, 2.45, -2.4), look = V(0, 2.4, 0), fov = 28 } },
 	-- FASE 3: plano aberto (pilar de energia) com a câmera subindo
 	{ t = 12, duration = 3.0, ease = "Quad",
-		from = { pos = V(0, -0.5, -17), look = V(0, 6, 0), fov = 70 },
-		to = { pos = V(0, 1.5, -13), look = V(0, 9, 0), fov = 62 } },
+		from = { pos = V(0, -2.0, -17), look = V(0, 6, 0), fov = 70 },
+		to = { pos = V(0, -0.5, -13), look = V(0, 8, 0), fov = 62 } },
 	-- close da máscara (rosto)
 	{ t = 15, duration = 2.0, ease = "Quad",
-		from = { pos = V(0.3, 4.3, -2.9), look = V(0, 4.2, 0), fov = 32 },
-		to = { pos = V(0, 4.3, -2.1), look = V(0, 4.2, 0), fov = 28 } },
+		from = { pos = V(0.3, 2.5, -2.9), look = V(0, 2.4, 0), fov = 32 },
+		to = { pos = V(0, 2.5, -2.1), look = V(0, 2.4, 0), fov = 28 } },
 	-- plano de espera durante o flash branco (câmera cai de cima)
 	{ t = 17, duration = 2.0, ease = "Sine",
-		from = { pos = V(0, 14, -3), look = V(0, 2, 0), fov = 60 },
-		to = { pos = V(0, 9, -7), look = V(0, 3, 0), fov = 54 } },
+		from = { pos = V(0, 12, -3), look = V(0, 0, 0), fov = 60 },
+		to = { pos = V(0, 7, -7), look = V(0, 1, 0), fov = 54 } },
 	-- FASE 4: whip rápido para a pose de Mugetsu (impacto em t=19.6)
 	{ t = 19, duration = 0.45, ease = "Expo",
-		from = { pos = V(9, 2.4, -6), look = V(0, 3, 0), fov = 90 },
-		to = { pos = V(1.8, 2.6, -9), look = V(0, 3.2, 0), fov = 56 } },
+		from = { pos = V(9, 0.4, -6), look = V(0, 1.2, 0), fov = 90 },
+		to = { pos = V(1.8, 0.6, -9), look = V(0, 1.2, 0), fov = 56 } },
 	{ t = 19.45, duration = 3.6, ease = "Sine",
-		from = { pos = V(1.8, 2.6, -9), look = V(0, 3.2, 0), fov = 56 },
-		to = { pos = V(-2.4, 2.2, -12.5), look = V(0, 3.6, 0), fov = 50 } },
+		from = { pos = V(1.8, 0.6, -9), look = V(0, 1.4, 0), fov = 56 },
+		to = { pos = V(-2.4, 0.2, -12.5), look = V(0, 1.6, 0), fov = 50 } },
 	-- reverso: plano de baixo para cima mostrando o cabelo ao vento
 	{ t = 23.05, duration = 2.95, ease = "Sine",
-		from = { pos = V(-5, 0.6, -8), look = V(0, 3.6, 0), fov = 58 },
-		to = { pos = V(4.5, 1.0, -7), look = V(0, 3.8, 0), fov = 46 } },
+		from = { pos = V(-5, -1.8, -8), look = V(0, 1.6, 0), fov = 58 },
+		to = { pos = V(4.5, -1.4, -7), look = V(0, 1.8, 0), fov = 46 } },
 	-- OUTRO: close do olho vermelho
 	{ t = 26, duration = 4.0, ease = "Quad",
-		from = { pos = V(0.5, 4.25, -3.2), look = V(0, 4.2, 0), fov = 30 },
-		to = { pos = V(0.2, 4.25, -1.6), look = V(0, 4.2, 0), fov = 22 } },
+		from = { pos = V(0.6, 2.45, -3.6), look = V(0, 2.4, 0), fov = 34 },
+		to = { pos = V(0.2, 2.45, -2.4), look = V(0, 2.4, 0), fov = 28 } },
 } :: { Shot }
 
 -- Eventos sincronizados. O servidor e o cliente consomem a mesma lista.

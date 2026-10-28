@@ -26,7 +26,7 @@ end
 
 local STANCE: Pose = {
 	Root = { 0, 0, 0, 0 }, Waist = { 2, 0, 0 }, Neck = { 8, 0, 0 },
-	RightShoulder = { -8, 0, 6 }, RightElbow = { 10, 0, 0 },
+	RightShoulder = { 25, 0, 8 }, RightElbow = { 18, 0, 0 }, -- braço à frente: ponta da lâmina fica acima do chão
 	LeftShoulder = { -5, 0, -8 }, LeftElbow = { 12, 0, 0 },
 	RightHip = { 6, 0, 3 }, RightKnee = { -8, 0, 0 },
 	LeftHip = { -8, 0, -3 }, LeftKnee = { -4, 0, 0 },
@@ -34,7 +34,7 @@ local STANCE: Pose = {
 
 local GUARD: Pose = {
 	Root = { 4, 0, 0, -0.5 }, Waist = { 6, 0, 0 }, Neck = { 20, 0, 0 },
-	RightShoulder = { 55, 0, -30 }, RightElbow = { 70, 0, 0 },
+	RightShoulder = { 22, 0, -24 }, RightElbow = { 40, 0, 0 }, -- espada baixa na frente do corpo (não cruza o rosto)
 	LeftShoulder = { 30, 0, -10 }, LeftElbow = { 40, 0, 0 },
 	RightHip = { 22, 0, 8 }, RightKnee = { -34, 0, 0 },
 	LeftHip = { -20, 0, -8 }, LeftKnee = { -18, 0, 0 },
@@ -42,7 +42,7 @@ local GUARD: Pose = {
 
 local FACE_HAND: Pose = {
 	Root = { 0, 0, 0, -0.2 }, Waist = { 18, 0, 0 }, Neck = { 34, 0, 0 },
-	RightShoulder = { 20, 0, 12 }, RightElbow = { 20, 0, 0 },
+	RightShoulder = { 20, 0, 26 }, RightElbow = { 14, 0, 0 }, -- espada afastada para fora: não cruza o rosto nos closes
 	LeftShoulder = { 95, 0, -15 }, LeftElbow = { 105, 0, 0 },
 	RightHip = { 10, 0, 6 }, RightKnee = { -14, 0, 0 },
 	LeftHip = { -10, 0, -6 }, LeftKnee = { -8, 0, 0 },
@@ -74,7 +74,7 @@ local SLASH: Pose = {
 
 local FINAL: Pose = {
 	Root = { 0, 0, 0, 0 }, Waist = { -3, 0, 0 }, Neck = { 14, 0, 0 },
-	RightShoulder = { -4, 0, 10 }, RightElbow = { 8, 0, 0 },
+	RightShoulder = { 18, 0, 12 }, RightElbow = { 14, 0, 0 },
 	LeftShoulder = { -6, 0, -12 }, LeftElbow = { 10, 0, 0 },
 	RightHip = { 4, 0, 8 }, RightKnee = { -6, 0, 0 },
 	LeftHip = { -6, 0, -8 }, LeftKnee = { -3, 0, 0 },

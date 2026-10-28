@@ -105,6 +105,9 @@ H.Lighting = function(ctx, arg)
 	if ctx.isOwner then
 		LightingDirector.apply(arg, arg == "Mugetsu" and 0.1 or 1.0)
 	end
+	if arg == "Mugetsu" then
+		ctx.vfx:faceLight(ctx.char, Color3.fromRGB(225, 230, 242), 2.4, 12)
+	end
 end
 H.AuraWhispers = function(ctx)
 	ctx.vfx:auraStart(ctx.char, "Blue")
@@ -227,7 +230,7 @@ H.ReleaseImpact = function(ctx)
 	ctx.vfx:lightPulse(ctx.root.Position + Vector3.new(0, 2, 0), VFX.Colors.White, 10, 90, 0.7)
 	HairSway.gust(1, 3)
 	if ctx.isOwner then
-		Hud.flash(Color3.new(1, 1, 1), 0.06, 0.4)
+		Hud.flash(Color3.new(1, 1, 1), 0.05, 0.25)
 		CameraDirector.shake(0.8, 0.7)
 		CameraDirector.punchFov(14, 0.5)
 		LightingDirector.pulse(1.2)

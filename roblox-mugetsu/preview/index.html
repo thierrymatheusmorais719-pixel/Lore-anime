@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prévia aproximada — Mugetsu</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;color:#ddd;font:13px/1.3 system-ui,sans-serif;overflow:hidden}
+  #stage{position:relative;width:100vw;height:100vh}
+  canvas{display:block;width:100%;height:100%}
+  .bar{position:absolute;left:0;right:0;background:#000;transition:none;z-index:5}
+  #fade,#flash{position:absolute;inset:0;pointer-events:none;z-index:6;opacity:0}
+  #badge{position:absolute;top:8px;left:8px;z-index:9;background:#000a;padding:5px 9px;border:1px solid #fff4;border-radius:6px;font-size:12px}
+  #ui{position:absolute;bottom:8px;left:8px;right:8px;z-index:9;display:flex;gap:10px;align-items:center;background:#000b;padding:6px 10px;border-radius:8px}
+  #ui input[type=range]{flex:1}
+  #lbl{min-width:240px;font-variant-numeric:tabular-nums}
+  button{background:#222;color:#eee;border:1px solid #555;border-radius:5px;padding:3px 9px;cursor:pointer}
+  body.shot #ui{display:none}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div class="bar" id="barT" style="top:0;height:0"></div>
+  <div class="bar" id="barB" style="bottom:0;height:0"></div>
+  <div id="fade"></div><div id="flash"></div>
+  <div id="badge">PRÉVIA APROXIMADA (three.js) — simulação da Timeline/poses do projeto, <b>não</b> é o Roblox</div>
+  <div id="ui">
+    <button id="play">⏸</button>
+    <input id="seek" type="range" min="0" max="30" step="0.01" value="0">
+    <span id="lbl"></span>
+  </div>
+</div>
+<script type="module" src="./preview.js"></script>
+</body>
+</html>

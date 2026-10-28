@@ -271,18 +271,50 @@ end
 ------------------------------------------------------------------------------------------------
 -- Anéis, ondas de choque
 ------------------------------------------------------------------------------------------------
+-- Anel VAZADO sem assets: peça plana invisível com SurfaceGui (Frame redondo só com contorno).
+-- (Uma peça Cylinder é maciça e viraria um disco tampando o chão.)
 function Session.ring(self: Session, origin: CFrame, maxRadius: number, duration: number, color: Color3, thickness: number, tilt: CFrame?)
-	local p = acquire("Cylinder")
+	local p = acquire("Block")
 	if not p then
 		return
 	end
-	p.Color = color
-	local base = origin * (tilt or CFrame.identity) * CFrame.Angles(0, 0, math.rad(90))
+	p.Material = Enum.Material.SmoothPlastic
+	p.Transparency = 1
+	local base = origin * (tilt or CFrame.identity)
+	local strokes: { UIStroke } = {}
+	for _, face in { Enum.NormalId.Top, Enum.NormalId.Bottom } do
+		local sg = Instance.new("SurfaceGui")
+		sg.Face = face
+		sg.LightInfluence = 0
+		sg.Brightness = 2
+		sg.CanvasSize = Vector2.new(512, 512)
+		sg.SizingMode = Enum.SurfaceGuiSizingMode.FixedSize
+		sg.Parent = p
+		local f = Instance.new("Frame")
+		f.Size = UDim2.fromScale(1, 1)
+		f.BackgroundTransparency = 1
+		f.BorderSizePixel = 0
+		f.Parent = sg
+		local c = Instance.new("UICorner")
+		c.CornerRadius = UDim.new(0.5, 0)
+		c.Parent = f
+		local st = Instance.new("UIStroke")
+		st.Color = color
+		st.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		st.Thickness = 8
+		st.Parent = f
+		table.insert(strokes, st)
+	end
 	run(self, duration, function(k)
-		local r = maxRadius * easeOut(k)
-		p.Size = Vector3.new(thickness * (1 - k * 0.7), r * 2, r * 2)
+		local r = math.max(maxRadius * easeOut(k), 0.5)
+		p.Size = Vector3.new(r * 2, 0.2, r * 2)
 		p.CFrame = base
-		p.Transparency = k ^ 2
+		-- espessura em studs convertida para pixels do canvas (512 px cobrem 2r studs)
+		local px = math.max(1, thickness * (1 - k * 0.7) * 256 / r)
+		for _, st in strokes do
+			st.Thickness = px
+			st.Transparency = k ^ 2
+		end
 	end, function()
 		release(p)
 	end)
@@ -516,6 +548,25 @@ function Session.tendrils(self: Session, center: Vector3, count: number, duratio
 	end
 end
 
+-- Luz de preenchimento presa à cabeça: mantém o rosto legível nos closes sob iluminação escura.
+function Session.faceLight(self: Session, char: Model, color: Color3, brightness: number, range: number)
+	local head = char:FindFirstChild("Head")
+	if not (head and head:IsA("BasePart")) then
+		return
+	end
+	local at = Instance.new("Attachment")
+	at.Name = "MugetsuFaceLight"
+	at.Position = Vector3.new(0.6, 0.5, -2.4)
+	at.Parent = head
+	local l = Instance.new("PointLight")
+	l.Color = color
+	l.Brightness = brightness
+	l.Range = range
+	l.Shadows = false
+	l.Parent = at
+	track(self, at)
+end
+
 function Session.swordTrail(self: Session, blade: BasePart, duration: number)
 	local a, b = blade:FindFirstChild("TrailA"), blade:FindFirstChild("TrailB")
 	if not (a and b) then
@@ -604,23 +655,35 @@ function Session.environmentReact(self: Session, origin: Vector3, radius: number
 	end)
 end
 
--- Projétil do Getsuga: crescente negro com borda branca; posição = origem + dir * velocidade * (tempo do servidor).
+-- Projétil do Getsuga: crescente vertical (arco de segmentos que afinam nas pontas) negro com borda
+-- branca. Posição = origem + dir * velocidade * (tempo do servidor), igual em todos os clientes.
 function Session.projectile(self: Session, origin: Vector3, dir: Vector3, speed: number, range: number, width: number, serverStart: number)
-	local core = acquire("Cylinder")
-	local rim = acquire("Cylinder")
-	if not (core and rim) then
-		if core then
-			release(core)
+	local SEG = 11
+	local radius = width * 0.6
+	local maxAngle = math.rad(68)
+	local core: { Part } = {}
+	local rim: { Part } = {}
+	for i = 1, SEG do
+		local c = acquire("Block")
+		local r = acquire("Block")
+		if not (c and r) then
+			if c then
+				release(c)
+			end
+			if r then
+				release(r)
+			end
+			break
 		end
-		if rim then
-			release(rim)
-		end
+		c.Color = BLACK
+		c.Material = Enum.Material.SmoothPlastic
+		r.Color = WHITE
+		table.insert(core, c)
+		table.insert(rim, r)
+	end
+	if #core == 0 then
 		return
 	end
-	core.Color = BLACK
-	rim.Color = WHITE
-	local look = CFrame.lookAt(Vector3.zero, dir)
-	local disc = CFrame.Angles(0, math.rad(90), 0) -- eixo do cilindro (X) aponta para a frente
 	local emitterPart = Instance.new("Part")
 	emitterPart.Anchored = true
 	emitterPart.CanCollide = false
@@ -633,27 +696,38 @@ function Session.projectile(self: Session, origin: Vector3, dir: Vector3, speed:
 	local trail = emitter(emitterPart, {
 		Texture = SMOKE, Color = ColorSequence.new(BLACK), LightEmission = 0, Rate = 40 * self.q.ParticleScale,
 		Lifetime = NumberRange.new(0.5, 0.9),
-		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, width * 0.5), NumberSequenceKeypoint.new(1, width * 0.9) }),
+		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, width * 0.4), NumberSequenceKeypoint.new(1, width * 0.8) }),
 		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 1) }),
 		Speed = NumberRange.new(0, 2), SpreadAngle = Vector2.new(25, 25),
 	})
+	local basis = CFrame.lookAt(Vector3.zero, dir)
+	local n = #core
+	local segLen = 2 * radius * math.sin(maxAngle) / (n - 1) * 1.15
 	local duration = range / speed
 	local startDelay = math.max(0, serverStart - Workspace:GetServerTimeNow())
 	run(self, duration + startDelay, function()
 		local d = math.clamp((Workspace:GetServerTimeNow() - serverStart) * speed, 0, range)
 		local pos = origin + dir * d
 		local fade = math.clamp((d - range * 0.8) / (range * 0.2), 0, 1)
-		core.Size = Vector3.new(1.0, width * 1.5, width * 1.5)
-		rim.Size = Vector3.new(0.5, width * 1.65, width * 1.65)
-		core.CFrame = CFrame.new(pos) * look.Rotation * disc * CFrame.Angles(0, 0, 0)
-		rim.CFrame = CFrame.new(pos - dir * 0.6) * look.Rotation * disc
-		core.Transparency = fade
-		rim.Transparency = fade
+		local frame = CFrame.new(pos) * basis.Rotation
+		for i = 1, n do
+			local theta = -maxAngle + (i - 1) / (n - 1) * 2 * maxAngle
+			local thick = 0.3 + 1.3 * math.cos(theta / maxAngle * math.pi / 2)
+			local local_ = CFrame.new(0, radius * math.sin(theta), -(radius * math.cos(theta) - radius)) * CFrame.Angles(-theta, 0, 0)
+			core[i].Size = Vector3.new(width * 0.35, segLen, thick)
+			core[i].CFrame = frame * local_
+			core[i].Transparency = fade
+			rim[i].Size = Vector3.new(width * 0.3, segLen, 0.18)
+			rim[i].CFrame = frame * local_ * CFrame.new(0, 0, -(thick / 2 + 0.05))
+			rim[i].Transparency = fade
+		end
 		emitterPart.Position = pos
 	end, function()
 		trail.Rate = 0
-		release(core)
-		release(rim)
+		for i = 1, n do
+			release(core[i])
+			release(rim[i])
+		end
 		task.delay(1, function()
 			emitterPart:Destroy()
 		end)
