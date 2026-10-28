@@ -1,0 +1,7 @@
+{
+  "name": "mugetsu-transformation-tests",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node tests/run.mjs" },
+  "devDependencies": { "luau-web": "^1.5.1" }
+}

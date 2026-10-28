@@ -1,0 +1,4323 @@
+<roblox version="4">
+  <Item class="Lighting" referent="0">
+    <Properties>
+      <string name="Name">Lighting</string>
+      <bool name="GlobalShadows">true</bool>
+      <token name="Technology">3</token>
+    </Properties>
+  </Item>
+  <Item class="ReplicatedStorage" referent="1">
+    <Properties>
+      <string name="Name">ReplicatedStorage</string>
+    </Properties>
+    <Item class="Folder" referent="2">
+      <Properties>
+        <string name="Name">Mugetsu</string>
+      </Properties>
+      <Item class="ModuleScript" referent="3">
+        <Properties>
+          <string name="Name">AbilityMath</string>
+          <string name="Source"><![CDATA[--!strict
+-- Regras puras da habilidade: cooldown, sanitização de direção e teste de acerto em caixa orientada.
+-- Usadas pelo servidor (autoridade) e pelo cliente (apenas para o telegraph).
+
+local AbilityMath = {}
+
+-- Cooldown: guarda o instante em que a habilidade volta a ficar disponível.
+function AbilityMath.isReady(readyAt: number?, now: number): boolean
+	return readyAt == nil or now >= readyAt
+end
+
+function AbilityMath.remaining(readyAt: number?, now: number): number
+	if readyAt == nil then
+		return 0
+	end
+	return math.max(0, readyAt - now)
+end
+
+-- Aceita apenas direção horizontal finita. Retorna nil se inválida.
+function AbilityMath.sanitizeDirection(dir: any): Vector3?
+	if typeof(dir) ~= "Vector3" then
+		return nil
+	end
+	local d = dir :: Vector3
+	if d.X ~= d.X or d.Y ~= d.Y or d.Z ~= d.Z then -- NaN
+		return nil
+	end
+	local flat = Vector3.new(d.X, 0, d.Z)
+	if flat.Magnitude < 1e-3 or flat.Magnitude == math.huge then
+		return nil
+	end
+	return flat.Unit
+end
+
+-- Se o cliente enviar uma mira muito diferente da direção do personagem, usa a do personagem.
+function AbilityMath.clampAim(sent: Vector3, facing: Vector3, tolerance: number): Vector3
+	if sent:Dot(facing) >= 1 - tolerance * 5 then -- tolerance 0.2 => dot >= 0 (<= 90°)
+		return sent
+	end
+	return facing
+end
+
+-- Ponto dentro da caixa orientada (origem, direção, comprimento, largura, altura).
+function AbilityMath.insideBeam(
+	point: Vector3,
+	origin: Vector3,
+	dir: Vector3,
+	length: number,
+	width: number,
+	height: number
+): boolean
+	local rel = point - origin
+	local along = rel:Dot(dir)
+	if along < 0 or along > length then
+		return false
+	end
+	local side = Vector3.new(-dir.Z, 0, dir.X)
+	if math.abs(rel:Dot(side)) > width / 2 then
+		return false
+	end
+	return math.abs(rel.Y) <= height
+end
+
+return AbilityMath
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="4">
+        <Properties>
+          <string name="Name">AssetManifest</string>
+          <string name="Source"><![CDATA[--!strict
+-- Manifesto de assets EXTERNOS. Nenhum ID foi inventado: tudo que está vazio ("") ainda precisa
+-- ser produzido/publicado por você. O código detecta o vazio e usa o fallback procedural
+-- (PoseDriver para animação; sons sintetizados por Sound sem SoundId ficam silenciosos).
+--
+-- Para integrar: publique a animação/áudio, cole o ID ("rbxassetid://123") e (opcional) liste os
+-- KeyframeMarkers que a animação emite, com o nome do evento da Timeline correspondente.
+
+export type AnimEntry = {
+	id: string, -- "" = ainda não existe
+	looped: boolean,
+	markers: { [string]: string }, -- nome do marker -> nome do evento da Timeline
+	expectedLength: number, -- duração desejada (segundos) para quem for animar
+	brief: string, -- descrição para o animador
+}
+
+export type SoundEntry = {
+	id: string,
+	volume: number,
+	brief: string,
+}
+
+local Manifest = {}
+
+Manifest.Animations = {
+	Prepare = { id = "", looped = false, markers = {}, expectedLength = 5,
+		brief = "Costas para a câmera, espada baixa na mão direita, peso no pé de trás, respiração lenta." },
+	Concentrate = { id = "", looped = true, markers = { Pulse = "PulseLight" }, expectedLength = 7,
+		brief = "Pose frontal: espada atravessada na frente do corpo, braço esquerdo tenso, cabeça baixa; tremor crescente." },
+	Transform = { id = "", looped = false, markers = { Mask = "MaskForm", Swap = "MorphSwap" }, expectedLength = 7,
+		brief = "Mão esquerda cobre o rosto, cabeça para trás, corpo se curva; mão cai revelando a máscara." },
+	Release = { id = "", looped = false, markers = { Impact = "ReleaseImpact", Slash = "SwordSlash" }, expectedLength = 3,
+		brief = "Golpe diagonal descendente com a espada: wind-up 0.3s, impacto no frame 'Impact', follow-through." },
+	FinalPose = { id = "", looped = true, markers = {}, expectedLength = 4,
+		brief = "Mugetsu ereto, espada baixa ao lado, braço esquerdo relaxado, cabelo ao vento." },
+	GetsugaCast = { id = "", looped = false, markers = { Fire = "AbilityFire" }, expectedLength = 1.2,
+		brief = "Ataque especial: carga com espada atrás (0.9s) e corte frontal ascendente no marker 'Fire'." },
+} :: { [string]: AnimEntry }
+
+Manifest.Sounds = {
+	AmbientBed = { id = "", volume = 0.5, brief = "Drone grave contínuo, tensão crescente (loop)." },
+	Heartbeat = { id = "", volume = 0.8, brief = "Batimento grave para as PauseBeat." },
+	EnergyRise = { id = "", volume = 0.9, brief = "Riser de 7s para a Concentração." },
+	Impact = { id = "", volume = 1.0, brief = "Impacto sub-grave + crack para ReleaseImpact." },
+	SwordSlash = { id = "", volume = 0.9, brief = "Whoosh de lâmina." },
+	Getsuga = { id = "", volume = 0.9, brief = "Disparo do Getsuga negro." },
+	Tendrils = { id = "", volume = 0.8, brief = "Textura de chamas negras/sussurros." },
+} :: { [string]: SoundEntry }
+
+-- Kit de modelo opcional: se existir ServerStorage.MugetsuAssets.MugetsuKit (Model) com a estrutura
+-- documentada no README, o ModelKit o usa no lugar das peças procedurais.
+Manifest.CustomKitPath = { "MugetsuAssets", "MugetsuKit" }
+
+return Manifest
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="5">
+        <Properties>
+          <string name="Name">Config</string>
+          <string name="Source"><![CDATA[--!strict
+-- Configuração central. Tudo que é ajustável fica aqui.
+
+export type QualityLevel = "Low" | "Medium" | "High"
+
+local Config = {}
+
+Config.Transform = {
+	Keybind = Enum.KeyCode.G,
+	MobileButtonLabel = "MUGETSU",
+	Cooldown = 90, -- segundos entre transformações
+	FormDuration = 120, -- segundos na forma Mugetsu (0 = até morrer)
+	MaxRange = 120, -- observadores além disso recebem só o resultado final
+	RequireR15 = true,
+}
+
+Config.Ability = {
+	Name = "Getsuga Tenshō Negro",
+	Keybind = Enum.KeyCode.F,
+	MobileButtonLabel = "GETSUGA",
+	Cooldown = 6,
+	TelegraphTime = 0.9, -- tempo de aviso antes do disparo
+	Damage = 35,
+	Range = 90,
+	Width = 9, -- largura da faixa de dano (studs)
+	Height = 10,
+	ProjectileSpeed = 140,
+	MaxHitsPerCast = 8,
+	RemoteRateLimit = 0.25, -- mínimo entre requisições aceitas
+	AimTolerance = 0.2, -- direção enviada pelo cliente é normalizada e limitada
+}
+
+Config.Quality = {
+	Low = { ParticleScale = 0.35, Shards = 14, Rings = 2, PostFx = false, Fog = false },
+	Medium = { ParticleScale = 0.65, Shards = 28, Rings = 3, PostFx = true, Fog = true },
+	High = { ParticleScale = 1.0, Shards = 48, Rings = 4, PostFx = true, Fog = true },
+}
+
+Config.Arena = {
+	Origin = Vector3.new(0, 0, 0),
+	Radius = 160,
+	SpawnOffset = Vector3.new(0, 6, 0),
+	Pillars = 14,
+}
+
+Config.Safety = {
+	-- Se a cutscene durar mais que isto (timeline + margem), o watchdog a cancela.
+	WatchdogMargin = 6,
+	HumanoidWalkSpeedDuringCutscene = 0,
+}
+
+return Config
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="6">
+        <Properties>
+          <string name="Name">Maid</string>
+          <string name="Source"><![CDATA[--!strict
+-- Coletor de limpeza: conexões, instâncias, funções, threads e tweens.
+
+local Maid = {}
+Maid.__index = Maid
+
+export type Maid = typeof(setmetatable({} :: { tasks: { any }, destroyed: boolean }, Maid))
+
+function Maid.new(): Maid
+	return setmetatable({ tasks = {}, destroyed = false }, Maid)
+end
+
+function Maid.give(self: Maid, task_: any): any
+	if self.destroyed then
+		Maid._clean(task_)
+		return task_
+	end
+	table.insert(self.tasks, task_)
+	return task_
+end
+
+function Maid._clean(t: any)
+	local ty = typeof(t)
+	if ty == "RBXScriptConnection" then
+		t:Disconnect()
+	elseif ty == "Instance" then
+		pcall(function()
+			t:Destroy()
+		end)
+	elseif ty == "function" then
+		pcall(t)
+	elseif ty == "thread" then
+		pcall(task.cancel, t)
+	elseif ty == "table" then
+		if type(t.Destroy) == "function" then
+			pcall(t.Destroy, t)
+		elseif type(t.Cancel) == "function" then
+			pcall(t.Cancel, t)
+		end
+	end
+end
+
+function Maid.clean(self: Maid)
+	local tasks = self.tasks
+	self.tasks = {}
+	for i = #tasks, 1, -1 do
+		Maid._clean(tasks[i])
+	end
+end
+
+function Maid.destroy(self: Maid)
+	self:clean()
+	self.destroyed = true
+end
+
+return Maid
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="7">
+        <Properties>
+          <string name="Name">PoseDriver</string>
+          <string name="Source"><![CDATA[--!strict
+-- Animação procedural por keyframes de poses (fallback enquanto não existem animações publicadas).
+-- Dados puros: sample() devolve ângulos em graus por junta; o cliente converte em Motor6D.Transform.
+--
+-- Convenção (R15, personagem olha para -Z, direita = +X), derivada da geometria dos eixos:
+--   Ombro/Quadril/Cotovelo +X = membro vai para a FRENTE; Ombro direito +Z = abre para fora.
+--   Waist/Neck +X = inclina para TRÁS / olha para cima. Root.y = deslocamento vertical em studs.
+-- Os sinais devem ser conferidos no Studio (veja README, "Testes manuais").
+
+export type Joint = { number } -- {x, y, z, extra?}
+export type Pose = { [string]: Joint }
+
+type Key = { t: number, pose: Pose }
+
+local PoseDriver = {}
+
+PoseDriver.Joints = {
+	"Root", "Waist", "Neck",
+	"RightShoulder", "RightElbow", "LeftShoulder", "LeftElbow",
+	"RightHip", "RightKnee", "LeftHip", "LeftKnee",
+}
+
+local function P(t: number, p: Pose): Key
+	return { t = t, pose = p }
+end
+
+local STANCE: Pose = {
+	Root = { 0, 0, 0, 0 }, Waist = { 2, 0, 0 }, Neck = { 8, 0, 0 },
+	RightShoulder = { -8, 0, 6 }, RightElbow = { 10, 0, 0 },
+	LeftShoulder = { -5, 0, -8 }, LeftElbow = { 12, 0, 0 },
+	RightHip = { 6, 0, 3 }, RightKnee = { -8, 0, 0 },
+	LeftHip = { -8, 0, -3 }, LeftKnee = { -4, 0, 0 },
+}
+
+local GUARD: Pose = {
+	Root = { 4, 0, 0, -0.5 }, Waist = { 6, 0, 0 }, Neck = { 20, 0, 0 },
+	RightShoulder = { 55, 0, -30 }, RightElbow = { 70, 0, 0 },
+	LeftShoulder = { 30, 0, -10 }, LeftElbow = { 40, 0, 0 },
+	RightHip = { 22, 0, 8 }, RightKnee = { -34, 0, 0 },
+	LeftHip = { -20, 0, -8 }, LeftKnee = { -18, 0, 0 },
+}
+
+local FACE_HAND: Pose = {
+	Root = { 0, 0, 0, -0.2 }, Waist = { 18, 0, 0 }, Neck = { 34, 0, 0 },
+	RightShoulder = { 20, 0, 12 }, RightElbow = { 20, 0, 0 },
+	LeftShoulder = { 95, 0, -15 }, LeftElbow = { 105, 0, 0 },
+	RightHip = { 10, 0, 6 }, RightKnee = { -14, 0, 0 },
+	LeftHip = { -10, 0, -6 }, LeftKnee = { -8, 0, 0 },
+}
+
+local TALL: Pose = {
+	Root = { 0, 0, 0, 0 }, Waist = { -6, 0, 0 }, Neck = { -8, 0, 0 },
+	RightShoulder = { 10, 0, 8 }, RightElbow = { 8, 0, 0 },
+	LeftShoulder = { 10, 0, -8 }, LeftElbow = { 10, 0, 0 },
+	RightHip = { 4, 0, 6 }, RightKnee = { -6, 0, 0 },
+	LeftHip = { -6, 0, -6 }, LeftKnee = { -3, 0, 0 },
+}
+
+local WINDUP: Pose = {
+	Root = { -6, 0, 0, -0.3 }, Waist = { 16, 0, 0 }, Neck = { 10, 0, 0 },
+	RightShoulder = { 150, 0, 20 }, RightElbow = { 40, 0, 0 },
+	LeftShoulder = { -20, 0, -30 }, LeftElbow = { 20, 0, 0 },
+	RightHip = { -14, 0, 8 }, RightKnee = { -24, 0, 0 },
+	LeftHip = { 20, 0, -8 }, LeftKnee = { -30, 0, 0 },
+}
+
+local SLASH: Pose = {
+	Root = { 12, 0, 0, -0.5 }, Waist = { -24, 0, 0 }, Neck = { 6, 0, 0 },
+	RightShoulder = { 20, 0, -5 }, RightElbow = { 14, 0, 0 },
+	LeftShoulder = { -40, 0, -40 }, LeftElbow = { 10, 0, 0 },
+	RightHip = { 30, 0, 8 }, RightKnee = { -42, 0, 0 },
+	LeftHip = { -16, 0, -8 }, LeftKnee = { -6, 0, 0 },
+}
+
+local FINAL: Pose = {
+	Root = { 0, 0, 0, 0 }, Waist = { -3, 0, 0 }, Neck = { 14, 0, 0 },
+	RightShoulder = { -4, 0, 10 }, RightElbow = { 8, 0, 0 },
+	LeftShoulder = { -6, 0, -12 }, LeftElbow = { 10, 0, 0 },
+	RightHip = { 4, 0, 8 }, RightKnee = { -6, 0, 0 },
+	LeftHip = { -6, 0, -8 }, LeftKnee = { -3, 0, 0 },
+}
+
+PoseDriver.Animations = {
+	Prepare = { length = 5, looped = false, keys = { P(0, STANCE), P(3.5, STANCE), P(5, GUARD) } },
+	Concentrate = { length = 7, looped = true, keys = { P(0, GUARD), P(7, GUARD) } },
+	Transform = { length = 7, looped = false, keys = {
+		P(0, GUARD), P(1.5, FACE_HAND), P(2.8, FACE_HAND), P(3.4, TALL), P(7, TALL),
+	} },
+	Release = { length = 3.2, looped = false, keys = {
+		P(0, TALL), P(0.55, WINDUP), P(0.62, WINDUP), P(0.78, SLASH), P(1.6, SLASH), P(3.2, FINAL),
+	} },
+	FinalPose = { length = 4, looped = true, keys = { P(0, FINAL), P(4, FINAL) } },
+	GetsugaCast = { length = 1.2, looped = false, keys = {
+		P(0, FINAL), P(0.6, WINDUP), P(0.72, WINDUP), P(0.9, SLASH), P(1.2, FINAL),
+	} },
+}
+
+local function smooth(a: number): number
+	return a * a * (3 - 2 * a)
+end
+
+local function lerpJoint(a: Joint, b: Joint, k: number): Joint
+	return {
+		a[1] + (b[1] - a[1]) * k,
+		a[2] + (b[2] - a[2]) * k,
+		a[3] + (b[3] - a[3]) * k,
+		(a[4] or 0) + ((b[4] or 0) - (a[4] or 0)) * k,
+	}
+end
+
+-- t = segundos desde o início da animação; intensity (0..1) controla o tremor da Concentração.
+function PoseDriver.sample(animName: string, t: number, intensity: number?): Pose?
+	local anim = PoseDriver.Animations[animName]
+	if anim == nil then
+		return nil
+	end
+	local keys = anim.keys :: { Key }
+	local tt = anim.looped and t % anim.length or math.clamp(t, 0, anim.length)
+	if not anim.looped then
+		tt = math.clamp(t, 0, keys[#keys].t)
+	end
+	local lo, hi = keys[1], keys[#keys]
+	for i = 1, #keys - 1 do
+		if tt >= keys[i].t and tt <= keys[i + 1].t then
+			lo, hi = keys[i], keys[i + 1]
+			break
+		end
+	end
+	local span = hi.t - lo.t
+	local k = span > 1e-6 and smooth((tt - lo.t) / span) or 1
+	local out: Pose = {}
+	for _, j in PoseDriver.Joints do
+		local a, b = lo.pose[j], hi.pose[j]
+		if a and b then
+			out[j] = lerpJoint(a, b, k)
+		end
+	end
+	if animName == "Concentrate" and intensity and intensity > 0 then
+		local amp = intensity * 2.2
+		for _, j in { "RightShoulder", "LeftShoulder", "Neck", "Waist" } do
+			local o = out[j]
+			if o then
+				o[1] += math.sin(t * 31 + #j) * amp
+				o[3] += math.sin(t * 27 + #j * 2) * amp * 0.6
+			end
+		end
+	end
+	return out
+end
+
+function PoseDriver.length(animName: string): number
+	local a = PoseDriver.Animations[animName]
+	return a and a.length or 0
+end
+
+return PoseDriver
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="8">
+        <Properties>
+          <string name="Name">Remotes</string>
+          <string name="Source"><![CDATA[--!strict
+-- Criação/obtenção centralizada dos RemoteEvents. O servidor cria; o cliente espera.
+
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local NAMES = {
+	"RequestTransform", -- C->S
+	"RequestAbility", -- C->S
+	"CutsceneStart", -- S->C  (alvo: dono da cutscene)
+	"CutsceneObserve", -- S->C  (observadores próximos)
+	"CutsceneCancel", -- S->C
+	"CutsceneEnd", -- S->C
+	"AbilityTelegraph", -- S->C (todos)
+	"AbilityFire", -- S->C (todos)
+	"AbilityCooldown", -- S->C (dono)
+	"Notify", -- S->C
+}
+
+local Remotes = {}
+
+local folder: Folder
+if RunService:IsServer() then
+	folder = Instance.new("Folder")
+	folder.Name = "MugetsuRemotes"
+	for _, n in NAMES do
+		local r = Instance.new("RemoteEvent")
+		r.Name = n
+		r.Parent = folder
+	end
+	folder.Parent = ReplicatedStorage
+else
+	folder = ReplicatedStorage:WaitForChild("MugetsuRemotes") :: Folder
+end
+
+function Remotes.get(name: string): RemoteEvent
+	return folder:WaitForChild(name) :: RemoteEvent
+end
+
+return Remotes
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="9">
+        <Properties>
+          <string name="Name">StateMachine</string>
+          <string name="Source"><![CDATA[--!strict
+-- Máquina de estados da cutscene (lógica pura, testável fora do Roblox).
+-- Idle -> Starting -> Running -> Climax -> Finishing -> Idle
+-- Cancelled pode ser alcançado a partir de qualquer estado ativo e sempre volta para Idle.
+
+export type State = "Idle" | "Starting" | "Running" | "Climax" | "Finishing" | "Cancelled"
+
+local ALLOWED: { [State]: { [State]: boolean } } = {
+	Idle = { Starting = true },
+	Starting = { Running = true, Cancelled = true },
+	Running = { Climax = true, Cancelled = true, Finishing = true },
+	Climax = { Finishing = true, Cancelled = true },
+	Finishing = { Idle = true, Cancelled = true },
+	Cancelled = { Idle = true },
+}
+
+local StateMachine = {}
+StateMachine.__index = StateMachine
+
+export type Machine = typeof(setmetatable(
+	{} :: { state: State, listeners: { (State, State) -> () } },
+	StateMachine
+))
+
+function StateMachine.new(): Machine
+	return setmetatable({ state = "Idle" :: State, listeners = {} }, StateMachine)
+end
+
+function StateMachine.canTransition(self: Machine, to: State): boolean
+	local row = ALLOWED[self.state]
+	return row ~= nil and row[to] == true
+end
+
+function StateMachine.transition(self: Machine, to: State): boolean
+	if not StateMachine.canTransition(self, to) then
+		return false
+	end
+	local from = self.state
+	self.state = to
+	for _, fn in self.listeners do
+		task.spawn(fn, from, to)
+	end
+	return true
+end
+
+-- Reset forçado para o recuperar de erros/cancelamento: sempre termina em Idle.
+function StateMachine.reset(self: Machine)
+	if self.state ~= "Idle" then
+		local from = self.state
+		self.state = "Idle"
+		for _, fn in self.listeners do
+			task.spawn(fn, from, "Idle" :: State)
+		end
+	end
+end
+
+function StateMachine.onChanged(self: Machine, fn: (State, State) -> ())
+	table.insert(self.listeners, fn)
+end
+
+function StateMachine.isActive(self: Machine): boolean
+	return self.state ~= "Idle"
+end
+
+return StateMachine
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="10">
+        <Properties>
+          <string name="Name">Timeline</string>
+          <string name="Source"><![CDATA[--!strict
+-- Linha do tempo da cutscene (dados puros, sem dependência de Roblox para poder ser testada).
+-- Coreografia baseada no vídeo de referência (Ichigo -> Mugetsu):
+--   costas/espada  -> pose frontal -> close dos olhos -> pilar de luz azul -> máscara
+--   -> flash branco -> tentáculos negros -> emerge Mugetsu -> close do olho -> blackout.
+-- Todos os tempos são em segundos desde o início da cutscene (relógio do servidor).
+
+export type Phase = {
+	name: string,
+	start: number,
+	finish: number,
+}
+
+export type Shot = {
+	t: number, -- início do plano
+	duration: number,
+	-- offsets em espaço do personagem (X direita, Y cima, -Z frente do personagem)
+	from: { pos: Vector3, look: Vector3, fov: number },
+	to: { pos: Vector3, look: Vector3, fov: number },
+	ease: string, -- "Linear" | "Sine" | "Quad" | "Expo" | "Orbit"
+	orbit: { degrees: number, radius: number, height: number }?,
+}
+
+export type Event = {
+	t: number,
+	name: string,
+	arg: any?,
+}
+
+local V = Vector3.new
+
+local Timeline = {}
+
+Timeline.Duration = 30
+
+Timeline.Phases = {
+	{ name = "Activation", start = 0, finish = 5 },
+	{ name = "Concentration", start = 5, finish = 12 },
+	{ name = "Transformation", start = 12, finish = 19 },
+	{ name = "Release", start = 19, finish = 26 },
+	{ name = "Outro", start = 26, finish = 30 },
+} :: { Phase }
+
+-- Planos de câmera. "look" e "pos" são relativos ao HumanoidRootPart (CFrame do personagem).
+Timeline.Shots = {
+	-- FASE 1: aproximação lenta por trás, espada baixa
+	{ t = 0, duration = 2.6, ease = "Sine",
+		from = { pos = V(2.5, 3.2, 14), look = V(0, 2.4, 0), fov = 55 },
+		to = { pos = V(1.2, 3.0, 8.5), look = V(0, 2.8, 0), fov = 48 } },
+	-- corte para a lâmina (close na espada)
+	{ t = 2.6, duration = 2.4, ease = "Quad",
+		from = { pos = V(-3.5, 1.2, -4.5), look = V(1.6, 1.0, -1.2), fov = 38 },
+		to = { pos = V(-2.0, 2.4, -3.6), look = V(1.6, 2.8, -1.2), fov = 34 } },
+	-- FASE 2: pose frontal + órbita ascendente
+	{ t = 5, duration = 4.2, ease = "Orbit",
+		from = { pos = V(0, 3.4, -11), look = V(0, 3, 0), fov = 52 },
+		to = { pos = V(0, 3.4, -11), look = V(0, 3, 0), fov = 44 },
+		orbit = { degrees = 110, radius = 11, height = 3.4 } },
+	-- close dos olhos
+	{ t = 9.2, duration = 2.8, ease = "Expo",
+		from = { pos = V(0.4, 4.15, -4.2), look = V(0, 4.15, 0), fov = 40 },
+		to = { pos = V(0.2, 4.2, -1.7), look = V(0, 4.2, 0), fov = 26 } },
+	-- FASE 3: plano aberto (pilar de energia) com a câmera subindo
+	{ t = 12, duration = 3.0, ease = "Quad",
+		from = { pos = V(0, -0.5, -17), look = V(0, 6, 0), fov = 70 },
+		to = { pos = V(0, 1.5, -13), look = V(0, 9, 0), fov = 62 } },
+	-- close da máscara (rosto)
+	{ t = 15, duration = 2.0, ease = "Quad",
+		from = { pos = V(0.3, 4.3, -2.9), look = V(0, 4.2, 0), fov = 32 },
+		to = { pos = V(0, 4.3, -2.1), look = V(0, 4.2, 0), fov = 28 } },
+	-- plano de espera durante o flash branco (câmera cai de cima)
+	{ t = 17, duration = 2.0, ease = "Sine",
+		from = { pos = V(0, 14, -3), look = V(0, 2, 0), fov = 60 },
+		to = { pos = V(0, 9, -7), look = V(0, 3, 0), fov = 54 } },
+	-- FASE 4: whip rápido para a pose de Mugetsu (impacto em t=19.6)
+	{ t = 19, duration = 0.45, ease = "Expo",
+		from = { pos = V(9, 2.4, -6), look = V(0, 3, 0), fov = 90 },
+		to = { pos = V(1.8, 2.6, -9), look = V(0, 3.2, 0), fov = 56 } },
+	{ t = 19.45, duration = 3.6, ease = "Sine",
+		from = { pos = V(1.8, 2.6, -9), look = V(0, 3.2, 0), fov = 56 },
+		to = { pos = V(-2.4, 2.2, -12.5), look = V(0, 3.6, 0), fov = 50 } },
+	-- reverso: plano de baixo para cima mostrando o cabelo ao vento
+	{ t = 23.05, duration = 2.95, ease = "Sine",
+		from = { pos = V(-5, 0.6, -8), look = V(0, 3.6, 0), fov = 58 },
+		to = { pos = V(4.5, 1.0, -7), look = V(0, 3.8, 0), fov = 46 } },
+	-- OUTRO: close do olho vermelho
+	{ t = 26, duration = 4.0, ease = "Quad",
+		from = { pos = V(0.5, 4.25, -3.2), look = V(0, 4.2, 0), fov = 30 },
+		to = { pos = V(0.2, 4.25, -1.6), look = V(0, 4.2, 0), fov = 22 } },
+} :: { Shot }
+
+-- Eventos sincronizados. O servidor e o cliente consomem a mesma lista.
+-- Quando existir animação real com KeyframeMarker de mesmo nome, o marker tem prioridade.
+Timeline.Events = {
+	{ t = 0.0, name = "LockControls" },
+	{ t = 0.0, name = "AmbientDuck", arg = 0.25 },
+	{ t = 0.2, name = "Anim", arg = "Prepare" },
+	{ t = 0.5, name = "Lighting", arg = "Cold" },
+	{ t = 1.0, name = "AuraWhispers" },
+	{ t = 2.6, name = "SwordGlint" },
+	{ t = 4.7, name = "PauseBeat" },
+	{ t = 5.0, name = "Anim", arg = "Concentrate" },
+	{ t = 5.0, name = "EnergyGather", arg = 1 },
+	{ t = 6.5, name = "GroundShards" },
+	{ t = 7.0, name = "PulseLight", arg = 0.5 },
+	{ t = 8.0, name = "PulseLight", arg = 0.7 },
+	{ t = 9.0, name = "PulseLight", arg = 0.9 },
+	{ t = 9.2, name = "EyeReiatsu" },
+	{ t = 11.6, name = "PressureWave", arg = 1 },
+	{ t = 12.0, name = "Anim", arg = "Transform" },
+	{ t = 12.0, name = "BlueSpire" },
+	{ t = 14.8, name = "MaskForm" },
+	{ t = 15.2, name = "ShakeSmall" },
+	{ t = 16.6, name = "BeginFade", arg = "White" },
+	{ t = 17.0, name = "WhiteOut" },
+	{ t = 17.4, name = "MorphSwap" }, -- troca real do modelo (servidor) durante o branco
+	{ t = 18.0, name = "BlackTendrils" },
+	{ t = 18.7, name = "PauseBeat" },
+	{ t = 19.0, name = "Anim", arg = "Release" },
+	{ t = 19.0, name = "WhiteOutEnd" },
+	{ t = 19.6, name = "ReleaseImpact" }, -- clímax: flash, anéis, shockwave, tremor
+	{ t = 19.7, name = "SwordSlash" },
+	{ t = 19.9, name = "EnvironmentReact" },
+	{ t = 20.8, name = "ImpactFrame" },
+	{ t = 22.0, name = "Anim", arg = "FinalPose" },
+	{ t = 24.0, name = "PauseBeat" },
+	{ t = 25.4, name = "FadeToBlack" },
+	{ t = 26.0, name = "Lighting", arg = "Mugetsu" },
+	{ t = 27.5, name = "FadeFromBlack" },
+	{ t = 29.4, name = "EnableAbility" },
+	{ t = 30.0, name = "End" },
+} :: { Event }
+
+local function ease(kind: string, a: number): number
+	a = math.clamp(a, 0, 1)
+	if kind == "Linear" then
+		return a
+	elseif kind == "Sine" then
+		return 0.5 - 0.5 * math.cos(a * math.pi)
+	elseif kind == "Quad" then
+		return a < 0.5 and 2 * a * a or 1 - (-2 * a + 2) ^ 2 / 2
+	elseif kind == "Expo" then
+		if a <= 0 then
+			return 0
+		elseif a >= 1 then
+			return 1
+		end
+		return a < 0.5 and 2 ^ (20 * a - 10) / 2 or (2 - 2 ^ (-20 * a + 10)) / 2
+	end
+	return 0.5 - 0.5 * math.cos(a * math.pi)
+end
+Timeline.ease = ease
+
+function Timeline.getShot(t: number): (Shot?, number)
+	local current: Shot? = nil
+	for _, shot in Timeline.Shots do
+		if t >= shot.t then
+			current = shot
+		end
+	end
+	if current == nil then
+		return nil, 0
+	end
+	local s = current :: Shot
+	local alpha = (t - s.t) / math.max(s.duration, 1e-3)
+	return s, math.clamp(alpha, 0, 1)
+end
+
+function Timeline.getPhase(t: number): string
+	local name = "Outro"
+	for _, p in Timeline.Phases do
+		if t >= p.start and t < p.finish then
+			name = p.name
+			break
+		end
+	end
+	return name
+end
+
+-- Retorna os eventos com (prev, now] para disparo exatamente uma vez.
+function Timeline.eventsBetween(prev: number, now: number): { Event }
+	local out = {}
+	for _, ev in Timeline.Events do
+		if ev.t > prev and ev.t <= now then
+			table.insert(out, ev)
+		end
+	end
+	return out
+end
+
+-- Validação estrutural: usada nos testes.
+function Timeline.validate(): { string }
+	local problems = {}
+	local lastT = -1
+	for i, ev in Timeline.Events do
+		if ev.t < lastT then
+			table.insert(problems, `evento {i} ({ev.name}) fora de ordem`)
+		end
+		lastT = ev.t
+		if ev.t < 0 or ev.t > Timeline.Duration then
+			table.insert(problems, `evento {ev.name} fora da duração`)
+		end
+	end
+	local cursor = 0
+	for i, shot in Timeline.Shots do
+		if math.abs(shot.t - cursor) > 0.01 and i > 1 then
+			table.insert(problems, `plano {i} deixa lacuna/sobreposição ({cursor} -> {shot.t})`)
+		end
+		cursor = shot.t + shot.duration
+	end
+	if math.abs(cursor - Timeline.Duration) > 0.01 then
+		table.insert(problems, `planos terminam em {cursor}, duração é {Timeline.Duration}`)
+	end
+	return problems
+end
+
+return Timeline
+]]></string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="ServerScriptService" referent="11">
+    <Properties>
+      <string name="Name">ServerScriptService</string>
+    </Properties>
+    <Item class="Folder" referent="12">
+      <Properties>
+        <string name="Name">MugetsuServer</string>
+      </Properties>
+      <Item class="ModuleScript" referent="13">
+        <Properties>
+          <string name="Name">AbilityService</string>
+          <string name="Source"><![CDATA[--!strict
+-- Habilidade "Getsuga Tenshō Negro". Todo o julgamento é do servidor:
+-- forma ativa, cooldown, rate limit, direção sanitizada, tempo de telegraph, varredura de acerto
+-- e dano. O cliente só pede e desenha efeitos.
+
+local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Shared = ReplicatedStorage:WaitForChild("Mugetsu")
+local Config = require(Shared:WaitForChild("Config"))
+local AbilityMath = require(Shared:WaitForChild("AbilityMath"))
+local Remotes = require(Shared:WaitForChild("Remotes"))
+local RateLimiter = require(script.Parent:WaitForChild("RateLimiter"))
+local TransformationService = require(script.Parent:WaitForChild("TransformationService"))
+
+local AbilityService = {}
+
+local A = Config.Ability
+local readyAt: { [Player]: number } = {}
+local casting: { [Player]: boolean } = {}
+
+type Beam = {
+	owner: Player,
+	origin: Vector3,
+	dir: Vector3,
+	startTime: number,
+	travelled: number,
+	hit: { [Model]: boolean },
+	hits: number,
+	conn: RBXScriptConnection?,
+}
+local beams: { [Beam]: boolean } = {}
+
+local cooldownRemote = Remotes.get("AbilityCooldown")
+local telegraphRemote = Remotes.get("AbilityTelegraph")
+local fireRemote = Remotes.get("AbilityFire")
+
+local function alive(char: Model?): (Humanoid?, BasePart?)
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	local root = char and char:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if hum and root and hum.Health > 0 then
+		return hum, root
+	end
+	return nil, nil
+end
+
+local function broadcast(remote: RemoteEvent, origin: Vector3, payload: any)
+	for _, p in Players:GetPlayers() do
+		local c = p.Character
+		local hrp = c and c:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if hrp and (hrp.Position - origin).Magnitude <= Config.Transform.MaxRange + A.Range then
+			remote:FireClient(p, payload)
+		end
+	end
+end
+
+local function candidates(owner: Player): { Model }
+	local list: { Model } = {}
+	for _, p in Players:GetPlayers() do
+		if p ~= owner and p.Character then
+			-- sem fogo amigo entre colegas de time
+			if not (owner.Team ~= nil and p.Team == owner.Team and not owner.Neutral) then
+				table.insert(list, p.Character)
+			end
+		end
+	end
+	for _, m in CollectionService:GetTagged("MugetsuTarget") do
+		if m:IsA("Model") then
+			table.insert(list, m)
+		end
+	end
+	return list
+end
+
+local function sweep(b: Beam, from: number, to: number)
+	local segOrigin = b.origin + b.dir * from
+	local length = to - from
+	for _, model in candidates(b.owner) do
+		if b.hit[model] or b.hits >= A.MaxHitsPerCast then
+			continue
+		end
+		local hum, root = alive(model)
+		if hum and root then
+			-- tolerância de meia espessura do alvo em cada eixo
+			local inside = AbilityMath.insideBeam(root.Position, segOrigin, b.dir, length + 2, A.Width + 2, A.Height)
+			if inside then
+				b.hit[model] = true
+				b.hits += 1
+				hum:TakeDamage(A.Damage)
+			end
+		end
+	end
+end
+
+local function endBeam(b: Beam)
+	if b.conn then
+		b.conn:Disconnect()
+		b.conn = nil
+	end
+	beams[b] = nil
+end
+
+local function launch(owner: Player, origin: Vector3, dir: Vector3)
+	local now = Workspace:GetServerTimeNow()
+	local b: Beam = { owner = owner, origin = origin, dir = dir, startTime = now, travelled = 0, hit = {}, hits = 0, conn = nil }
+	beams[b] = true
+	broadcast(fireRemote, origin, {
+		userId = owner.UserId, origin = origin, dir = dir, speed = A.ProjectileSpeed,
+		range = A.Range, width = A.Width, startTime = now,
+	})
+	local last = 0
+	b.conn = RunService.Heartbeat:Connect(function()
+		local d = math.min(A.Range, (Workspace:GetServerTimeNow() - b.startTime) * A.ProjectileSpeed)
+		if d > last then
+			sweep(b, last, d)
+			last = d
+		end
+		if d >= A.Range then
+			endBeam(b)
+		end
+	end)
+end
+
+function AbilityService.request(player: Player, aimDir: any)
+	if not RateLimiter.allow(player, "Ability", Config.Ability.RemoteRateLimit) then
+		return
+	end
+	local char = player.Character
+	local hum, root = alive(char)
+	if not (hum and root) then
+		return
+	end
+	if player:GetAttribute("MugetsuForm") ~= true or player:GetAttribute("MugetsuAbilityReady") ~= true then
+		return
+	end
+	if TransformationService.isInCutscene(player) or casting[player] then
+		return
+	end
+	local now = Workspace:GetServerTimeNow()
+	if not AbilityMath.isReady(readyAt[player], now) then
+		return
+	end
+	local dir = AbilityMath.sanitizeDirection(aimDir)
+	if not dir then
+		return
+	end
+	local facing = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z).Unit
+	dir = AbilityMath.clampAim(dir, facing, A.AimTolerance)
+
+	-- aceitou: cooldown começa agora (servidor), o dono é avisado com o instante exato
+	readyAt[player] = now + A.Cooldown
+	cooldownRemote:FireClient(player, { readyAt = readyAt[player], duration = A.Cooldown })
+	casting[player] = true
+
+	-- trava leve de movimento durante o telegraph
+	local prevSpeed = hum.WalkSpeed
+	hum.WalkSpeed = 0
+	root.CFrame = CFrame.lookAt(root.Position, root.Position + dir)
+	local origin = root.Position + Vector3.new(0, 1, 0) + dir * 3
+	broadcast(telegraphRemote, origin, {
+		userId = player.UserId, origin = origin, dir = dir, range = A.Range, width = A.Width,
+		startTime = now, telegraph = A.TelegraphTime,
+	})
+
+	task.delay(A.TelegraphTime, function()
+		casting[player] = false
+		if hum.Parent then
+			hum.WalkSpeed = prevSpeed
+		end
+		local h2, r2 = alive(player.Character)
+		if not (h2 and r2) or TransformationService.isInCutscene(player) then
+			return -- morreu/cena: cancela o disparo, cooldown permanece
+		end
+		launch(player, origin, dir)
+	end)
+end
+
+function AbilityService.init()
+	Remotes.get("RequestAbility").OnServerEvent:Connect(function(player: Player, aim: any)
+		AbilityService.request(player, aim)
+	end)
+	Players.PlayerRemoving:Connect(function(p)
+		readyAt[p] = nil
+		casting[p] = nil
+		for b in beams do
+			if b.owner == p then
+				endBeam(b)
+			end
+		end
+	end)
+end
+
+
+return AbilityService
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="14">
+        <Properties>
+          <string name="Name">ArenaBuilder</string>
+          <string name="Source"><![CDATA[--!strict
+-- Arena procedural inspirada no cânion árido do vídeo: chão claro limpo no centro (para destacar a
+-- transformação), muralhas de mesa ao redor com profundidade, rochas reativas e bonecos de treino.
+-- Peças reativas recebem a tag "MugetsuReactive" (o cliente as faz tremer localmente).
+
+local CollectionService = game:GetService("CollectionService")
+local Workspace = game:GetService("Workspace")
+
+local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Mugetsu"):WaitForChild("Config"))
+
+local ArenaBuilder = {}
+
+local function block(parent: Instance, name: string, size: Vector3, cf: CFrame, color: Color3, mat: Enum.Material): Part
+	local p = Instance.new("Part")
+	p.Name = name
+	p.Anchored = true
+	p.Size = size
+	p.CFrame = cf
+	p.Color = color
+	p.Material = mat
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
+	p.Parent = parent
+	return p
+end
+
+local function makeDummy(parent: Instance, cf: CFrame, index: number): Model
+	local m = Instance.new("Model")
+	m.Name = `Dummy{index}`
+	local hrp = block(m, "HumanoidRootPart", Vector3.new(2, 2, 1), cf, Color3.fromRGB(80, 80, 85), Enum.Material.SmoothPlastic)
+	local torso = block(m, "Torso", Vector3.new(2, 2, 1), cf, Color3.fromRGB(110, 110, 118), Enum.Material.SmoothPlastic)
+	local head = block(m, "Head", Vector3.new(1.4, 1.2, 1.2), cf * CFrame.new(0, 1.7, 0), Color3.fromRGB(170, 170, 176), Enum.Material.SmoothPlastic)
+	hrp.Transparency = 1
+	torso.CFrame = cf
+	local hum = Instance.new("Humanoid")
+	hum.MaxHealth = 200
+	hum.Health = 200
+	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	hum.Parent = m
+	m.PrimaryPart = hrp
+	m.Parent = parent
+	CollectionService:AddTag(m, "MugetsuTarget")
+	return m
+end
+
+function ArenaBuilder.build(): Folder
+	local existing = Workspace:FindFirstChild("MugetsuArena")
+	if existing then
+		return existing :: Folder -- nunca sobrescreve
+	end
+	local arena = Instance.new("Folder")
+	arena.Name = "MugetsuArena"
+	local o = Config.Arena.Origin
+	local R = Config.Arena.Radius
+
+	-- chão: disco claro + anel escuro
+	local floor = block(arena, "Floor", Vector3.new(R * 2, 4, R * 2), CFrame.new(o + Vector3.new(0, -2, 0)), Color3.fromRGB(176, 160, 130), Enum.Material.Sand)
+	floor.Shape = Enum.PartType.Cylinder
+	floor.CFrame = CFrame.new(o + Vector3.new(0, -2, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	floor.Size = Vector3.new(4, R * 2, R * 2)
+	local inner = block(arena, "InnerPlate", Vector3.new(0.4, 80, 80), CFrame.new(o + Vector3.new(0, 0.02, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(196, 184, 160), Enum.Material.Slate)
+	inner.Shape = Enum.PartType.Cylinder
+
+	-- muralha de mesas (camadas para profundidade)
+	local rng = Random.new(1337)
+	for i = 1, Config.Arena.Pillars do
+		local a = (i / Config.Arena.Pillars) * math.pi * 2
+		local dist = R - 6 + rng:NextNumber(-4, 8)
+		local h = rng:NextNumber(40, 85)
+		local w = rng:NextNumber(34, 56)
+		local pos = o + Vector3.new(math.cos(a) * dist, h / 2 - 2, math.sin(a) * dist)
+		local cf = CFrame.lookAt(pos, o + Vector3.new(0, pos.Y, 0))
+		local wall = block(arena, "Mesa", Vector3.new(w, h, rng:NextNumber(18, 30)), cf, Color3.fromRGB(150, 128, 92), Enum.Material.Sandstone)
+		wall:SetAttribute("ReactAmp", rng:NextNumber(0.4, 0.9))
+		CollectionService:AddTag(wall, "MugetsuReactive")
+		-- estratos
+		for k = 1, 3 do
+			local strip = block(arena, "Strata", Vector3.new(w + 0.4, 1.2, wall.Size.Z + 0.4), cf * CFrame.new(0, -h / 2 + k * (h / 4), 0), Color3.fromRGB(120, 100, 74), Enum.Material.Rock)
+			strip.CanCollide = false
+		end
+	end
+
+	-- rochas reativas ao redor da área limpa
+	for i = 1, 22 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local d = rng:NextNumber(46, 110)
+		local s = rng:NextNumber(3, 9)
+		local rock = block(arena, "Rock", Vector3.new(s, s * 0.8, s * 1.1), CFrame.new(o + Vector3.new(math.cos(a) * d, s * 0.3, math.sin(a) * d)) * CFrame.Angles(rng:NextNumber(0, 1), rng:NextNumber(0, 6), rng:NextNumber(0, 1)), Color3.fromRGB(128, 112, 90), Enum.Material.Rock)
+		rock:SetAttribute("ReactAmp", 1)
+		CollectionService:AddTag(rock, "MugetsuReactive")
+	end
+
+	-- spawn
+	local spawn = Instance.new("SpawnLocation")
+	spawn.Name = "MugetsuSpawn"
+	spawn.Anchored = true
+	spawn.Size = Vector3.new(10, 1, 10)
+	spawn.Position = o + Vector3.new(0, 0.5, 30)
+	spawn.Transparency = 1
+	spawn.CanCollide = false
+	spawn.Neutral = true
+	spawn.Parent = arena
+
+	-- bonecos de treino para testar o dano (respawn automático)
+	local dummies = Instance.new("Folder")
+	dummies.Name = "Dummies"
+	dummies.Parent = arena
+	for i = 1, 5 do
+		local pos = o + Vector3.new(-40 + (i - 1) * 20, 3, -55)
+		local cf = CFrame.new(pos)
+		local d = makeDummy(dummies, cf, i)
+		local function watch(model: Model)
+			local hum = model:FindFirstChildOfClass("Humanoid") :: Humanoid
+			hum.Died:Once(function()
+				task.delay(3, function()
+					model:Destroy()
+					watch(makeDummy(dummies, cf, i))
+				end)
+			end)
+		end
+		watch(d)
+	end
+
+	arena.Parent = Workspace
+	return arena
+end
+
+return ArenaBuilder
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="Script" referent="15">
+        <Properties>
+          <string name="Name">Main</string>
+          <token name="RunContext">0</token>
+          <string name="Source"><![CDATA[--!strict
+-- Ponto de entrada do servidor.
+local ArenaBuilder = require(script.Parent:WaitForChild("ArenaBuilder"))
+local TransformationService = require(script.Parent:WaitForChild("TransformationService"))
+local AbilityService = require(script.Parent:WaitForChild("AbilityService"))
+
+ArenaBuilder.build()
+TransformationService.init()
+AbilityService.init()
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="16">
+        <Properties>
+          <string name="Name">ModelKit</string>
+          <string name="Source"><![CDATA[--!strict
+-- Kits visuais do personagem (Ichigo / Mugetsu) construídos sobre o rig R15 EXISTENTE.
+-- Nada substitui o corpo: as peças são soldadas aos membros, então o rig, as juntas e as animações
+-- continuam compatíveis. A troca de forma faz crossfade de Transparency + troca de cor da pele.
+--
+-- Ponto de integração: se existir ServerStorage.MugetsuAssets.MugetsuKit (Model) com peças que tenham
+--   Attribute "AttachTo" (string, nome do membro R15) e "Offset" (CFrame relativo ao membro),
+--   mais Attribute "Form" ("Ichigo" | "Mugetsu"), elas são usadas no lugar das peças procedurais.
+
+local CollectionService = game:GetService("CollectionService")
+local ServerStorage = game:GetService("ServerStorage")
+local TweenService = game:GetService("TweenService")
+
+local Manifest = require(game:GetService("ReplicatedStorage"):WaitForChild("Mugetsu"):WaitForChild("AssetManifest"))
+
+export type Form = "Ichigo" | "Mugetsu"
+
+local ModelKit = {}
+
+local SKIN = {
+	Ichigo = Color3.fromRGB(240, 190, 150),
+	Mugetsu = Color3.fromRGB(226, 218, 210),
+}
+
+local LIMBS = {
+	"Head", "UpperTorso", "LowerTorso",
+	"LeftUpperArm", "LeftLowerArm", "LeftHand",
+	"RightUpperArm", "RightLowerArm", "RightHand",
+	"LeftUpperLeg", "LeftLowerLeg", "LeftFoot",
+	"RightUpperLeg", "RightLowerLeg", "RightFoot",
+}
+
+local CF = CFrame.new
+local ANG = CFrame.Angles
+local rad = math.rad
+
+local function makePart(name: string, size: Vector3, color: Color3, material: Enum.Material, parent: Instance): Part
+	local p = Instance.new("Part")
+	p.Name = name
+	p.Size = size
+	p.Color = color
+	p.Material = material
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.Massless = true
+	p.Anchored = false
+	p.CastShadow = true
+	p:SetAttribute("BaseTransparency", 0)
+	p.Parent = parent
+	return p
+end
+
+local function weld(p0: BasePart, p1: BasePart, c0: CFrame)
+	local w = Instance.new("Weld")
+	w.Part0 = p0
+	w.Part1 = p1
+	w.C0 = c0
+	w.Parent = p1
+end
+
+-- Cadeia de cabelo: segmentos ligados por Motor6D; o cliente balança via Transform (tag MugetsuHair).
+local function hairStrand(
+	kit: Folder, head: BasePart, name: string, root: CFrame, lengths: { number }, width: number, color: Color3, bend: number
+)
+	local prev: BasePart = head
+	local prevLen = 0
+	for i, len in lengths do
+		local w = width * (1 - (i - 1) * 0.18)
+		local seg = makePart(`{name}_{i}`, Vector3.new(w, len, w * 0.55), color, Enum.Material.SmoothPlastic, kit)
+		local m = Instance.new("Motor6D")
+		m.Part0 = prev
+		m.Part1 = seg
+		if i == 1 then
+			m.C0 = root
+		else
+			m.C0 = CF(0, -prevLen / 2, 0) * ANG(rad(bend), 0, 0)
+		end
+		m.C1 = CF(0, len / 2, 0)
+		m:SetAttribute("Index", i)
+		m:SetAttribute("Phase", #name * 0.7)
+		m.Parent = seg
+		CollectionService:AddTag(m, "MugetsuHair")
+		prev, prevLen = seg, len
+	end
+end
+
+local function buildIchigo(char: Model, kit: Folder)
+	local head = char:FindFirstChild("Head") :: BasePart
+	local lower = char:FindFirstChild("LowerTorso") :: BasePart
+	local rHand = char:FindFirstChild("RightHand") :: BasePart
+	local upper = char:FindFirstChild("UpperTorso") :: BasePart
+	local rUpper = char:FindFirstChild("RightUpperArm") :: BasePart
+	local orange = Color3.fromRGB(255, 132, 20)
+	local black = Color3.fromRGB(14, 14, 16)
+
+	-- cabelo laranja espetado
+	for i = 1, 11 do
+		local a = (i / 11) * math.pi * 2
+		local spike = makePart(`Spike{i}`, Vector3.new(0.34, 0.9, 0.34), orange, Enum.Material.SmoothPlastic, kit)
+		weld(head, spike, CF(math.cos(a) * 0.5, 0.62, math.sin(a) * 0.45) * ANG(math.sin(a) * 0.7, 0, -math.cos(a) * 0.7))
+	end
+	local cap = makePart("HairCap", Vector3.new(1.15, 0.5, 1.1), orange, Enum.Material.SmoothPlastic, kit)
+	weld(head, cap, CF(0, 0.45, 0.05))
+
+	-- shihakushō: abas e traseira
+	local back = makePart("CoatBack", Vector3.new(2.1, 3.5, 0.15), black, Enum.Material.Fabric, kit)
+	weld(lower, back, CF(0, -1.7, 0.62) * ANG(rad(6), 0, 0))
+	for _, s in { -1, 1 } do
+		local flap = makePart("CoatFlap", Vector3.new(0.15, 3.2, 1.1), black, Enum.Material.Fabric, kit)
+		weld(lower, flap, CF(s * 1.12, -1.6, 0.1) * ANG(0, 0, rad(-s * 6)))
+	end
+	local sash = makePart("Sash", Vector3.new(2.15, 0.35, 1.1), Color3.fromRGB(235, 235, 235), Enum.Material.Fabric, kit)
+	weld(lower, sash, CF(0, 0.15, 0))
+	local collar = makePart("Collar", Vector3.new(2.1, 0.5, 1.05), black, Enum.Material.Fabric, kit)
+	weld(upper, collar, CF(0, 0.55, 0.05))
+
+	-- braço direito enfaixado
+	local wrap = makePart("ArmWrap", Vector3.new(1.15, 1.3, 1.15), Color3.fromRGB(215, 205, 190), Enum.Material.Fabric, kit)
+	weld(rUpper, wrap, CF(0, 0, 0))
+
+	-- Tensa Zangetsu (Bankai): lâmina negra
+	local handle = makePart("SwordHandle", Vector3.new(0.28, 0.28, 1.1), black, Enum.Material.Metal, kit)
+	weld(rHand, handle, CF(0, -0.2, 0) * ANG(rad(-67), 0, 0))
+	local blade = makePart("Blade", Vector3.new(0.12, 0.55, 4.6), Color3.fromRGB(10, 10, 12), Enum.Material.Metal, kit)
+	weld(handle, blade, CF(0, 0, -(0.55 + 2.3)))
+	local edgeA = Instance.new("Attachment")
+	edgeA.Name = "TrailA"
+	edgeA.Position = Vector3.new(0, 0.27, -2.2)
+	edgeA.Parent = blade
+	local edgeB = Instance.new("Attachment")
+	edgeB.Name = "TrailB"
+	edgeB.Position = Vector3.new(0, -0.27, -2.2)
+	edgeB.Parent = blade
+	local tip = Instance.new("Attachment")
+	tip.Name = "Tip"
+	tip.Position = Vector3.new(0, 0, -2.3)
+	tip.Parent = blade
+end
+
+local function buildMugetsu(char: Model, kit: Folder)
+	local head = char:FindFirstChild("Head") :: BasePart
+	local lower = char:FindFirstChild("LowerTorso") :: BasePart
+	local upper = char:FindFirstChild("UpperTorso") :: BasePart
+	local rHand = char:FindFirstChild("RightHand") :: BasePart
+	local rUpper = char:FindFirstChild("RightUpperArm") :: BasePart
+	local rLower = char:FindFirstChild("RightLowerArm") :: BasePart
+	local black = Color3.fromRGB(8, 8, 10)
+
+	-- cabelo longo: cortina frontal + mechas laterais + cascata traseira
+	local strands = {
+		{ "BackA", CF(0, 0.55, 0.38) * ANG(0, 0, 0) * ANG(rad(-40), 0, 0), { 1.3, 1.5, 1.7, 1.9 }, 0.55, -6 },
+		{ "BackB", CF(0.3, 0.5, 0.35) * ANG(0, rad(-25), 0) * ANG(rad(-38), 0, 0), { 1.2, 1.5, 1.8, 1.8 }, 0.45, -7 },
+		{ "BackC", CF(-0.3, 0.5, 0.35) * ANG(0, rad(25), 0) * ANG(rad(-38), 0, 0), { 1.2, 1.5, 1.8, 1.8 }, 0.45, -7 },
+		{ "BackD", CF(0.5, 0.4, 0.25) * ANG(0, rad(-60), 0) * ANG(rad(-30), 0, 0), { 1.0, 1.3, 1.6 }, 0.4, -6 },
+		{ "BackE", CF(-0.5, 0.4, 0.25) * ANG(0, rad(60), 0) * ANG(rad(-30), 0, 0), { 1.0, 1.3, 1.6 }, 0.4, -6 },
+		{ "SideR", CF(0.55, 0.25, -0.1) * ANG(0, rad(-90), 0) * ANG(rad(-8), 0, 0), { 0.9, 1.1, 1.3 }, 0.3, -4 },
+		{ "SideL", CF(-0.55, 0.25, -0.1) * ANG(0, rad(90), 0) * ANG(rad(-8), 0, 0), { 0.9, 1.1, 1.3 }, 0.3, -4 },
+		{ "BangR", CF(0.3, 0.6, -0.45) * ANG(rad(8), 0, rad(-6)), { 0.8, 0.9 }, 0.26, -3 },
+		{ "BangL", CF(-0.3, 0.6, -0.45) * ANG(rad(8), 0, rad(6)), { 0.8, 0.9 }, 0.26, -3 },
+	}
+	for _, s in strands do
+		hairStrand(kit, head, s[1], s[2], s[3], s[4], black, s[5])
+	end
+	local crown = makePart("HairCrown", Vector3.new(1.2, 0.55, 1.15), black, Enum.Material.SmoothPlastic, kit)
+	weld(head, crown, CF(0, 0.5, 0.08))
+
+	-- máscara na parte inferior do rosto
+	local mask = makePart("FaceMask", Vector3.new(1.05, 0.5, 0.2), Color3.fromRGB(86, 104, 118), Enum.Material.Fabric, kit)
+	weld(head, mask, CF(0, -0.22, -0.52))
+	-- olhos vermelhos (brilho mínimo, só detalhe)
+	for _, s in { -1, 1 } do
+		local eye = makePart("Eye", Vector3.new(0.22, 0.08, 0.05), Color3.fromRGB(200, 20, 30), Enum.Material.Neon, kit)
+		weld(head, eye, CF(s * 0.25, 0.1, -0.53))
+	end
+
+	-- bandagem do torso (faixas diagonais) e braço direito
+	for i = 1, 6 do
+		local band = makePart(`Wrap{i}`, Vector3.new(2.08, 0.2, 1.08), Color3.fromRGB(205, 205, 200), Enum.Material.Fabric, kit)
+		weld(upper, band, CF(0, 0.65 - i * 0.24, 0) * ANG(0, 0, rad(i % 2 == 0 and 5 or -5)))
+	end
+	for i = 1, 4 do
+		local stripe = makePart(`Stripe{i}`, Vector3.new(1.08, 0.12, 1.08), black, Enum.Material.SmoothPlastic, kit)
+		weld(rUpper, stripe, CF(0, 0.5 - i * 0.28, 0) * ANG(0, rad(i * 14), rad(8)))
+	end
+	local armBand = makePart("ForearmWrap", Vector3.new(1.08, 1.0, 1.08), Color3.fromRGB(205, 205, 200), Enum.Material.Fabric, kit)
+	weld(rLower, armBand, CF(0, 0.1, 0))
+
+	-- casaco longo rasgado
+	local coatBack = makePart("CoatBack", Vector3.new(2.3, 4.2, 0.12), black, Enum.Material.Fabric, kit)
+	weld(lower, coatBack, CF(0, -2.1, 0.66) * ANG(rad(8), 0, 0))
+	for i = 1, 5 do
+		local tatter = makePart(`Tatter{i}`, Vector3.new(0.42, 1.4 + (i % 3) * 0.5, 0.1), black, Enum.Material.Fabric, kit)
+		weld(lower, tatter, CF(-0.92 + (i - 1) * 0.46, -4.6 - (i % 3) * 0.1, 0.72) * ANG(rad(10 + i * 2), 0, rad((i - 3) * 3)))
+	end
+	for _, s in { -1, 1 } do
+		local flap = makePart("CoatFlap", Vector3.new(0.14, 3.6, 1.2), black, Enum.Material.Fabric, kit)
+		weld(lower, flap, CF(s * 1.14, -1.8, 0.1) * ANG(0, 0, rad(-s * 9)))
+	end
+	local belt = makePart("Belt", Vector3.new(2.15, 0.3, 1.1), black, Enum.Material.Fabric, kit)
+	weld(lower, belt, CF(0, 0.15, 0))
+
+	-- Tensa Zangetsu (Mugetsu): katana negra com corrente no pomo
+	local handle = makePart("SwordHandle", Vector3.new(0.26, 0.26, 1.2), black, Enum.Material.Metal, kit)
+	weld(rHand, handle, CF(0, -0.2, 0) * ANG(rad(-67), 0, 0))
+	local guard = makePart("Guard", Vector3.new(0.55, 0.55, 0.12), Color3.fromRGB(25, 25, 28), Enum.Material.Metal, kit)
+	weld(handle, guard, CF(0, 0, -0.66))
+	local blade = makePart("Blade", Vector3.new(0.1, 0.5, 4.2), black, Enum.Material.Metal, kit)
+	weld(handle, blade, CF(0, 0, -(0.7 + 2.1)))
+	local a = Instance.new("Attachment")
+	a.Name = "TrailA"
+	a.Position = Vector3.new(0, 0.25, -2.0)
+	a.Parent = blade
+	local b = Instance.new("Attachment")
+	b.Name = "TrailB"
+	b.Position = Vector3.new(0, -0.25, -2.0)
+	b.Parent = blade
+	local tip = Instance.new("Attachment")
+	tip.Name = "Tip"
+	tip.Position = Vector3.new(0, 0, -2.1)
+	tip.Parent = blade
+	local prev: BasePart = handle
+	for i = 1, 4 do
+		local link = makePart(`Chain{i}`, Vector3.new(0.14, 0.14, 0.34), Color3.fromRGB(60, 60, 66), Enum.Material.Metal, kit)
+		weld(prev, link, CF(0.0, -0.05 * i, (i == 1 and 0.78 or 0.3)) * ANG(rad(14), 0, 0))
+		prev = link
+	end
+end
+
+local function tagAuraAnchors(char: Model)
+	local function anchor(partName: string, attName: string, pos: Vector3?)
+		local p = char:FindFirstChild(partName)
+		if p and p:IsA("BasePart") and not p:FindFirstChild(attName) then
+			local at = Instance.new("Attachment")
+			at.Name = attName
+			at.Position = pos or Vector3.zero
+			at.Parent = p
+		end
+	end
+	anchor("UpperTorso", "AuraChest")
+	anchor("LowerTorso", "AuraFeet", Vector3.new(0, -3.2, 0))
+	anchor("Head", "AuraHead")
+	anchor("RightLowerArm", "AuraRArm")
+	anchor("LeftLowerArm", "AuraLArm")
+	anchor("RightHand", "AuraHand")
+end
+
+local function tryCustomKit(char: Model, form: Form, kit: Folder): boolean
+	local node: Instance? = ServerStorage
+	for _, n in Manifest.CustomKitPath do
+		node = node and node:FindFirstChild(n)
+	end
+	if not node then
+		return false
+	end
+	local used = false
+	for _, d in node:GetDescendants() do
+		if d:IsA("BasePart") and d:GetAttribute("Form") == form then
+			local limb = char:FindFirstChild(d:GetAttribute("AttachTo") or "")
+			local offset = d:GetAttribute("Offset")
+			if limb and limb:IsA("BasePart") and typeof(offset) == "CFrame" then
+				local c = d:Clone()
+				c.Anchored = false
+				c.CanCollide = false
+				c.CanQuery = false
+				c.CanTouch = false
+				c.Massless = true
+				c:SetAttribute("BaseTransparency", d.Transparency)
+				c.Parent = kit
+				weld(limb :: BasePart, c, offset :: CFrame)
+				used = true
+			end
+		end
+	end
+	return used
+end
+
+local function setKitTransparency(kit: Folder, hidden: boolean)
+	for _, d in kit:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.Transparency = hidden and 1 or (d:GetAttribute("BaseTransparency") :: number? or 0)
+		end
+	end
+end
+
+function ModelKit.isR15(char: Model): boolean
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	return hum ~= nil and hum.RigType == Enum.HumanoidRigType.R15
+end
+
+-- Cria os dois kits (Ichigo visível, Mugetsu oculto). Idempotente.
+function ModelKit.build(char: Model)
+	if char:FindFirstChild("MugetsuKits") then
+		return
+	end
+	local root = Instance.new("Folder")
+	root.Name = "MugetsuKits"
+	tagAuraAnchors(char)
+
+	for _, form in { "Ichigo", "Mugetsu" } :: { Form } do
+		local kit = Instance.new("Folder")
+		kit.Name = form
+		kit.Parent = root
+		if not tryCustomKit(char, form, kit) then
+			if form == "Ichigo" then
+				buildIchigo(char, kit)
+			else
+				buildMugetsu(char, kit)
+			end
+		end
+	end
+	root.Parent = char
+	setKitTransparency(root.Ichigo, false)
+	setKitTransparency(root.Mugetsu, true)
+	root:SetAttribute("Form", "Ichigo")
+
+	local original = {}
+	for _, n in LIMBS do
+		local p = char:FindFirstChild(n)
+		if p and p:IsA("BasePart") then
+			original[n] = p.Color
+		end
+	end
+	for n, c in original do
+		(root :: Instance):SetAttribute("Skin_" .. n, c)
+	end
+	for _, n in LIMBS do
+		local p = char:FindFirstChild(n) :: BasePart?
+		if p then
+			p.Color = SKIN.Ichigo
+		end
+	end
+end
+
+local function fadeKit(kit: Folder, toHidden: boolean, duration: number)
+	for _, d in kit:GetDescendants() do
+		if d:IsA("BasePart") then
+			local target = toHidden and 1 or (d:GetAttribute("BaseTransparency") :: number? or 0)
+			if duration <= 0 then
+				d.Transparency = target
+			else
+				TweenService:Create(d, TweenInfo.new(duration, Enum.EasingStyle.Sine), { Transparency = target }):Play()
+			end
+		end
+	end
+end
+
+function ModelKit.currentForm(char: Model): Form
+	local root = char:FindFirstChild("MugetsuKits")
+	return (root and root:GetAttribute("Form") or "Ichigo") :: Form
+end
+
+function ModelKit.setForm(char: Model, form: Form, fadeTime: number)
+	local root = char:FindFirstChild("MugetsuKits") :: Folder?
+	if not root then
+		return
+	end
+	local other: Form = form == "Mugetsu" and "Ichigo" or "Mugetsu"
+	fadeKit(root:FindFirstChild(other) :: Folder, true, fadeTime)
+	fadeKit(root:FindFirstChild(form) :: Folder, false, fadeTime)
+	root:SetAttribute("Form", form)
+	for _, n in LIMBS do
+		local p = char:FindFirstChild(n) :: BasePart?
+		if p then
+			p.Color = SKIN[form]
+		end
+	end
+end
+
+function ModelKit.getBlade(char: Model): BasePart?
+	local root = char:FindFirstChild("MugetsuKits")
+	local form = ModelKit.currentForm(char)
+	local kit = root and root:FindFirstChild(form)
+	local b = kit and kit:FindFirstChild("Blade")
+	return b and b:IsA("BasePart") and b or nil
+end
+
+return ModelKit
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="17">
+        <Properties>
+          <string name="Name">RateLimiter</string>
+          <string name="Source"><![CDATA[--!strict
+-- Limite simples por jogador e por chave.
+local RateLimiter = {}
+local last: { [Player]: { [string]: number } } = {}
+
+function RateLimiter.allow(player: Player, key: string, minInterval: number): boolean
+	local now = os.clock()
+	local row = last[player]
+	if not row then
+		row = {}
+		last[player] = row
+	end
+	local prev = row[key]
+	if prev and now - prev < minInterval then
+		return false
+	end
+	row[key] = now
+	return true
+end
+
+function RateLimiter.forget(player: Player)
+	last[player] = nil
+end
+
+return RateLimiter
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="18">
+        <Properties>
+          <string name="Name">TransformationService</string>
+          <string name="Source"><![CDATA[--!strict
+-- Autoridade da transformação. Valida o pedido, trava o personagem, executa os eventos do servidor
+-- da Timeline (troca real do modelo, habilitar habilidade), e SEMPRE restaura o estado, mesmo em
+-- cancelamento, morte, saída do jogador ou timeout (watchdog).
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Shared = ReplicatedStorage:WaitForChild("Mugetsu")
+local Config = require(Shared:WaitForChild("Config"))
+local Timeline = require(Shared:WaitForChild("Timeline"))
+local StateMachine = require(Shared:WaitForChild("StateMachine"))
+local AbilityMath = require(Shared:WaitForChild("AbilityMath"))
+local Remotes = require(Shared:WaitForChild("Remotes"))
+local ModelKit = require(script.Parent:WaitForChild("ModelKit"))
+local RateLimiter = require(script.Parent:WaitForChild("RateLimiter"))
+
+type Saved = {
+	walkSpeed: number,
+	jumpHeight: number,
+	jumpPower: number,
+	useJumpPower: boolean,
+	autoRotate: boolean,
+	anchored: boolean,
+}
+
+type Session = {
+	player: Player,
+	character: Model,
+	humanoid: Humanoid,
+	root: BasePart,
+	machine: StateMachine.Machine,
+	startTime: number, -- GetServerTimeNow
+	lastT: number,
+	saved: Saved,
+	forceField: ForceField?,
+	conns: { RBXScriptConnection },
+	swapped: boolean,
+}
+
+local TransformationService = {}
+
+local sessions: { [Player]: Session } = {}
+local transformCooldownReadyAt: { [Player]: number } = {}
+local revertTokens: { [Player]: number } = {}
+local heartbeatConn: RBXScriptConnection? = nil
+
+local LEAD_TIME = 0.4 -- margem para o cliente receber o evento antes do t=0
+
+local notify = Remotes.get("Notify")
+local startRemote = Remotes.get("CutsceneStart")
+local observeRemote = Remotes.get("CutsceneObserve")
+local cancelRemote = Remotes.get("CutsceneCancel")
+local endRemote = Remotes.get("CutsceneEnd")
+
+local function nearbyPlayers(origin: Vector3, except: Player): { Player }
+	local list = {}
+	for _, p in Players:GetPlayers() do
+		if p ~= except then
+			local c = p.Character
+			local hrp = c and c:FindFirstChild("HumanoidRootPart") :: BasePart?
+			if hrp and (hrp.Position - origin).Magnitude <= Config.Transform.MaxRange then
+				table.insert(list, p)
+			end
+		end
+	end
+	return list
+end
+
+local function restore(s: Session)
+	local h, r = s.humanoid, s.root
+	if h.Parent then
+		h.WalkSpeed = s.saved.walkSpeed
+		h.UseJumpPower = s.saved.useJumpPower
+		h.JumpHeight = s.saved.jumpHeight
+		h.JumpPower = s.saved.jumpPower
+		h.AutoRotate = s.saved.autoRotate
+	end
+	if r.Parent then
+		r.Anchored = s.saved.anchored
+	end
+	if s.forceField then
+		s.forceField:Destroy()
+		s.forceField = nil
+	end
+end
+
+local function finish(s: Session, reason: string, completed: boolean)
+	if sessions[s.player] ~= s then
+		return
+	end
+	sessions[s.player] = nil
+	for _, c in s.conns do
+		c:Disconnect()
+	end
+	restore(s)
+	if completed then
+		s.machine:transition("Idle")
+	else
+		s.machine:transition("Cancelled")
+		s.machine:transition("Idle")
+	end
+	s.player:SetAttribute("MugetsuCutscene", false)
+	local payload = { reason = reason, form = s.swapped }
+	if completed then
+		endRemote:FireClient(s.player, payload)
+	else
+		cancelRemote:FireClient(s.player, payload)
+	end
+	for _, p in nearbyPlayers(s.root.Position, s.player) do
+		(completed and endRemote or cancelRemote):FireClient(p, { userId = s.player.UserId, reason = reason })
+	end
+	-- Mantém o form final apenas se a troca já aconteceu; a habilidade fica ativa apenas se completou
+	-- ou se a troca já aconteceu (o jogador já é Mugetsu).
+	if s.swapped then
+		s.player:SetAttribute("MugetsuForm", true)
+		s.player:SetAttribute("MugetsuAbilityReady", true)
+	end
+end
+
+local function revertForm(player: Player, character: Model)
+	if ModelKit.currentForm(character) == "Mugetsu" then
+		ModelKit.setForm(character, "Ichigo", 0.8)
+	end
+	player:SetAttribute("MugetsuForm", false)
+end
+
+local function onServerEvent(s: Session, name: string)
+	if name == "ReleaseImpact" then
+		s.machine:transition("Climax")
+	elseif name == "MorphSwap" then
+		if not s.swapped then
+			ModelKit.setForm(s.character, "Mugetsu", 0.5)
+			s.swapped = true
+			s.player:SetAttribute("MugetsuForm", true)
+			-- agenda o retorno à forma normal
+			if Config.Transform.FormDuration > 0 then
+				local token = (revertTokens[s.player] or 0) + 1
+				revertTokens[s.player] = token
+				local char = s.character
+				task.delay(Config.Transform.FormDuration, function()
+					if revertTokens[s.player] == token and char.Parent then
+						revertForm(s.player, char)
+					end
+				end)
+			end
+		end
+	elseif name == "FadeToBlack" then
+		s.machine:transition("Finishing")
+	elseif name == "EnableAbility" then
+		s.player:SetAttribute("MugetsuAbilityReady", true)
+	elseif name == "End" then
+		finish(s, "completed", true)
+	end
+end
+
+local function step()
+	local now = Workspace:GetServerTimeNow()
+	for _, s in sessions do
+		local t = now - s.startTime
+		if t > Timeline.Duration + Config.Safety.WatchdogMargin then
+			finish(s, "watchdog", false)
+		elseif t > 0 then
+			if s.machine.state == "Starting" then
+				s.machine:transition("Running")
+			end
+			local events = Timeline.eventsBetween(s.lastT, t)
+			s.lastT = t
+			for _, ev in events do
+				-- se a sessão foi finalizada por um evento anterior, interrompe
+				if sessions[s.player] ~= s then
+					break
+				end
+				onServerEvent(s, ev.name)
+			end
+		end
+	end
+	if next(sessions) == nil and heartbeatConn then
+		heartbeatConn:Disconnect()
+		heartbeatConn = nil
+	end
+end
+
+function TransformationService.cancel(player: Player, reason: string)
+	local s = sessions[player]
+	if s then
+		finish(s, reason, false)
+	end
+end
+
+function TransformationService.isInCutscene(player: Player): boolean
+	return sessions[player] ~= nil
+end
+
+local function reject(player: Player, msg: string)
+	notify:FireClient(player, { kind = "warn", text = msg })
+end
+
+function TransformationService.request(player: Player)
+	if not RateLimiter.allow(player, "Transform", 1) then
+		return
+	end
+	local char = player.Character
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	local root = char and char:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not (char and hum and root) or hum.Health <= 0 then
+		return
+	end
+	if sessions[player] then
+		return
+	end
+	if Config.Transform.RequireR15 and not ModelKit.isR15(char) then
+		return reject(player, "A transformação exige um avatar R15.")
+	end
+	if player:GetAttribute("MugetsuForm") == true then
+		return reject(player, "Você já está na forma Mugetsu.")
+	end
+	local now = Workspace:GetServerTimeNow()
+	if not AbilityMath.isReady(transformCooldownReadyAt[player], now) then
+		return reject(player, `Aguarde {math.ceil(AbilityMath.remaining(transformCooldownReadyAt[player], now))}s.`)
+	end
+
+	ModelKit.build(char)
+	transformCooldownReadyAt[player] = now + Config.Transform.Cooldown
+
+	local saved: Saved = {
+		walkSpeed = hum.WalkSpeed,
+		jumpHeight = hum.JumpHeight,
+		jumpPower = hum.JumpPower,
+		useJumpPower = hum.UseJumpPower,
+		autoRotate = hum.AutoRotate,
+		anchored = root.Anchored,
+	}
+	local machine = StateMachine.new()
+	machine:transition("Starting")
+	local s: Session = {
+		player = player,
+		character = char,
+		humanoid = hum,
+		root = root,
+		machine = machine,
+		startTime = now + LEAD_TIME,
+		lastT = 0,
+		saved = saved,
+		forceField = nil,
+		conns = {},
+		swapped = false,
+	}
+	sessions[player] = s
+
+	-- trava de movimento + invulnerabilidade durante a cena
+	hum.WalkSpeed = Config.Safety.HumanoidWalkSpeedDuringCutscene
+	hum.JumpHeight = 0
+	hum.JumpPower = 0
+	hum.AutoRotate = false
+	root.AssemblyLinearVelocity = Vector3.zero
+	root.Anchored = true
+	local ff = Instance.new("ForceField")
+	ff.Visible = false
+	ff.Parent = char
+	s.forceField = ff
+	player:SetAttribute("MugetsuCutscene", true)
+	player:SetAttribute("MugetsuAbilityReady", false)
+
+	table.insert(s.conns, hum.Died:Connect(function()
+		finish(s, "died", false)
+	end))
+	table.insert(s.conns, char.AncestryChanged:Connect(function(_, parent)
+		if parent == nil then
+			finish(s, "character-removed", false)
+		end
+	end))
+
+	local cframe = root.CFrame
+	startRemote:FireClient(player, { startTime = s.startTime, duration = Timeline.Duration })
+	for _, p in nearbyPlayers(root.Position, player) do
+		observeRemote:FireClient(p, { userId = player.UserId, startTime = s.startTime, duration = Timeline.Duration, cframe = cframe })
+	end
+
+	if not heartbeatConn then
+		heartbeatConn = RunService.Heartbeat:Connect(step)
+	end
+end
+
+function TransformationService.init()
+	Remotes.get("RequestTransform").OnServerEvent:Connect(function(player: Player)
+		TransformationService.request(player)
+	end)
+	local function onPlayer(p: Player)
+		p.CharacterAdded:Connect(function(char)
+			p:SetAttribute("MugetsuForm", false)
+			p:SetAttribute("MugetsuAbilityReady", false)
+			p:SetAttribute("MugetsuCutscene", false)
+			revertTokens[p] = (revertTokens[p] or 0) + 1 -- invalida reversões pendentes
+			task.defer(function()
+				if char.Parent and char:FindFirstChildOfClass("Humanoid") and ModelKit.isR15(char) then
+					ModelKit.build(char)
+				end
+			end)
+		end)
+	end
+	Players.PlayerAdded:Connect(onPlayer)
+	for _, p in Players:GetPlayers() do
+		onPlayer(p)
+	end
+	Players.PlayerRemoving:Connect(function(p)
+		TransformationService.cancel(p, "left")
+		transformCooldownReadyAt[p] = nil
+		revertTokens[p] = nil
+		RateLimiter.forget(p)
+	end)
+end
+
+return TransformationService
+]]></string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="StarterPlayer" referent="19">
+    <Properties>
+      <string name="Name">StarterPlayer</string>
+    </Properties>
+    <Item class="StarterPlayerScripts" referent="20">
+      <Properties>
+        <string name="Name">StarterPlayerScripts</string>
+      </Properties>
+      <Item class="Folder" referent="21">
+        <Properties>
+          <string name="Name">MugetsuClient</string>
+        </Properties>
+        <Item class="ModuleScript" referent="22">
+          <Properties>
+            <string name="Name">AbilityClient</string>
+            <string name="Source"><![CDATA[--!strict
+-- Lado cliente da habilidade: telegraph visual, projétil, cooldown e animação de lançamento.
+-- O servidor decide tudo (dano, cooldown); aqui só se desenha e se envia o pedido.
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
+
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Mugetsu")
+local Config = require(Shared:WaitForChild("Config"))
+local Remotes = require(Shared:WaitForChild("Remotes"))
+local PoseApplier = require(script.Parent:WaitForChild("PoseApplier"))
+local VFX = require(script.Parent:WaitForChild("VFX"))
+local Hud = require(script.Parent:WaitForChild("Hud"))
+local CameraDirector = require(script.Parent:WaitForChild("CameraDirector"))
+
+local AbilityClient = {}
+
+local localPlayer = Players.LocalPlayer
+local clientCooldownUntil = 0 -- só para não spammar o remote; o servidor é quem valida de verdade
+
+local function groundY(pos: Vector3): number
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { localPlayer.Character :: Instance? }
+	local r = Workspace:Raycast(pos + Vector3.new(0, 4, 0), Vector3.new(0, -60, 0), params)
+	return r and r.Position.Y + 0.08 or pos.Y - 3
+end
+
+function AbilityClient.request()
+	if localPlayer:GetAttribute("MugetsuForm") ~= true or localPlayer:GetAttribute("MugetsuAbilityReady") ~= true then
+		return
+	end
+	if localPlayer:GetAttribute("MugetsuCutscene") == true then
+		return
+	end
+	if Workspace:GetServerTimeNow() < clientCooldownUntil then
+		return
+	end
+	local cam = Workspace.CurrentCamera
+	local look = cam and cam.CFrame.LookVector or Vector3.new(0, 0, -1)
+	local char = localPlayer.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local aim = Vector3.new(look.X, 0, look.Z)
+	if aim.Magnitude < 0.01 and root then
+		aim = root.CFrame.LookVector
+	end
+	clientCooldownUntil = Workspace:GetServerTimeNow() + 0.3
+	Remotes.get("RequestAbility"):FireServer(aim)
+end
+
+local function showTelegraph(p: any)
+	local origin: Vector3, dir: Vector3 = p.origin, p.dir
+	local y = groundY(origin)
+	local length, width, tele = p.range, p.width, p.telegraph
+	local q = VFX.session()
+	local base = Instance.new("Part")
+	base.Name = "MugetsuTelegraph"
+	base.Anchored = true
+	base.CanCollide = false
+	base.CanQuery = false
+	base.CanTouch = false
+	base.CastShadow = false
+	base.Material = Enum.Material.Neon
+	base.Color = Color3.fromRGB(190, 22, 34)
+	base.Transparency = 0.8
+	base.Size = Vector3.new(width, 0.12, length)
+	local mid = Vector3.new(origin.X, y, origin.Z) + dir * (length / 2)
+	base.CFrame = CFrame.lookAt(mid, mid + dir)
+	base.Parent = Workspace
+	local fill = base:Clone()
+	fill.Color = Color3.fromRGB(255, 255, 255)
+	fill.Transparency = 0.45
+	fill.Size = Vector3.new(width, 0.16, 0.1)
+	fill.Parent = Workspace
+	local start = os.clock()
+	local conn
+	conn = game:GetService("RunService").Heartbeat:Connect(function()
+		local k = math.clamp((os.clock() - start) / tele, 0, 1)
+		fill.Size = Vector3.new(width * k, 0.16, length * k)
+		local m = Vector3.new(origin.X, y + 0.02, origin.Z) + dir * (length * k / 2)
+		fill.CFrame = CFrame.lookAt(m, m + dir)
+		if k >= 1 then
+			conn:Disconnect()
+		end
+	end)
+	task.delay(tele + 0.05, function()
+		if conn then
+			conn:Disconnect()
+		end
+		base:Destroy()
+		fill:Destroy()
+		q:clean()
+	end)
+
+	-- animação de lançamento + brilho de carga
+	local who = Players:GetPlayerByUserId(p.userId)
+	local char = who and who.Character
+	if char then
+		local applier = PoseApplier.new(char, who == localPlayer)
+		applier:play("GetsugaCast", p.startTime)
+		task.delay(1.3, function()
+			applier:stop()
+		end)
+		local s = VFX.session()
+		s:lightPulse(origin, VFX.Colors.Red, 3, 22, tele)
+		task.delay(tele + 0.5, function()
+			s:clean()
+		end)
+	end
+end
+
+local function showFire(p: any)
+	local s = VFX.session()
+	s:projectile(p.origin, p.dir, p.speed, p.range, p.width, p.startTime)
+	s:shockwave(CFrame.new(p.origin.X, groundY(p.origin), p.origin.Z), 12, 0.5, VFX.Colors.White)
+	if p.userId == localPlayer.UserId and CameraDirector.isActive() == false then
+		local cam = Workspace.CurrentCamera
+		if cam then
+			local fov = cam.FieldOfView
+			cam.FieldOfView = fov + 6
+			TweenService:Create(cam, TweenInfo.new(0.3), { FieldOfView = fov }):Play()
+		end
+	end
+	task.delay(p.range / p.speed + 1.5, function()
+		s:clean()
+	end)
+end
+
+function AbilityClient.init()
+	Remotes.get("AbilityTelegraph").OnClientEvent:Connect(showTelegraph)
+	Remotes.get("AbilityFire").OnClientEvent:Connect(showFire)
+	Remotes.get("AbilityCooldown").OnClientEvent:Connect(function(p)
+		Hud.setCooldown(p.readyAt, p.duration)
+	end)
+end
+
+return AbilityClient
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="23">
+          <Properties>
+            <string name="Name">AudioDirector</string>
+            <string name="Source"><![CDATA[--!strict
+-- Áudio da cutscene. Só toca sons cujo ID existe no AssetManifest (nenhum ID é inventado).
+-- Também abaixa o volume dos sons ambientes existentes e os restaura ao final.
+
+local SoundService = game:GetService("SoundService")
+local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
+
+local Manifest = require(game:GetService("ReplicatedStorage"):WaitForChild("Mugetsu"):WaitForChild("AssetManifest"))
+
+local AudioDirector = {}
+
+local ducked: { [Sound]: number } = {}
+local live: { Sound } = {}
+
+function AudioDirector.missing(): { string }
+	local out = {}
+	for name, entry in Manifest.Sounds do
+		if entry.id == "" then
+			table.insert(out, name)
+		end
+	end
+	table.sort(out)
+	return out
+end
+
+function AudioDirector.play(name: string, volumeScale: number?, looped: boolean?): Sound?
+	local entry = Manifest.Sounds[name]
+	if not entry or entry.id == "" then
+		return nil
+	end
+	local s = Instance.new("Sound")
+	s.Name = "Mugetsu_" .. name
+	s.SoundId = entry.id
+	s.Volume = entry.volume * (volumeScale or 1)
+	s.Looped = looped == true
+	s.Parent = SoundService
+	s:Play()
+	table.insert(live, s)
+	if not s.Looped then
+		s.Ended:Once(function()
+			s:Destroy()
+		end)
+	end
+	return s
+end
+
+function AudioDirector.duck(scale: number, time: number)
+	local function consider(root: Instance)
+		for _, d in root:GetDescendants() do
+			if d:IsA("Sound") and not string.find(d.Name, "^Mugetsu_") and ducked[d] == nil then
+				ducked[d] = d.Volume
+			end
+		end
+	end
+	consider(Workspace)
+	consider(SoundService)
+	for s, base in ducked do
+		if s.Parent then
+			TweenService:Create(s, TweenInfo.new(time), { Volume = base * scale }):Play()
+		end
+	end
+end
+
+function AudioDirector.stopAll(fadeTime: number)
+	for s, base in ducked do
+		if s.Parent then
+			TweenService:Create(s, TweenInfo.new(fadeTime), { Volume = base }):Play()
+		end
+	end
+	ducked = {}
+	for _, s in live do
+		if s.Parent then
+			TweenService:Create(s, TweenInfo.new(fadeTime), { Volume = 0 }):Play()
+			task.delay(fadeTime + 0.05, function()
+				s:Destroy()
+			end)
+		end
+	end
+	live = {}
+end
+
+return AudioDirector
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="24">
+          <Properties>
+            <string name="Name">CameraDirector</string>
+            <string name="Source"><![CDATA[--!strict
+-- Câmera exclusiva da cutscene. Posição = f(tempo do servidor), nunca aleatória:
+-- planos definidos na Timeline (posição/olhar/FOV relativos ao HumanoidRootPart), órbita,
+-- transições suaves, impulsos de tremor com decaimento e restauração garantida da câmera original.
+
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local Timeline = require(game:GetService("ReplicatedStorage"):WaitForChild("Mugetsu"):WaitForChild("Timeline"))
+
+local CameraDirector = {}
+
+local BIND_NAME = "MugetsuCutsceneCamera"
+
+type Shake = { start: number, duration: number, amplitude: number }
+type Saved = { cameraType: Enum.CameraType, subject: Instance?, cframe: CFrame, fov: number }
+
+local active = false
+local saved: Saved? = nil
+local subject: BasePart? = nil
+local startServer = 0
+local shakes: { Shake } = {}
+local fovKick = 0
+local fovKickDecay = 0
+
+local function lerpV(a: Vector3, b: Vector3, k: number): Vector3
+	return a:Lerp(b, k)
+end
+
+local function shotCFrame(root: CFrame, shot: Timeline.Shot, alpha: number): (CFrame, number)
+	local k = Timeline.ease(shot.ease == "Orbit" and "Sine" or shot.ease, alpha)
+	local focus
+	local pos
+	if shot.ease == "Orbit" and shot.orbit then
+		local o = shot.orbit
+		local ang = math.rad(o.degrees) * k
+		local base = shot.from.pos
+		local startAngle = math.atan2(base.X, base.Z)
+		local a = startAngle + ang
+		local local_ = Vector3.new(math.sin(a) * o.radius, o.height + 0.6 * math.sin(k * math.pi), math.cos(a) * o.radius)
+		pos = root:PointToWorldSpace(local_)
+		focus = root:PointToWorldSpace(lerpV(shot.from.look, shot.to.look, k))
+	else
+		pos = root:PointToWorldSpace(lerpV(shot.from.pos, shot.to.pos, k))
+		focus = root:PointToWorldSpace(lerpV(shot.from.look, shot.to.look, k))
+	end
+	local fov = shot.from.fov + (shot.to.fov - shot.from.fov) * k
+	return CFrame.lookAt(pos, focus), fov
+end
+
+-- pseudo-ruído suave e determinístico (sem aleatoriedade)
+local function noise(t: number, seed: number): number
+	return math.sin(t * 47.0 + seed) * 0.6 + math.sin(t * 81.0 + seed * 2.3) * 0.4
+end
+
+function CameraDirector.shake(amplitude: number, duration: number)
+	table.insert(shakes, { start = os.clock(), duration = duration, amplitude = amplitude })
+end
+
+function CameraDirector.punchFov(amount: number, decayTime: number)
+	fovKick = amount
+	fovKickDecay = amount / math.max(decayTime, 0.05)
+end
+
+function CameraDirector.isActive(): boolean
+	return active
+end
+
+function CameraDirector.stop()
+	if not active then
+		return
+	end
+	active = false
+	pcall(function()
+		RunService:UnbindFromRenderStep(BIND_NAME)
+	end)
+	local cam = Workspace.CurrentCamera
+	local s = saved
+	saved = nil
+	shakes = {}
+	fovKick = 0
+	if cam and s then
+		cam.CameraType = s.cameraType
+		if s.subject then
+			cam.CameraSubject = s.subject
+		end
+		cam.FieldOfView = s.fov
+		-- a câmera padrão reassume e se reposiciona sozinha; mantemos o CFrame para evitar salto.
+		cam.CFrame = s.cframe
+	end
+end
+
+function CameraDirector.start(rootPart: BasePart, serverStart: number)
+	if active then
+		CameraDirector.stop()
+	end
+	local cam = Workspace.CurrentCamera
+	if not cam then
+		return
+	end
+	saved = {
+		cameraType = cam.CameraType, subject = cam.CameraSubject, cframe = cam.CFrame, fov = cam.FieldOfView,
+	}
+	subject = rootPart
+	startServer = serverStart
+	active = true
+	cam.CameraType = Enum.CameraType.Scriptable
+
+	local lastFrame = os.clock()
+	RunService:BindToRenderStep(BIND_NAME, Enum.RenderPriority.Camera.Value + 1, function()
+		local now = os.clock()
+		local dt = now - lastFrame
+		lastFrame = now
+		if not active or not subject or not subject.Parent then
+			CameraDirector.stop()
+			return
+		end
+		local t = Workspace:GetServerTimeNow() - startServer
+		-- raiz estável: posição do HRP mas orientação "congelada" na do início (o servidor ancora o HRP).
+		local root = subject.CFrame
+		local shot, alpha = Timeline.getShot(math.max(t, 0))
+		if not shot then
+			shot = Timeline.Shots[1]
+			alpha = 0
+		end
+		local cf, fov = shotCFrame(root, shot :: Timeline.Shot, alpha)
+
+		-- tremor: soma de impulsos com decaimento quadrático
+		local offset = Vector3.zero
+		local roll = 0
+		for i = #shakes, 1, -1 do
+			local sk = shakes[i]
+			local age = now - sk.start
+			if age >= sk.duration then
+				table.remove(shakes, i)
+			else
+				local f = (1 - age / sk.duration) ^ 2 * sk.amplitude
+				offset += Vector3.new(noise(now, 1) * f, noise(now, 7) * f, noise(now, 13) * f * 0.5)
+				roll += noise(now, 19) * f * 0.02
+			end
+		end
+		if fovKick ~= 0 then
+			fovKick = fovKick > 0 and math.max(0, fovKick - fovKickDecay * dt) or math.min(0, fovKick - fovKickDecay * dt)
+		end
+		cam.CFrame = cf * CFrame.new(offset) * CFrame.Angles(0, 0, roll)
+		cam.FieldOfView = math.clamp(fov + fovKick, 8, 110)
+	end)
+end
+
+return CameraDirector
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="25">
+          <Properties>
+            <string name="Name">CutsceneController</string>
+            <string name="Source"><![CDATA[--!strict
+-- Orquestrador da cutscene no cliente.
+-- Um único relógio (tempo do servidor) dirige: câmera, HUD, iluminação, áudio, poses e VFX.
+-- O dono da cutscene recebe tudo; observadores próximos veem só pose + VFX + troca de modelo.
+-- Máquina de estados: Idle -> Starting -> Running -> Climax -> Finishing -> Idle (e Cancelled).
+-- Qualquer erro dentro de um handler é capturado; qualquer saída passa por teardown().
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Mugetsu")
+local Config = require(Shared:WaitForChild("Config"))
+local Timeline = require(Shared:WaitForChild("Timeline"))
+local StateMachine = require(Shared:WaitForChild("StateMachine"))
+local Manifest = require(Shared:WaitForChild("AssetManifest"))
+local Remotes = require(Shared:WaitForChild("Remotes"))
+
+local CameraDirector = require(script.Parent:WaitForChild("CameraDirector"))
+local LightingDirector = require(script.Parent:WaitForChild("LightingDirector"))
+local AudioDirector = require(script.Parent:WaitForChild("AudioDirector"))
+local InputController = require(script.Parent:WaitForChild("InputController"))
+local PoseApplier = require(script.Parent:WaitForChild("PoseApplier"))
+local VFX = require(script.Parent:WaitForChild("VFX"))
+local Quality = require(script.Parent:WaitForChild("Quality"))
+local Hud = require(script.Parent:WaitForChild("Hud"))
+local HairSway = require(script.Parent:WaitForChild("HairSway"))
+
+local BIND = "MugetsuTimeline"
+local localPlayer = Players.LocalPlayer
+
+type Ctx = {
+	isOwner: boolean,
+	player: Player,
+	char: Model,
+	root: BasePart,
+	start: number,
+	lastT: number,
+	vfx: VFX.Session,
+	pose: PoseApplier.Applier,
+	auraRamp: { from: number, to: number, t0: number, dur: number }?,
+	markerOwned: { [string]: boolean },
+	fired: { [string]: boolean },
+	bindName: string,
+	done: boolean,
+}
+
+local CutsceneController = {}
+CutsceneController.machine = StateMachine.new()
+
+local ownerCtx: Ctx? = nil
+local observers: { [number]: Ctx } = {}
+local counter = 0
+
+local function floorCF(ctx: Ctx): CFrame
+	return CFrame.new(ctx.root.Position - Vector3.new(0, 2.95, 0))
+end
+
+local function blade(ctx: Ctx): BasePart?
+	local kits = ctx.char:FindFirstChild("MugetsuKits")
+	if not kits then
+		return nil
+	end
+	local form = kits:GetAttribute("Form") :: string?
+	local kit = kits:FindFirstChild(form or "Ichigo")
+	local b = kit and kit:FindFirstChild("Blade")
+	return b and b:IsA("BasePart") and b or nil
+end
+
+local function setAura(ctx: Ctx, to: number, dur: number)
+	ctx.auraRamp = { from = 0, to = to, t0 = os.clock(), dur = math.max(dur, 0.01) }
+end
+
+------------------------------------------------------------------------------------------------
+-- Handlers: um por evento da Timeline. (ctx, arg)
+------------------------------------------------------------------------------------------------
+local H: { [string]: (Ctx, any) -> () } = {}
+
+H.LockControls = function(ctx)
+	if ctx.isOwner then
+		InputController.lock()
+		Hud.showButtons(false, false)
+		Hud.setLetterbox(true, 0.9)
+		LightingDirector.apply("Cold", 1.5)
+	end
+end
+H.AmbientDuck = function(ctx, arg)
+	if ctx.isOwner then
+		AudioDirector.duck(arg or 0.25, 1.2)
+		AudioDirector.play("AmbientBed", 1, true)
+	end
+end
+local function animStart(name: string): number
+	for _, ev in Timeline.Events do
+		if ev.name == "Anim" and ev.arg == name then
+			return ev.t
+		end
+	end
+	return 0
+end
+H.Anim = function(ctx, arg)
+	ctx.pose:play(arg, ctx.start + animStart(arg), arg == "Concentrate" and 1 or 0)
+end
+H.Lighting = function(ctx, arg)
+	if ctx.isOwner then
+		LightingDirector.apply(arg, arg == "Mugetsu" and 0.1 or 1.0)
+	end
+end
+H.AuraWhispers = function(ctx)
+	ctx.vfx:auraStart(ctx.char, "Blue")
+	setAura(ctx, 0.25, 3)
+end
+H.SwordGlint = function(ctx)
+	local b = blade(ctx)
+	if b then
+		ctx.vfx:glint(b)
+	end
+end
+H.PauseBeat = function(ctx)
+	if ctx.isOwner then
+		CameraDirector.punchFov(-4, 0.5)
+		AudioDirector.play("Heartbeat")
+		LightingDirector.pulse(0.15)
+	end
+end
+H.EnergyGather = function(ctx)
+	setAura(ctx, 1, 7)
+	ctx.vfx:gather(ctx.char, 6.5, VFX.Colors.Blue)
+	if ctx.isOwner then
+		AudioDirector.play("EnergyRise")
+	end
+end
+H.GroundShards = function(ctx)
+	local f = floorCF(ctx).Position
+	ctx.vfx:shards(f, "rise", 22, 5.2, Color3.fromRGB(16, 18, 28), nil)
+	ctx.vfx:shards(f, "rise", 14, 5.2, VFX.Colors.Blue, nil)
+end
+H.PulseLight = function(ctx, arg)
+	local a = arg or 0.5
+	ctx.vfx:lightPulse(ctx.root.Position + Vector3.new(0, 1, 0), VFX.Colors.Blue, 3 + 4 * a, 45, 0.55)
+	if ctx.isOwner then
+		LightingDirector.pulse(a * 0.5)
+		CameraDirector.shake(0.05 + 0.08 * a, 0.3)
+	end
+end
+H.EyeReiatsu = function(ctx)
+	local head = ctx.char:FindFirstChild("Head") :: BasePart?
+	if head then
+		ctx.vfx:lightPulse(head.Position + Vector3.new(0, 0, -1.5), VFX.Colors.Blue, 4, 12, 2.4)
+	end
+	if ctx.isOwner then
+		LightingDirector.pulse(0.4)
+	end
+end
+H.PressureWave = function(ctx)
+	ctx.vfx:shockwave(floorCF(ctx), 28, 1.3, VFX.Colors.Blue)
+	ctx.vfx:dustBurst(floorCF(ctx).Position, 24, nil)
+	ctx.vfx:shards(floorCF(ctx).Position, "burst", 10, 1.6, VFX.Colors.Blue, nil)
+	if ctx.isOwner then
+		CameraDirector.shake(0.25, 0.8)
+	end
+end
+H.BlueSpire = function(ctx)
+	if ctx.isOwner then
+		LightingDirector.apply("Night", 0.6)
+		LightingDirector.blur(2, 0.6)
+	end
+	ctx.vfx:spire(floorCF(ctx).Position + Vector3.new(0, 0, -2), 70, 3.6, VFX.Colors.Blue)
+end
+H.MaskForm = function(ctx)
+	local head = ctx.char:FindFirstChild("Head") :: BasePart?
+	if head then
+		ctx.vfx:shards(head.Position + Vector3.new(0, 1, -6), "converge", 26, 1.1, VFX.Colors.White, function()
+			return head.Position + Vector3.new(0, -0.2, -0.6)
+		end)
+		ctx.vfx:lightPulse(head.Position, VFX.Colors.White, 6, 16, 0.8)
+	end
+	if ctx.isOwner then
+		CameraDirector.shake(0.18, 0.6)
+		LightingDirector.blur(0, 0.4)
+	end
+end
+H.ShakeSmall = function(ctx)
+	if ctx.isOwner then
+		CameraDirector.shake(0.12, 0.5)
+	end
+end
+H.BeginFade = function(ctx)
+	if ctx.isOwner then
+		Hud.fade(Color3.new(1, 1, 1), 0, 0.4)
+	end
+end
+H.WhiteOut = function(ctx)
+	if ctx.isOwner then
+		-- a troca real do modelo acontece no servidor durante o branco; aqui trocamos o cenário
+		LightingDirector.apply("Overcast", 0.05)
+		LightingDirector.blur(0, 0.1)
+	end
+	ctx.vfx:auraStop()
+end
+H.MorphSwap = function() end -- executado no servidor (ModelKit); o cliente só observa a replicação
+H.BlackTendrils = function(ctx)
+	ctx.vfx:tendrils(ctx.root.Position, 14, 2.8)
+	if ctx.isOwner then
+		AudioDirector.play("Tendrils")
+	end
+end
+H.WhiteOutEnd = function(ctx)
+	if ctx.isOwner then
+		Hud.fade(Color3.new(1, 1, 1), 1, 0.35)
+	end
+end
+H.ReleaseImpact = function(ctx)
+	CutsceneController.machine:transition("Climax")
+	local f = floorCF(ctx)
+	ctx.vfx:auraStart(ctx.char, "Black")
+	setAura(ctx, 1, 0.3)
+	ctx.vfx:shockwave(f, 70, 1.2, VFX.Colors.White)
+	local n = Quality.settings().Rings
+	for i = 1, n do
+		ctx.vfx:ring(f * CFrame.new(0, 0.2 + i * 0.4, 0), 36 + i * 16, 0.7 + i * 0.18, i % 2 == 0 and VFX.Colors.White or VFX.Colors.Black, 0.8 + i * 0.25)
+	end
+	ctx.vfx:ring(f * CFrame.new(0, 3, 0), 30, 0.9, VFX.Colors.Black, 1.2, CFrame.Angles(math.rad(18), 0, math.rad(-12)))
+	ctx.vfx:shards(f.Position, "burst", 36, 1.8, Color3.fromRGB(10, 10, 12), nil)
+	ctx.vfx:shards(f.Position, "burst", 12, 1.6, VFX.Colors.White, nil)
+	ctx.vfx:dustBurst(f.Position, 40, nil)
+	ctx.vfx:lightPulse(ctx.root.Position + Vector3.new(0, 2, 0), VFX.Colors.White, 10, 90, 0.7)
+	HairSway.gust(1, 3)
+	if ctx.isOwner then
+		Hud.flash(Color3.new(1, 1, 1), 0.06, 0.4)
+		CameraDirector.shake(0.8, 0.7)
+		CameraDirector.punchFov(14, 0.5)
+		LightingDirector.pulse(1.2)
+		AudioDirector.play("Impact")
+	end
+end
+H.SwordSlash = function(ctx)
+	local b = blade(ctx)
+	if b then
+		ctx.vfx:swordTrail(b, 0.9)
+	end
+	if ctx.isOwner then
+		AudioDirector.play("SwordSlash")
+	end
+end
+H.EnvironmentReact = function(ctx)
+	ctx.vfx:environmentReact(ctx.root.Position, 170, 1.3, 2.4)
+end
+H.ImpactFrame = function(ctx)
+	if ctx.isOwner then
+		LightingDirector.impactFrame(0.12)
+		Hud.flash(Color3.new(0, 0, 0), 0.04, 0.12)
+		CameraDirector.shake(0.3, 0.25)
+	end
+end
+H.FadeToBlack = function(ctx)
+	if ctx.isOwner then
+		CutsceneController.machine:transition("Finishing")
+		Hud.fade(Color3.new(0, 0, 0), 0, 1.3)
+	end
+end
+H.FadeFromBlack = function(ctx)
+	if ctx.isOwner then
+		Hud.fade(Color3.new(0, 0, 0), 1, 1.4)
+	end
+end
+H.EnableAbility = function(ctx)
+	if ctx.isOwner then
+		Hud.notify("Habilidade liberada: " .. Config.Ability.Name)
+	end
+end
+H.End = function() end -- o servidor envia CutsceneEnd; o relógio local também encerra por segurança
+
+------------------------------------------------------------------------------------------------
+-- Ciclo de vida
+------------------------------------------------------------------------------------------------
+local function dispatch(ctx: Ctx, ev: Timeline.Event)
+	local fn = H[ev.name]
+	if not fn then
+		return
+	end
+	-- eventos conduzidos por marker de animação real: o marker dispara; este fallback cobre atrasos
+	if ctx.markerOwned[ev.name] then
+		task.delay(0.6, function()
+			if not ctx.done and not ctx.fired[ev.name] then
+				ctx.fired[ev.name] = true
+				local ok, err = pcall(fn, ctx, ev.arg)
+				if not ok then
+					warn("[Mugetsu] handler", ev.name, err)
+				end
+			end
+		end)
+		return
+	end
+	local ok, err = pcall(fn, ctx, ev.arg)
+	if not ok then
+		warn("[Mugetsu] handler", ev.name, err)
+	end
+end
+
+local function eventCount(name: string): number
+	local n = 0
+	for _, ev in Timeline.Events do
+		if ev.name == name then
+			n += 1
+		end
+	end
+	return n
+end
+
+local function teardownCtx(ctx: Ctx)
+	if ctx.done then
+		return
+	end
+	ctx.done = true
+	pcall(function()
+		RunService:UnbindFromRenderStep(ctx.bindName)
+	end)
+	ctx.vfx:auraStop()
+	pcall(function()
+		ctx.pose:stop()
+	end)
+	task.delay(1.4, function()
+		ctx.vfx:clean()
+	end)
+end
+
+local function teardownOwner(reason: string)
+	local ctx = ownerCtx
+	ownerCtx = nil
+	if ctx then
+		teardownCtx(ctx)
+	end
+	-- tudo abaixo é idempotente e executa mesmo se ctx for nil
+	CameraDirector.stop()
+	Hud.resetCinematic()
+	Hud.showButtons(localPlayer:GetAttribute("MugetsuForm") ~= true, localPlayer:GetAttribute("MugetsuAbilityReady") == true and localPlayer:GetAttribute("MugetsuForm") == true)
+	LightingDirector.restore(reason == "completed" and 1.0 or 0.4)
+	AudioDirector.stopAll(0.6)
+	InputController.unlock()
+	CutsceneController.machine:reset()
+end
+
+local function makeCtx(player: Player, start: number, isOwner: boolean): Ctx?
+	local char = player.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not (char and root) then
+		return nil
+	end
+	counter += 1
+	local ctx: Ctx = {
+		isOwner = isOwner, player = player, char = char, root = root, start = start, lastT = -0.001,
+		vfx = VFX.session(), pose = PoseApplier.new(char, isOwner), auraRamp = nil, markerOwned = {}, fired = {},
+		bindName = `{BIND}{counter}`, done = false,
+	}
+	ctx.pose.onMarker = function(eventName: string)
+		if not ctx.fired[eventName] and H[eventName] then
+			ctx.fired[eventName] = true
+			local ok, err = pcall(H[eventName], ctx, nil)
+			if not ok then
+				warn("[Mugetsu] marker", eventName, err)
+			end
+		end
+	end
+	-- marca eventos únicos que têm marker numa animação real publicada
+	for _, entry in Manifest.Animations do
+		if entry.id ~= "" then
+			for _, ev in entry.markers do
+				if eventCount(ev) == 1 and ev ~= "MorphSwap" then
+					ctx.markerOwned[ev] = true
+				end
+			end
+		end
+	end
+	return ctx
+end
+
+local function run(ctx: Ctx)
+	RunService:BindToRenderStep(ctx.bindName, Enum.RenderPriority.Camera.Value - 3, function()
+		if ctx.done then
+			return
+		end
+		local ok, err = pcall(function()
+			if not ctx.root.Parent then
+				error("personagem removido")
+			end
+			local t = Workspace:GetServerTimeNow() - ctx.start
+			if t > Timeline.Duration + Config.Safety.WatchdogMargin then
+				error("watchdog")
+			end
+			if t < 0 then
+				return
+			end
+			for _, ev in Timeline.eventsBetween(ctx.lastT, t) do
+				dispatch(ctx, ev)
+			end
+			ctx.lastT = t
+			local r = ctx.auraRamp
+			if r then
+				local k = math.clamp((os.clock() - r.t0) / r.dur, 0, 1)
+				ctx.vfx:auraIntensity(r.from + (r.to - r.from) * k)
+				if k >= 1 then
+					ctx.auraRamp = nil
+				end
+			end
+		end)
+		if not ok then
+			warn("[Mugetsu] cutscene loop:", err)
+			if ctx.isOwner then
+				teardownOwner("error")
+			else
+				teardownCtx(ctx)
+			end
+		end
+	end)
+end
+
+function CutsceneController.startOwner(payload: { startTime: number, duration: number })
+	if ownerCtx then
+		teardownOwner("restart")
+	end
+	local m = CutsceneController.machine
+	m:reset()
+	m:transition("Starting")
+	local ctx = makeCtx(localPlayer, payload.startTime, true)
+	if not ctx then
+		teardownOwner("no-character")
+		return
+	end
+	ownerCtx = ctx
+	InputController.lock() -- trava imediatamente, antes do t=0
+	CameraDirector.start(ctx.root, payload.startTime)
+	m:transition("Running")
+	local hum = ctx.char:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.Died:Once(function()
+			teardownOwner("died")
+		end)
+	end
+	run(ctx)
+end
+
+function CutsceneController.startObserver(payload: { userId: number, startTime: number })
+	local player = Players:GetPlayerByUserId(payload.userId)
+	if not player or player == localPlayer then
+		return
+	end
+	local old = observers[payload.userId]
+	if old then
+		teardownCtx(old)
+	end
+	local ctx = makeCtx(player, payload.startTime, false)
+	if not ctx then
+		return
+	end
+	observers[payload.userId] = ctx
+	run(ctx)
+end
+
+function CutsceneController.endObserver(userId: number)
+	local ctx = observers[userId]
+	observers[userId] = nil
+	if ctx then
+		teardownCtx(ctx)
+	end
+end
+
+function CutsceneController.cancelOwner(reason: string)
+	teardownOwner(reason)
+end
+
+function CutsceneController.isRunning(): boolean
+	return ownerCtx ~= nil
+end
+
+function CutsceneController.init()
+	Remotes.get("CutsceneStart").OnClientEvent:Connect(CutsceneController.startOwner)
+	Remotes.get("CutsceneObserve").OnClientEvent:Connect(CutsceneController.startObserver)
+	Remotes.get("CutsceneEnd").OnClientEvent:Connect(function(p)
+		if p and p.userId then
+			CutsceneController.endObserver(p.userId)
+		else
+			teardownOwner("completed")
+		end
+	end)
+	Remotes.get("CutsceneCancel").OnClientEvent:Connect(function(p)
+		if p and p.userId then
+			CutsceneController.endObserver(p.userId)
+		else
+			teardownOwner("cancelled")
+		end
+	end)
+	-- saída segura se o personagem do dono sumir
+	localPlayer.CharacterRemoving:Connect(function()
+		if ownerCtx then
+			teardownOwner("character-removing")
+		end
+	end)
+	Remotes.get("Notify").OnClientEvent:Connect(function(p)
+		Hud.notify(p.text)
+	end)
+end
+
+return CutsceneController
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="26">
+          <Properties>
+            <string name="Name">HairSway</string>
+            <string name="Source"><![CDATA[--!strict
+-- Balanço do cabelo de Mugetsu: soma de senoides em Motor6D.Transform dos segmentos (tag MugetsuHair).
+-- Só processa segmentos da forma ativa, com limite de distância; um único laço para todos.
+
+local CollectionService = game:GetService("CollectionService")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local HairSway = {}
+
+local motors: { [Motor6D]: boolean } = {}
+local wind = 0
+local windDecay = 0
+local MAX_DIST = 120
+
+function HairSway.gust(strength: number, decayTime: number)
+	wind = strength
+	windDecay = strength / math.max(decayTime, 0.1)
+end
+
+function HairSway.init()
+	local function add(i: Instance)
+		if i:IsA("Motor6D") then
+			motors[i] = true
+		end
+	end
+	for _, i in CollectionService:GetTagged("MugetsuHair") do
+		add(i)
+	end
+	CollectionService:GetInstanceAddedSignal("MugetsuHair"):Connect(add)
+	CollectionService:GetInstanceRemovedSignal("MugetsuHair"):Connect(function(i)
+		motors[i :: Motor6D] = nil
+	end)
+	RunService.PreRender:Connect(function(dt)
+		local cam = Workspace.CurrentCamera
+		if not cam then
+			return
+		end
+		if wind > 0 then
+			wind = math.max(0, wind - windDecay * dt)
+		end
+		local t = os.clock()
+		local camPos = cam.CFrame.Position
+		for m in motors do
+			local seg = m.Part1
+			local kit = seg and seg.Parent
+			local root = kit and kit.Parent
+			if seg and root and root.Name == "MugetsuKits" then
+				if root:GetAttribute("Form") == "Mugetsu" and (seg.Position - camPos).Magnitude < MAX_DIST then
+					local idx = (m:GetAttribute("Index") :: number? or 1)
+					local ph = (m:GetAttribute("Phase") :: number? or 0)
+					local amp = math.rad(3 + idx * 2.2) * (1 + wind * 2.5)
+					m.Transform = CFrame.Angles(math.sin(t * 1.6 + ph + idx * 0.7) * amp, 0, math.sin(t * 1.1 + ph * 1.3 + idx * 0.5) * amp * 0.8)
+				else
+					m.Transform = CFrame.identity
+				end
+			end
+		end
+	end)
+end
+
+return HairSway
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="27">
+          <Properties>
+            <string name="Name">Hud</string>
+            <string name="Source"><![CDATA[--!strict
+-- Interface: barras de cinema, fade/flash, botões de transformação e habilidade (PC + mobile),
+-- indicador de disponibilidade e cooldown. Construída por código (StarterGui não precisa de assets).
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+
+local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Mugetsu"):WaitForChild("Config"))
+
+local Hud = {}
+
+local gui: ScreenGui
+local top: Frame, bottom: Frame, fade: Frame, flash: Frame
+local transformBtn: TextButton, abilityBtn: TextButton
+local cdOverlay: Frame, cdLabel: TextLabel
+local toast: TextLabel
+local cdConn: RBXScriptConnection? = nil
+
+Hud.onTransform = function() end :: () -> ()
+Hud.onAbility = function() end :: () -> ()
+
+local function frame(name: string, parent: Instance, color: Color3, transparency: number): Frame
+	local f = Instance.new("Frame")
+	f.Name = name
+	f.BackgroundColor3 = color
+	f.BackgroundTransparency = transparency
+	f.BorderSizePixel = 0
+	f.Parent = parent
+	return f
+end
+
+local function button(name: string, text: string, key: string, pos: UDim2): TextButton
+	local touch = UserInputService.TouchEnabled
+	local b = Instance.new("TextButton")
+	b.Name = name
+	b.AnchorPoint = Vector2.new(1, 1)
+	b.Position = pos
+	b.Size = touch and UDim2.fromOffset(104, 104) or UDim2.fromOffset(86, 86)
+	b.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
+	b.BackgroundTransparency = 0.15
+	b.AutoButtonColor = true
+	b.Text = ""
+	b.ClipsDescendants = true
+	b.Visible = false
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 18)
+	c.Parent = b
+	local s = Instance.new("UIStroke")
+	s.Color = Color3.fromRGB(230, 230, 235)
+	s.Thickness = 2
+	s.Parent = b
+	local l = Instance.new("TextLabel")
+	l.Name = "Title"
+	l.BackgroundTransparency = 1
+	l.Size = UDim2.fromScale(1, 0.55)
+	l.Position = UDim2.fromScale(0, 0.14)
+	l.Font = Enum.Font.GothamBlack
+	l.TextScaled = true
+	l.Text = text
+	l.TextColor3 = Color3.fromRGB(240, 240, 245)
+	l.Parent = b
+	local pad = Instance.new("UIPadding")
+	pad.PaddingLeft = UDim.new(0, 8)
+	pad.PaddingRight = UDim.new(0, 8)
+	pad.Parent = l
+	if not touch then
+		local k = Instance.new("TextLabel")
+		k.Name = "Key"
+		k.BackgroundTransparency = 1
+		k.Size = UDim2.fromScale(1, 0.25)
+		k.Position = UDim2.fromScale(0, 0.7)
+		k.Font = Enum.Font.GothamMedium
+		k.TextScaled = true
+		k.Text = `[{key}]`
+		k.TextColor3 = Color3.fromRGB(170, 170, 180)
+		k.Parent = b
+	end
+	b.Parent = gui
+	return b
+end
+
+function Hud.init()
+	local player = Players.LocalPlayer
+	gui = Instance.new("ScreenGui")
+	gui.Name = "MugetsuHUD"
+	gui.ResetOnSpawn = false
+	gui.IgnoreGuiInset = true
+	gui.DisplayOrder = 100
+	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+	top = frame("BarTop", gui, Color3.new(0, 0, 0), 0)
+	top.Size = UDim2.fromScale(1, 0)
+	top.ZIndex = 20
+	bottom = frame("BarBottom", gui, Color3.new(0, 0, 0), 0)
+	bottom.AnchorPoint = Vector2.new(0, 1)
+	bottom.Position = UDim2.fromScale(0, 1)
+	bottom.Size = UDim2.fromScale(1, 0)
+	bottom.ZIndex = 20
+	fade = frame("Fade", gui, Color3.new(0, 0, 0), 1)
+	fade.Size = UDim2.fromScale(1, 1)
+	fade.ZIndex = 30
+	flash = frame("Flash", gui, Color3.new(1, 1, 1), 1)
+	flash.Size = UDim2.fromScale(1, 1)
+	flash.ZIndex = 31
+
+	transformBtn = button("Transform", Config.Transform.MobileButtonLabel, Config.Transform.Keybind.Name, UDim2.new(1, -24, 1, -24))
+	abilityBtn = button("Ability", Config.Ability.MobileButtonLabel, Config.Ability.Keybind.Name, UDim2.new(1, -24, 1, -24))
+	cdOverlay = frame("Cooldown", abilityBtn, Color3.new(0, 0, 0), 0.35)
+	cdOverlay.AnchorPoint = Vector2.new(0, 1)
+	cdOverlay.Position = UDim2.fromScale(0, 1)
+	cdOverlay.Size = UDim2.fromScale(1, 0)
+	cdOverlay.ZIndex = 5
+	cdLabel = Instance.new("TextLabel")
+	cdLabel.BackgroundTransparency = 1
+	cdLabel.Size = UDim2.fromScale(1, 1)
+	cdLabel.Font = Enum.Font.GothamBlack
+	cdLabel.TextSize = 30
+	cdLabel.TextColor3 = Color3.new(1, 1, 1)
+	cdLabel.Text = ""
+	cdLabel.ZIndex = 6
+	cdLabel.Parent = abilityBtn
+
+	toast = Instance.new("TextLabel")
+	toast.Name = "Toast"
+	toast.AnchorPoint = Vector2.new(0.5, 0)
+	toast.Position = UDim2.fromScale(0.5, 0.08)
+	toast.Size = UDim2.fromOffset(420, 36)
+	toast.BackgroundColor3 = Color3.new(0, 0, 0)
+	toast.BackgroundTransparency = 0.3
+	toast.TextColor3 = Color3.new(1, 1, 1)
+	toast.Font = Enum.Font.GothamMedium
+	toast.TextSize = 18
+	toast.Visible = false
+	toast.Parent = gui
+
+	transformBtn.Activated:Connect(function()
+		Hud.onTransform()
+	end)
+	abilityBtn.Activated:Connect(function()
+		Hud.onAbility()
+	end)
+	gui.Parent = player:WaitForChild("PlayerGui")
+end
+
+function Hud.setLetterbox(on: boolean, time: number)
+	local ti = TweenInfo.new(time, Enum.EasingStyle.Sine)
+	local h = on and 0.12 or 0
+	TweenService:Create(top, ti, { Size = UDim2.fromScale(1, h) }):Play()
+	TweenService:Create(bottom, ti, { Size = UDim2.fromScale(1, h) }):Play()
+end
+
+-- Fade de tela cheia (preto ou branco). to: 0 = opaco, 1 = transparente.
+function Hud.fade(color: Color3, to: number, time: number)
+	fade.BackgroundColor3 = color
+	if time <= 0 then
+		fade.BackgroundTransparency = to
+		return
+	end
+	TweenService:Create(fade, TweenInfo.new(time, Enum.EasingStyle.Sine), { BackgroundTransparency = to }):Play()
+end
+
+function Hud.flash(color: Color3, hold: number, out: number)
+	flash.BackgroundColor3 = color
+	flash.BackgroundTransparency = 0
+	task.delay(hold, function()
+		TweenService:Create(flash, TweenInfo.new(out, Enum.EasingStyle.Quad), { BackgroundTransparency = 1 }):Play()
+	end)
+end
+
+-- Restaura barras e fades imediatamente (cancelamento seguro).
+function Hud.resetCinematic()
+	Hud.setLetterbox(false, 0.25)
+	fade.BackgroundTransparency = 1
+	flash.BackgroundTransparency = 1
+end
+
+function Hud.showButtons(transformVisible: boolean, abilityVisible: boolean)
+	transformBtn.Visible = transformVisible
+	abilityBtn.Visible = abilityVisible
+	-- empilha à esquerda se ambos aparecerem
+	abilityBtn.Position = UDim2.new(1, -24, 1, -24)
+	transformBtn.Position = UDim2.new(1, -24, 1, -24)
+end
+
+function Hud.setCooldown(readyAt: number?, duration: number)
+	if cdConn then
+		cdConn:Disconnect()
+		cdConn = nil
+	end
+	if not readyAt then
+		cdOverlay.Size = UDim2.fromScale(1, 0)
+		cdLabel.Text = ""
+		return
+	end
+	cdConn = RunService.Heartbeat:Connect(function()
+		local remaining = readyAt - Workspace:GetServerTimeNow()
+		if remaining <= 0 then
+			cdOverlay.Size = UDim2.fromScale(1, 0)
+			cdLabel.Text = ""
+			if cdConn then
+				cdConn:Disconnect()
+				cdConn = nil
+			end
+			return
+		end
+		cdOverlay.Size = UDim2.fromScale(1, math.clamp(remaining / duration, 0, 1))
+		cdLabel.Text = string.format("%.1f", remaining)
+	end)
+end
+
+function Hud.notify(text: string)
+	toast.Text = text
+	toast.Visible = true
+	local token = os.clock()
+	toast:SetAttribute("Token", token)
+	task.delay(2.5, function()
+		if toast:GetAttribute("Token") == token then
+			toast.Visible = false
+		end
+	end)
+end
+
+return Hud
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="28">
+          <Properties>
+            <string name="Name">InputController</string>
+            <string name="Source"><![CDATA[--!strict
+-- Teclas configuráveis (Config) + trava de controles durante a cutscene.
+-- Trava: sorve todo input via ContextActionService e desativa os Controls do PlayerModule.
+-- unlock() é idempotente e é chamado por TODOS os caminhos de saída (fim, cancelamento, erro).
+
+local ContextActionService = game:GetService("ContextActionService")
+local Players = game:GetService("Players")
+
+local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Mugetsu"):WaitForChild("Config"))
+
+local InputController = {}
+
+local LOCK = "MugetsuLockInput"
+local locked = false
+
+local function controls(): any?
+	local ok, c = pcall(function()
+		local ps = Players.LocalPlayer:WaitForChild("PlayerScripts", 2)
+		local pm = ps and ps:WaitForChild("PlayerModule", 2)
+		return pm and require(pm :: ModuleScript):GetControls()
+	end)
+	return ok and c or nil
+end
+
+function InputController.bind(onTransform: () -> (), onAbility: () -> ())
+	ContextActionService:BindAction("MugetsuTransform", function(_, state)
+		if state == Enum.UserInputState.Begin then
+			onTransform()
+		end
+		return Enum.ContextActionResult.Pass
+	end, false, Config.Transform.Keybind)
+	ContextActionService:BindAction("MugetsuAbility", function(_, state)
+		if state == Enum.UserInputState.Begin then
+			onAbility()
+		end
+		return Enum.ContextActionResult.Pass
+	end, false, Config.Ability.Keybind)
+end
+
+function InputController.lock()
+	if locked then
+		return
+	end
+	locked = true
+	ContextActionService:BindActionAtPriority(LOCK, function()
+		return Enum.ContextActionResult.Sink
+	end, false, Enum.ContextActionPriority.High.Value + 10,
+		Enum.UserInputType.Keyboard, Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2,
+		Enum.UserInputType.Gamepad1)
+	local c = controls()
+	if c then
+		pcall(function()
+			c:Disable()
+		end)
+	end
+end
+
+function InputController.unlock()
+	if not locked then
+		return
+	end
+	locked = false
+	ContextActionService:UnbindAction(LOCK)
+	local c = controls()
+	if c then
+		pcall(function()
+			c:Enable()
+		end)
+	end
+end
+
+function InputController.isLocked(): boolean
+	return locked
+end
+
+return InputController
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="29">
+          <Properties>
+            <string name="Name">LightingDirector</string>
+            <string name="Source"><![CDATA[--!strict
+-- Iluminação cinematográfica e pós-processamento (moderado). Guarda o estado original e o restaura.
+
+local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
+
+local Quality = require(script.Parent:WaitForChild("Quality"))
+
+local LightingDirector = {}
+
+local saved: { [string]: any }? = nil
+local created: { Instance } = {}
+local cc: ColorCorrectionEffect?
+local bloom: BloomEffect?
+local blur: BlurEffect?
+local atmosphere: Atmosphere?
+local createdAtmosphere = false
+
+local PRESETS = {
+	Cold = {
+		ClockTime = 17.2, Brightness = 1.4, ExposureCompensation = -0.5,
+		Ambient = Color3.fromRGB(52, 62, 84), OutdoorAmbient = Color3.fromRGB(70, 84, 112),
+		ColorShift_Top = Color3.fromRGB(120, 150, 255),
+		cc = { Saturation = -0.25, Contrast = 0.25, Brightness = -0.05, TintColor = Color3.fromRGB(205, 220, 255) },
+		bloom = { Intensity = 0.4, Size = 24, Threshold = 1.0 },
+		haze = { Density = 0.38, Color = Color3.fromRGB(90, 104, 130) },
+	},
+	Night = {
+		ClockTime = 0.5, Brightness = 0.6, ExposureCompensation = -0.8,
+		Ambient = Color3.fromRGB(20, 40, 90), OutdoorAmbient = Color3.fromRGB(26, 52, 110),
+		ColorShift_Top = Color3.fromRGB(80, 150, 255),
+		cc = { Saturation = -0.1, Contrast = 0.35, Brightness = -0.1, TintColor = Color3.fromRGB(170, 200, 255) },
+		bloom = { Intensity = 0.9, Size = 32, Threshold = 0.9 },
+		haze = { Density = 0.45, Color = Color3.fromRGB(30, 60, 120) },
+	},
+	Overcast = {
+		ClockTime = 13, Brightness = 3, ExposureCompensation = 0.2,
+		Ambient = Color3.fromRGB(150, 150, 155), OutdoorAmbient = Color3.fromRGB(170, 170, 176),
+		ColorShift_Top = Color3.fromRGB(255, 255, 255),
+		cc = { Saturation = -0.55, Contrast = 0.4, Brightness = 0.02, TintColor = Color3.fromRGB(255, 255, 255) },
+		bloom = { Intensity = 0.5, Size = 24, Threshold = 1.2 },
+		haze = { Density = 0.3, Color = Color3.fromRGB(215, 215, 220) },
+	},
+	Mugetsu = {
+		ClockTime = 16.5, Brightness = 1.0, ExposureCompensation = -0.9,
+		Ambient = Color3.fromRGB(26, 26, 30), OutdoorAmbient = Color3.fromRGB(46, 46, 52),
+		ColorShift_Top = Color3.fromRGB(255, 255, 255),
+		cc = { Saturation = -0.85, Contrast = 0.6, Brightness = -0.12, TintColor = Color3.fromRGB(240, 240, 245) },
+		bloom = { Intensity = 0.35, Size = 18, Threshold = 1.1 },
+		haze = { Density = 0.5, Color = Color3.fromRGB(30, 30, 34) },
+	},
+}
+
+local function ensure()
+	if saved then
+		return
+	end
+	saved = {
+		ClockTime = Lighting.ClockTime, Brightness = Lighting.Brightness,
+		ExposureCompensation = Lighting.ExposureCompensation, Ambient = Lighting.Ambient,
+		OutdoorAmbient = Lighting.OutdoorAmbient, ColorShift_Top = Lighting.ColorShift_Top,
+	}
+	local q = Quality.settings()
+	if q.PostFx then
+		cc = Instance.new("ColorCorrectionEffect")
+		cc.Name = "MugetsuCC"
+		cc.Parent = Lighting
+		bloom = Instance.new("BloomEffect")
+		bloom.Name = "MugetsuBloom"
+		bloom.Intensity = 0
+		bloom.Parent = Lighting
+		blur = Instance.new("BlurEffect")
+		blur.Name = "MugetsuBlur"
+		blur.Size = 0
+		blur.Parent = Lighting
+		table.insert(created, cc :: Instance)
+		table.insert(created, bloom :: Instance)
+		table.insert(created, blur :: Instance)
+	end
+	if q.Fog then
+		atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
+		if not atmosphere then
+			atmosphere = Instance.new("Atmosphere")
+			atmosphere.Name = "MugetsuAtmosphere"
+			atmosphere.Density = 0
+			atmosphere.Parent = Lighting
+			createdAtmosphere = true
+			table.insert(created, atmosphere :: Instance)
+		else
+			saved.AtmDensity = atmosphere.Density
+			saved.AtmColor = atmosphere.Color
+		end
+	end
+end
+
+local function tween(inst: Instance?, time: number, props: { [string]: any })
+	if inst then
+		TweenService:Create(inst, TweenInfo.new(time, Enum.EasingStyle.Sine), props):Play()
+	end
+end
+
+function LightingDirector.apply(preset: string, time: number)
+	local p = PRESETS[preset]
+	if not p then
+		return
+	end
+	ensure()
+	tween(Lighting, time, {
+		ClockTime = p.ClockTime, Brightness = p.Brightness, ExposureCompensation = p.ExposureCompensation,
+		Ambient = p.Ambient, OutdoorAmbient = p.OutdoorAmbient, ColorShift_Top = p.ColorShift_Top,
+	})
+	tween(cc, time, p.cc)
+	tween(bloom, time, p.bloom)
+	tween(atmosphere, time, { Density = p.haze.Density, Color = p.haze.Color })
+end
+
+-- Pulso curto de brilho (sincronizado com eventos de energia).
+function LightingDirector.pulse(strength: number)
+	ensure()
+	if bloom then
+		local base = bloom.Intensity
+		bloom.Intensity = base + strength
+		tween(bloom, 0.45, { Intensity = base })
+	end
+	if cc then
+		local b = cc.Brightness
+		cc.Brightness = b + strength * 0.12
+		tween(cc, 0.4, { Brightness = b })
+	end
+end
+
+-- Impact frame: alto contraste e dessaturação total por poucos quadros.
+function LightingDirector.impactFrame(duration: number)
+	ensure()
+	if not cc then
+		return
+	end
+	local s, c, br = cc.Saturation, cc.Contrast, cc.Brightness
+	cc.Saturation = -1
+	cc.Contrast = 1.8
+	cc.Brightness = 0.1
+	task.delay(duration, function()
+		if cc then
+			cc.Saturation, cc.Contrast, cc.Brightness = s, c, br
+		end
+	end)
+end
+
+function LightingDirector.blur(size: number, time: number)
+	ensure()
+	tween(blur, time, { Size = size })
+end
+
+function LightingDirector.restore(time: number)
+	local s = saved
+	if not s then
+		return
+	end
+	saved = nil
+	tween(Lighting, time, {
+		ClockTime = s.ClockTime, Brightness = s.Brightness, ExposureCompensation = s.ExposureCompensation,
+		Ambient = s.Ambient, OutdoorAmbient = s.OutdoorAmbient, ColorShift_Top = s.ColorShift_Top,
+	})
+	if atmosphere and not createdAtmosphere and s.AtmDensity then
+		tween(atmosphere, time, { Density = s.AtmDensity, Color = s.AtmColor })
+	end
+	tween(cc, time, { Saturation = 0, Contrast = 0, Brightness = 0, TintColor = Color3.new(1, 1, 1) })
+	tween(bloom, time, { Intensity = 0 })
+	tween(blur, time, { Size = 0 })
+	local toDestroy = created
+	created = {}
+	createdAtmosphere = false
+	cc, bloom, blur, atmosphere = nil, nil, nil, nil
+	task.delay(time + 0.1, function()
+		for _, i in toDestroy do
+			i:Destroy()
+		end
+	end)
+end
+
+return LightingDirector
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="LocalScript" referent="30">
+          <Properties>
+            <string name="Name">Main</string>
+            <string name="Source"><![CDATA[--!strict
+-- Ponto de entrada do cliente.
+local Players = game:GetService("Players")
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Mugetsu")
+local Remotes = require(Shared:WaitForChild("Remotes"))
+
+local Hud = require(script.Parent:WaitForChild("Hud"))
+local InputController = require(script.Parent:WaitForChild("InputController"))
+local CutsceneController = require(script.Parent:WaitForChild("CutsceneController"))
+local AbilityClient = require(script.Parent:WaitForChild("AbilityClient"))
+local HairSway = require(script.Parent:WaitForChild("HairSway"))
+local AudioDirector = require(script.Parent:WaitForChild("AudioDirector"))
+
+local player = Players.LocalPlayer
+
+Hud.init()
+HairSway.init()
+CutsceneController.init()
+AbilityClient.init()
+
+local function requestTransform()
+	if CutsceneController.isRunning() or player:GetAttribute("MugetsuForm") == true then
+		return
+	end
+	Remotes.get("RequestTransform"):FireServer()
+end
+
+Hud.onTransform = requestTransform
+Hud.onAbility = AbilityClient.request
+InputController.bind(requestTransform, AbilityClient.request)
+
+local function refreshButtons()
+	local inForm = player:GetAttribute("MugetsuForm") == true
+	local inScene = player:GetAttribute("MugetsuCutscene") == true
+	local ready = player:GetAttribute("MugetsuAbilityReady") == true
+	Hud.showButtons(not inForm and not inScene, inForm and ready and not inScene)
+end
+for _, a in { "MugetsuForm", "MugetsuCutscene", "MugetsuAbilityReady" } do
+	player:GetAttributeChangedSignal(a):Connect(refreshButtons)
+end
+refreshButtons()
+
+local missing = AudioDirector.missing()
+if #missing > 0 then
+	print("[Mugetsu] sons ainda sem ID no AssetManifest: " .. table.concat(missing, ", "))
+end
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="31">
+          <Properties>
+            <string name="Name">PoseApplier</string>
+            <string name="Source"><![CDATA[--!strict
+-- Aplica animações em um personagem R15:
+--   * se AssetManifest.Animations[nome].id existe -> usa a animação REAL (Animator) e repassa os
+--     KeyframeMarkers como eventos;
+--   * senão -> usa o PoseDriver (poses procedurais em Motor6D.Transform), determinístico pelo
+--     relógio do servidor (todos os clientes veem a mesma pose).
+-- Ao parar, zera as Transforms e devolve o script Animate ao estado original.
+
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Mugetsu")
+local PoseDriver = require(Shared:WaitForChild("PoseDriver"))
+local Manifest = require(Shared:WaitForChild("AssetManifest"))
+
+local JOINT_PATH = {
+	Root = { "LowerTorso", "Root" },
+	Waist = { "UpperTorso", "Waist" },
+	Neck = { "Head", "Neck" },
+	RightShoulder = { "RightUpperArm", "RightShoulder" },
+	RightElbow = { "RightLowerArm", "RightElbow" },
+	LeftShoulder = { "LeftUpperArm", "LeftShoulder" },
+	LeftElbow = { "LeftLowerArm", "LeftElbow" },
+	RightHip = { "RightUpperLeg", "RightHip" },
+	RightKnee = { "RightLowerLeg", "RightKnee" },
+	LeftHip = { "LeftUpperLeg", "LeftHip" },
+	LeftKnee = { "LeftLowerLeg", "LeftKnee" },
+}
+
+local PoseApplier = {}
+PoseApplier.__index = PoseApplier
+
+export type Applier = typeof(setmetatable(
+	{} :: {
+		char: Model,
+		joints: { [string]: Motor6D },
+		anim: string?,
+		startServer: number,
+		intensity: number,
+		bindName: string,
+		bound: boolean,
+		animate: LocalScript?,
+		animateWasEnabled: boolean,
+		track: AnimationTrack?,
+		markerConns: { RBXScriptConnection },
+		onMarker: ((string) -> ())?,
+		isOwner: boolean,
+	},
+	PoseApplier
+))
+
+local counter = 0
+
+function PoseApplier.new(char: Model, isOwner: boolean): Applier
+	counter += 1
+	local joints: { [string]: Motor6D } = {}
+	for name, path in JOINT_PATH do
+		local limb = char:FindFirstChild(path[1])
+		local m = limb and limb:FindFirstChild(path[2])
+		if m and m:IsA("Motor6D") then
+			joints[name] = m
+		end
+	end
+	local animate = char:FindFirstChild("Animate")
+	return setmetatable({
+		char = char, joints = joints, anim = nil, startServer = 0, intensity = 0,
+		bindName = `MugetsuPose{counter}`, bound = false,
+		animate = animate and animate:IsA("LocalScript") and animate or nil,
+		animateWasEnabled = true, track = nil, markerConns = {}, onMarker = nil, isOwner = isOwner,
+	}, PoseApplier)
+end
+
+local function stopTracks(char: Model)
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	local animator = hum and hum:FindFirstChildOfClass("Animator")
+	if animator then
+		for _, t in animator:GetPlayingAnimationTracks() do
+			t:Stop(0.15)
+		end
+	end
+end
+
+local function clearMarkers(self: Applier)
+	for _, c in self.markerConns do
+		c:Disconnect()
+	end
+	self.markerConns = {}
+end
+
+local function bind(self: Applier)
+	if self.bound then
+		return
+	end
+	self.bound = true
+	RunService:BindToRenderStep(self.bindName, Enum.RenderPriority.Camera.Value - 2, function()
+		local anim = self.anim
+		if not anim or self.track then
+			return -- animação real em execução: o Animator cuida das juntas
+		end
+		local t = Workspace:GetServerTimeNow() - self.startServer
+		local pose = PoseDriver.sample(anim, math.max(t, 0), self.intensity)
+		if not pose then
+			return
+		end
+		for name, j in pose do
+			local m = self.joints[name]
+			if m then
+				local yOff = name == "Root" and j[4] or 0
+				m.Transform = CFrame.new(0, yOff or 0, 0) * CFrame.Angles(math.rad(j[1]), math.rad(j[2]), math.rad(j[3]))
+			end
+		end
+	end)
+end
+
+-- Retorna true se há animação real (os markers chegam por onMarker).
+function PoseApplier.play(self: Applier, name: string, serverStart: number, intensity: number?): boolean
+	self.anim = name
+	self.startServer = serverStart
+	self.intensity = intensity or 0
+	clearMarkers(self)
+	if self.track then
+		self.track:Stop(0.1)
+		self.track = nil
+	end
+	if self.isOwner then
+		if self.animate and self.animate.Enabled then
+			self.animateWasEnabled = true
+			self.animate.Enabled = false
+		end
+		stopTracks(self.char)
+	end
+	local entry = Manifest.Animations[name]
+	if self.isOwner and entry and entry.id ~= "" then
+		local hum = self.char:FindFirstChildOfClass("Humanoid")
+		local animator = hum and hum:FindFirstChildOfClass("Animator")
+		if animator then
+			local a = Instance.new("Animation")
+			a.AnimationId = entry.id
+			local ok, track = pcall(function()
+				return animator:LoadAnimation(a)
+			end)
+			if ok and track then
+				track.Looped = entry.looped
+				track.Priority = Enum.AnimationPriority.Action4
+				for marker in entry.markers do
+					table.insert(self.markerConns, track:GetMarkerReachedSignal(marker):Connect(function()
+						if self.onMarker then
+							self.onMarker(entry.markers[marker])
+						end
+					end))
+				end
+				track:Play(0.1)
+				self.track = track
+				return true
+			end
+		end
+	end
+	bind(self)
+	return false
+end
+
+function PoseApplier.setIntensity(self: Applier, v: number)
+	self.intensity = v
+end
+
+function PoseApplier.stop(self: Applier)
+	clearMarkers(self)
+	if self.bound then
+		pcall(function()
+			RunService:UnbindFromRenderStep(self.bindName)
+		end)
+		self.bound = false
+	end
+	if self.track then
+		self.track:Stop(0.2)
+		self.track = nil
+	end
+	self.anim = nil
+	for _, m in self.joints do
+		if m.Parent then
+			m.Transform = CFrame.identity
+		end
+	end
+	if self.isOwner and self.animate and self.animate.Parent then
+		self.animate.Enabled = self.animateWasEnabled
+	end
+end
+
+return PoseApplier
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="32">
+          <Properties>
+            <string name="Name">Quality</string>
+            <string name="Source"><![CDATA[--!strict
+-- Seleciona o nível de qualidade dos efeitos. Pode ser forçado com o atributo "MugetsuQuality"
+-- no LocalPlayer ("Low" | "Medium" | "High").
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Mugetsu"):WaitForChild("Config"))
+
+local Quality = {}
+
+function Quality.level(): Config.QualityLevel
+	local forced = Players.LocalPlayer:GetAttribute("MugetsuQuality")
+	if forced == "Low" or forced == "Medium" or forced == "High" then
+		return forced :: Config.QualityLevel
+	end
+	local ok, saved = pcall(function()
+		return UserSettings():GetService("UserGameSettings").SavedQualityLevel
+	end)
+	local n = ok and saved.Value or 0
+	if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
+		return n >= 8 and "Medium" or "Low"
+	end
+	if n == 0 then
+		return "High"
+	end
+	return n <= 3 and "Low" or (n <= 7 and "Medium" or "High")
+end
+
+function Quality.settings()
+	return Config.Quality[Quality.level()]
+end
+
+return Quality
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="33">
+          <Properties>
+            <string name="Name">VFX</string>
+            <string name="Source"><![CDATA[--!strict
+-- Biblioteca de efeitos reutilizável. Todo efeito:
+--   * nasce de uma origem (personagem/attachment/posição) com trajetória analítica e duração definidas;
+--   * pertence a uma Session; Session:clean() remove tudo (cancelamento/fim);
+--   * usa peças de um pool e um único laço Heartbeat compartilhado (zero conexões por efeito);
+--   * respeita o orçamento do nível de qualidade (Low/Medium/High).
+-- Os efeitos são locais (cada cliente os desenha a partir do mesmo evento replicado), então nada
+-- precisa ser replicado individualmente pelo servidor.
+
+local CollectionService = game:GetService("CollectionService")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local Quality = require(script.Parent:WaitForChild("Quality"))
+
+local VFX = {}
+
+local BLUE = Color3.fromRGB(80, 170, 255)
+local WHITE = Color3.fromRGB(238, 246, 255)
+local BLACK = Color3.fromRGB(6, 6, 8)
+local RED = Color3.fromRGB(190, 22, 34)
+VFX.Colors = { Blue = BLUE, White = WHITE, Black = BLACK, Red = RED }
+
+local SMOKE = "rbxasset://textures/particles/smoke_main.dds"
+local SPARK = "rbxasset://textures/particles/sparkles_main.dds"
+
+------------------------------------------------------------------------------------------------
+-- Pool de peças + scheduler
+------------------------------------------------------------------------------------------------
+local folder: Folder? = nil
+local pool: { [string]: { Part } } = {}
+local activePartCount = 0
+local MAX_PARTS = 220
+
+type Actor = {
+	t0: number,
+	dur: number,
+	update: (k: number, dt: number) -> (),
+	finish: (() -> ())?,
+	owner: any,
+}
+local actors: { Actor } = {}
+local loopConn: RBXScriptConnection? = nil
+local lastStep = 0
+
+local function getFolder(): Folder
+	if folder and folder.Parent then
+		return folder
+	end
+	local f = Instance.new("Folder")
+	f.Name = "MugetsuVFX_Local"
+	f.Parent = Workspace
+	folder = f
+	return f
+end
+
+local function acquire(shape: string): Part?
+	if activePartCount >= MAX_PARTS then
+		return nil
+	end
+	local list = pool[shape]
+	local p = list and table.remove(list)
+	if not p then
+		p = Instance.new("Part")
+		p.Anchored = true
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		p.CastShadow = false
+		p.Massless = true
+		if shape == "Ball" then
+			p.Shape = Enum.PartType.Ball
+		elseif shape == "Cylinder" then
+			p.Shape = Enum.PartType.Cylinder
+		else
+			p.Shape = Enum.PartType.Block
+		end
+		p:SetAttribute("Shape", shape)
+	end
+	activePartCount += 1
+	p.Material = Enum.Material.Neon
+	p.Transparency = 0
+	p.Parent = getFolder()
+	return p
+end
+
+local function release(p: Part)
+	activePartCount = math.max(0, activePartCount - 1)
+	p.Parent = nil
+	for _, c in p:GetChildren() do
+		c:Destroy()
+	end
+	local shape = p:GetAttribute("Shape") :: string
+	local list = pool[shape]
+	if not list then
+		list = {}
+		pool[shape] = list
+	end
+	if #list < 80 then
+		table.insert(list, p)
+	else
+		p:Destroy()
+	end
+end
+
+local function loop()
+	local now = os.clock()
+	local dt = now - lastStep
+	lastStep = now
+	for i = #actors, 1, -1 do
+		local a = actors[i]
+		local k = (now - a.t0) / a.dur
+		if k >= 1 then
+			a.update(1, dt)
+			if a.finish then
+				a.finish()
+			end
+			table.remove(actors, i)
+		else
+			a.update(math.max(k, 0), dt)
+		end
+	end
+	if #actors == 0 and loopConn then
+		loopConn:Disconnect()
+		loopConn = nil
+	end
+end
+
+local function addActor(owner: any, dur: number, update: (number, number) -> (), finish: (() -> ())?): Actor
+	local a: Actor = { t0 = os.clock(), dur = math.max(dur, 0.05), update = update, finish = finish, owner = owner }
+	table.insert(actors, a)
+	if not loopConn then
+		lastStep = os.clock()
+		loopConn = RunService.Heartbeat:Connect(loop)
+	end
+	return a
+end
+
+local function easeOut(k: number): number
+	return 1 - (1 - k) * (1 - k)
+end
+
+------------------------------------------------------------------------------------------------
+-- Session
+------------------------------------------------------------------------------------------------
+local Session = {}
+Session.__index = Session
+export type Session = typeof(setmetatable(
+	{} :: { instances: { Instance }, myActors: { Actor }, q: any, aura: { emitters: { ParticleEmitter }, base: { number } }?, dead: boolean },
+	Session
+))
+
+function VFX.session(): Session
+	return setmetatable({ instances = {}, myActors = {}, q = Quality.settings(), aura = nil, dead = false }, Session)
+end
+
+local function track(self: Session, inst: Instance): Instance
+	table.insert(self.instances, inst)
+	return inst
+end
+
+local function run(self: Session, dur: number, update: (number, number) -> (), finish: (() -> ())?): Actor
+	local a = addActor(self, dur, update, finish)
+	table.insert(self.myActors, a)
+	return a
+end
+
+function Session.clean(self: Session)
+	self.dead = true
+	for i = #actors, 1, -1 do
+		local a = actors[i]
+		if a.owner == self then
+			if a.finish then
+				pcall(a.finish)
+			end
+			table.remove(actors, i)
+		end
+	end
+	for _, inst in self.instances do
+		inst:Destroy() -- peças do pool nunca entram aqui: voltam ao pool no finish() do ator
+	end
+	self.instances = {}
+	self.myActors = {}
+	self.aura = nil
+end
+
+local function emitter(parent: Instance, props: { [string]: any }): ParticleEmitter
+	local e = Instance.new("ParticleEmitter")
+	for k, v in props do
+		(e :: any)[k] = v
+	end
+	e.Parent = parent
+	return e
+end
+
+------------------------------------------------------------------------------------------------
+-- Aura em camadas (fumaça escura + faíscas + fiapos nos braços), acompanha o corpo por Attachments
+------------------------------------------------------------------------------------------------
+function Session.auraStart(self: Session, char: Model, palette: string)
+	if self.aura then
+		return
+	end
+	local black = palette ~= "Blue"
+	local col = black and BLACK or BLUE
+	local spark = black and ColorSequence.new(WHITE, RED) or ColorSequence.new(WHITE, BLUE)
+	local sc = self.q.ParticleScale
+	local emitters: { ParticleEmitter } = {}
+	local base: { number } = {}
+	local function add(attName: string, props: { [string]: any }, rate: number)
+		local at = char:FindFirstChild(attName, true)
+		if at and at:IsA("Attachment") then
+			props.Rate = 0
+			props.Enabled = true
+			local e = emitter(at, props)
+			table.insert(emitters, e)
+			table.insert(base, rate * sc)
+			track(self, e)
+		end
+	end
+	add("AuraFeet", {
+		Texture = SMOKE, Color = ColorSequence.new(col), LightEmission = 0, Lifetime = NumberRange.new(1.4, 2.4),
+		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 2.2), NumberSequenceKeypoint.new(1, 6) }),
+		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 1) }),
+		Speed = NumberRange.new(3, 7), SpreadAngle = Vector2.new(30, 30), Acceleration = Vector3.new(0, 7, 0),
+		Rotation = NumberRange.new(0, 360), RotSpeed = NumberRange.new(-25, 25),
+		EmissionDirection = Enum.NormalId.Top, Orientation = Enum.ParticleOrientation.FacingCamera,
+	}, 22)
+	add("AuraChest", {
+		Texture = SMOKE, Color = ColorSequence.new(col), LightEmission = 0, Lifetime = NumberRange.new(0.9, 1.6),
+		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1.4), NumberSequenceKeypoint.new(1, 3.4) }),
+		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 1) }),
+		Speed = NumberRange.new(1, 3), SpreadAngle = Vector2.new(180, 180), Acceleration = Vector3.new(0, 4, 0),
+		Rotation = NumberRange.new(0, 360), RotSpeed = NumberRange.new(-40, 40),
+	}, 12)
+	add("AuraChest", {
+		Texture = SPARK, Color = spark, LightEmission = 1, Lifetime = NumberRange.new(0.5, 1.1),
+		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 0) }),
+		Transparency = NumberSequence.new(0),
+		Speed = NumberRange.new(5, 11), SpreadAngle = Vector2.new(180, 180), Acceleration = Vector3.new(0, 2, 0),
+	}, 18)
+	for _, n in { "AuraRArm", "AuraLArm", "AuraHand" } do
+		add(n, {
+			Texture = SMOKE, Color = ColorSequence.new(col), LightEmission = 0, Lifetime = NumberRange.new(0.6, 1.1),
+			Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.7), NumberSequenceKeypoint.new(1, 1.8) }),
+			Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) }),
+			Speed = NumberRange.new(1, 3), SpreadAngle = Vector2.new(60, 60), Acceleration = Vector3.new(0, 5, 0),
+			Rotation = NumberRange.new(0, 360),
+		}, 9)
+	end
+	self.aura = { emitters = emitters, base = base }
+end
+
+function Session.auraIntensity(self: Session, intensity: number)
+	local a = self.aura
+	if not a then
+		return
+	end
+	for i, e in a.emitters do
+		e.Rate = a.base[i] * intensity
+	end
+end
+
+function Session.auraStop(self: Session)
+	if self.aura then
+		for _, e in self.aura.emitters do
+			e.Rate = 0
+		end
+	end
+end
+
+------------------------------------------------------------------------------------------------
+-- Anéis, ondas de choque
+------------------------------------------------------------------------------------------------
+function Session.ring(self: Session, origin: CFrame, maxRadius: number, duration: number, color: Color3, thickness: number, tilt: CFrame?)
+	local p = acquire("Cylinder")
+	if not p then
+		return
+	end
+	p.Color = color
+	local base = origin * (tilt or CFrame.identity) * CFrame.Angles(0, 0, math.rad(90))
+	run(self, duration, function(k)
+		local r = maxRadius * easeOut(k)
+		p.Size = Vector3.new(thickness * (1 - k * 0.7), r * 2, r * 2)
+		p.CFrame = base
+		p.Transparency = k ^ 2
+	end, function()
+		release(p)
+	end)
+end
+
+-- Cúpula translúcida + poeira: lê como onda de pressão, sem tapar o personagem.
+function Session.shockwave(self: Session, origin: CFrame, radius: number, duration: number, color: Color3)
+	local p = acquire("Ball")
+	if p then
+		p.Color = color
+		p.Material = Enum.Material.ForceField
+			run(self, duration, function(k)
+			local r = radius * easeOut(k)
+			p.Size = Vector3.new(r * 2, r * 0.6, r * 2)
+			p.CFrame = origin
+			p.Transparency = 0.4 + 0.6 * k
+		end, function()
+			release(p)
+		end)
+	end
+	self:ring(origin, radius * 1.15, duration * 0.9, WHITE, 0.6)
+	self:ring(origin, radius * 0.8, duration * 0.7, color, 0.4)
+end
+
+function Session.dustBurst(self: Session, position: Vector3, amount: number, color: Color3?)
+	local a = Instance.new("Part")
+	a.Anchored = true
+	a.CanCollide = false
+	a.CanQuery = false
+	a.CanTouch = false
+	a.Transparency = 1
+	a.Size = Vector3.one
+	a.Position = position
+	a.Parent = getFolder()
+	track(self, a)
+	local e = emitter(a, {
+		Texture = SMOKE, Color = ColorSequence.new(color or Color3.fromRGB(150, 130, 100)), Rate = 0,
+		Lifetime = NumberRange.new(1.2, 2.2),
+		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 3), NumberSequenceKeypoint.new(1, 11) }),
+		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.4), NumberSequenceKeypoint.new(1, 1) }),
+		Speed = NumberRange.new(18, 34), SpreadAngle = Vector2.new(90, 5), Drag = 3,
+		EmissionDirection = Enum.NormalId.Top, Rotation = NumberRange.new(0, 360),
+	})
+	e:Emit(math.max(1, math.floor(amount * self.q.ParticleScale)))
+	task.delay(3, function()
+		a:Destroy()
+	end)
+end
+
+------------------------------------------------------------------------------------------------
+-- Fragmentos com trajetória: "burst" (balístico), "rise" (sobe do chão e orbita), "converge" (para um alvo)
+------------------------------------------------------------------------------------------------
+function Session.shards(self: Session, origin: Vector3, mode: string, count: number, duration: number, color: Color3, target: (() -> Vector3)?)
+	local n = math.min(count, self.q.Shards)
+	if n <= 0 then
+		return
+	end
+	local rng = Random.new(math.floor(origin.X * 31 + origin.Z * 17 + n))
+	type Sh = { part: Part, p0: Vector3, v0: Vector3, spin: Vector3, size: number, phase: number, radius: number }
+	local list: { Sh } = {}
+	for i = 1, n do
+		local p = acquire("Block")
+		if not p then
+			break
+		end
+		p.Color = color
+		local s = rng:NextNumber(0.25, 0.9)
+		p.Size = Vector3.new(s * 0.5, s * 1.6, s * 0.4)
+			local a = rng:NextNumber(0, math.pi * 2)
+		local sh: Sh = { part = p, p0 = origin, v0 = Vector3.zero, spin = Vector3.new(rng:NextNumber(-6, 6), rng:NextNumber(-6, 6), rng:NextNumber(-6, 6)), size = s, phase = a, radius = rng:NextNumber(4, 14) }
+		if mode == "burst" then
+			local speed = rng:NextNumber(18, 70)
+			sh.v0 = Vector3.new(math.cos(a) * speed, rng:NextNumber(10, 34), math.sin(a) * speed)
+		elseif mode == "rise" then
+			sh.p0 = origin + Vector3.new(math.cos(a) * sh.radius, 0, math.sin(a) * sh.radius)
+			sh.v0 = Vector3.new(0, rng:NextNumber(5, 12), 0)
+		else
+			sh.p0 = origin + Vector3.new(math.cos(a) * sh.radius * 2.2, rng:NextNumber(0, 6), math.sin(a) * sh.radius * 2.2)
+		end
+		table.insert(list, sh)
+	end
+	run(self, duration, function(k)
+		local t = k * duration
+		local goal = target and target() or origin + Vector3.new(0, 3, 0)
+		for _, sh in list do
+			local pos: Vector3
+			if mode == "burst" then
+				pos = sh.p0 + sh.v0 * t + Vector3.new(0, -0.5 * 60 * t * t, 0)
+				pos = Vector3.new(pos.X, math.max(pos.Y, origin.Y + 0.2), pos.Z)
+			elseif mode == "rise" then
+				local ang = sh.phase + t * 0.9
+				local r = sh.radius * (1 - 0.25 * k)
+				pos = Vector3.new(origin.X + math.cos(ang) * r, origin.Y + sh.v0.Y * t, origin.Z + math.sin(ang) * r)
+			else
+				local e = k * k
+				pos = sh.p0:Lerp(goal, e)
+			end
+			sh.part.CFrame = CFrame.new(pos) * CFrame.Angles(sh.spin.X * t, sh.spin.Y * t, sh.spin.Z * t)
+			sh.part.Transparency = mode == "converge" and (k > 0.85 and (k - 0.85) / 0.15 or 0) or math.clamp((k - 0.6) / 0.4, 0, 1)
+		end
+	end, function()
+		for _, sh in list do
+			release(sh.part)
+		end
+	end)
+end
+
+-- Gather contínuo: gera pequenos lotes convergindo para o peito (energia se acumulando).
+function Session.gather(self: Session, char: Model, duration: number, color: Color3)
+	local chest = char:FindFirstChild("UpperTorso") :: BasePart?
+	local root = char:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not (chest and root) then
+		return
+	end
+	local floorPos = root.Position - Vector3.new(0, 2.9, 0)
+	local acc = 0
+	run(self, duration, function(k, dt)
+		acc += dt * (4 + 10 * k) * self.q.ParticleScale
+		while acc >= 1 do
+			acc -= 1
+			self:shards(floorPos, "converge", 3, 0.9 + (1 - k) * 0.4, color, function()
+				return chest.Position
+			end)
+		end
+	end)
+end
+
+------------------------------------------------------------------------------------------------
+-- Luzes, pilar, tentáculos, rastro
+------------------------------------------------------------------------------------------------
+function Session.lightPulse(self: Session, position: Vector3, color: Color3, brightness: number, range: number, duration: number)
+	local a = Instance.new("Part")
+	a.Anchored = true
+	a.CanCollide = false
+	a.CanQuery = false
+	a.CanTouch = false
+	a.Transparency = 1
+	a.Size = Vector3.one
+	a.Position = position
+	a.Parent = getFolder()
+	local l = Instance.new("PointLight")
+	l.Color = color
+	l.Brightness = brightness
+	l.Range = range
+	l.Shadows = false
+	l.Parent = a
+	track(self, a)
+	run(self, duration, function(k)
+		l.Brightness = brightness * (1 - k) ^ 2
+	end, function()
+		a:Destroy()
+	end)
+end
+
+function Session.spire(self: Session, base: Vector3, height: number, duration: number, color: Color3)
+	local outer = acquire("Cylinder")
+	local inner = acquire("Cylinder")
+	if not (outer and inner) then
+		return
+	end
+	outer.Color = color
+	outer.Transparency = 0.45
+	inner.Color = WHITE
+	local up = CFrame.Angles(0, 0, math.rad(90))
+	run(self, duration, function(k)
+		local grow = easeOut(math.min(k / 0.25, 1))
+		local fadeOut = k > 0.75 and (k - 0.75) / 0.25 or 0
+		local h = height * grow
+		local w = (1 - fadeOut) * (7 + math.sin(k * 40) * 0.5)
+		outer.Size = Vector3.new(h, w * 1.6, w * 1.6)
+		inner.Size = Vector3.new(h, w * 0.6, w * 0.6)
+		local cf = CFrame.new(base + Vector3.new(0, h / 2, 0)) * up
+		outer.CFrame = cf
+		inner.CFrame = cf
+		outer.Transparency = 0.45 + 0.55 * fadeOut
+		inner.Transparency = fadeOut
+	end, function()
+		release(outer)
+		release(inner)
+	end)
+	self:lightPulse(base + Vector3.new(0, 8, 0), color, 6, 90, duration * 0.8)
+end
+
+-- Fitas negras (Beam) caindo sobre o personagem: tentáculos de energia escura legíveis sobre o branco.
+function Session.tendrils(self: Session, center: Vector3, count: number, duration: number)
+	local n = math.max(2, math.floor(count * self.q.ParticleScale))
+	local rng = Random.new(77)
+	for i = 1, n do
+		local ang = (i / n) * math.pi * 2 + rng:NextNumber(-0.3, 0.3)
+		local rad = rng:NextNumber(3, 11)
+		local anchorTop = Instance.new("Part")
+		anchorTop.Anchored = true
+		anchorTop.CanCollide = false
+		anchorTop.CanQuery = false
+		anchorTop.CanTouch = false
+		anchorTop.Transparency = 1
+		anchorTop.Size = Vector3.one
+		anchorTop.Parent = getFolder()
+		track(self, anchorTop)
+		local a0 = Instance.new("Attachment")
+		a0.Parent = anchorTop
+		local a1 = Instance.new("Attachment")
+		a1.Parent = anchorTop
+		local beam = Instance.new("Beam")
+		beam.Attachment0 = a0
+		beam.Attachment1 = a1
+		beam.Color = ColorSequence.new(BLACK)
+		beam.LightEmission = 0
+		beam.FaceCamera = true
+		beam.Segments = 12
+		beam.CurveSize0 = rng:NextNumber(-7, 7)
+		beam.CurveSize1 = rng:NextNumber(-5, 5)
+		beam.Width0 = rng:NextNumber(1.6, 3.2)
+		beam.Width1 = 0.1
+		beam.Transparency = NumberSequence.new(0)
+		beam.Parent = anchorTop
+		local top = center + Vector3.new(math.cos(ang) * rad, 20 + rng:NextNumber(0, 10), math.sin(ang) * rad)
+		local bottom = center + Vector3.new(math.cos(ang) * rad * 0.35, 0.5, math.sin(ang) * rad * 0.35)
+		local delay = rng:NextNumber(0, 0.35)
+		run(self, duration, function(k)
+			local kk = math.clamp((k - delay) / (1 - delay), 0, 1)
+			local fall = easeOut(math.min(kk / 0.4, 1))
+			local fade = kk > 0.7 and (kk - 0.7) / 0.3 or 0
+			anchorTop.Position = top
+			a0.WorldPosition = top:Lerp(bottom, fall * 0.35)
+			a1.WorldPosition = top:Lerp(bottom, fall)
+			beam.Transparency = NumberSequence.new(fade)
+		end, function()
+			anchorTop:Destroy()
+		end)
+	end
+end
+
+function Session.swordTrail(self: Session, blade: BasePart, duration: number)
+	local a, b = blade:FindFirstChild("TrailA"), blade:FindFirstChild("TrailB")
+	if not (a and b) then
+		return
+	end
+	local function mk(color: Color3, width: number, emission: number)
+		local t = Instance.new("Trail")
+		t.Attachment0 = a :: Attachment
+		t.Attachment1 = b :: Attachment
+		t.Lifetime = 0.4
+		t.Color = ColorSequence.new(color)
+		t.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1) })
+		t.WidthScale = NumberSequence.new({ NumberSequenceKeypoint.new(0, width), NumberSequenceKeypoint.new(1, 0) })
+		t.LightEmission = emission
+		t.FaceCamera = true
+		t.MinLength = 0.05
+		t.Parent = blade
+		track(self, t)
+		return t
+	end
+	mk(BLACK, 5, 0)
+	mk(WHITE, 1.6, 1)
+	task.delay(duration, function()
+		-- os Trails são destruídos por Session:clean(); aqui só desligamos a emissão
+		for _, c in blade:GetChildren() do
+			if c:IsA("Trail") then
+				c.Enabled = false
+			end
+		end
+	end)
+end
+
+function Session.glint(self: Session, blade: BasePart)
+	local tip = blade:FindFirstChild("Tip")
+	if tip and tip:IsA("Attachment") then
+		self:lightPulse(tip.WorldPosition, WHITE, 5, 14, 0.5)
+		local e = emitter(tip, {
+			Texture = SPARK, Color = ColorSequence.new(WHITE), LightEmission = 1, Rate = 0, Lifetime = NumberRange.new(0.3, 0.6),
+			Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(1, 0) }),
+			Speed = NumberRange.new(4, 9), SpreadAngle = Vector2.new(180, 180),
+		})
+		track(self, e)
+		e:Emit(math.floor(14 * self.q.ParticleScale) + 2)
+	end
+end
+
+------------------------------------------------------------------------------------------------
+-- Reação do cenário: as peças tagueadas tremem LOCALMENTE e voltam exatamente à posição original.
+------------------------------------------------------------------------------------------------
+function Session.environmentReact(self: Session, origin: Vector3, radius: number, strength: number, duration: number)
+	local items: { { part: BasePart, cf: CFrame, amp: number, dist: number } } = {}
+	for _, inst in CollectionService:GetTagged("MugetsuReactive") do
+		if inst:IsA("BasePart") and inst.Anchored then
+			local d = (inst.Position - origin).Magnitude
+			if d <= radius then
+				table.insert(items, { part = inst, cf = inst.CFrame, amp = (inst:GetAttribute("ReactAmp") :: number? or 1) * strength, dist = d })
+			end
+		end
+	end
+	table.sort(items, function(a, b)
+		return a.dist < b.dist
+	end)
+	for i = 1, math.min(#items, 6) do
+		self:dustBurst(items[i].part.Position - Vector3.new(0, items[i].part.Size.Y / 2 - 1, 0), 10, nil)
+	end
+	if #items == 0 then
+		return
+	end
+	run(self, duration, function(k)
+		for _, it in items do
+			-- onda: atraso proporcional à distância para a reação "viajar" pelo cenário
+			local delay = math.clamp(it.dist / radius, 0, 1) * 0.35
+			local kk = math.clamp((k - delay) / (1 - delay), 0, 1)
+			local d = (1 - kk) ^ 2 * it.amp * (k > delay and 1 or 0)
+			local t = os.clock() * 38
+			if it.part.Parent then
+				it.part.CFrame = it.cf * CFrame.new(math.sin(t + it.dist) * 0.25 * d, math.sin(t * 1.3) * 0.12 * d, math.cos(t * 0.9) * 0.25 * d)
+			end
+		end
+	end, function()
+		for _, it in items do
+			if it.part.Parent then
+				it.part.CFrame = it.cf
+			end
+		end
+	end)
+end
+
+-- Projétil do Getsuga: crescente negro com borda branca; posição = origem + dir * velocidade * (tempo do servidor).
+function Session.projectile(self: Session, origin: Vector3, dir: Vector3, speed: number, range: number, width: number, serverStart: number)
+	local core = acquire("Cylinder")
+	local rim = acquire("Cylinder")
+	if not (core and rim) then
+		if core then
+			release(core)
+		end
+		if rim then
+			release(rim)
+		end
+		return
+	end
+	core.Color = BLACK
+	rim.Color = WHITE
+	local look = CFrame.lookAt(Vector3.zero, dir)
+	local disc = CFrame.Angles(0, math.rad(90), 0) -- eixo do cilindro (X) aponta para a frente
+	local emitterPart = Instance.new("Part")
+	emitterPart.Anchored = true
+	emitterPart.CanCollide = false
+	emitterPart.CanQuery = false
+	emitterPart.CanTouch = false
+	emitterPart.Transparency = 1
+	emitterPart.Size = Vector3.one
+	emitterPart.Parent = getFolder()
+	track(self, emitterPart)
+	local trail = emitter(emitterPart, {
+		Texture = SMOKE, Color = ColorSequence.new(BLACK), LightEmission = 0, Rate = 40 * self.q.ParticleScale,
+		Lifetime = NumberRange.new(0.5, 0.9),
+		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, width * 0.5), NumberSequenceKeypoint.new(1, width * 0.9) }),
+		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 1) }),
+		Speed = NumberRange.new(0, 2), SpreadAngle = Vector2.new(25, 25),
+	})
+	local duration = range / speed
+	local startDelay = math.max(0, serverStart - Workspace:GetServerTimeNow())
+	run(self, duration + startDelay, function()
+		local d = math.clamp((Workspace:GetServerTimeNow() - serverStart) * speed, 0, range)
+		local pos = origin + dir * d
+		local fade = math.clamp((d - range * 0.8) / (range * 0.2), 0, 1)
+		core.Size = Vector3.new(1.0, width * 1.5, width * 1.5)
+		rim.Size = Vector3.new(0.5, width * 1.65, width * 1.65)
+		core.CFrame = CFrame.new(pos) * look.Rotation * disc * CFrame.Angles(0, 0, 0)
+		rim.CFrame = CFrame.new(pos - dir * 0.6) * look.Rotation * disc
+		core.Transparency = fade
+		rim.Transparency = fade
+		emitterPart.Position = pos
+	end, function()
+		trail.Rate = 0
+		release(core)
+		release(rim)
+		task.delay(1, function()
+			emitterPart:Destroy()
+		end)
+	end)
+end
+
+function VFX.activeParts(): number
+	return activePartCount
+end
+
+function VFX.activeActors(): number
+	return #actors
+end
+
+return VFX
+]]></string>
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="Workspace" referent="34">
+    <Properties>
+      <string name="Name">Workspace</string>
+      <float name="Gravity">196.2</float>
+      <bool name="NeedsPivotMigration">false</bool>
+    </Properties>
+  </Item>
+</roblox>

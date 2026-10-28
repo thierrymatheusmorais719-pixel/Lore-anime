@@ -1,0 +1,29 @@
+{
+  "name": "MugetsuTransformation",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "Mugetsu": { "$path": "src/shared" }
+    },
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "MugetsuServer": { "$path": "src/server" }
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "MugetsuClient": { "$path": "src/client" }
+      }
+    },
+    "Workspace": {
+      "$className": "Workspace",
+      "$properties": { "Gravity": 196.2 }
+    },
+    "Lighting": {
+      "$className": "Lighting",
+      "$properties": { "GlobalShadows": true, "Technology": "ShadowMap" }
+    }
+  }
+}
