@@ -92,8 +92,15 @@ end
 -- attachments da aura) é remontado depois porque os membros podem ter sido trocados.
 local function skinAsync(player: Player, char: Model, action: "apply" | "restore", form: string?)
 	task.spawn(function()
-		local ok = if action == "apply" then SkinService.apply(player, form :: string) else SkinService.restore(player)
-		if ok and char.Parent then
+		-- o corpo volta ao estado original ANTES do ApplyDescription (o kit do Ichigo esconde roupa/acessórios
+		-- e repinta os membros; sem isso a skin seria aplicada "por baixo" e apagada na remontagem)
+		ModelKit.resetBody(char)
+		if action == "apply" then
+			SkinService.apply(player, form :: string)
+		else
+			SkinService.restore(player)
+		end
+		if char.Parent then
 			ModelKit.refresh(char)
 		end
 	end)
@@ -149,8 +156,8 @@ end
 local function onServerEvent(s: Session, name: string)
 	if name == "ReleaseImpact" then
 		s.machine:transition("Climax")
-	elseif name == "BeginFade" then
-		-- a skin do Mugetsu começa a carregar quando a tela começa a ficar branca (16.6s)
+	elseif name == "WhiteOut" then
+		-- a skin do Mugetsu carrega com a tela TODA branca (17.0s a 19.0s): a troca fica escondida
 		if SkinService.hasSkin("Mugetsu") then
 			skinAsync(s.player, s.character, "apply", "Mugetsu")
 		end
@@ -320,7 +327,9 @@ function TransformationService.request(player: Player)
 		-- a cena só começa depois que a skin do Ichigo carregou (personagem já travado e protegido)
 		s.startTime = math.huge
 		task.spawn(function()
-			if SkinService.apply(player, "Ichigo") and char.Parent then
+			ModelKit.resetBody(char)
+			SkinService.apply(player, "Ichigo")
+			if char.Parent then
 				ModelKit.refresh(char)
 			end
 			if sessions[player] == s then

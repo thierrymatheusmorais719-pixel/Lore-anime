@@ -14,19 +14,16 @@ do corpo R15. O jogo já sabe encaixar cada peça; você só precisa enviá-lo p
 3. Nas opções de importação:
    * deixe a unidade do arquivo em **studs** (o modelo deve medir ≈ 6,5 studs de altura);
    * **não** mescle as malhas (cada peça precisa continuar separada, com o nome dela).
-4. Confirme. Vai aparecer um Model no Workspace com peças chamadas `Root`, `Head_Hair`, `Head_Face`,
-   `Head_Jaw`, `UpperTorso`, `LowerTorso_Coat`, `RightUpperArm`, `RightLowerArm`, `RightHand`,
-   `LeftUpperArm`, `LeftLowerArm`, `RightLowerLeg`, `LeftLowerLeg`, `Blade`.
-5. Renomeie esse Model para **`IchigoMesh`**.
-6. Em **ServerStorage**, crie uma pasta chamada **`MugetsuAssets`** e arraste o Model `IchigoMesh` para dentro.
-7. Aperte **Play** e use **G**. No Output deve aparecer:
-   `[Mugetsu] forma Ichigo montada a partir da malha importada (13 pedaços)`.
+4. Confirme. O modelo aparece no mapa (Workspace). **Pronto, não precisa mover nem renomear nada.**
+5. Aperte **Play**. Ao iniciar, o jogo encontra o modelo sozinho, guarda em `ServerStorage/MugetsuAssets`
+   e o Output mostra `modelo importado encontrado em ...`. O personagem aparece como o Ichigo do modelo
+   e, ao usar **G**, ele vira o Mugetsu.
 
-Não precisa posicionar nada: o jogo usa o cubo `Root` como referência e encaixa cada peça no membro do
-personagem pelas juntas, seja qual for o lugar onde o Model foi solto.
+Para o modelo ficar salvo no jogo, salve o place depois de importar (File → Save).
 
 ## Se algo der errado
 
+* **Nenhuma mensagem `modelo importado encontrado`**: o import provavelmente mesclou as peças; reimporte sem mesclar.
 * **Mensagem "IchigoMesh sem o cubo 'Root'"**: o Model importado não tem a peça `Root`; reimporte sem mesclar.
 * **Peças no lugar errado ou escala estranha**: o avatar precisa ser **R15** com escala padrão
   (Game Settings → Avatar → R15, escalas em 100%). O modelo foi ajustado para o corpo R15 padrão.

@@ -12,6 +12,8 @@ __src.ModelKit = function()
 		currentForm = function(char) return char._form or "Ichigo" end,
 		setForm = function(char, form, t) char._form = form; table.insert(formCalls, form) end,
 		refresh = function(char) char._refreshed = (char._refreshed or 0) + 1 end,
+		resetBody = function(char) char._reset = (char._reset or 0) + 1 end,
+		adoptImportedMesh = function() return nil end,
 	}
 end
 -- SkinService falso: registra chamadas; quais formas têm skin é controlado pelo teste
@@ -308,19 +310,20 @@ local function logFor(name)
 	return out
 end
 
-test("skin: Mugetsu carrega no começo do flash e só volta quando a forma acaba (RestoreAfter=Form)", function()
+test("skin: Mugetsu carrega com a tela toda branca (17.0s) e só volta quando a forma acaba (RestoreAfter=Form)", function()
 	SKIN.forms = { Mugetsu = true }
 	local p = fresh("SK1", V(7000, 3, 0))
 	local t0 = SIM.clock
 	reqTransform(p)
-	SIM.advance(0.4 + 16.5)
-	eq(#logFor("SK1"), 0, "nada aplicado antes do flash")
+	SIM.advance(0.4 + 16.9)
+	eq(#logFor("SK1"), 0, "nada aplicado antes da tela ficar toda branca")
 	SIM.advance(0.3)
 	local l = logFor("SK1")
 	eq(#l, 1); assert(l[1]:find("apply:Mugetsu"), l[1])
 	SIM.advance(14)
 	eq(#logFor("SK1"), 1, "fim da cena não restaura com RestoreAfter=Form")
 	assert(p.Character._refreshed and p.Character._refreshed >= 1, "kit remontado depois da skin")
+	assert(p.Character._reset and p.Character._reset >= 1, "corpo volta ao original antes do ApplyDescription")
 	SIM.advance(Config.Transform.FormDuration + 1)
 	l = logFor("SK1")
 	eq(#l, 2); assert(l[2]:find("restore"), "restaura ao fim da forma")

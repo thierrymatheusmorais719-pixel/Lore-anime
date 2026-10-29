@@ -80,4 +80,24 @@ try {
 	console.log("FAIL runtime sim:", e?.message ?? e);
 	failures++;
 }
+
+// 4) ModelKit REAL sobre personagem simulado (roupa/acessórios/cores reversíveis; skin não é apagada)
+{
+	const st2 = await LuauState.createAsync({});
+	const rd = (f) => fs.readFileSync(path.join(root, f), "utf8").replace(/^--!strict\n/, "");
+	let mk = `local KITS = { obj = ${toLua(JSON.parse(rd("src/shared/KitDataObj.json")))}, procedural = ${toLua(JSON.parse(rd("src/shared/KitDataProcedural.json")))} }\n`;
+	mk += `local MESH = ${toLua(JSON.parse(rd("src/shared/MeshKitManifest.json")))}\n`;
+	mk += `local __MODELKIT, __CONFIG\nlocal __runner = (function()\n${fs.readFileSync(path.join(here, "sim_modelkit.luau"), "utf8")}\nend)()\n`;
+	mk += `__CONFIG = function()\n${rd("src/shared/Config.luau")}\nend\n`;
+	mk += `__MODELKIT = function()\n${rd("src/server/ModelKit.luau")}\nend\n`;
+	mk += `local passed, failed = 0, {}
+local function test(name, fn) local ok, err = pcall(fn) if ok then passed += 1 else table.insert(failed, name .. ": " .. tostring(err)) end end
+local function eq(a, b, msg) if a ~= b then error((msg or "") .. " esperado " .. tostring(b) .. " obtido " .. tostring(a), 2) end end
+__runner(test, eq)
+if #failed > 0 then return "FAILED " .. #failed .. " / " .. (passed + #failed) .. string.char(10) .. table.concat(failed, string.char(10)) end
+return "ALL PASSED " .. passed .. " cenários do ModelKit real"\n`;
+	const f = st2.loadstring(mk, "sim_modelkit", false);
+	if (typeof f === "string") { console.log("FAIL compile modelkit sim:", f); failures++; }
+	else { try { const r = String(await f()); console.log(r); if (!/ALL PASSED/.test(r)) failures++; } catch (e) { console.log("FAIL runtime modelkit sim:", e?.message ?? e); failures++; } }
+}
 process.exit(failures ? 1 : 0);

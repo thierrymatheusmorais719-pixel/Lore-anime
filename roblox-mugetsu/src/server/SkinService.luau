@@ -132,7 +132,8 @@ function SkinService.describe(base: HumanoidDescription, ids: { number }): Human
 		(d :: any)[field] = table.concat(list, ",")
 	end
 	if #layered > 0 then
-		d:SetAccessories(layered, true)
+		-- false = mexe só nas roupas em camadas; com true apagaria o cabelo/máscara definidos acima
+		d:SetAccessories(layered, false)
 	end
 	return d
 end

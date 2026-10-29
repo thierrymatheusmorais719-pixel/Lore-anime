@@ -174,14 +174,41 @@ local function meshManifest(): any?
 	return m and require(m :: ModuleScript) or nil
 end
 
-local function meshSource(): Model?
+-- Procura o Model importado pelo Importador 3D: ele tem as peças "Root" e "Head_Hair". Pode estar no
+-- Workspace (onde o Studio solta o import), com qualquer nome: é movido para ServerStorage.MugetsuAssets
+-- com o nome do manifesto, para sumir do mapa e ficar no lugar certo.
+function ModelKit.adoptImportedMesh(): Model?
 	local man = meshManifest()
 	if not (Config.Kit.UseMesh and man) then
 		return nil
 	end
-	local folder = ServerStorage:FindFirstChild(Manifest.CustomKitPath[1])
-	local model = folder and folder:FindFirstChild(man.modelName or "IchigoMesh")
-	return model and model:IsA("Model") and model or nil
+	local folderName = Manifest.CustomKitPath[1]
+	local folder = ServerStorage:FindFirstChild(folderName)
+	local existing = folder and folder:FindFirstChild(man.modelName or "IchigoMesh")
+	if existing and existing:IsA("Model") then
+		return existing
+	end
+	for _, place in { workspace, ServerStorage, game:GetService("ReplicatedStorage") } do
+		for _, d in place:GetDescendants() do
+			if d:IsA("Model") and not d:FindFirstChildOfClass("Humanoid") and d:FindFirstChild(man.rootName, true)
+				and d:FindFirstChild("Head_Hair", true) then
+				if not folder then
+					folder = Instance.new("Folder")
+					folder.Name = folderName
+					folder.Parent = ServerStorage
+				end
+				print(`[Mugetsu] modelo importado encontrado em {d:GetFullName()}; movido para ServerStorage.{folderName}`)
+				d.Name = man.modelName or "IchigoMesh"
+				d.Parent = folder
+				return d
+			end
+		end
+	end
+	return nil
+end
+
+local function meshSource(): Model?
+	return ModelKit.adoptImportedMesh()
 end
 
 -- Monta a forma a partir do Model importado (MeshParts nomeados como no MeshKitManifest + "Root").
@@ -300,11 +327,81 @@ local function setKitTransparency(kit: Folder, hidden: boolean)
 	end
 end
 
+-- Mudanças no corpo feitas por um kit (cores dos membros, roupa escondida, acessórios e rosto ocultos)
+-- são REVERSÍVEIS: o estado original fica guardado e resetBody() o devolve. Isso importa para as skins
+-- por ID: o ApplyDescription do Roblox compara com a última aparência aplicada, então o corpo precisa
+-- estar no estado original antes de aplicar ou restaurar uma skin.
+local function stashBody(char: Model)
+	if char:GetAttribute("MugetsuBodyStashed") then
+		return
+	end
+	char:SetAttribute("MugetsuBodyStashed", true)
+	for _, n in LIMBS do
+		local p = char:FindFirstChild(n)
+		if p and p:IsA("BasePart") then
+			p:SetAttribute("MugetsuOrigColor", p.Color)
+		end
+	end
+	local stash = char:FindFirstChild("MugetsuStash") or Instance.new("Folder")
+	stash.Name = "MugetsuStash"
+	stash.Parent = char
+	for _, inst in char:GetChildren() do
+		if inst:IsA("Shirt") or inst:IsA("Pants") or inst:IsA("ShirtGraphic") then
+			inst.Parent = stash -- dentro de uma pasta a roupa não é desenhada
+		elseif inst:IsA("Accessory") then
+			local handle = inst:FindFirstChild("Handle")
+			if handle and handle:IsA("BasePart") then
+				handle:SetAttribute("MugetsuOrigT", handle.Transparency)
+				handle.Transparency = 1
+			end
+		end
+	end
+	local head = char:FindFirstChild("Head")
+	local face = head and head:FindFirstChildOfClass("Decal")
+	if face then
+		face:SetAttribute("MugetsuOrigT", face.Transparency)
+	end
+end
+
+function ModelKit.resetBody(char: Model)
+	if not char:GetAttribute("MugetsuBodyStashed") then
+		return
+	end
+	char:SetAttribute("MugetsuBodyStashed", nil)
+	for _, n in LIMBS do
+		local p = char:FindFirstChild(n)
+		if p and p:IsA("BasePart") then
+			local c = p:GetAttribute("MugetsuOrigColor")
+			if typeof(c) == "Color3" then
+				p.Color = c
+			end
+			p:SetAttribute("MugetsuOrigColor", nil)
+			p.Transparency = 0
+		end
+	end
+	local stash = char:FindFirstChild("MugetsuStash")
+	if stash then
+		for _, inst in stash:GetChildren() do
+			inst.Parent = char
+		end
+		stash:Destroy()
+	end
+	for _, d in char:GetDescendants() do
+		local t = d:GetAttribute("MugetsuOrigT")
+		if typeof(t) == "number" and (d:IsA("BasePart") or d:IsA("Decal")) then
+			(d :: any).Transparency = t
+			d:SetAttribute("MugetsuOrigT", nil)
+		end
+	end
+end
+
 local function applyLimbColors(char: Model, form: Form)
 	local def = kitData().forms[form]
 	if not def or skinForm(form) then
-		return -- a skin traz as próprias cores/roupas
+		ModelKit.resetBody(char) -- a skin traz as próprias cores/roupas: corpo no estado original
+		return
 	end
+	stashBody(char)
 	for _, n in LIMBS do
 		local p = char:FindFirstChild(n)
 		local c = def.limbColors[n]
@@ -312,25 +409,10 @@ local function applyLimbColors(char: Model, form: Form)
 			p.Color = color(c)
 		end
 	end
-	-- as roupas do avatar (Shirt/Pants) cobririam as cores dos membros: ficam ocultas enquanto o kit existe
-	for _, inst in char:GetChildren() do
-		if inst:IsA("Shirt") or inst:IsA("Pants") or inst:IsA("ShirtGraphic") then
-			inst.Parent = nil
-		end
-	end
-	-- acessórios do avatar (cabelos, chapéus) atravessariam o cabelo/roupa do kit
-	for _, acc in char:GetChildren() do
-		if acc:IsA("Accessory") then
-			local handle = acc:FindFirstChild("Handle")
-			if handle and handle:IsA("BasePart") then
-				handle.Transparency = 1
-			end
-		end
-	end
 	local head = char:FindFirstChild("Head")
 	local face = head and head:FindFirstChildOfClass("Decal")
-	if face and def.hideFace then
-		face.Transparency = 1 -- o rosto vem do kit (olhos/sobrancelhas/máscara)
+	if face then
+		face.Transparency = def.hideFace and 1 or (face:GetAttribute("MugetsuOrigT") :: number? or 0)
 	end
 end
 
@@ -339,8 +421,8 @@ function ModelKit.isR15(char: Model): boolean
 	return hum ~= nil and hum.RigType == Enum.HumanoidRigType.R15
 end
 
--- Cria os dois kits (Ichigo visível, Mugetsu oculto). Idempotente.
-function ModelKit.build(char: Model)
+-- Cria os dois kits e mostra a forma inicial (Ichigo, ou a forma atual numa remontagem). Idempotente.
+function ModelKit.build(char: Model, initialForm: Form?)
 	if char:FindFirstChild("MugetsuKits") then
 		return
 	end
@@ -366,10 +448,9 @@ function ModelKit.build(char: Model)
 		end
 	end
 	root.Parent = char
-	setKitTransparency(root.Ichigo, false)
+	setKitTransparency(root.Ichigo, true)
 	setKitTransparency(root.Mugetsu, true)
-	root:SetAttribute("Form", "Ichigo")
-	ModelKit.setForm(char, "Ichigo", 0)
+	ModelKit.setForm(char, initialForm or "Ichigo", 0)
 end
 
 local function fadeKit(kit: Folder, toHidden: boolean, duration: number)
@@ -424,10 +505,7 @@ function ModelKit.refresh(char: Model)
 			at:Destroy()
 		end
 	end
-	ModelKit.build(char)
-	if form == "Mugetsu" then
-		ModelKit.setForm(char, "Mugetsu", 0)
-	end
+	ModelKit.build(char, form)
 end
 
 function ModelKit.getBlade(char: Model): BasePart?
