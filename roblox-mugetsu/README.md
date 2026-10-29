@@ -92,17 +92,25 @@ tests/                                      run.mjs · unit.luau · sim_env.luau
 | Modelo/kit de alta qualidade (opcional) | `ServerStorage/MugetsuAssets/MugetsuKit` | ver acima |
 | Texturas de partícula próprias (opcional) | `VFX.luau` (`SMOKE`/`SPARK`) | hoje usa texturas embutidas do cliente Roblox |
 
-## Modelo 3D do Mugetsu (malha esculpida)
+## Modelo 3D do Ichigo (malha esculpida)
 
-O modelo enviado (OBJ de ~600 mil triângulos, sem cor) foi processado por `tools/import_mesh.py`: limpeza de
+O modelo enviado (Ichigo normal; OBJ de ~600 mil triângulos, sem cor) foi processado por `tools/import_mesh.py`: limpeza de
 172 mil fragmentos soltos, rotação para a frente do Roblox, escala para o R15, corte por membro (cabelo, rosto,
-máscara, torso, casaco, braços, mão, pernas e espada), redução para ≈43 mil triângulos e cores das referências.
-Resultado: `assets/models/mugetsu_mesh/MugetsuMesh.obj` + `src/shared/MeshKitManifest.json`.
+mandíbula, torso, casaco, braços, mão, pernas e espada), redução para ≈43 mil triângulos e cores das referências.
+Resultado: `assets/models/ichigo_mesh/IchigoMesh.obj` + `src/shared/MeshKitManifest.json`.
 
 O envio da malha para o Roblox precisa ser feito por você no Studio (é a sua conta): **siga
 [`docs/IMPORTAR_MALHA.md`](docs/IMPORTAR_MALHA.md)**. Enquanto o Model não for importado, o jogo usa o kit de peças
 (`Config.Kit.Source`). A prévia (`preview/index.html`) já mostra a malha na cutscene; `preview/mesh.html?seg=1`
 mostra os cortes por membro.
+
+## Skins do catálogo (por ID), só na cutscene
+
+`Config.Skins.Ichigo` / `Config.Skins.Mugetsu` recebem IDs do catálogo (ou `{ bundle = ID }`). O servidor
+descobre o tipo de cada item (`MarketplaceService`) e monta um `HumanoidDescription` a partir da aparência
+original do jogador: Ichigo antes da cena começar, Mugetsu no início do flash branco, e volta ao normal no
+fim da forma (`RestoreAfter = "Form"`) ou da cutscene (`"Cutscene"`). Uma forma com skin usa só a espada do
+jogo (rastro/golpes); sem skin, usa o kit. `src/server/SkinService.luau`.
 
 ## Testes
 

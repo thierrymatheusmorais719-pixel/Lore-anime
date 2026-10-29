@@ -3,7 +3,7 @@
 
 Entrada: OBJ de corpo inteiro (ex.: assets/models/source/Mugetsu_Roblox.obj, Y para cima).
 Saída:
-  * assets/models/mugetsu_mesh/MugetsuMesh.obj  -> UM arquivo com os pedaços nomeados por membro R15
+  * assets/models/ichigo_mesh/IchigoMesh.obj  -> UM arquivo com os pedaços nomeados por membro R15
     + um cubo "Root" na origem do HumanoidRootPart. É o arquivo que se importa no Roblox Studio.
   * src/shared/MeshKitManifest.json -> como cada pedaço se prende ao rig, cor, material, attachments
     (rastro da espada) e peças extras (olhos). Lido pelo ModelKit (jogo) e pela prévia.
@@ -21,7 +21,7 @@ import trimesh
 import fast_simplification as fs
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-OUT_OBJ = ROOT / "assets/models/mugetsu_mesh/MugetsuMesh.obj"
+OUT_OBJ = ROOT / "assets/models/ichigo_mesh/IchigoMesh.obj"
 OUT_MANIFEST = ROOT / "src/shared/MeshKitManifest.json"
 
 # R15 em repouso (relativo ao HumanoidRootPart): pés -3, ombro/pescoço +1.8, cotovelo +0.4, punho -0.7.
@@ -29,21 +29,22 @@ FEET, SHOULDER = -3.0, 1.8
 ELBOW_Y, WRIST_Y, NECK_Y, WAIST_Y = 0.4, -0.75, 1.85, -0.1
 SHOULDER_TOP_SRC = 0.45  # altura do ombro no arquivo de origem (medida pelo perfil de largura)
 
-# Cores (das imagens de referência do Mugetsu) e orçamento de triângulos por pedaço.
+# Modelo enviado = ICHIGO normal (antes da transformação). Cores da imagem de referência do Ichigo
+# e orçamento de triângulos por pedaço.
 PIECES = {
-    "Head_Hair":       ("Head",          [14, 14, 17], "SmoothPlastic", 9000),
+    "Head_Hair":       ("Head",          [255, 128, 26], "SmoothPlastic", 9000),
     "Head_Face":       ("Head",          [232, 192, 152], "SmoothPlastic", 1200),
-    "Head_Mask":       ("Head",          [40, 48, 62], "Fabric", 1500),
-    "UpperTorso":      ("UpperTorso",    [24, 27, 34], "Fabric", 6000),
+    "Head_Jaw":        ("Head",          [232, 192, 152], "SmoothPlastic", 1500),
+    "UpperTorso":      ("UpperTorso",    [16, 16, 20], "Fabric", 6000),
     "LowerTorso_Coat": ("LowerTorso",    [16, 16, 20], "Fabric", 9000),
-    "RightUpperArm":   ("RightUpperArm", [40, 48, 62], "Fabric", 2500),
-    "RightLowerArm":   ("RightLowerArm", [40, 48, 62], "Fabric", 2500),
-    "RightHand":       ("RightHand",     [40, 48, 62], "Fabric", 1200),
+    "RightUpperArm":   ("RightUpperArm", [232, 192, 152], "SmoothPlastic", 2500),
+    "RightLowerArm":   ("RightLowerArm", [232, 192, 152], "SmoothPlastic", 2500),
+    "RightHand":       ("RightHand",     [12, 12, 14], "Fabric", 1200),
     "LeftUpperArm":    ("LeftUpperArm",  [18, 18, 22], "Fabric", 2500),
     "LeftLowerArm":    ("LeftLowerArm",  [18, 18, 22], "Fabric", 2500),
     "RightLowerLeg":   ("RightLowerLeg", [16, 16, 20], "Fabric", 1500),
     "LeftLowerLeg":    ("LeftLowerLeg",  [16, 16, 20], "Fabric", 1500),
-    "Blade":           ("RightHand",     [8, 8, 10], "Metal", 2500),
+    "Blade":           ("RightHand",     [24, 24, 28], "Metal", 2500),
 }
 
 
@@ -129,9 +130,13 @@ def segment(mesh):
     head = rest & (y > NECK_Y)
     hc = np.array([np.median(x[head]), 0, np.median(z[head])])
     front = head & (np.abs(x - hc[0]) < 0.5) & (y > 1.95) & (y < 2.75) & (N[:, 2] < -0.35) & (z < hc[2] - 0.3)
+    # franja na frente do rosto: o que se projeta à frente da superfície da pele é cabelo
+    if front.any():
+        zf = float(np.percentile(z[front], 75))
+        front &= z > zf - 0.09
     labels[head] = "Head_Hair"
     labels[front & (y >= 2.32)] = "Head_Face"
-    labels[front & (y < 2.32)] = "Head_Mask"
+    labels[front & (y < 2.32)] = "Head_Jaw"
 
     # --- braços: só dentro da COLUNA de cada braço (medida no braço, acima do casaco), para não levar
     #     junto a lateral do casaco que abre na altura das mãos.
@@ -177,7 +182,7 @@ def main():
     labels, grip, tip, hc = segment(mesh)
     OUT_OBJ.parent.mkdir(parents=True, exist_ok=True)
     pieces, total = {}, 0
-    lines = ["# MugetsuMesh: pedaços por membro R15, coordenadas em studs relativas ao HumanoidRootPart",
+    lines = ["# IchigoMesh: pedaços por membro R15, coordenadas em studs relativas ao HumanoidRootPart",
              "# gerado por tools/import_mesh.py — importe no Roblox Studio (3D Importer), sem mesclar malhas"]
     vbase = 1
 
@@ -212,12 +217,16 @@ def main():
         emit(name, sub.vertices, sub.faces)
         print(f"  {name:16s} -> {limb:14s} {len(sub.faces):6d} triângulos")
     OUT_OBJ.write_text("\n".join(lines) + "\n")
-    # olhos vermelhos (a malha não tem cor nem olhos): peças simples presas à cabeça, na frente do rosto
+    # olhos castanhos e sobrancelhas laranja (a malha não tem cor nem olhos): peças simples presas à cabeça
     face_z = float(np.percentile(mesh.vertices[(np.abs(mesh.vertices[:, 0] - hc[0]) < 0.45) & (np.abs(mesh.vertices[:, 1] - 2.45) < 0.12)][:, 2], 3))
-    extras = [{"name": f"Eye{s}", "attach": "Head", "shape": "Block", "size": [0.24, 0.08, 0.04],
-               "worldPos": [round(hc[0] + s * 0.24, 4), 2.45, round(face_z - 0.02, 4)], "color": [200, 24, 34], "material": "Neon"} for s in (-1, 1)]
-    manifest = {"version": 1, "form": "Mugetsu", "source": f"tools/import_mesh.py <- {src.name}", "replaceBody": True,
-                "file": "assets/models/mugetsu_mesh/MugetsuMesh.obj", "rootName": "Root", "pieces": pieces, "extras": extras,
+    extras = []
+    for s_ in (-1, 1):
+        extras.append({"name": f"Eye{s_}", "attach": "Head", "shape": "Block", "size": [0.22, 0.09, 0.04],
+                       "worldPos": [round(hc[0] + s_ * 0.24, 4), 2.45, round(face_z - 0.02, 4)], "color": [52, 30, 22], "material": "SmoothPlastic"})
+        extras.append({"name": f"Brow{s_}", "attach": "Head", "shape": "Block", "size": [0.3, 0.06, 0.04],
+                       "worldPos": [round(hc[0] + s_ * 0.25, 4), 2.58, round(face_z - 0.03, 4)], "color": [214, 92, 14], "material": "SmoothPlastic"})
+    manifest = {"version": 1, "form": "Ichigo", "modelName": "IchigoMesh", "source": f"tools/import_mesh.py <- {src.name}", "replaceBody": True,
+                "file": "assets/models/ichigo_mesh/IchigoMesh.obj", "rootName": "Root", "pieces": pieces, "extras": extras,
                 "totalTriangles": int(total)}
     OUT_MANIFEST.write_text(json.dumps(manifest, indent=1))
     print(f"total {total} triângulos; escrito {OUT_OBJ.relative_to(ROOT)} e {OUT_MANIFEST.relative_to(ROOT)}")

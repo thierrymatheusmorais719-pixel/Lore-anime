@@ -8,9 +8,9 @@
 --   * KitDataProcedural.json <- tools/build_kits.py  (kit procedural mais detalhado, feito a partir das imagens)
 -- Config.Kit.Source escolhe qual usar.
 --
--- Kit de MALHA (modelo esculpido): tools/import_mesh.py gera assets/models/mugetsu_mesh/MugetsuMesh.obj
+-- Kit de MALHA (modelo esculpido): tools/import_mesh.py gera assets/models/ichigo_mesh/IchigoMesh.obj
 -- (pedaços nomeados por membro + cubo "Root") e MeshKitManifest.json. Depois de importar o OBJ no Studio
--- e colocar o Model resultante em ServerStorage.MugetsuAssets.MugetsuMesh, a forma Mugetsu usa a malha
+-- e colocar o Model resultante em ServerStorage.MugetsuAssets.IchigoMesh, a forma do manifesto usa a malha
 -- (com prioridade sobre os dados acima) e o corpo R15 fica oculto por baixo dela.
 --
 -- Ponto de integração para arte final: se existir ServerStorage.MugetsuAssets.MugetsuKit (Model) com peças
@@ -95,8 +95,16 @@ local function weld(p0: BasePart, p1: BasePart, c0: CFrame)
 	w.Parent = p1
 end
 
-local function buildFromData(char: Model, kit: Folder, def: any)
+local function skinForm(form: string): boolean
+	local sk = Config.Skins
+	return sk ~= nil and sk.Enabled == true and #(sk[form] or {}) > 0
+end
+
+local function buildFromData(char: Model, kit: Folder, def: any, swordOnly: boolean?)
 	for _, d in def.parts do
+		if swordOnly and d.attach ~= "RightHand" then
+			continue -- forma com skin do catálogo: o kit só fornece a espada
+		end
 		local limb = char:FindFirstChild(d.attach)
 		if limb and limb:IsA("BasePart") then
 			local p = newPart(d.shape)
@@ -116,7 +124,7 @@ local function buildFromData(char: Model, kit: Folder, def: any)
 		end
 	end
 	-- mechas de cabelo: segmentos ligados por Motor6D (o cliente balança via Transform; tag MugetsuHair)
-	for _, c in def.chains do
+	for _, c in (swordOnly and {} or def.chains) do
 		local head = char:FindFirstChild(c.attach)
 		if head and head:IsA("BasePart") then
 			local prev: BasePart = head
@@ -167,11 +175,12 @@ local function meshManifest(): any?
 end
 
 local function meshSource(): Model?
-	if not Config.Kit.UseMesh then
+	local man = meshManifest()
+	if not (Config.Kit.UseMesh and man) then
 		return nil
 	end
 	local folder = ServerStorage:FindFirstChild(Manifest.CustomKitPath[1])
-	local model = folder and folder:FindFirstChild("MugetsuMesh")
+	local model = folder and folder:FindFirstChild(man.modelName or "IchigoMesh")
 	return model and model:IsA("Model") and model or nil
 end
 
@@ -179,7 +188,7 @@ end
 local function buildFromMesh(char: Model, kit: Folder, model: Model, man: any): boolean
 	local root = model:FindFirstChild(man.rootName, true)
 	if not (root and root:IsA("BasePart")) then
-		warn("[Mugetsu] MugetsuMesh sem o cubo 'Root'; usando o kit de peças")
+		warn(`[Mugetsu] {model.Name} sem o cubo 'Root'; usando o kit de peças`)
 		return false
 	end
 	-- se o Studio importou em outra escala, o cubo Root (0.2 stud no arquivo) revela o fator
@@ -293,8 +302,8 @@ end
 
 local function applyLimbColors(char: Model, form: Form)
 	local def = kitData().forms[form]
-	if not def then
-		return
+	if not def or skinForm(form) then
+		return -- a skin traz as próprias cores/roupas
 	end
 	for _, n in LIMBS do
 		local p = char:FindFirstChild(n)
@@ -346,7 +355,10 @@ function ModelKit.build(char: Model)
 		local man = meshManifest()
 		local model = meshSource()
 		local done = false
-		if model and man and man.form == form then
+		if skinForm(form) then
+			buildFromData(char, kit, data.forms[form], true)
+			done = true
+		elseif model and man and man.form == form then
 			done = buildFromMesh(char, kit, model, man)
 		end
 		if not done and not tryCustomKit(char, form, kit) then
@@ -357,7 +369,7 @@ function ModelKit.build(char: Model)
 	setKitTransparency(root.Ichigo, false)
 	setKitTransparency(root.Mugetsu, true)
 	root:SetAttribute("Form", "Ichigo")
-	applyLimbColors(char, "Ichigo")
+	ModelKit.setForm(char, "Ichigo", 0)
 end
 
 local function fadeKit(kit: Folder, toHidden: boolean, duration: number)
@@ -395,6 +407,26 @@ function ModelKit.setForm(char: Model, form: Form, fadeTime: number)
 		if p and p:IsA("BasePart") then
 			p.Transparency = replace and 1 or 0
 		end
+	end
+end
+
+-- Depois de um ApplyDescription (skin), membros podem ter sido trocados e as soldas perdidas:
+-- remonta os kits mantendo a forma atual.
+function ModelKit.refresh(char: Model)
+	local old = char:FindFirstChild("MugetsuKits")
+	local form = ModelKit.currentForm(char)
+	if old then
+		old:Destroy()
+	end
+	for _, n in { "AuraChest", "AuraFeet", "AuraHead", "AuraRArm", "AuraLArm", "AuraHand" } do
+		local at = char:FindFirstChild(n, true)
+		if at and at:IsA("Attachment") then
+			at:Destroy()
+		end
+	end
+	ModelKit.build(char)
+	if form == "Mugetsu" then
+		ModelKit.setForm(char, "Mugetsu", 0)
 	end
 end
 

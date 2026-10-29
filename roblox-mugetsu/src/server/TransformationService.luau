@@ -15,6 +15,7 @@ local StateMachine = require(Shared:WaitForChild("StateMachine"))
 local AbilityMath = require(Shared:WaitForChild("AbilityMath"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local ModelKit = require(script.Parent:WaitForChild("ModelKit"))
+local SkinService = require(script.Parent:WaitForChild("SkinService"))
 local RateLimiter = require(script.Parent:WaitForChild("RateLimiter"))
 
 type Saved = {
@@ -87,6 +88,17 @@ local function restore(s: Session)
 	end
 end
 
+-- ApplyDescription bloqueia enquanto o Roblox carrega os itens: sempre em paralelo, e o kit (espada,
+-- attachments da aura) é remontado depois porque os membros podem ter sido trocados.
+local function skinAsync(player: Player, char: Model, action: "apply" | "restore", form: string?)
+	task.spawn(function()
+		local ok = if action == "apply" then SkinService.apply(player, form :: string) else SkinService.restore(player)
+		if ok and char.Parent then
+			ModelKit.refresh(char)
+		end
+	end)
+end
+
 local function finish(s: Session, reason: string, completed: boolean)
 	if sessions[s.player] ~= s then
 		return
@@ -112,6 +124,10 @@ local function finish(s: Session, reason: string, completed: boolean)
 	for _, p in nearbyPlayers(s.root.Position, s.player) do
 		(completed and endRemote or cancelRemote):FireClient(p, { userId = s.player.UserId, reason = reason })
 	end
+	-- skin: cancelado antes da troca -> volta já; "Cutscene" -> volta ao terminar; "Form" -> na reversão
+	if SkinService.hasSaved(s.player) and (not s.swapped or Config.Skins.RestoreAfter == "Cutscene") then
+		skinAsync(s.player, s.character, "restore")
+	end
 	-- Mantém o form final apenas se a troca já aconteceu; a habilidade fica ativa apenas se completou
 	-- ou se a troca já aconteceu (o jogador já é Mugetsu).
 	if s.swapped then
@@ -125,11 +141,19 @@ local function revertForm(player: Player, character: Model)
 		ModelKit.setForm(character, "Ichigo", 0.8)
 	end
 	player:SetAttribute("MugetsuForm", false)
+	if SkinService.hasSaved(player) then
+		skinAsync(player, character, "restore")
+	end
 end
 
 local function onServerEvent(s: Session, name: string)
 	if name == "ReleaseImpact" then
 		s.machine:transition("Climax")
+	elseif name == "BeginFade" then
+		-- a skin do Mugetsu começa a carregar quando a tela começa a ficar branca (16.6s)
+		if SkinService.hasSkin("Mugetsu") then
+			skinAsync(s.player, s.character, "apply", "Mugetsu")
+		end
 	elseif name == "MorphSwap" then
 		if not s.swapped then
 			ModelKit.setForm(s.character, "Mugetsu", 0) -- instantâneo: a tela está toda branca neste instante
@@ -273,14 +297,31 @@ function TransformationService.request(player: Player)
 		end
 	end))
 
-	local cframe = root.CFrame
-	startRemote:FireClient(player, { startTime = s.startTime, duration = Timeline.Duration })
-	for _, p in nearbyPlayers(root.Position, player) do
-		observeRemote:FireClient(p, { userId = player.UserId, startTime = s.startTime, duration = Timeline.Duration, cframe = cframe })
+	local function announce()
+		local cframe = root.CFrame
+		startRemote:FireClient(player, { startTime = s.startTime, duration = Timeline.Duration })
+		for _, p in nearbyPlayers(root.Position, player) do
+			observeRemote:FireClient(p, { userId = player.UserId, startTime = s.startTime, duration = Timeline.Duration, cframe = cframe })
+		end
+		if not heartbeatConn then
+			heartbeatConn = RunService.Heartbeat:Connect(step)
+		end
 	end
 
-	if not heartbeatConn then
-		heartbeatConn = RunService.Heartbeat:Connect(step)
+	if SkinService.hasSkin("Ichigo") then
+		-- a cena só começa depois que a skin do Ichigo carregou (personagem já travado e protegido)
+		s.startTime = math.huge
+		task.spawn(function()
+			if SkinService.apply(player, "Ichigo") and char.Parent then
+				ModelKit.refresh(char)
+			end
+			if sessions[player] == s then
+				s.startTime = Workspace:GetServerTimeNow() + LEAD_TIME
+				announce()
+			end
+		end)
+	else
+		announce()
 	end
 end
 
@@ -294,6 +335,7 @@ function TransformationService.init()
 			p:SetAttribute("MugetsuAbilityReady", false)
 			p:SetAttribute("MugetsuCutscene", false)
 			revertTokens[p] = (revertTokens[p] or 0) + 1 -- invalida reversões pendentes
+			SkinService.forget(p) -- personagem novo já nasce com a aparência do perfil
 			task.defer(function()
 				if char.Parent and char:FindFirstChildOfClass("Humanoid") and ModelKit.isR15(char) then
 					ModelKit.build(char)

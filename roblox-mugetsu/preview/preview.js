@@ -118,7 +118,7 @@ function kitMat(c, material) {
 }
 const hair = [];
 const kits = {};
-const KIT_SRC = new URLSearchParams(location.search).get("kit") === "procedural" ? "procedural" : "obj"; // igual a Config.Kit.Source
+const KIT_SRC = new URLSearchParams(location.search).get("kit") === "obj" ? "obj" : "procedural"; // igual a Config.Kit.Source
 function shapeGeo(p) {
   if (p.shape === "Wedge") return wedgeGeo(...p.size);
   if (p.shape === "Ball") return new THREE.SphereGeometry(p.size[0] / 2, 14, 10);
@@ -152,8 +152,8 @@ function buildKit(name) {
   }
   kits[name] = { groups, named, colors: def.limbColors };
 }
-// Mugetsu com a malha esculpida (MeshKitManifest + MugetsuMesh.obj), como o ModelKit faz quando o Model
-// importado existe no ServerStorage. ?mesh=0 volta ao kit de peças.
+// Forma do manifesto (Ichigo) com a malha esculpida (MeshKitManifest + IchigoMesh.obj), como o ModelKit faz
+// quando o Model importado existe no ServerStorage. ?mesh=0 volta ao kit de peças.
 async function buildMeshKit() {
   const man = await (await fetch("../src/shared/MeshKitManifest.json")).json();
   const txt = await (await fetch("../" + man.file)).text();
@@ -174,10 +174,10 @@ async function buildMeshKit() {
     place(m, info.attach); named[name] = m;
   }
   for (const e of man.extras) { const m = new THREE.Mesh(new THREE.BoxGeometry(...e.size), kitMat(e.color, e.material)); m.position.set(...e.worldPos); place(m, e.attach); }
-  kits.Mugetsu = { groups, named, colors: DATA.kits[KIT_SRC].forms.Mugetsu.limbColors, replaceBody: man.replaceBody };
+  kits[man.form] = { groups, named, colors: DATA.kits[KIT_SRC].forms[man.form].limbColors, replaceBody: man.replaceBody };
 }
-buildKit("Ichigo");
-if (new URLSearchParams(location.search).get("mesh") !== "0") await buildMeshKit(); else buildKit("Mugetsu");
+buildKit("Mugetsu");
+if (new URLSearchParams(location.search).get("mesh") !== "0") await buildMeshKit(); else buildKit("Ichigo");
 const swordM = { base: kits.Mugetsu.named.TrailA, tip: kits.Mugetsu.named.TrailB };
 let currentForm = null;
 function setForm(f) {

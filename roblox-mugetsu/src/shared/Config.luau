@@ -17,10 +17,27 @@ Config.Transform = {
 Config.Kit = {
 	-- "OBJ": modelos enviados (assets/models/*.obj, convertidos por tools/import_obj.py)
 	-- "Procedural": kit mais detalhado gerado por tools/build_kits.py a partir das imagens de referência
-	Source = "OBJ",
-	-- Mugetsu com a malha esculpida (tools/import_mesh.py), quando o Model importado existir em
-	-- ServerStorage.MugetsuAssets.MugetsuMesh. Sem ele, o jogo usa o kit acima.
+	Source = "Procedural", -- o kit procedural é o mais próximo das imagens de referência
+	-- Ichigo com a malha esculpida enviada (tools/import_mesh.py), quando o Model importado existir em
+	-- ServerStorage.MugetsuAssets.IchigoMesh. Sem ele, o jogo usa o kit acima. Skins por ID têm prioridade.
 	UseMesh = true,
+}
+
+-- Skins do catálogo do Roblox aplicadas SÓ na cutscene/forma (HumanoidDescription).
+-- Coloque os IDs (o número do link roblox.com/catalog/<ID>/...) ou { bundle = <ID> } para pacotes.
+-- O tipo de cada item (cabelo, cabeça, máscara, roupa...) é descoberto automaticamente no servidor.
+-- Uma forma COM skin usa só a espada do jogo (o resto vem da skin); uma forma SEM skin usa o kit.
+Config.Skins = {
+	Enabled = true,
+	Ichigo = {},
+	Mugetsu = {
+		17328647456, -- cabeça do Ichigo Mugetsu
+		9343723027, -- calça
+		-- máscara: aguardando o ID
+	},
+	-- "Form": volta a aparência original quando a forma Mugetsu acaba (FormDuration) ou é cancelada.
+	-- "Cutscene": volta logo que a cutscene termina.
+	RestoreAfter = "Form",
 }
 
 Config.Ability = {

@@ -11,6 +11,18 @@ __src.ModelKit = function()
 		build = function(char) char._built = true end,
 		currentForm = function(char) return char._form or "Ichigo" end,
 		setForm = function(char, form, t) char._form = form; table.insert(formCalls, form) end,
+		refresh = function(char) char._refreshed = (char._refreshed or 0) + 1 end,
+	}
+end
+-- SkinService falso: registra chamadas; quais formas têm skin é controlado pelo teste
+local SKIN = { forms = {}, log = {}, saved = {} }
+__src.SkinService = function()
+	return {
+		hasSkin = function(form) return SKIN.forms[form] == true end,
+		apply = function(p, form) table.insert(SKIN.log, p.Name .. ":apply:" .. form .. "@" .. string.format("%.1f", SIM.clock)); SKIN.saved[p] = true; return true end,
+		restore = function(p) table.insert(SKIN.log, p.Name .. ":restore@" .. string.format("%.1f", SIM.clock)); SKIN.saved[p] = nil; return true end,
+		hasSaved = function(p) return SKIN.saved[p] == true end,
+		forget = function(p) SKIN.saved[p] = nil end,
 	}
 end
 __src.Remotes = function()
@@ -285,6 +297,63 @@ test("múltiplos jogadores: cooldowns independentes e sem fogo em si mesmo", fun
 	wait(2)
 	eq(hum(b).damageTaken, Config.Ability.Damage, "B está na linha de A e leva dano")
 	eq(hum(a).damageTaken, nil, "A (atrás de B, B atirou antes de A sair da frente) não se fere pelo próprio golpe")
+end)
+
+------------------------------------------------------------------------------------------------
+-- Skins do catálogo
+------------------------------------------------------------------------------------------------
+local function logFor(name)
+	local out = {}
+	for _, l in ipairs(SKIN.log) do if l:sub(1, #name + 1) == name .. ":" then table.insert(out, l) end end
+	return out
+end
+
+test("skin: Mugetsu carrega no começo do flash e só volta quando a forma acaba (RestoreAfter=Form)", function()
+	SKIN.forms = { Mugetsu = true }
+	local p = fresh("SK1", V(7000, 3, 0))
+	local t0 = SIM.clock
+	reqTransform(p)
+	SIM.advance(0.4 + 16.5)
+	eq(#logFor("SK1"), 0, "nada aplicado antes do flash")
+	SIM.advance(0.3)
+	local l = logFor("SK1")
+	eq(#l, 1); assert(l[1]:find("apply:Mugetsu"), l[1])
+	SIM.advance(14)
+	eq(#logFor("SK1"), 1, "fim da cena não restaura com RestoreAfter=Form")
+	assert(p.Character._refreshed and p.Character._refreshed >= 1, "kit remontado depois da skin")
+	SIM.advance(Config.Transform.FormDuration + 1)
+	l = logFor("SK1")
+	eq(#l, 2); assert(l[2]:find("restore"), "restaura ao fim da forma")
+	SKIN.forms = {}
+	_ = t0
+end)
+
+test("skin: Ichigo aplicada ANTES da cena começar; cancelar antes da troca restaura", function()
+	SKIN.forms = { Ichigo = true, Mugetsu = true }
+	local p = fresh("SK2", V(8000, 3, 0))
+	reqTransform(p)
+	local l = logFor("SK2")
+	eq(#l, 1); assert(l[1]:find("apply:Ichigo"))
+	local st = SIM.getRemote("CutsceneStart"):last(p)
+	assert(st and st.startTime > SIM.clock, "cena anunciada depois da skin, com margem")
+	SIM.advance(5)
+	hum(p).Health = 0; hum(p).Died:Fire()
+	l = logFor("SK2")
+	assert(l[#l]:find("restore"), "cancelamento antes da troca volta a aparência original")
+	eq(hum(p).WalkSpeed, 16)
+	SKIN.forms = {}
+end)
+
+test("skin: cancelar DEPOIS da troca mantém a skin do Mugetsu (forma continua)", function()
+	SKIN.forms = { Mugetsu = true }
+	local p = fresh("SK3", V(9000, 3, 0))
+	reqTransform(p)
+	SIM.advance(0.4 + 18.5)
+	TS.cancel(p, "teste")
+	local l = logFor("SK3")
+	eq(#l, 1, "sem restore: a forma Mugetsu segue ativa")
+	eq(p:GetAttribute("MugetsuForm"), true)
+	SKIN.forms = {}
 end)
 
 if #failed > 0 then

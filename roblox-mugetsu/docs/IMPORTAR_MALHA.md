@@ -1,30 +1,33 @@
-# Como colocar o modelo 3D do Mugetsu no jogo (Roblox Studio)
+# Como colocar o modelo 3D do Ichigo no jogo (Roblox Studio)
 
-O arquivo pronto é `assets/models/mugetsu_mesh/MugetsuMesh.obj`. Ele já está cortado por parte do corpo,
+O modelo enviado é o **Ichigo normal** (antes da transformação). Ele vira a forma Ichigo da cutscene;
+o Mugetsu vem das skins por ID (`Config.Skins.Mugetsu`) ou, sem elas, do kit procedural.
+
+O arquivo pronto é `assets/models/ichigo_mesh/IchigoMesh.obj`. Ele já está cortado por parte do corpo,
 reduzido (≈43 mil triângulos no total, no máximo 9 mil por peça), virado para a frente certa e na escala
 do corpo R15. O jogo já sabe encaixar cada peça; você só precisa enviá-lo para a sua conta pelo Studio.
 
 ## Passo a passo (uma vez só)
 
 1. Abra o `Mugetsu.rbxlx` no Roblox Studio (precisa estar logado na sua conta).
-2. Use o **Importador 3D** do Studio (aba *Home* ou *Avatar* → **Import 3D**) e escolha `MugetsuMesh.obj`.
+2. Use o **Importador 3D** do Studio (aba *Home* ou *Avatar* → **Import 3D**) e escolha `IchigoMesh.obj`.
 3. Nas opções de importação:
    * deixe a unidade do arquivo em **studs** (o modelo deve medir ≈ 6,5 studs de altura);
    * **não** mescle as malhas (cada peça precisa continuar separada, com o nome dela).
 4. Confirme. Vai aparecer um Model no Workspace com peças chamadas `Root`, `Head_Hair`, `Head_Face`,
-   `Head_Mask`, `UpperTorso`, `LowerTorso_Coat`, `RightUpperArm`, `RightLowerArm`, `RightHand`,
+   `Head_Jaw`, `UpperTorso`, `LowerTorso_Coat`, `RightUpperArm`, `RightLowerArm`, `RightHand`,
    `LeftUpperArm`, `LeftLowerArm`, `RightLowerLeg`, `LeftLowerLeg`, `Blade`.
-5. Renomeie esse Model para **`MugetsuMesh`**.
-6. Em **ServerStorage**, crie uma pasta chamada **`MugetsuAssets`** e arraste o Model `MugetsuMesh` para dentro.
+5. Renomeie esse Model para **`IchigoMesh`**.
+6. Em **ServerStorage**, crie uma pasta chamada **`MugetsuAssets`** e arraste o Model `IchigoMesh` para dentro.
 7. Aperte **Play** e use **G**. No Output deve aparecer:
-   `[Mugetsu] forma Mugetsu montada a partir da malha importada (13 pedaços)`.
+   `[Mugetsu] forma Ichigo montada a partir da malha importada (13 pedaços)`.
 
 Não precisa posicionar nada: o jogo usa o cubo `Root` como referência e encaixa cada peça no membro do
 personagem pelas juntas, seja qual for o lugar onde o Model foi solto.
 
 ## Se algo der errado
 
-* **Mensagem "MugetsuMesh sem o cubo 'Root'"**: o Model importado não tem a peça `Root`; reimporte sem mesclar.
+* **Mensagem "IchigoMesh sem o cubo 'Root'"**: o Model importado não tem a peça `Root`; reimporte sem mesclar.
 * **Peças no lugar errado ou escala estranha**: o avatar precisa ser **R15** com escala padrão
   (Game Settings → Avatar → R15, escalas em 100%). O modelo foi ajustado para o corpo R15 padrão.
 * **Alguma peça não aparece**: confira se os nomes das peças são exatamente os da lista acima.

@@ -166,10 +166,27 @@ Config.Transform = {
 Config.Kit = {
 	-- "OBJ": modelos enviados (assets/models/*.obj, convertidos por tools/import_obj.py)
 	-- "Procedural": kit mais detalhado gerado por tools/build_kits.py a partir das imagens de referência
-	Source = "OBJ",
-	-- Mugetsu com a malha esculpida (tools/import_mesh.py), quando o Model importado existir em
-	-- ServerStorage.MugetsuAssets.MugetsuMesh. Sem ele, o jogo usa o kit acima.
+	Source = "Procedural", -- o kit procedural é o mais próximo das imagens de referência
+	-- Ichigo com a malha esculpida enviada (tools/import_mesh.py), quando o Model importado existir em
+	-- ServerStorage.MugetsuAssets.IchigoMesh. Sem ele, o jogo usa o kit acima. Skins por ID têm prioridade.
 	UseMesh = true,
+}
+
+-- Skins do catálogo do Roblox aplicadas SÓ na cutscene/forma (HumanoidDescription).
+-- Coloque os IDs (o número do link roblox.com/catalog/<ID>/...) ou { bundle = <ID> } para pacotes.
+-- O tipo de cada item (cabelo, cabeça, máscara, roupa...) é descoberto automaticamente no servidor.
+-- Uma forma COM skin usa só a espada do jogo (o resto vem da skin); uma forma SEM skin usa o kit.
+Config.Skins = {
+	Enabled = true,
+	Ichigo = {},
+	Mugetsu = {
+		17328647456, -- cabeça do Ichigo Mugetsu
+		9343723027, -- calça
+		-- máscara: aguardando o ID
+	},
+	-- "Form": volta a aparência original quando a forma Mugetsu acaba (FormDuration) ou é cancelada.
+	-- "Cutscene": volta logo que a cutscene termina.
+	RestoreAfter = "Form",
 }
 
 Config.Ability = {
@@ -4444,23 +4461,40 @@ return Maid
           <string name="Source">return {
 	extras = {{
 		attach = "Head",
-		color = {200, 24, 34},
-		material = "Neon",
+		color = {52, 30, 22},
+		material = "SmoothPlastic",
 		name = "Eye-1",
 		shape = "Block",
-		size = {0.24, 0.08, 0.04},
+		size = {0.22, 0.09, 0.04},
 		worldPos = {-0.1891, 2.45, -0.7378},
 	}, {
 		attach = "Head",
-		color = {200, 24, 34},
-		material = "Neon",
+		color = {214, 92, 14},
+		material = "SmoothPlastic",
+		name = "Brow-1",
+		shape = "Block",
+		size = {0.3, 0.06, 0.04},
+		worldPos = {-0.1991, 2.58, -0.7478},
+	}, {
+		attach = "Head",
+		color = {52, 30, 22},
+		material = "SmoothPlastic",
 		name = "Eye1",
 		shape = "Block",
-		size = {0.24, 0.08, 0.04},
+		size = {0.22, 0.09, 0.04},
 		worldPos = {0.2909, 2.45, -0.7378},
+	}, {
+		attach = "Head",
+		color = {214, 92, 14},
+		material = "SmoothPlastic",
+		name = "Brow1",
+		shape = "Block",
+		size = {0.3, 0.06, 0.04},
+		worldPos = {0.3009, 2.58, -0.7478},
 	}},
-	file = "assets/models/mugetsu_mesh/MugetsuMesh.obj",
-	form = "Mugetsu",
+	file = "assets/models/ichigo_mesh/IchigoMesh.obj",
+	form = "Ichigo",
+	modelName = "IchigoMesh",
 	pieces = {
 		Blade = {
 			attach = "RightHand",
@@ -4475,30 +4509,30 @@ return Maid
 				pos = {-2.5039, -0.8567, -0.6727},
 			}},
 			center = {-0.4649, -1.376, -1.2438},
-			color = {8, 8, 10},
+			color = {24, 24, 28},
 			material = "Metal",
 			triangles = 2499,
 		},
 		Head_Face = {
 			attach = "Head",
-			center = {0.0516, 2.5284, -0.5445},
+			center = {0.0516, 2.5333, -0.4442},
 			color = {232, 192, 152},
 			material = "SmoothPlastic",
-			triangles = 1200,
+			triangles = 612,
 		},
 		Head_Hair = {
 			attach = "Head",
-			center = {0.1164, 2.6578, 0.0612},
-			color = {14, 14, 17},
+			center = {0.1164, 2.6578, 0.0456},
+			color = {255, 128, 26},
 			material = "SmoothPlastic",
 			triangles = 8999,
 		},
-		Head_Mask = {
+		Head_Jaw = {
 			attach = "Head",
-			center = {0.0516, 2.1322, -0.4815},
-			color = {40, 48, 62},
-			material = "Fabric",
-			triangles = 1499,
+			center = {0.0516, 2.1322, -0.4181},
+			color = {232, 192, 152},
+			material = "SmoothPlastic",
+			triangles = 1500,
 		},
 		LeftLowerArm = {
 			attach = "LeftLowerArm",
@@ -4531,15 +4565,15 @@ return Maid
 		RightHand = {
 			attach = "RightHand",
 			center = {1.4551, -0.8504, -0.3724},
-			color = {40, 48, 62},
+			color = {12, 12, 14},
 			material = "Fabric",
 			triangles = 1199,
 		},
 		RightLowerArm = {
 			attach = "RightLowerArm",
 			center = {1.4503, -0.1741, -0.1773},
-			color = {40, 48, 62},
-			material = "Fabric",
+			color = {232, 192, 152},
+			material = "SmoothPlastic",
 			triangles = 2499,
 		},
 		RightLowerLeg = {
@@ -4552,14 +4586,14 @@ return Maid
 		RightUpperArm = {
 			attach = "RightUpperArm",
 			center = {1.25, 1.1124, -0.0558},
-			color = {40, 48, 62},
-			material = "Fabric",
+			color = {232, 192, 152},
+			material = "SmoothPlastic",
 			triangles = 2500,
 		},
 		UpperTorso = {
 			attach = "UpperTorso",
 			center = {0.1784, 0.8788, 0.0147},
-			color = {24, 27, 34},
+			color = {16, 16, 20},
 			material = "Fabric",
 			triangles = 6000,
 		},
@@ -4567,7 +4601,7 @@ return Maid
 	replaceBody = true,
 	rootName = "Root",
 	source = "tools/import_mesh.py &lt;- mugetsu2.obj",
-	totalTriangles = 43391,
+	totalTriangles = 42804,
 	version = 1,
 }</string>
         </Properties>
@@ -5451,9 +5485,9 @@ AbilityService.init()
 --   * KitDataProcedural.json <- tools/build_kits.py  (kit procedural mais detalhado, feito a partir das imagens)
 -- Config.Kit.Source escolhe qual usar.
 --
--- Kit de MALHA (modelo esculpido): tools/import_mesh.py gera assets/models/mugetsu_mesh/MugetsuMesh.obj
+-- Kit de MALHA (modelo esculpido): tools/import_mesh.py gera assets/models/ichigo_mesh/IchigoMesh.obj
 -- (pedaços nomeados por membro + cubo "Root") e MeshKitManifest.json. Depois de importar o OBJ no Studio
--- e colocar o Model resultante em ServerStorage.MugetsuAssets.MugetsuMesh, a forma Mugetsu usa a malha
+-- e colocar o Model resultante em ServerStorage.MugetsuAssets.IchigoMesh, a forma do manifesto usa a malha
 -- (com prioridade sobre os dados acima) e o corpo R15 fica oculto por baixo dela.
 --
 -- Ponto de integração para arte final: se existir ServerStorage.MugetsuAssets.MugetsuKit (Model) com peças
@@ -5538,8 +5572,16 @@ local function weld(p0: BasePart, p1: BasePart, c0: CFrame)
 	w.Parent = p1
 end
 
-local function buildFromData(char: Model, kit: Folder, def: any)
+local function skinForm(form: string): boolean
+	local sk = Config.Skins
+	return sk ~= nil and sk.Enabled == true and #(sk[form] or {}) > 0
+end
+
+local function buildFromData(char: Model, kit: Folder, def: any, swordOnly: boolean?)
 	for _, d in def.parts do
+		if swordOnly and d.attach ~= "RightHand" then
+			continue -- forma com skin do catálogo: o kit só fornece a espada
+		end
 		local limb = char:FindFirstChild(d.attach)
 		if limb and limb:IsA("BasePart") then
 			local p = newPart(d.shape)
@@ -5559,7 +5601,7 @@ local function buildFromData(char: Model, kit: Folder, def: any)
 		end
 	end
 	-- mechas de cabelo: segmentos ligados por Motor6D (o cliente balança via Transform; tag MugetsuHair)
-	for _, c in def.chains do
+	for _, c in (swordOnly and {} or def.chains) do
 		local head = char:FindFirstChild(c.attach)
 		if head and head:IsA("BasePart") then
 			local prev: BasePart = head
@@ -5610,11 +5652,12 @@ local function meshManifest(): any?
 end
 
 local function meshSource(): Model?
-	if not Config.Kit.UseMesh then
+	local man = meshManifest()
+	if not (Config.Kit.UseMesh and man) then
 		return nil
 	end
 	local folder = ServerStorage:FindFirstChild(Manifest.CustomKitPath[1])
-	local model = folder and folder:FindFirstChild("MugetsuMesh")
+	local model = folder and folder:FindFirstChild(man.modelName or "IchigoMesh")
 	return model and model:IsA("Model") and model or nil
 end
 
@@ -5622,7 +5665,7 @@ end
 local function buildFromMesh(char: Model, kit: Folder, model: Model, man: any): boolean
 	local root = model:FindFirstChild(man.rootName, true)
 	if not (root and root:IsA("BasePart")) then
-		warn("[Mugetsu] MugetsuMesh sem o cubo 'Root'; usando o kit de peças")
+		warn(`[Mugetsu] {model.Name} sem o cubo 'Root'; usando o kit de peças`)
 		return false
 	end
 	-- se o Studio importou em outra escala, o cubo Root (0.2 stud no arquivo) revela o fator
@@ -5736,8 +5779,8 @@ end
 
 local function applyLimbColors(char: Model, form: Form)
 	local def = kitData().forms[form]
-	if not def then
-		return
+	if not def or skinForm(form) then
+		return -- a skin traz as próprias cores/roupas
 	end
 	for _, n in LIMBS do
 		local p = char:FindFirstChild(n)
@@ -5789,7 +5832,10 @@ function ModelKit.build(char: Model)
 		local man = meshManifest()
 		local model = meshSource()
 		local done = false
-		if model and man and man.form == form then
+		if skinForm(form) then
+			buildFromData(char, kit, data.forms[form], true)
+			done = true
+		elseif model and man and man.form == form then
 			done = buildFromMesh(char, kit, model, man)
 		end
 		if not done and not tryCustomKit(char, form, kit) then
@@ -5800,7 +5846,7 @@ function ModelKit.build(char: Model)
 	setKitTransparency(root.Ichigo, false)
 	setKitTransparency(root.Mugetsu, true)
 	root:SetAttribute("Form", "Ichigo")
-	applyLimbColors(char, "Ichigo")
+	ModelKit.setForm(char, "Ichigo", 0)
 end
 
 local function fadeKit(kit: Folder, toHidden: boolean, duration: number)
@@ -5838,6 +5884,26 @@ function ModelKit.setForm(char: Model, form: Form, fadeTime: number)
 		if p and p:IsA("BasePart") then
 			p.Transparency = replace and 1 or 0
 		end
+	end
+end
+
+-- Depois de um ApplyDescription (skin), membros podem ter sido trocados e as soldas perdidas:
+-- remonta os kits mantendo a forma atual.
+function ModelKit.refresh(char: Model)
+	local old = char:FindFirstChild("MugetsuKits")
+	local form = ModelKit.currentForm(char)
+	if old then
+		old:Destroy()
+	end
+	for _, n in { "AuraChest", "AuraFeet", "AuraHead", "AuraRArm", "AuraLArm", "AuraHand" } do
+		local at = char:FindFirstChild(n, true)
+		if at and at:IsA("Attachment") then
+			at:Destroy()
+		end
+	end
+	ModelKit.build(char)
+	if form == "Mugetsu" then
+		ModelKit.setForm(char, "Mugetsu", 0)
 	end
 end
 
@@ -5886,6 +5952,215 @@ return RateLimiter
       </Item>
       <Item class="ModuleScript" referent="21">
         <Properties>
+          <string name="Name">SkinService</string>
+          <string name="Source"><![CDATA[--!strict
+-- Skins por ID do catálogo do Roblox, só durante a cutscene/forma.
+-- Config.Skins.Ichigo / .Mugetsu: listas de IDs (números) ou { bundle = ID }.
+-- O tipo de cada ID é descoberto no servidor (MarketplaceService), então não importa se é cabelo,
+-- cabeça dinâmica, máscara, roupa clássica ou em camadas: cada um vai para o campo certo do
+-- HumanoidDescription. A aparência original do jogador é salva antes e restaurada depois.
+
+local AssetService = game:GetService("AssetService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local Players = game:GetService("Players")
+
+local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Mugetsu"):WaitForChild("Config"))
+
+local SkinService = {}
+
+-- nome do Enum.AssetType -> campo do HumanoidDescription (acessórios rígidos são listas "id,id")
+local RIGID = {
+	Hat = "HatAccessory", HairAccessory = "HairAccessory", FaceAccessory = "FaceAccessory",
+	NeckAccessory = "NeckAccessory", ShoulderAccessory = "ShouldersAccessory", FrontAccessory = "FrontAccessory",
+	BackAccessory = "BackAccessory", WaistAccessory = "WaistAccessory",
+}
+local SINGLE = {
+	Shirt = "Shirt", Pants = "Pants", TShirt = "GraphicTShirt", Face = "Face", Head = "Head", DynamicHead = "Head",
+	Torso = "Torso", LeftArm = "LeftArm", RightArm = "RightArm", LeftLeg = "LeftLeg", RightLeg = "RightLeg",
+}
+-- roupas em camadas e acessórios de rosto dinâmico -> Enum.AccessoryType
+local LAYERED = {
+	TShirtAccessory = "TShirt", ShirtAccessory = "Shirt", PantsAccessory = "Pants", JacketAccessory = "Jacket",
+	SweaterAccessory = "Sweater", ShortsAccessory = "Shorts", LeftShoeAccessory = "LeftShoe",
+	RightShoeAccessory = "RightShoe", DressSkirtAccessory = "DressSkirt", EyebrowAccessory = "Eyebrow",
+	EyelashAccessory = "Eyelash",
+}
+
+local typeCache: { [number]: string } = {}
+local originals: { [Player]: HumanoidDescription } = {}
+
+local function assetTypeName(id: number): string?
+	if typeCache[id] then
+		return typeCache[id]
+	end
+	local ok, info = pcall(function()
+		return MarketplaceService:GetProductInfo(id, Enum.InfoType.Asset)
+	end)
+	if not ok or type(info) ~= "table" then
+		warn(`[Mugetsu] não consegui ler o item {id} do catálogo: {info}`)
+		return nil
+	end
+	for _, e in Enum.AssetType:GetEnumItems() do
+		if e.Value == info.AssetTypeId then
+			typeCache[id] = e.Name
+			return e.Name
+		end
+	end
+	warn(`[Mugetsu] item {id}: tipo {info.AssetTypeId} desconhecido`)
+	return nil
+end
+
+-- expande { bundle = ID } nos itens do pacote
+local function expand(list: { any }): { number }
+	local out = {}
+	for _, entry in list do
+		if type(entry) == "number" then
+			table.insert(out, entry)
+		elseif type(entry) == "table" and type(entry.bundle) == "number" then
+			local ok, details = pcall(function()
+				return AssetService:GetBundleDetailsAsync(entry.bundle)
+			end)
+			if ok and details then
+				for _, item in details.Items do
+					if item.Type == "Asset" then
+						table.insert(out, item.Id)
+					end
+				end
+			else
+				warn(`[Mugetsu] não consegui ler o pacote {entry.bundle}: {details}`)
+			end
+		end
+	end
+	return out
+end
+
+local function skinList(form: string): { any }
+	local s = Config.Skins
+	return (s and s.Enabled and s[form]) or {}
+end
+
+function SkinService.hasSkin(form: string): boolean
+	return #skinList(form) > 0
+end
+
+function SkinService.anyActive(): boolean
+	return SkinService.hasSkin("Ichigo") or SkinService.hasSkin("Mugetsu")
+end
+
+-- Monta a descrição: parte da ORIGINAL do jogador e sobrescreve só o que a skin traz.
+-- Se a skin tem qualquer acessório, os acessórios originais saem (não empilha cabelo sobre cabelo).
+function SkinService.describe(base: HumanoidDescription, ids: { number }): HumanoidDescription
+	local d = base:Clone()
+	local rigid: { [string]: { string } } = {}
+	local layered = {}
+	local cleared = false
+	local function clearAccessories()
+		if cleared then
+			return
+		end
+		cleared = true
+		for _, field in RIGID do
+			(d :: any)[field] = ""
+		end
+		d:SetAccessories({}, true)
+	end
+	for _, id in ids do
+		local t = assetTypeName(id)
+		if t and RIGID[t] then
+			clearAccessories()
+			rigid[RIGID[t]] = rigid[RIGID[t]] or {}
+			table.insert(rigid[RIGID[t]], tostring(id))
+		elseif t and SINGLE[t] then
+			(d :: any)[SINGLE[t]] = id
+		elseif t and LAYERED[t] then
+			clearAccessories()
+			table.insert(layered, { AssetId = id, AccessoryType = (Enum.AccessoryType :: any)[LAYERED[t]], IsLayered = true, Order = #layered + 1 })
+		elseif t then
+			warn(`[Mugetsu] item {id} ({t}) não é parte de aparência; ignorado`)
+		end
+	end
+	for field, list in rigid do
+		(d :: any)[field] = table.concat(list, ",")
+	end
+	if #layered > 0 then
+		d:SetAccessories(layered, true)
+	end
+	return d
+end
+
+function SkinService.saveOriginal(player: Player)
+	if originals[player] then
+		return
+	end
+	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	if hum then
+		local ok, d = pcall(function()
+			return hum:GetAppliedDescription()
+		end)
+		if ok and d then
+			originals[player] = d
+		end
+	end
+end
+
+-- Aplica a skin da forma. Bloqueia até o Roblox carregar os itens. Retorna true se aplicou.
+function SkinService.apply(player: Player, form: string): boolean
+	local list = skinList(form)
+	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	if #list == 0 or not hum then
+		return false
+	end
+	SkinService.saveOriginal(player)
+	local base = originals[player]
+	if not base then
+		return false
+	end
+	local desc = SkinService.describe(base, expand(list))
+	local ok, err = pcall(function()
+		hum:ApplyDescription(desc)
+	end)
+	if not ok then
+		warn(`[Mugetsu] falha ao aplicar a skin {form}: {err}`)
+	end
+	return ok
+end
+
+-- Volta a aparência original (se ela foi salva). Bloqueia.
+function SkinService.restore(player: Player): boolean
+	local d = originals[player]
+	originals[player] = nil
+	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	if not (d and hum and hum.Health > 0) then
+		return false
+	end
+	local ok, err = pcall(function()
+		hum:ApplyDescription(d)
+	end)
+	if not ok then
+		warn(`[Mugetsu] falha ao restaurar a aparência: {err}`)
+	end
+	return ok
+end
+
+function SkinService.hasSaved(player: Player): boolean
+	return originals[player] ~= nil
+end
+
+-- personagem novo = aparência do perfil de novo: esquece o que estava salvo
+function SkinService.forget(player: Player)
+	originals[player] = nil
+end
+
+Players.PlayerRemoving:Connect(function(p)
+	originals[p] = nil
+end)
+
+return SkinService
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="22">
+        <Properties>
           <string name="Name">TransformationService</string>
           <string name="Source"><![CDATA[--!strict
 -- Autoridade da transformação. Valida o pedido, trava o personagem, executa os eventos do servidor
@@ -5904,6 +6179,7 @@ local StateMachine = require(Shared:WaitForChild("StateMachine"))
 local AbilityMath = require(Shared:WaitForChild("AbilityMath"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local ModelKit = require(script.Parent:WaitForChild("ModelKit"))
+local SkinService = require(script.Parent:WaitForChild("SkinService"))
 local RateLimiter = require(script.Parent:WaitForChild("RateLimiter"))
 
 type Saved = {
@@ -5976,6 +6252,17 @@ local function restore(s: Session)
 	end
 end
 
+-- ApplyDescription bloqueia enquanto o Roblox carrega os itens: sempre em paralelo, e o kit (espada,
+-- attachments da aura) é remontado depois porque os membros podem ter sido trocados.
+local function skinAsync(player: Player, char: Model, action: "apply" | "restore", form: string?)
+	task.spawn(function()
+		local ok = if action == "apply" then SkinService.apply(player, form :: string) else SkinService.restore(player)
+		if ok and char.Parent then
+			ModelKit.refresh(char)
+		end
+	end)
+end
+
 local function finish(s: Session, reason: string, completed: boolean)
 	if sessions[s.player] ~= s then
 		return
@@ -6001,6 +6288,10 @@ local function finish(s: Session, reason: string, completed: boolean)
 	for _, p in nearbyPlayers(s.root.Position, s.player) do
 		(completed and endRemote or cancelRemote):FireClient(p, { userId = s.player.UserId, reason = reason })
 	end
+	-- skin: cancelado antes da troca -> volta já; "Cutscene" -> volta ao terminar; "Form" -> na reversão
+	if SkinService.hasSaved(s.player) and (not s.swapped or Config.Skins.RestoreAfter == "Cutscene") then
+		skinAsync(s.player, s.character, "restore")
+	end
 	-- Mantém o form final apenas se a troca já aconteceu; a habilidade fica ativa apenas se completou
 	-- ou se a troca já aconteceu (o jogador já é Mugetsu).
 	if s.swapped then
@@ -6014,11 +6305,19 @@ local function revertForm(player: Player, character: Model)
 		ModelKit.setForm(character, "Ichigo", 0.8)
 	end
 	player:SetAttribute("MugetsuForm", false)
+	if SkinService.hasSaved(player) then
+		skinAsync(player, character, "restore")
+	end
 end
 
 local function onServerEvent(s: Session, name: string)
 	if name == "ReleaseImpact" then
 		s.machine:transition("Climax")
+	elseif name == "BeginFade" then
+		-- a skin do Mugetsu começa a carregar quando a tela começa a ficar branca (16.6s)
+		if SkinService.hasSkin("Mugetsu") then
+			skinAsync(s.player, s.character, "apply", "Mugetsu")
+		end
 	elseif name == "MorphSwap" then
 		if not s.swapped then
 			ModelKit.setForm(s.character, "Mugetsu", 0) -- instantâneo: a tela está toda branca neste instante
@@ -6162,14 +6461,31 @@ function TransformationService.request(player: Player)
 		end
 	end))
 
-	local cframe = root.CFrame
-	startRemote:FireClient(player, { startTime = s.startTime, duration = Timeline.Duration })
-	for _, p in nearbyPlayers(root.Position, player) do
-		observeRemote:FireClient(p, { userId = player.UserId, startTime = s.startTime, duration = Timeline.Duration, cframe = cframe })
+	local function announce()
+		local cframe = root.CFrame
+		startRemote:FireClient(player, { startTime = s.startTime, duration = Timeline.Duration })
+		for _, p in nearbyPlayers(root.Position, player) do
+			observeRemote:FireClient(p, { userId = player.UserId, startTime = s.startTime, duration = Timeline.Duration, cframe = cframe })
+		end
+		if not heartbeatConn then
+			heartbeatConn = RunService.Heartbeat:Connect(step)
+		end
 	end
 
-	if not heartbeatConn then
-		heartbeatConn = RunService.Heartbeat:Connect(step)
+	if SkinService.hasSkin("Ichigo") then
+		-- a cena só começa depois que a skin do Ichigo carregou (personagem já travado e protegido)
+		s.startTime = math.huge
+		task.spawn(function()
+			if SkinService.apply(player, "Ichigo") and char.Parent then
+				ModelKit.refresh(char)
+			end
+			if sessions[player] == s then
+				s.startTime = Workspace:GetServerTimeNow() + LEAD_TIME
+				announce()
+			end
+		end)
+	else
+		announce()
 	end
 end
 
@@ -6183,6 +6499,7 @@ function TransformationService.init()
 			p:SetAttribute("MugetsuAbilityReady", false)
 			p:SetAttribute("MugetsuCutscene", false)
 			revertTokens[p] = (revertTokens[p] or 0) + 1 -- invalida reversões pendentes
+			SkinService.forget(p) -- personagem novo já nasce com a aparência do perfil
 			task.defer(function()
 				if char.Parent and char:FindFirstChildOfClass("Humanoid") and ModelKit.isR15(char) then
 					ModelKit.build(char)
@@ -6208,19 +6525,19 @@ return TransformationService
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="22">
+  <Item class="StarterPlayer" referent="23">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="23">
+    <Item class="StarterPlayerScripts" referent="24">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="24">
+      <Item class="Folder" referent="25">
         <Properties>
           <string name="Name">MugetsuClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="25">
+        <Item class="ModuleScript" referent="26">
           <Properties>
             <string name="Name">AbilityClient</string>
             <string name="Source"><![CDATA[--!strict
@@ -6364,7 +6681,7 @@ return AbilityClient
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="26">
+        <Item class="ModuleScript" referent="27">
           <Properties>
             <string name="Name">AudioDirector</string>
             <string name="Source"><![CDATA[--!strict
@@ -6453,7 +6770,7 @@ return AudioDirector
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="27">
+        <Item class="ModuleScript" referent="28">
           <Properties>
             <string name="Name">CameraDirector</string>
             <string name="Source"><![CDATA[--!strict
@@ -6609,7 +6926,7 @@ return CameraDirector
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="28">
+        <Item class="ModuleScript" referent="29">
           <Properties>
             <string name="Name">CutsceneController</string>
             <string name="Source"><![CDATA[--!strict
@@ -7122,7 +7439,7 @@ return CutsceneController
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="29">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">HairSway</string>
             <string name="Source"><![CDATA[--!strict
@@ -7190,7 +7507,7 @@ return HairSway
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="30">
+        <Item class="ModuleScript" referent="31">
           <Properties>
             <string name="Name">Hud</string>
             <string name="Source"><![CDATA[--!strict
@@ -7422,7 +7739,7 @@ return Hud
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="31">
+        <Item class="ModuleScript" referent="32">
           <Properties>
             <string name="Name">InputController</string>
             <string name="Source"><![CDATA[--!strict
@@ -7504,7 +7821,7 @@ return InputController
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="32">
+        <Item class="ModuleScript" referent="33">
           <Properties>
             <string name="Name">LightingDirector</string>
             <string name="Source"><![CDATA[--!strict
@@ -7691,7 +8008,7 @@ return LightingDirector
 ]]></string>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="33">
+        <Item class="LocalScript" referent="34">
           <Properties>
             <string name="Name">Main</string>
             <string name="Source"><![CDATA[--!strict
@@ -7743,7 +8060,7 @@ end
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="34">
+        <Item class="ModuleScript" referent="35">
           <Properties>
             <string name="Name">PoseApplier</string>
             <string name="Source"><![CDATA[--!strict
@@ -7938,7 +8255,7 @@ return PoseApplier
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="36">
           <Properties>
             <string name="Name">Quality</string>
             <string name="Source"><![CDATA[--!strict
@@ -7976,7 +8293,7 @@ return Quality
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="37">
           <Properties>
             <string name="Name">VFX</string>
             <string name="Source"><![CDATA[--!strict
@@ -8731,7 +9048,7 @@ return VFX
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="37">
+  <Item class="Workspace" referent="38">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

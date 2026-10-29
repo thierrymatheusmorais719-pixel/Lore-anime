@@ -243,7 +243,7 @@ end
 
 -- MeshKitManifest (malha esculpida) ------------------------------------------------------------
 test("malha: pedaços presos a membros R15 e dentro do orçamento", function()
-	assert(MESH.rootName == "Root" and MESH.form == "Mugetsu")
+	assert(MESH.rootName == "Root" and MESH.form == "Ichigo" and MESH.modelName == "IchigoMesh")
 	local total = 0
 	for name, info in MESH.pieces do
 		assert(R15[info.attach], name .. " preso a membro inválido")
@@ -262,7 +262,7 @@ test("malha: espada com rastro base->ponta e olhos presos à cabeça", function(
 	local d = 0
 	for i = 1, 3 do d += (a.TrailA[i] - a.TrailB[i]) ^ 2 end
 	assert(math.sqrt(d) > 3, "rastro deve cobrir a lâmina")
-	eq(#MESH.extras, 2)
+	eq(#MESH.extras, 4) -- olhos + sobrancelhas
 	for _, e in MESH.extras do eq(e.attach, "Head") end
 end)
 
