@@ -241,6 +241,31 @@ for src, data in KITS do
 	end
 end
 
+-- MeshKitManifest (malha esculpida) ------------------------------------------------------------
+test("malha: pedaços presos a membros R15 e dentro do orçamento", function()
+	assert(MESH.rootName == "Root" and MESH.form == "Mugetsu")
+	local total = 0
+	for name, info in MESH.pieces do
+		assert(R15[info.attach], name .. " preso a membro inválido")
+		assert(info.triangles > 0 and info.triangles <= 10000, name .. " com triângulos demais para um MeshPart")
+		total += info.triangles
+	end
+	eq(total, MESH.totalTriangles)
+	assert(total <= 50000, "malha pesada demais: " .. total)
+end)
+test("malha: espada com rastro base->ponta e olhos presos à cabeça", function()
+	local b = MESH.pieces.Blade
+	assert(b and b.attach == "RightHand")
+	local a = {}
+	for _, at in b.attachments do a[at.name] = at.pos end
+	assert(a.TrailA and a.TrailB and a.Tip)
+	local d = 0
+	for i = 1, 3 do d += (a.TrailA[i] - a.TrailB[i]) ^ 2 end
+	assert(math.sqrt(d) > 3, "rastro deve cobrir a lâmina")
+	eq(#MESH.extras, 2)
+	for _, e in MESH.extras do eq(e.attach, "Head") end
+end)
+
 if #failed > 0 then
 	return "FAILED " .. #failed .. " / " .. (passed + #failed) .. "\n" .. table.concat(failed, "\n")
 end

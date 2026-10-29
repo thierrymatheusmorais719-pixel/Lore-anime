@@ -1,0 +1,276 @@
+{
+ "version": 1,
+ "form": "Mugetsu",
+ "source": "tools/import_mesh.py <- mugetsu2.obj",
+ "replaceBody": true,
+ "file": "assets/models/mugetsu_mesh/MugetsuMesh.obj",
+ "rootName": "Root",
+ "pieces": {
+  "Head_Hair": {
+   "attach": "Head",
+   "color": [
+    14,
+    14,
+    17
+   ],
+   "material": "SmoothPlastic",
+   "triangles": 8999,
+   "center": [
+    0.1164,
+    2.6578,
+    0.0612
+   ]
+  },
+  "Head_Face": {
+   "attach": "Head",
+   "color": [
+    232,
+    192,
+    152
+   ],
+   "material": "SmoothPlastic",
+   "triangles": 1200,
+   "center": [
+    0.0516,
+    2.5284,
+    -0.5445
+   ]
+  },
+  "Head_Mask": {
+   "attach": "Head",
+   "color": [
+    40,
+    48,
+    62
+   ],
+   "material": "Fabric",
+   "triangles": 1499,
+   "center": [
+    0.0516,
+    2.1322,
+    -0.4815
+   ]
+  },
+  "UpperTorso": {
+   "attach": "UpperTorso",
+   "color": [
+    24,
+    27,
+    34
+   ],
+   "material": "Fabric",
+   "triangles": 6000,
+   "center": [
+    0.1784,
+    0.8788,
+    0.0147
+   ]
+  },
+  "LowerTorso_Coat": {
+   "attach": "LowerTorso",
+   "color": [
+    16,
+    16,
+    20
+   ],
+   "material": "Fabric",
+   "triangles": 8998,
+   "center": [
+    -0.0479,
+    -1.5475,
+    0.1706
+   ]
+  },
+  "RightUpperArm": {
+   "attach": "RightUpperArm",
+   "color": [
+    40,
+    48,
+    62
+   ],
+   "material": "Fabric",
+   "triangles": 2500,
+   "center": [
+    1.25,
+    1.1124,
+    -0.0558
+   ]
+  },
+  "RightLowerArm": {
+   "attach": "RightLowerArm",
+   "color": [
+    40,
+    48,
+    62
+   ],
+   "material": "Fabric",
+   "triangles": 2499,
+   "center": [
+    1.4503,
+    -0.1741,
+    -0.1773
+   ]
+  },
+  "RightHand": {
+   "attach": "RightHand",
+   "color": [
+    40,
+    48,
+    62
+   ],
+   "material": "Fabric",
+   "triangles": 1199,
+   "center": [
+    1.4551,
+    -0.8504,
+    -0.3724
+   ]
+  },
+  "LeftUpperArm": {
+   "attach": "LeftUpperArm",
+   "color": [
+    18,
+    18,
+    22
+   ],
+   "material": "Fabric",
+   "triangles": 2500,
+   "center": [
+    -1.3723,
+    1.108,
+    0.1154
+   ]
+  },
+  "LeftLowerArm": {
+   "attach": "LeftLowerArm",
+   "color": [
+    18,
+    18,
+    22
+   ],
+   "material": "Fabric",
+   "triangles": 2499,
+   "center": [
+    -1.4782,
+    -0.1778,
+    0.065
+   ]
+  },
+  "RightLowerLeg": {
+   "attach": "RightLowerLeg",
+   "color": [
+    16,
+    16,
+    20
+   ],
+   "material": "Fabric",
+   "triangles": 1500,
+   "center": [
+    0.5266,
+    -2.7706,
+    -0.0284
+   ]
+  },
+  "LeftLowerLeg": {
+   "attach": "LeftLowerLeg",
+   "color": [
+    16,
+    16,
+    20
+   ],
+   "material": "Fabric",
+   "triangles": 1499,
+   "center": [
+    -0.5217,
+    -2.771,
+    0.0122
+   ]
+  },
+  "Blade": {
+   "attach": "RightHand",
+   "color": [
+    8,
+    8,
+    10
+   ],
+   "material": "Metal",
+   "triangles": 2499,
+   "center": [
+    -0.4649,
+    -1.376,
+    -1.2438
+   ],
+   "attachments": [
+    {
+     "name": "TrailA",
+     "pos": [
+      1.4452,
+      0.2882,
+      0.5096
+     ]
+    },
+    {
+     "name": "TrailB",
+     "pos": [
+      -2.5039,
+      -0.8567,
+      -0.6727
+     ]
+    },
+    {
+     "name": "Tip",
+     "pos": [
+      -2.5039,
+      -0.8567,
+      -0.6727
+     ]
+    }
+   ]
+  }
+ },
+ "extras": [
+  {
+   "name": "Eye-1",
+   "attach": "Head",
+   "shape": "Block",
+   "size": [
+    0.24,
+    0.08,
+    0.04
+   ],
+   "worldPos": [
+    -0.1891,
+    2.45,
+    -0.7378
+   ],
+   "color": [
+    200,
+    24,
+    34
+   ],
+   "material": "Neon"
+  },
+  {
+   "name": "Eye1",
+   "attach": "Head",
+   "shape": "Block",
+   "size": [
+    0.24,
+    0.08,
+    0.04
+   ],
+   "worldPos": [
+    0.2909,
+    2.45,
+    -0.7378
+   ],
+   "color": [
+    200,
+    24,
+    34
+   ],
+   "material": "Neon"
+  }
+ ],
+ "totalTriangles": 43391
+}

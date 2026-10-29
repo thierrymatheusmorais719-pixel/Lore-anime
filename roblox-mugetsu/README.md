@@ -92,6 +92,18 @@ tests/                                      run.mjs · unit.luau · sim_env.luau
 | Modelo/kit de alta qualidade (opcional) | `ServerStorage/MugetsuAssets/MugetsuKit` | ver acima |
 | Texturas de partícula próprias (opcional) | `VFX.luau` (`SMOKE`/`SPARK`) | hoje usa texturas embutidas do cliente Roblox |
 
+## Modelo 3D do Mugetsu (malha esculpida)
+
+O modelo enviado (OBJ de ~600 mil triângulos, sem cor) foi processado por `tools/import_mesh.py`: limpeza de
+172 mil fragmentos soltos, rotação para a frente do Roblox, escala para o R15, corte por membro (cabelo, rosto,
+máscara, torso, casaco, braços, mão, pernas e espada), redução para ≈43 mil triângulos e cores das referências.
+Resultado: `assets/models/mugetsu_mesh/MugetsuMesh.obj` + `src/shared/MeshKitManifest.json`.
+
+O envio da malha para o Roblox precisa ser feito por você no Studio (é a sua conta): **siga
+[`docs/IMPORTAR_MALHA.md`](docs/IMPORTAR_MALHA.md)**. Enquanto o Model não for importado, o jogo usa o kit de peças
+(`Config.Kit.Source`). A prévia (`preview/index.html`) já mostra a malha na cutscene; `preview/mesh.html?seg=1`
+mostra os cortes por membro.
+
 ## Testes
 
 ```bash

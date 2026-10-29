@@ -68,7 +68,8 @@ const G = (parent, pos = [0, 0, 0]) => { const g = new THREE.Group(); g.position
 const J = {}; // junta -> Group (rotação = Motor6D.Transform)
 const LIMB = {}; // nome do membro R15 -> Group no CENTRO da peça (mesma referência dos offsets do Roblox)
 const limbMat = {};
-function limb(name, parent, pos, size) { const g = G(parent, pos); limbMat[name] = std(0xffffff, 0.75); box(...size, limbMat[name], g); LIMB[name] = g; return g; }
+const limbBox = {};
+function limb(name, parent, pos, size) { const g = G(parent, pos); limbMat[name] = std(0xffffff, 0.75); limbBox[name] = box(...size, limbMat[name], g); LIMB[name] = g; return g; }
 const root = G(scene, [0, 3, 0]); J.Root = root;
 const lowerC = limb("LowerTorso", root, [0, 0, 0], [2, 0.4, 1]);
 const waist = G(root, [0, 0.2, 0]); J.Waist = waist;
@@ -151,13 +152,39 @@ function buildKit(name) {
   }
   kits[name] = { groups, named, colors: def.limbColors };
 }
-buildKit("Ichigo"); buildKit("Mugetsu");
+// Mugetsu com a malha esculpida (MeshKitManifest + MugetsuMesh.obj), como o ModelKit faz quando o Model
+// importado existe no ServerStorage. ?mesh=0 volta ao kit de peças.
+async function buildMeshKit() {
+  const man = await (await fetch("../src/shared/MeshKitManifest.json")).json();
+  const txt = await (await fetch("../" + man.file)).text();
+  const V = [], groupsIdx = {}; let cur = null;
+  for (const line of txt.split("\n")) {
+    const t = line.trim().split(/\s+/);
+    if (t[0] === "o") { cur = t[1]; groupsIdx[cur] = []; } else if (t[0] === "v") V.push(t.slice(1, 4).map(Number)); else if (t[0] === "f") groupsIdx[cur].push(...t.slice(1, 4).map((x) => parseInt(x) - 1));
+  }
+  scene.updateMatrixWorld(true); // juntas ainda em repouso aqui
+  const hrp = new THREE.Matrix4().makeTranslation(0, 3, 0), groups = [], named = {};
+  const place = (obj, limbName) => { const L = LIMB[limbName]; obj.applyMatrix4(new THREE.Matrix4().copy(L.matrixWorld).invert().multiply(hrp)); L.add(obj); groups.push(obj); };
+  for (const [name, info] of Object.entries(man.pieces)) {
+    const idx = groupsIdx[name]; if (!idx) continue;
+    const pos = []; for (const k of idx) pos.push(...V[k]);
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, kitMat(info.color, info.material)); m.castShadow = true; m.material.flatShading = true;
+    for (const a of info.attachments || []) { const o = new THREE.Object3D(); o.name = a.name; o.position.set(info.center[0] + a.pos[0], info.center[1] + a.pos[1], info.center[2] + a.pos[2]); m.add(o); named[a.name] = o; }
+    place(m, info.attach); named[name] = m;
+  }
+  for (const e of man.extras) { const m = new THREE.Mesh(new THREE.BoxGeometry(...e.size), kitMat(e.color, e.material)); m.position.set(...e.worldPos); place(m, e.attach); }
+  kits.Mugetsu = { groups, named, colors: DATA.kits[KIT_SRC].forms.Mugetsu.limbColors, replaceBody: man.replaceBody };
+}
+buildKit("Ichigo");
+if (new URLSearchParams(location.search).get("mesh") !== "0") await buildMeshKit(); else buildKit("Mugetsu");
 const swordM = { base: kits.Mugetsu.named.TrailA, tip: kits.Mugetsu.named.TrailB };
 let currentForm = null;
 function setForm(f) {
   if (f === currentForm) return; currentForm = f;
   for (const [n, k] of Object.entries(kits)) k.groups.forEach((g) => (g.visible = n === f));
   for (const [limbName, c] of Object.entries(kits[f].colors)) limbMat[limbName]?.color.setRGB(c[0] / 255, c[1] / 255, c[2] / 255);
+  for (const b of Object.values(limbBox)) b.visible = !kits[f].replaceBody; // corpo de blocos some sob a malha
 }
 
 // ------------------------------------------------------------------ pose (porta do PoseDriver.sample)

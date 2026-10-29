@@ -2,3 +2,4 @@ node_modules/
 *.rbxl.lock
 *.rbxlx.lock
 __pycache__/
+assets/models/work/

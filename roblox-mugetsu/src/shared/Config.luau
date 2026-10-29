@@ -18,6 +18,9 @@ Config.Kit = {
 	-- "OBJ": modelos enviados (assets/models/*.obj, convertidos por tools/import_obj.py)
 	-- "Procedural": kit mais detalhado gerado por tools/build_kits.py a partir das imagens de referência
 	Source = "OBJ",
+	-- Mugetsu com a malha esculpida (tools/import_mesh.py), quando o Model importado existir em
+	-- ServerStorage.MugetsuAssets.MugetsuMesh. Sem ele, o jogo usa o kit acima.
+	UseMesh = true,
 }
 
 Config.Ability = {

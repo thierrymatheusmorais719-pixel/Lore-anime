@@ -8,6 +8,11 @@
 --   * KitDataProcedural.json <- tools/build_kits.py  (kit procedural mais detalhado, feito a partir das imagens)
 -- Config.Kit.Source escolhe qual usar.
 --
+-- Kit de MALHA (modelo esculpido): tools/import_mesh.py gera assets/models/mugetsu_mesh/MugetsuMesh.obj
+-- (pedaços nomeados por membro + cubo "Root") e MeshKitManifest.json. Depois de importar o OBJ no Studio
+-- e colocar o Model resultante em ServerStorage.MugetsuAssets.MugetsuMesh, a forma Mugetsu usa a malha
+-- (com prioridade sobre os dados acima) e o corpo R15 fica oculto por baixo dela.
+--
 -- Ponto de integração para arte final: se existir ServerStorage.MugetsuAssets.MugetsuKit (Model) com peças
 -- (ex.: MeshParts importados no Studio) que tenham Attribute "AttachTo" (membro R15), "Offset" (CFrame
 -- relativo ao membro) e "Form" ("Ichigo" | "Mugetsu"), elas substituem os dados daquela forma.
@@ -142,6 +147,94 @@ local function buildFromData(char: Model, kit: Folder, def: any)
 	end
 end
 
+-- CFrame do membro em REPOUSO relativo ao HumanoidRootPart, pela cadeia de Motor6D (C0 * C1^-1),
+-- ignorando a animação atual (Transform). Assim o encaixe não depende da pose no momento da montagem.
+local function restCFrame(char: Model, part: BasePart, depth: number?): CFrame
+	if part.Name == "HumanoidRootPart" or (depth or 0) > 12 then
+		return CFrame.identity
+	end
+	for _, m in part:GetChildren() do
+		if m:IsA("Motor6D") and m.Part1 == part and m.Part0 then
+			return restCFrame(char, m.Part0, (depth or 0) + 1) * m.C0 * m.C1:Inverse()
+		end
+	end
+	return CFrame.identity
+end
+
+local function meshManifest(): any?
+	local m = Shared:FindFirstChild("MeshKitManifest")
+	return m and require(m :: ModuleScript) or nil
+end
+
+local function meshSource(): Model?
+	if not Config.Kit.UseMesh then
+		return nil
+	end
+	local folder = ServerStorage:FindFirstChild(Manifest.CustomKitPath[1])
+	local model = folder and folder:FindFirstChild("MugetsuMesh")
+	return model and model:IsA("Model") and model or nil
+end
+
+-- Monta a forma a partir do Model importado (MeshParts nomeados como no MeshKitManifest + "Root").
+local function buildFromMesh(char: Model, kit: Folder, model: Model, man: any): boolean
+	local root = model:FindFirstChild(man.rootName, true)
+	if not (root and root:IsA("BasePart")) then
+		warn("[Mugetsu] MugetsuMesh sem o cubo 'Root'; usando o kit de peças")
+		return false
+	end
+	-- se o Studio importou em outra escala, o cubo Root (0.2 stud no arquivo) revela o fator
+	local k = 0.2 / math.max(root.Size.X, 1e-3)
+	local used = 0
+	for name, info in man.pieces do
+		local src = model:FindFirstChild(name, true)
+		local limb = char:FindFirstChild(info.attach)
+		if src and src:IsA("BasePart") and limb and limb:IsA("BasePart") then
+			local p = src:Clone()
+			p.Anchored = false
+			p.CanCollide = false
+			p.CanQuery = false
+			p.CanTouch = false
+			p.Massless = true
+			p.Size = p.Size * k
+			p.Color = color(info.color)
+			p.Material = material(info.material)
+			p:SetAttribute("BaseTransparency", 0)
+			for _, c in p:GetChildren() do
+				if c:IsA("Attachment") then
+					c:Destroy()
+				end
+			end
+			for _, a in info.attachments or {} do
+				local at = Instance.new("Attachment")
+				at.Name = a.name
+				at.Position = vec(a.pos)
+				at.Parent = p
+			end
+			local rel = root.CFrame:ToObjectSpace(src.CFrame)
+			rel = rel - rel.Position + rel.Position * k -- posição relativa ao HRP em repouso (studs do jogo)
+			p.Parent = kit
+			weld(limb, p, restCFrame(char, limb):Inverse() * rel)
+			used += 1
+		end
+	end
+	local head = char:FindFirstChild("Head")
+	if head and head:IsA("BasePart") then
+		for _, e in man.extras or {} do
+			local p = newPart(e.shape)
+			p.Name = e.name
+			p.Size = vec(e.size)
+			p.Color = color(e.color)
+			p.Material = material(e.material)
+			p:SetAttribute("BaseTransparency", 0)
+			p.Parent = kit
+			weld(head, p, restCFrame(char, head):Inverse() * CFrame.new(vec(e.worldPos)))
+		end
+	end
+	kit:SetAttribute("ReplaceBody", man.replaceBody == true)
+	print(`[Mugetsu] forma {man.form} montada a partir da malha importada ({used} pedaços)`)
+	return used > 0
+end
+
 local function tagAuraAnchors(char: Model)
 	local function anchor(partName: string, attName: string, pos: Vector3?)
 		local p = char:FindFirstChild(partName)
@@ -216,6 +309,15 @@ local function applyLimbColors(char: Model, form: Form)
 			inst.Parent = nil
 		end
 	end
+	-- acessórios do avatar (cabelos, chapéus) atravessariam o cabelo/roupa do kit
+	for _, acc in char:GetChildren() do
+		if acc:IsA("Accessory") then
+			local handle = acc:FindFirstChild("Handle")
+			if handle and handle:IsA("BasePart") then
+				handle.Transparency = 1
+			end
+		end
+	end
 	local head = char:FindFirstChild("Head")
 	local face = head and head:FindFirstChildOfClass("Decal")
 	if face and def.hideFace then
@@ -241,7 +343,13 @@ function ModelKit.build(char: Model)
 		local kit = Instance.new("Folder")
 		kit.Name = form
 		kit.Parent = root
-		if not tryCustomKit(char, form, kit) then
+		local man = meshManifest()
+		local model = meshSource()
+		local done = false
+		if model and man and man.form == form then
+			done = buildFromMesh(char, kit, model, man)
+		end
+		if not done and not tryCustomKit(char, form, kit) then
 			buildFromData(char, kit, data.forms[form])
 		end
 	end
@@ -280,6 +388,14 @@ function ModelKit.setForm(char: Model, form: Form, fadeTime: number)
 	fadeKit(root:FindFirstChild(form) :: Folder, false, fadeTime)
 	root:SetAttribute("Form", form)
 	applyLimbColors(char, form)
+	local kitFolder = root:FindFirstChild(form)
+	local replace = kitFolder and kitFolder:GetAttribute("ReplaceBody") == true
+	for _, n in LIMBS do
+		local p = char:FindFirstChild(n)
+		if p and p:IsA("BasePart") then
+			p.Transparency = replace and 1 or 0
+		end
+	end
 end
 
 function ModelKit.getBlade(char: Model): BasePart?

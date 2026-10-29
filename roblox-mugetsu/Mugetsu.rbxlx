@@ -167,6 +167,9 @@ Config.Kit = {
 	-- "OBJ": modelos enviados (assets/models/*.obj, convertidos por tools/import_obj.py)
 	-- "Procedural": kit mais detalhado gerado por tools/build_kits.py a partir das imagens de referência
 	Source = "OBJ",
+	-- Mugetsu com a malha esculpida (tools/import_mesh.py), quando o Model importado existir em
+	-- ServerStorage.MugetsuAssets.MugetsuMesh. Sem ele, o jogo usa o kit acima.
+	UseMesh = true,
 }
 
 Config.Ability = {
@@ -4437,6 +4440,140 @@ return Maid
       </Item>
       <Item class="ModuleScript" referent="9">
         <Properties>
+          <string name="Name">MeshKitManifest</string>
+          <string name="Source">return {
+	extras = {{
+		attach = "Head",
+		color = {200, 24, 34},
+		material = "Neon",
+		name = "Eye-1",
+		shape = "Block",
+		size = {0.24, 0.08, 0.04},
+		worldPos = {-0.1891, 2.45, -0.7378},
+	}, {
+		attach = "Head",
+		color = {200, 24, 34},
+		material = "Neon",
+		name = "Eye1",
+		shape = "Block",
+		size = {0.24, 0.08, 0.04},
+		worldPos = {0.2909, 2.45, -0.7378},
+	}},
+	file = "assets/models/mugetsu_mesh/MugetsuMesh.obj",
+	form = "Mugetsu",
+	pieces = {
+		Blade = {
+			attach = "RightHand",
+			attachments = {{
+				name = "TrailA",
+				pos = {1.4452, 0.2882, 0.5096},
+			}, {
+				name = "TrailB",
+				pos = {-2.5039, -0.8567, -0.6727},
+			}, {
+				name = "Tip",
+				pos = {-2.5039, -0.8567, -0.6727},
+			}},
+			center = {-0.4649, -1.376, -1.2438},
+			color = {8, 8, 10},
+			material = "Metal",
+			triangles = 2499,
+		},
+		Head_Face = {
+			attach = "Head",
+			center = {0.0516, 2.5284, -0.5445},
+			color = {232, 192, 152},
+			material = "SmoothPlastic",
+			triangles = 1200,
+		},
+		Head_Hair = {
+			attach = "Head",
+			center = {0.1164, 2.6578, 0.0612},
+			color = {14, 14, 17},
+			material = "SmoothPlastic",
+			triangles = 8999,
+		},
+		Head_Mask = {
+			attach = "Head",
+			center = {0.0516, 2.1322, -0.4815},
+			color = {40, 48, 62},
+			material = "Fabric",
+			triangles = 1499,
+		},
+		LeftLowerArm = {
+			attach = "LeftLowerArm",
+			center = {-1.4782, -0.1778, 0.065},
+			color = {18, 18, 22},
+			material = "Fabric",
+			triangles = 2499,
+		},
+		LeftLowerLeg = {
+			attach = "LeftLowerLeg",
+			center = {-0.5217, -2.771, 0.0122},
+			color = {16, 16, 20},
+			material = "Fabric",
+			triangles = 1499,
+		},
+		LeftUpperArm = {
+			attach = "LeftUpperArm",
+			center = {-1.3723, 1.108, 0.1154},
+			color = {18, 18, 22},
+			material = "Fabric",
+			triangles = 2500,
+		},
+		LowerTorso_Coat = {
+			attach = "LowerTorso",
+			center = {-0.0479, -1.5475, 0.1706},
+			color = {16, 16, 20},
+			material = "Fabric",
+			triangles = 8998,
+		},
+		RightHand = {
+			attach = "RightHand",
+			center = {1.4551, -0.8504, -0.3724},
+			color = {40, 48, 62},
+			material = "Fabric",
+			triangles = 1199,
+		},
+		RightLowerArm = {
+			attach = "RightLowerArm",
+			center = {1.4503, -0.1741, -0.1773},
+			color = {40, 48, 62},
+			material = "Fabric",
+			triangles = 2499,
+		},
+		RightLowerLeg = {
+			attach = "RightLowerLeg",
+			center = {0.5266, -2.7706, -0.0284},
+			color = {16, 16, 20},
+			material = "Fabric",
+			triangles = 1500,
+		},
+		RightUpperArm = {
+			attach = "RightUpperArm",
+			center = {1.25, 1.1124, -0.0558},
+			color = {40, 48, 62},
+			material = "Fabric",
+			triangles = 2500,
+		},
+		UpperTorso = {
+			attach = "UpperTorso",
+			center = {0.1784, 0.8788, 0.0147},
+			color = {24, 27, 34},
+			material = "Fabric",
+			triangles = 6000,
+		},
+	},
+	replaceBody = true,
+	rootName = "Root",
+	source = "tools/import_mesh.py &lt;- mugetsu2.obj",
+	totalTriangles = 43391,
+	version = 1,
+}</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="10">
+        <Properties>
           <string name="Name">PoseDriver</string>
           <string name="Source"><![CDATA[--!strict
 -- Animação procedural por keyframes de poses (fallback enquanto não existem animações publicadas).
@@ -4597,7 +4734,7 @@ return PoseDriver
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="10">
+      <Item class="ModuleScript" referent="11">
         <Properties>
           <string name="Name">Remotes</string>
           <string name="Source"><![CDATA[--!strict
@@ -4643,7 +4780,7 @@ return Remotes
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="11">
+      <Item class="ModuleScript" referent="12">
         <Properties>
           <string name="Name">StateMachine</string>
           <string name="Source"><![CDATA[--!strict
@@ -4714,7 +4851,7 @@ return StateMachine
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="12">
+      <Item class="ModuleScript" referent="13">
         <Properties>
           <string name="Name">Timeline</string>
           <string name="Source"><![CDATA[--!strict
@@ -4940,15 +5077,15 @@ return Timeline
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="13">
+  <Item class="ServerScriptService" referent="14">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="14">
+    <Item class="Folder" referent="15">
       <Properties>
         <string name="Name">MugetsuServer</string>
       </Properties>
-      <Item class="ModuleScript" referent="15">
+      <Item class="ModuleScript" referent="16">
         <Properties>
           <string name="Name">AbilityService</string>
           <string name="Source"><![CDATA[--!strict
@@ -5151,7 +5288,7 @@ return AbilityService
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="16">
+      <Item class="ModuleScript" referent="17">
         <Properties>
           <string name="Name">ArenaBuilder</string>
           <string name="Source"><![CDATA[--!strict
@@ -5285,7 +5422,7 @@ return ArenaBuilder
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Script" referent="17">
+      <Item class="Script" referent="18">
         <Properties>
           <string name="Name">Main</string>
           <token name="RunContext">0</token>
@@ -5301,7 +5438,7 @@ AbilityService.init()
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="18">
+      <Item class="ModuleScript" referent="19">
         <Properties>
           <string name="Name">ModelKit</string>
           <string name="Source"><![CDATA[--!strict
@@ -5313,6 +5450,11 @@ AbilityService.init()
 --   * KitDataObj.json        <- tools/import_obj.py  (modelos assets/models/*.obj enviados pelo usuário)
 --   * KitDataProcedural.json <- tools/build_kits.py  (kit procedural mais detalhado, feito a partir das imagens)
 -- Config.Kit.Source escolhe qual usar.
+--
+-- Kit de MALHA (modelo esculpido): tools/import_mesh.py gera assets/models/mugetsu_mesh/MugetsuMesh.obj
+-- (pedaços nomeados por membro + cubo "Root") e MeshKitManifest.json. Depois de importar o OBJ no Studio
+-- e colocar o Model resultante em ServerStorage.MugetsuAssets.MugetsuMesh, a forma Mugetsu usa a malha
+-- (com prioridade sobre os dados acima) e o corpo R15 fica oculto por baixo dela.
 --
 -- Ponto de integração para arte final: se existir ServerStorage.MugetsuAssets.MugetsuKit (Model) com peças
 -- (ex.: MeshParts importados no Studio) que tenham Attribute "AttachTo" (membro R15), "Offset" (CFrame
@@ -5448,6 +5590,94 @@ local function buildFromData(char: Model, kit: Folder, def: any)
 	end
 end
 
+-- CFrame do membro em REPOUSO relativo ao HumanoidRootPart, pela cadeia de Motor6D (C0 * C1^-1),
+-- ignorando a animação atual (Transform). Assim o encaixe não depende da pose no momento da montagem.
+local function restCFrame(char: Model, part: BasePart, depth: number?): CFrame
+	if part.Name == "HumanoidRootPart" or (depth or 0) > 12 then
+		return CFrame.identity
+	end
+	for _, m in part:GetChildren() do
+		if m:IsA("Motor6D") and m.Part1 == part and m.Part0 then
+			return restCFrame(char, m.Part0, (depth or 0) + 1) * m.C0 * m.C1:Inverse()
+		end
+	end
+	return CFrame.identity
+end
+
+local function meshManifest(): any?
+	local m = Shared:FindFirstChild("MeshKitManifest")
+	return m and require(m :: ModuleScript) or nil
+end
+
+local function meshSource(): Model?
+	if not Config.Kit.UseMesh then
+		return nil
+	end
+	local folder = ServerStorage:FindFirstChild(Manifest.CustomKitPath[1])
+	local model = folder and folder:FindFirstChild("MugetsuMesh")
+	return model and model:IsA("Model") and model or nil
+end
+
+-- Monta a forma a partir do Model importado (MeshParts nomeados como no MeshKitManifest + "Root").
+local function buildFromMesh(char: Model, kit: Folder, model: Model, man: any): boolean
+	local root = model:FindFirstChild(man.rootName, true)
+	if not (root and root:IsA("BasePart")) then
+		warn("[Mugetsu] MugetsuMesh sem o cubo 'Root'; usando o kit de peças")
+		return false
+	end
+	-- se o Studio importou em outra escala, o cubo Root (0.2 stud no arquivo) revela o fator
+	local k = 0.2 / math.max(root.Size.X, 1e-3)
+	local used = 0
+	for name, info in man.pieces do
+		local src = model:FindFirstChild(name, true)
+		local limb = char:FindFirstChild(info.attach)
+		if src and src:IsA("BasePart") and limb and limb:IsA("BasePart") then
+			local p = src:Clone()
+			p.Anchored = false
+			p.CanCollide = false
+			p.CanQuery = false
+			p.CanTouch = false
+			p.Massless = true
+			p.Size = p.Size * k
+			p.Color = color(info.color)
+			p.Material = material(info.material)
+			p:SetAttribute("BaseTransparency", 0)
+			for _, c in p:GetChildren() do
+				if c:IsA("Attachment") then
+					c:Destroy()
+				end
+			end
+			for _, a in info.attachments or {} do
+				local at = Instance.new("Attachment")
+				at.Name = a.name
+				at.Position = vec(a.pos)
+				at.Parent = p
+			end
+			local rel = root.CFrame:ToObjectSpace(src.CFrame)
+			rel = rel - rel.Position + rel.Position * k -- posição relativa ao HRP em repouso (studs do jogo)
+			p.Parent = kit
+			weld(limb, p, restCFrame(char, limb):Inverse() * rel)
+			used += 1
+		end
+	end
+	local head = char:FindFirstChild("Head")
+	if head and head:IsA("BasePart") then
+		for _, e in man.extras or {} do
+			local p = newPart(e.shape)
+			p.Name = e.name
+			p.Size = vec(e.size)
+			p.Color = color(e.color)
+			p.Material = material(e.material)
+			p:SetAttribute("BaseTransparency", 0)
+			p.Parent = kit
+			weld(head, p, restCFrame(char, head):Inverse() * CFrame.new(vec(e.worldPos)))
+		end
+	end
+	kit:SetAttribute("ReplaceBody", man.replaceBody == true)
+	print(`[Mugetsu] forma {man.form} montada a partir da malha importada ({used} pedaços)`)
+	return used > 0
+end
+
 local function tagAuraAnchors(char: Model)
 	local function anchor(partName: string, attName: string, pos: Vector3?)
 		local p = char:FindFirstChild(partName)
@@ -5522,6 +5752,15 @@ local function applyLimbColors(char: Model, form: Form)
 			inst.Parent = nil
 		end
 	end
+	-- acessórios do avatar (cabelos, chapéus) atravessariam o cabelo/roupa do kit
+	for _, acc in char:GetChildren() do
+		if acc:IsA("Accessory") then
+			local handle = acc:FindFirstChild("Handle")
+			if handle and handle:IsA("BasePart") then
+				handle.Transparency = 1
+			end
+		end
+	end
 	local head = char:FindFirstChild("Head")
 	local face = head and head:FindFirstChildOfClass("Decal")
 	if face and def.hideFace then
@@ -5547,7 +5786,13 @@ function ModelKit.build(char: Model)
 		local kit = Instance.new("Folder")
 		kit.Name = form
 		kit.Parent = root
-		if not tryCustomKit(char, form, kit) then
+		local man = meshManifest()
+		local model = meshSource()
+		local done = false
+		if model and man and man.form == form then
+			done = buildFromMesh(char, kit, model, man)
+		end
+		if not done and not tryCustomKit(char, form, kit) then
 			buildFromData(char, kit, data.forms[form])
 		end
 	end
@@ -5586,6 +5831,14 @@ function ModelKit.setForm(char: Model, form: Form, fadeTime: number)
 	fadeKit(root:FindFirstChild(form) :: Folder, false, fadeTime)
 	root:SetAttribute("Form", form)
 	applyLimbColors(char, form)
+	local kitFolder = root:FindFirstChild(form)
+	local replace = kitFolder and kitFolder:GetAttribute("ReplaceBody") == true
+	for _, n in LIMBS do
+		local p = char:FindFirstChild(n)
+		if p and p:IsA("BasePart") then
+			p.Transparency = replace and 1 or 0
+		end
+	end
 end
 
 function ModelKit.getBlade(char: Model): BasePart?
@@ -5600,7 +5853,7 @@ return ModelKit
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="19">
+      <Item class="ModuleScript" referent="20">
         <Properties>
           <string name="Name">RateLimiter</string>
           <string name="Source"><![CDATA[--!strict
@@ -5631,7 +5884,7 @@ return RateLimiter
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="20">
+      <Item class="ModuleScript" referent="21">
         <Properties>
           <string name="Name">TransformationService</string>
           <string name="Source"><![CDATA[--!strict
@@ -5955,19 +6208,19 @@ return TransformationService
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="21">
+  <Item class="StarterPlayer" referent="22">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="22">
+    <Item class="StarterPlayerScripts" referent="23">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="23">
+      <Item class="Folder" referent="24">
         <Properties>
           <string name="Name">MugetsuClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="24">
+        <Item class="ModuleScript" referent="25">
           <Properties>
             <string name="Name">AbilityClient</string>
             <string name="Source"><![CDATA[--!strict
@@ -6111,7 +6364,7 @@ return AbilityClient
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="25">
+        <Item class="ModuleScript" referent="26">
           <Properties>
             <string name="Name">AudioDirector</string>
             <string name="Source"><![CDATA[--!strict
@@ -6200,7 +6453,7 @@ return AudioDirector
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="26">
+        <Item class="ModuleScript" referent="27">
           <Properties>
             <string name="Name">CameraDirector</string>
             <string name="Source"><![CDATA[--!strict
@@ -6356,7 +6609,7 @@ return CameraDirector
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="27">
+        <Item class="ModuleScript" referent="28">
           <Properties>
             <string name="Name">CutsceneController</string>
             <string name="Source"><![CDATA[--!strict
@@ -6869,7 +7122,7 @@ return CutsceneController
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="28">
+        <Item class="ModuleScript" referent="29">
           <Properties>
             <string name="Name">HairSway</string>
             <string name="Source"><![CDATA[--!strict
@@ -6937,7 +7190,7 @@ return HairSway
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="29">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">Hud</string>
             <string name="Source"><![CDATA[--!strict
@@ -7169,7 +7422,7 @@ return Hud
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="30">
+        <Item class="ModuleScript" referent="31">
           <Properties>
             <string name="Name">InputController</string>
             <string name="Source"><![CDATA[--!strict
@@ -7251,7 +7504,7 @@ return InputController
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="31">
+        <Item class="ModuleScript" referent="32">
           <Properties>
             <string name="Name">LightingDirector</string>
             <string name="Source"><![CDATA[--!strict
@@ -7438,7 +7691,7 @@ return LightingDirector
 ]]></string>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="32">
+        <Item class="LocalScript" referent="33">
           <Properties>
             <string name="Name">Main</string>
             <string name="Source"><![CDATA[--!strict
@@ -7490,7 +7743,7 @@ end
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="33">
+        <Item class="ModuleScript" referent="34">
           <Properties>
             <string name="Name">PoseApplier</string>
             <string name="Source"><![CDATA[--!strict
@@ -7685,7 +7938,7 @@ return PoseApplier
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="34">
+        <Item class="ModuleScript" referent="35">
           <Properties>
             <string name="Name">Quality</string>
             <string name="Source"><![CDATA[--!strict
@@ -7723,7 +7976,7 @@ return Quality
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="36">
           <Properties>
             <string name="Name">VFX</string>
             <string name="Source"><![CDATA[--!strict
@@ -8478,7 +8731,7 @@ return VFX
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="36">
+  <Item class="Workspace" referent="37">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>
