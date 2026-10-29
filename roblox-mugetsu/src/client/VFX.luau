@@ -587,8 +587,9 @@ function Session.swordTrail(self: Session, blade: BasePart, duration: number)
 		track(self, t)
 		return t
 	end
-	mk(BLACK, 5, 0)
-	mk(WHITE, 1.6, 1)
+	-- TrailA = base da lâmina, TrailB = ponta: largura 1 = lâmina inteira (arco de corte)
+	mk(BLACK, 1, 0)
+	mk(WHITE, 0.35, 1)
 	task.delay(duration, function()
 		-- os Trails são destruídos por Session:clean(); aqui só desligamos a emissão
 		for _, c in blade:GetChildren() do

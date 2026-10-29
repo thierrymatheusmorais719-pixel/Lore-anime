@@ -37,6 +37,9 @@ for (const m of pure) {
 	src += `__src["${m}"] = function()\n${code}\nend\n`;
 }
 src += `local function require(name) if __cache[name] == nil then __cache[name] = __src[name]() end return __cache[name] end\n`;
+// kits (JSON -> tabela Luau) para validar os dados que o ModelKit consome
+const toLua = (v) => Array.isArray(v) ? "{" + v.map(toLua).join(",") + "}" : v !== null && typeof v === "object" ? "{" + Object.entries(v).map(([k, x]) => `[${JSON.stringify(k)}]=${toLua(x)}`).join(",") + "}" : JSON.stringify(v);
+src += `local KITS = { obj = ${toLua(JSON.parse(fs.readFileSync(path.join(root, "src/shared/KitDataObj.json"), "utf8")))}, procedural = ${toLua(JSON.parse(fs.readFileSync(path.join(root, "src/shared/KitDataProcedural.json"), "utf8")))} }\n`;
 src += fs.readFileSync(path.join(here, "unit.luau"), "utf8");
 const fn = state.loadstring(src, "unit", false);
 if (typeof fn === "string") {

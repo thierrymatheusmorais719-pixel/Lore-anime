@@ -200,6 +200,47 @@ test("posedriver: nome desconhecido retorna nil", function()
 	assert(PoseDriver.sample("Nope", 0) == nil)
 end)
 
+-- KitData (obj e procedural) ------------------------------------------------------------------
+local R15 = {}
+for _, n in { "Head", "UpperTorso", "LowerTorso", "LeftUpperArm", "LeftLowerArm", "LeftHand", "RightUpperArm", "RightLowerArm",
+	"RightHand", "LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "RightUpperLeg", "RightLowerLeg", "RightFoot" } do R15[n] = true end
+for src, data in KITS do
+	for _, form in { "Ichigo", "Mugetsu" } do
+		local def = data.forms[form]
+		test(`kit {src}/{form}: existe, membros R15 válidos e tamanhos sãos`, function()
+			assert(def, "forma ausente")
+			for _, p in def.parts do
+				assert(R15[p.attach], p.name .. " preso a membro inválido: " .. tostring(p.attach))
+				for i = 1, 3 do assert(p.size[i] > 0 and p.size[i] < 8, p.name .. " tamanho fora do esperado") end
+				for i = 1, 3 do assert(math.abs(p.pos[i]) < 7, p.name .. " longe demais do membro") end
+				assert(p.shape == "Block" or p.shape == "Wedge" or p.shape == "Cylinder" or p.shape == "Ball", p.name .. " forma desconhecida")
+				for i = 1, 3 do assert(p.color[i] >= 0 and p.color[i] <= 255) end
+			end
+			for _, c in def.chains do assert(R15[c.attach] and #c.lengths >= 1) end
+			for n in pairs(def.limbColors) do assert(R15[n], "cor para membro inválido " .. n) end
+		end)
+		test(`kit {src}/{form}: lâmina única com TrailA/TrailB/Tip na mão direita`, function()
+			local blades = 0
+			for _, p in def.parts do
+				if p.name == "Blade" then
+					blades += 1
+					eq(p.attach, "RightHand")
+					local names = {}
+					for _, a in p.attachments or {} do names[a.name] = a.pos end
+					assert(names.TrailA and names.TrailB and names.Tip, "attachments do rastro ausentes")
+					assert(math.abs(names.TrailA[3] - names.TrailB[3]) > 2, "rastro deve cobrir a lâmina (base -> ponta)")
+				end
+			end
+			eq(blades, 1, "número de lâminas")
+		end)
+		test(`kit {src}/{form}: orçamento de instâncias (<= 260)`, function()
+			local n = #def.parts
+			for _, c in def.chains do n += #c.lengths end
+			assert(n <= 260, "instâncias demais: " .. n)
+		end)
+	end
+end
+
 if #failed > 0 then
 	return "FAILED " .. #failed .. " / " .. (passed + #failed) .. "\n" .. table.concat(failed, "\n")
 end

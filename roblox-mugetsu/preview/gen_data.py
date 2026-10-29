@@ -37,5 +37,6 @@ for m in re.finditer(r"(\w+) = \{ length = ([\d.]+), looped = (\w+), keys = \{(.
     anims[m.group(1)] = {"length": float(m.group(2)), "looped": m.group(3) == "true",
                          "keys": [{"t": float(t), "pose": p} for t, p in re.findall(r"P\(([\d.]+), (\w+)\)", m.group(4))]}
 dur = float(re.search(r"Timeline.Duration = ([\d.]+)", tl).group(1))
-(root / "preview/data.js").write_text("export const DATA = " + json.dumps({"duration": dur, "shots": shots, "events": events, "poses": poses, "anims": anims}, indent=1) + ";\n")
+kits = {"obj": json.loads((root / "src/shared/KitDataObj.json").read_text()), "procedural": json.loads((root / "src/shared/KitDataProcedural.json").read_text())}
+(root / "preview/data.js").write_text("export const DATA = " + json.dumps({"duration": dur, "shots": shots, "events": events, "poses": poses, "anims": anims, "kits": kits}, indent=1) + ";\n")
 print(len(shots), "planos", len(events), "eventos", len(poses), "poses", list(anims))

@@ -132,7 +132,7 @@ local function onServerEvent(s: Session, name: string)
 		s.machine:transition("Climax")
 	elseif name == "MorphSwap" then
 		if not s.swapped then
-			ModelKit.setForm(s.character, "Mugetsu", 0.5)
+			ModelKit.setForm(s.character, "Mugetsu", 0) -- instantâneo: a tela está toda branca neste instante
 			s.swapped = true
 			s.player:SetAttribute("MugetsuForm", true)
 			-- agenda o retorno à forma normal

@@ -163,6 +163,12 @@ Config.Transform = {
 	RequireR15 = true,
 }
 
+Config.Kit = {
+	-- "OBJ": modelos enviados (assets/models/*.obj, convertidos por tools/import_obj.py)
+	-- "Procedural": kit mais detalhado gerado por tools/build_kits.py a partir das imagens de referência
+	Source = "OBJ",
+}
+
 Config.Ability = {
 	Name = "Getsuga Tenshō Negro",
 	Keybind = Enum.KeyCode.F,
@@ -203,6 +209,4171 @@ return Config
         </Properties>
       </Item>
       <Item class="ModuleScript" referent="6">
+        <Properties>
+          <string name="Name">KitDataObj</string>
+          <string name="Source">return {
+	forms = {
+		Ichigo = {
+			chains = {},
+			hideFace = true,
+			limbColors = {
+				Head = {224, 174, 140},
+				LeftFoot = {55, 57, 65},
+				LeftHand = {224, 174, 140},
+				LeftLowerArm = {18, 18, 23},
+				LeftLowerLeg = {25, 23, 31},
+				LeftUpperArm = {18, 18, 23},
+				LeftUpperLeg = {25, 23, 31},
+				LowerTorso = {18, 18, 23},
+				RightFoot = {55, 57, 65},
+				RightHand = {224, 174, 140},
+				RightLowerArm = {18, 18, 23},
+				RightLowerLeg = {25, 23, 31},
+				RightUpperArm = {18, 18, 23},
+				RightUpperLeg = {25, 23, 31},
+				UpperTorso = {18, 18, 23},
+			},
+			parts = {{
+				attach = "LowerTorso",
+				color = {25, 23, 31},
+				material = "Fabric",
+				name = "Waist_Sash",
+				pos = {-0, -0.1371, -0.0208},
+				rot = {90, 90, 0},
+				shape = "Block",
+				size = {0.2514, 1.0833, 2.0903},
+			}, {
+				attach = "Head",
+				color = {25, 23, 31},
+				material = "SmoothPlastic",
+				name = "Eye_Left",
+				pos = {-0.2727, 0.1043, -0.6183},
+				rot = {0, -90, 0},
+				shape = "Block",
+				size = {0.0583, 0.0717, 0.1636},
+			}, {
+				attach = "Head",
+				color = {25, 23, 31},
+				material = "SmoothPlastic",
+				name = "Eye_Right",
+				pos = {0.2727, 0.1043, -0.6183},
+				rot = {0, -90, 0},
+				shape = "Block",
+				size = {0.0583, 0.0717, 0.1636},
+			}, {
+				attach = "Head",
+				color = {235, 100, 25},
+				material = "SmoothPlastic",
+				name = "Brow_Left",
+				pos = {-0.2727, 0.2348, -0.65},
+				rot = {90, 90, 0},
+				shape = "Block",
+				size = {0.0717, 0.075, 0.2455},
+			}, {
+				attach = "Head",
+				color = {235, 100, 25},
+				material = "SmoothPlastic",
+				name = "Brow_Right",
+				pos = {0.2727, 0.2348, -0.65},
+				rot = {90, 90, 0},
+				shape = "Block",
+				size = {0.0717, 0.075, 0.2455},
+			}, {
+				attach = "Head",
+				color = {235, 100, 25},
+				material = "SmoothPlastic",
+				name = "Hair_Cap",
+				pos = {-0, 0.7043, 0.0167},
+				rot = {180, -0, -90},
+				shape = "Block",
+				size = {0.4435, 1.3636, 1.3667},
+			}, {
+				attach = "Head",
+				color = {235, 100, 25},
+				material = "SmoothPlastic",
+				name = "Orange_Hair_Spike_0",
+				pos = {-0.4977, 0.9, 0.0167},
+				rot = {94.2705, 85.4325, -180},
+				shape = "Cylinder",
+				size = {0.5395, 0.3514, 0.3514},
+			}, {
+				attach = "Head",
+				color = {235, 100, 25},
+				material = "SmoothPlastic",
+				name = "Orange_Hair_Spike_1",
+				pos = {-0.225, 0.9698, 0.05},
+				rot = {93.4525, 86.1332, -180},
+				shape = "Cylinder",
+				size = {0.6268, 0.3513, 0.3513},
+			}, {
+				attach = "Head",
+				color = {235, 100, 25},
+				material = "SmoothPlastic",
+				name = "Orange_Hair_Spike_2",
+				pos = {-0.0205, 1.0096, 0.05},
+				rot = {-86.6365, 86.2158, -0},
+				shape = "Cylinder",
+				size = {0.6395, 0.3513, 0.3513},
+			}, {
+				attach = "Head",
+				color = {235, 100, 25},
+				material = "SmoothPlastic",
+				name = "Orange_Hair_Spike_3",
+				pos = {0.2523, 0.9548, 0.05},
+				rot = {-86.245, 85.8618, -0},
+				shape = "Cylinder",
+				size = {0.5891, 0.3513, 0.3513},
+			}, {
+				attach = "Head",
+				color = {235, 100, 25},
+				material = "SmoothPlastic",
+				name = "Orange_Hair_Spike_4",
+				pos = {0.525, 0.8452, 0.0167},
+				rot = {-85.0053, 84.8997, -0},
+				shape = "Cylinder",
+				size = {0.4911, 0.3516, 0.3516},
+			}, {
+				attach = "Head",
+				color = {235, 100, 25},
+				material = "SmoothPlastic",
+				name = "Orange_Hair_Spike_5",
+				pos = {-0.3614, 0.7657, 0.3167},
+				rot = {95.4891, 84.5812, -180},
+				shape = "Cylinder",
+				size = {0.4677, 0.3517, 0.3517},
+			}, {
+				attach = "Head",
+				color = {235, 100, 25},
+				material = "SmoothPlastic",
+				name = "Orange_Hair_Spike_6",
+				pos = {0.3205, 0.7657, 0.3167},
+				rot = {-84.5109, 84.5812, -0},
+				shape = "Cylinder",
+				size = {0.4677, 0.3517, 0.3517},
+			}, {
+				attach = "LowerTorso",
+				color = {25, 23, 31},
+				material = "Fabric",
+				name = "Robe_Tail_Left",
+				pos = {-0.6194, 0.2857, 0.5417},
+				rot = {-90, 0, -90},
+				shape = "Block",
+				size = {0.2222, 0.671, 1.3143},
+			}, {
+				attach = "LowerTorso",
+				color = {25, 23, 31},
+				material = "Fabric",
+				name = "Robe_Tail_Right",
+				pos = {0.6194, 0.2857, 0.5417},
+				rot = {-90, 0, -90},
+				shape = "Block",
+				size = {0.2222, 0.671, 1.3143},
+			}, {
+				attach = "RightLowerArm",
+				color = {55, 57, 65},
+				material = "Metal",
+				name = "Chain_Link_0",
+				pos = {-0.375, 0.4869, -0.5484},
+				rot = {0, 0, 0},
+				shape = "Ball",
+				size = {0.28, 0.28, 0.28},
+			}, {
+				attach = "RightLowerArm",
+				color = {55, 57, 65},
+				material = "Metal",
+				name = "Chain_Link_1",
+				pos = {-0.1875, 0.2607, -0.5484},
+				rot = {0, 0, 0},
+				shape = "Ball",
+				size = {0.28, 0.28, 0.28},
+			}, {
+				attach = "RightLowerArm",
+				color = {55, 57, 65},
+				material = "Metal",
+				name = "Chain_Link_2",
+				pos = {0, 0.0344, -0.5484},
+				rot = {0, 0, 0},
+				shape = "Ball",
+				size = {0.28, 0.28, 0.28},
+			}, {
+				attach = "RightLowerArm",
+				color = {55, 57, 65},
+				material = "Metal",
+				name = "Chain_Link_3",
+				pos = {0.1875, -0.1918, -0.5484},
+				rot = {0, 0, 0},
+				shape = "Ball",
+				size = {0.28, 0.28, 0.28},
+			}, {
+				attach = "RightLowerArm",
+				color = {55, 57, 65},
+				material = "Metal",
+				name = "Chain_Link_4",
+				pos = {0.375, -0.418, -0.5484},
+				rot = {0, 0, 0},
+				shape = "Ball",
+				size = {0.28, 0.28, 0.28},
+			}, {
+				attach = "RightHand",
+				color = {55, 57, 65},
+				material = "Fabric",
+				name = "SwordHandle",
+				pos = {0, -0.2, 0},
+				rot = {-50, 0, 0},
+				shape = "Block",
+				size = {0.1933, 0.1933, 0.5702},
+			}, {
+				attach = "RightHand",
+				color = {55, 57, 65},
+				material = "Metal",
+				name = "S1",
+				pos = {0, -0.4567, -0.2154},
+				rot = {-50, 0, 0},
+				shape = "Block",
+				size = {0.585, 0.156, 0.13},
+			}, {
+				attach = "RightHand",
+				attachments = {{
+					name = "TrailA",
+					pos = {0, 0, 1.365},
+				}, {
+					name = "TrailB",
+					pos = {0, 0, -1.515},
+				}, {
+					name = "Tip",
+					pos = {0, 0, -1.515},
+				}},
+				color = {25, 23, 31},
+				material = "Metal",
+				name = "Blade",
+				pos = {0, -1.6556, -1.2214},
+				rot = {-50, 0, 0},
+				shape = "Block",
+				size = {0.2196, 0.2196, 3.03},
+			}},
+		},
+		Mugetsu = {
+			chains = {},
+			hideFace = true,
+			limbColors = {
+				Head = {224, 174, 140},
+				LeftFoot = {55, 57, 65},
+				LeftHand = {224, 174, 140},
+				LeftLowerArm = {18, 18, 23},
+				LeftLowerLeg = {25, 23, 31},
+				LeftUpperArm = {18, 18, 23},
+				LeftUpperLeg = {25, 23, 31},
+				LowerTorso = {18, 18, 23},
+				RightFoot = {55, 57, 65},
+				RightHand = {224, 174, 140},
+				RightLowerArm = {18, 18, 23},
+				RightLowerLeg = {25, 23, 31},
+				RightUpperArm = {18, 18, 23},
+				RightUpperLeg = {25, 23, 31},
+				UpperTorso = {18, 18, 23},
+			},
+			parts = {{
+				attach = "LowerTorso",
+				color = {25, 23, 31},
+				material = "Fabric",
+				name = "Waist_Sash",
+				pos = {-0, -0.1371, -0.0208},
+				rot = {90, 90, 0},
+				shape = "Block",
+				size = {0.2514, 1.0833, 2.0903},
+			}, {
+				attach = "Head",
+				color = {25, 23, 31},
+				material = "SmoothPlastic",
+				name = "Eye_Left",
+				pos = {-0.2727, 0.1043, -0.6183},
+				rot = {0, -90, 0},
+				shape = "Block",
+				size = {0.0583, 0.0717, 0.1636},
+			}, {
+				attach = "Head",
+				color = {25, 23, 31},
+				material = "SmoothPlastic",
+				name = "Eye_Right",
+				pos = {0.2727, 0.1043, -0.6183},
+				rot = {0, -90, 0},
+				shape = "Block",
+				size = {0.0583, 0.0717, 0.1636},
+			}, {
+				attach = "Head",
+				color = {25, 23, 31},
+				material = "SmoothPlastic",
+				name = "Brow_Left",
+				pos = {-0.2727, 0.2348, -0.65},
+				rot = {90, 90, 0},
+				shape = "Block",
+				size = {0.0717, 0.075, 0.2455},
+			}, {
+				attach = "Head",
+				color = {25, 23, 31},
+				material = "SmoothPlastic",
+				name = "Brow_Right",
+				pos = {0.2727, 0.2348, -0.65},
+				rot = {90, 90, 0},
+				shape = "Block",
+				size = {0.0717, 0.075, 0.2455},
+			}, {
+				attach = "Head",
+				color = {25, 23, 31},
+				material = "SmoothPlastic",
+				name = "Hair_Cap",
+				pos = {-0, 0.7043, 0.0167},
+				rot = {180, -0, -90},
+				shape = "Block",
+				size = {0.4435, 1.3636, 1.3667},
+			}, {
+				attach = "Head",
+				color = {25, 23, 31},
+				material = "SmoothPlastic",
+				name = "Long_Black_Hair_Strand_0",
+				pos = {-0.4841, 0.9065, 0.025},
+				rot = {94.7884, 83.9779, -180},
+				shape = "Cylinder",
+				size = {0.6732, 0.3512, 0.3512},
+			}, {
+				attach = "Head",
+				color = {25, 23, 31},
+				material = "SmoothPlastic",
+				name = "Long_Black_Hair_Strand_1",
+				pos = {-0.1705, 0.99, 0.0917},
+				rot = {94.027, 84.8164, -180},
+				shape = "Cylinder",
+				size = {0.7739, 0.3512, 0.3512},
+			}, {
+				attach = "Head",
+				color = {25, 23, 31},
+				material = "SmoothPlastic",
+				name = "Long_Black_Hair_Strand_2",
+				pos = {0.1091, 0.975, 0.1083},
+				rot = {-85.7189, 85.6199, -0},
+				shape = "Cylinder",
+				size = {0.7349, 0.3512, 0.3512},
+			}, {
+				attach = "Head",
+				color = {25, 23, 31},
+				material = "SmoothPlastic",
+				name = "Long_Black_Hair_Strand_3",
+				pos = {0.45, 0.8772, 0.0583},
+				rot = {-84.5438, 84.6298, -0},
+				shape = "Cylinder",
+				size = {0.6099, 0.3513, 0.3513},
+			}, {
+				attach = "Head",
+				color = {25, 23, 31},
+				material = "SmoothPlastic",
+				name = "Long_Black_Hair_Strand_4",
+				pos = {-0.5386, 0.5857, 0.3583},
+				rot = {96.8495, 82.0377, -180},
+				shape = "Cylinder",
+				size = {0.527, 0.3515, 0.3515},
+			}, {
+				attach = "Head",
+				color = {25, 23, 31},
+				material = "SmoothPlastic",
+				name = "Long_Black_Hair_Strand_5",
+				pos = {0.5455, 0.5452, 0.3917},
+				rot = {-82.5588, 83.2478, -0},
+				shape = "Cylinder",
+				size = {0.5026, 0.3516, 0.3516},
+			}, {
+				attach = "Head",
+				color = {25, 23, 31},
+				material = "SmoothPlastic",
+				name = "Mugetsu_Face_Shadow",
+				pos = {0, -0.1957, -0.675},
+				rot = {0, -90, 0},
+				shape = "Block",
+				size = {0.2, 0.4435, 1.2273},
+			}, {
+				attach = "Head",
+				color = {25, 23, 31},
+				material = "SmoothPlastic",
+				name = "Long_Hair_Lock_-1",
+				pos = {-0.5727, -0.7435, -0.05},
+				rot = {90, -0, -0},
+				shape = "Block",
+				size = {0.2455, 0.4, 1.5391},
+			}, {
+				attach = "Head",
+				color = {25, 23, 31},
+				material = "SmoothPlastic",
+				name = "Long_Hair_Lock_1",
+				pos = {0.5727, -0.7435, -0.05},
+				rot = {90, -0, -0},
+				shape = "Block",
+				size = {0.2455, 0.4, 1.5391},
+			}, {
+				attach = "LowerTorso",
+				color = {25, 23, 31},
+				material = "Fabric",
+				name = "Robe_Tail_Left",
+				pos = {-0.6194, 0.2857, 0.5417},
+				rot = {-90, 0, -90},
+				shape = "Block",
+				size = {0.2222, 0.671, 1.3143},
+			}, {
+				attach = "LowerTorso",
+				color = {25, 23, 31},
+				material = "Fabric",
+				name = "Robe_Tail_Right",
+				pos = {0.6194, 0.2857, 0.5417},
+				rot = {-90, 0, -90},
+				shape = "Block",
+				size = {0.2222, 0.671, 1.3143},
+			}, {
+				attach = "RightLowerArm",
+				color = {55, 57, 65},
+				material = "Metal",
+				name = "Chain_Link_0",
+				pos = {-0.375, 0.4869, -0.5484},
+				rot = {0, 0, 0},
+				shape = "Ball",
+				size = {0.28, 0.28, 0.28},
+			}, {
+				attach = "RightLowerArm",
+				color = {55, 57, 65},
+				material = "Metal",
+				name = "Chain_Link_1",
+				pos = {-0.1875, 0.2607, -0.5484},
+				rot = {0, 0, 0},
+				shape = "Ball",
+				size = {0.28, 0.28, 0.28},
+			}, {
+				attach = "RightLowerArm",
+				color = {55, 57, 65},
+				material = "Metal",
+				name = "Chain_Link_2",
+				pos = {0, 0.0344, -0.5484},
+				rot = {0, 0, 0},
+				shape = "Ball",
+				size = {0.28, 0.28, 0.28},
+			}, {
+				attach = "RightLowerArm",
+				color = {55, 57, 65},
+				material = "Metal",
+				name = "Chain_Link_3",
+				pos = {0.1875, -0.1918, -0.5484},
+				rot = {0, 0, 0},
+				shape = "Ball",
+				size = {0.28, 0.28, 0.28},
+			}, {
+				attach = "RightLowerArm",
+				color = {55, 57, 65},
+				material = "Metal",
+				name = "Chain_Link_4",
+				pos = {0.375, -0.418, -0.5484},
+				rot = {0, 0, 0},
+				shape = "Ball",
+				size = {0.28, 0.28, 0.28},
+			}, {
+				attach = "RightHand",
+				color = {55, 57, 65},
+				material = "Fabric",
+				name = "SwordHandle",
+				pos = {0, -0.2, 0},
+				rot = {-50, 0, 0},
+				shape = "Block",
+				size = {0.1933, 0.1933, 0.5702},
+			}, {
+				attach = "RightHand",
+				color = {55, 57, 65},
+				material = "Metal",
+				name = "S1",
+				pos = {0, -0.4567, -0.2154},
+				rot = {-50, 0, 0},
+				shape = "Block",
+				size = {0.585, 0.156, 0.13},
+			}, {
+				attach = "RightHand",
+				attachments = {{
+					name = "TrailA",
+					pos = {0, 0, 1.365},
+				}, {
+					name = "TrailB",
+					pos = {0, 0, -1.515},
+				}, {
+					name = "Tip",
+					pos = {0, 0, -1.515},
+				}},
+				color = {25, 23, 31},
+				material = "Metal",
+				name = "Blade",
+				pos = {0, -1.6556, -1.2214},
+				rot = {-50, 0, 0},
+				shape = "Block",
+				size = {0.2196, 0.2196, 3.03},
+			}},
+		},
+	},
+	source = "tools/import_obj.py &lt;- assets/models/*.obj",
+	version = 2,
+}</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="7">
+        <Properties>
+          <string name="Name">KitDataProcedural</string>
+          <string name="Source">return {
+	forms = {
+		Ichigo = {
+			chains = {},
+			hideFace = true,
+			limbColors = {
+				Head = {232, 192, 152},
+				LeftFoot = {12, 12, 14},
+				LeftHand = {12, 12, 14},
+				LeftLowerArm = {232, 192, 152},
+				LeftLowerLeg = {16, 16, 20},
+				LeftUpperArm = {232, 192, 152},
+				LeftUpperLeg = {16, 16, 20},
+				LowerTorso = {16, 16, 20},
+				RightFoot = {12, 12, 14},
+				RightHand = {12, 12, 14},
+				RightLowerArm = {232, 192, 152},
+				RightLowerLeg = {16, 16, 20},
+				RightUpperArm = {232, 192, 152},
+				RightUpperLeg = {16, 16, 20},
+				UpperTorso = {232, 192, 152},
+			},
+			parts = {{
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P1",
+				pos = {0, 0.45, 0.06},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {1.34, 0.55, 1.32},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P2",
+				pos = {0, 0, 0.5},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {1.32, 1, 0.42},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P3",
+				pos = {-0.66, 0.12, 0.12},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {0.18, 0.85, 1},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P4",
+				pos = {0.66, 0.12, 0.12},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {0.18, 0.85, 1},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P5",
+				pos = {0.0394, 0.9714, 0.2698},
+				rot = {17.5108, -0.6327, -2.0046},
+				shape = "Wedge",
+				size = {0.4473, 0.7522, 0.2905},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P6",
+				pos = {0.0394, 0.9714, 0.2698},
+				rot = {90, 87.898, -72.4782},
+				shape = "Wedge",
+				size = {0.4473, 0.7522, 0.2905},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P7",
+				pos = {0.1392, 0.969, 0.1903},
+				rot = {13.2973, -1.7142, -7.2138},
+				shape = "Wedge",
+				size = {0.4667, 0.738, 0.2872},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P8",
+				pos = {0.1392, 0.969, 0.1903},
+				rot = {90, 82.5864, -76.5946},
+				shape = "Wedge",
+				size = {0.4667, 0.738, 0.2872},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P9",
+				pos = {0.0814, 0.9153, -0.0072},
+				rot = {3.0416, -0.2435, -4.5723},
+				shape = "Wedge",
+				size = {0.3976, 0.6074, 0.2994},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P10",
+				pos = {0.0814, 0.9153, -0.0072},
+				rot = {90, 85.4212, -86.9486},
+				shape = "Wedge",
+				size = {0.3976, 0.6074, 0.2994},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P11",
+				pos = {-0.0559, 0.937, -0.0198},
+				rot = {2.2728, 0.1224, 3.081},
+				shape = "Wedge",
+				size = {0.473, 0.6494, 0.2449},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P12",
+				pos = {-0.0559, 0.937, -0.0198},
+				rot = {-90, 86.9166, 92.2761},
+				shape = "Wedge",
+				size = {0.473, 0.6494, 0.2449},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P13",
+				pos = {-0.1486, 0.9283, 0.1342},
+				rot = {10.7647, 1.5442, 8.0674},
+				shape = "Wedge",
+				size = {0.4672, 0.6487, 0.2336},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P14",
+				pos = {-0.1486, 0.9283, 0.1342},
+				rot = {-90, 81.7871, 100.8736},
+				shape = "Wedge",
+				size = {0.4672, 0.6487, 0.2336},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P15",
+				pos = {0.1343, 0.9407, 0.6093},
+				rot = {33.7885, -4.2395, -6.3043},
+				shape = "Wedge",
+				size = {0.4528, 0.946, 0.2492},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P16",
+				pos = {0.1343, 0.9407, 0.6093},
+				rot = {90, 82.4076, -55.978},
+				shape = "Wedge",
+				size = {0.4528, 0.946, 0.2492},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P17",
+				pos = {0.376, 0.9407, 0.4615},
+				rot = {24.9737, -8.9542, -18.4787},
+				shape = "Wedge",
+				size = {0.3449, 0.9264, 0.2095},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P18",
+				pos = {0.376, 0.9407, 0.4615},
+				rot = {90, 69.5345, -63.5669},
+				shape = "Wedge",
+				size = {0.3449, 0.9264, 0.2095},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P19",
+				pos = {0.5204, 0.9798, 0.1392},
+				rot = {8.8829, -4.3908, -26.0976},
+				shape = "Wedge",
+				size = {0.3797, 0.9696, 0.269},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P20",
+				pos = {0.5204, 0.9798, 0.1392},
+				rot = {90, 63.5612, -80.099},
+				shape = "Wedge",
+				size = {0.3797, 0.9696, 0.269},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P21",
+				pos = {-0.5297, 1.0112, 0.0718},
+				rot = {5.756, 2.8211, 26.0245},
+				shape = "Wedge",
+				size = {0.3708, 1.0293, 0.2238},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P22",
+				pos = {-0.5297, 1.0112, 0.0718},
+				rot = {-90, 63.8336, 96.408},
+				shape = "Wedge",
+				size = {0.3708, 1.0293, 0.2238},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P23",
+				pos = {-0.4887, 0.9623, 0.291},
+				rot = {15.9166, 7.4203, 24.3645},
+				shape = "Wedge",
+				size = {0.3821, 0.9521, 0.2137},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P24",
+				pos = {-0.4887, 0.9623, 0.291},
+				rot = {-90, 64.5967, 107.5206},
+				shape = "Wedge",
+				size = {0.3821, 0.9521, 0.2137},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P25",
+				pos = {-0.1713, 0.9372, 0.5952},
+				rot = {33.0294, 5.3125, 8.1051},
+				shape = "Wedge",
+				size = {0.4026, 0.9359, 0.2153},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P26",
+				pos = {-0.1713, 0.9372, 0.5952},
+				rot = {-90, 80.3188, 123.4061},
+				shape = "Wedge",
+				size = {0.4026, 0.9359, 0.2153},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P27",
+				pos = {0.4386, 0.7626, 0.7284},
+				rot = {38.34, -19.4122, -22.7941},
+				shape = "Wedge",
+				size = {0.4006, 0.9712, 0.2165},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P28",
+				pos = {0.4386, 0.7626, 0.7284},
+				rot = {90, 60.4, -47.7106},
+				shape = "Wedge",
+				size = {0.4006, 0.9712, 0.2165},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P29",
+				pos = {0.7665, 0.8219, 0.3796},
+				rot = {16.293, -14.5009, -40.5859},
+				shape = "Wedge",
+				size = {0.4366, 1.088, 0.2996},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P30",
+				pos = {0.7665, 0.8219, 0.3796},
+				rot = {90, 47.3274, -68.3202},
+				shape = "Wedge",
+				size = {0.4366, 1.088, 0.2996},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P31",
+				pos = {0.7387, 0.7736, 0.0107},
+				rot = {2.8008, -2.6392, -43.2661},
+				shape = "Wedge",
+				size = {0.3563, 0.891, 0.2608},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P32",
+				pos = {0.7387, 0.7736, 0.0107},
+				rot = {90, 46.6693, -86.1524},
+				shape = "Wedge",
+				size = {0.3563, 0.891, 0.2608},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P33",
+				pos = {-0.8038, 0.8503, -0.0159},
+				rot = {1.6024, 1.4974, 43.0508},
+				shape = "Wedge",
+				size = {0.3403, 1.096, 0.2651},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P34",
+				pos = {-0.8038, 0.8503, -0.0159},
+				rot = {-90, 46.9282, 92.193},
+				shape = "Wedge",
+				size = {0.3403, 1.096, 0.2651},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P35",
+				pos = {-0.7167, 0.8, 0.4495},
+				rot = {19.8508, 16.7315, 38.5694},
+				shape = "Wedge",
+				size = {0.4734, 1.0373, 0.253},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P36",
+				pos = {-0.7167, 0.8, 0.4495},
+				rot = {-90, 48.4825, 115.7418},
+				shape = "Wedge",
+				size = {0.4734, 1.0373, 0.253},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P37",
+				pos = {-0.3105, 0.6991, 0.7174},
+				rot = {43.3768, 16.7504, 16.9624},
+				shape = "Wedge",
+				size = {0.4334, 0.7807, 0.2118},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P38",
+				pos = {-0.3105, 0.6991, 0.7174},
+				rot = {-90, 66.3356, 135.8921},
+				shape = "Wedge",
+				size = {0.4334, 0.7807, 0.2118},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P39",
+				pos = {0.0067, 0.7296, 0.828},
+				rot = {50.9348, -0.4026, -0.3268},
+				shape = "Wedge",
+				size = {0.3502, 0.8867, 0.2747},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P40",
+				pos = {0.0067, 0.7296, 0.828},
+				rot = {90, 89.4814, -39.064},
+				shape = "Wedge",
+				size = {0.3502, 0.8867, 0.2747},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P41",
+				pos = {0.536, 0.4955, 0.696},
+				rot = {35.352, -35.2189, -39.109},
+				shape = "Wedge",
+				size = {0.352, 0.7675, 0.2662},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P42",
+				pos = {0.536, 0.4955, 0.696},
+				rot = {90, 39.3395, -41.7836},
+				shape = "Wedge",
+				size = {0.352, 0.7675, 0.2662},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P43",
+				pos = {0.7899, 0.4972, 0.1739},
+				rot = {7.3674, -12.9347, -59.9874},
+				shape = "Wedge",
+				size = {0.3438, 0.6951, 0.222},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P44",
+				pos = {0.7899, 0.4972, 0.1739},
+				rot = {90, 29.1763, -75.1454},
+				shape = "Wedge",
+				size = {0.3438, 0.6951, 0.222},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P45",
+				pos = {-0.7329, 0.4956, 0.4152},
+				rot = {16.3467, 25.1498, 55.3884},
+				shape = "Wedge",
+				size = {0.3837, 0.7259, 0.2126},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P46",
+				pos = {-0.7329, 0.4956, 0.4152},
+				rot = {-90, 30.9415, 119.7026},
+				shape = "Wedge",
+				size = {0.3837, 0.7259, 0.2126},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P47",
+				pos = {-0.4418, 0.5025, 0.7871},
+				rot = {44.5122, 34.7586, 30.1099},
+				shape = "Wedge",
+				size = {0.3705, 0.8119, 0.2198},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P48",
+				pos = {-0.4418, 0.5025, 0.7871},
+				rot = {-90, 45.2922, 144.1365},
+				shape = "Wedge",
+				size = {0.3705, 0.8119, 0.2198},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P49",
+				pos = {0.0754, 0.4928, 0.8914},
+				rot = {65.2698, -8.9181, -4.0841},
+				shape = "Wedge",
+				size = {0.4177, 0.7825, 0.2886},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P50",
+				pos = {0.0754, 0.4928, 0.8914},
+				rot = {90, 80.1981, -24.4115},
+				shape = "Wedge",
+				size = {0.4177, 0.7825, 0.2886},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P51",
+				pos = {-0.4832, 0.4631, -0.6181},
+				rot = {-149.8409, 7.8662, 13.2537},
+				shape = "Wedge",
+				size = {0.3, 0.38, 0.16},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P52",
+				pos = {-0.2455, 0.4347, -0.6358},
+				rot = {-148.4749, 4.1122, 6.6679},
+				shape = "Wedge",
+				size = {0.3, 0.44, 0.16},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P53",
+				pos = {0, 0.4589, -0.6207},
+				rot = {-147.9946, 0, -0},
+				shape = "Wedge",
+				size = {0.3, 0.38, 0.16},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P54",
+				pos = {0.2455, 0.4347, -0.6358},
+				rot = {-148.4749, -4.1122, -6.6679},
+				shape = "Wedge",
+				size = {0.3, 0.44, 0.16},
+			}, {
+				attach = "Head",
+				color = {255, 128, 26},
+				material = "SmoothPlastic",
+				name = "P55",
+				pos = {0.4832, 0.4631, -0.6181},
+				rot = {-149.8409, -7.8662, -13.2537},
+				shape = "Wedge",
+				size = {0.3, 0.38, 0.16},
+			}, {
+				attach = "Head",
+				color = {52, 30, 22},
+				material = "SmoothPlastic",
+				name = "P56",
+				pos = {-0.25, 0.08, -0.615},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {0.24, 0.1, 0.04},
+			}, {
+				attach = "Head",
+				color = {214, 92, 14},
+				material = "SmoothPlastic",
+				name = "P57",
+				pos = {-0.26, 0.21, -0.615},
+				rot = {0, 0, 16},
+				shape = "Block",
+				size = {0.34, 0.07, 0.04},
+			}, {
+				attach = "Head",
+				color = {52, 30, 22},
+				material = "SmoothPlastic",
+				name = "P58",
+				pos = {0.25, 0.08, -0.615},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {0.24, 0.1, 0.04},
+			}, {
+				attach = "Head",
+				color = {214, 92, 14},
+				material = "SmoothPlastic",
+				name = "P59",
+				pos = {0.26, 0.21, -0.615},
+				rot = {0, 0, -16},
+				shape = "Block",
+				size = {0.34, 0.07, 0.04},
+			}, {
+				attach = "Head",
+				color = {120, 70, 60},
+				material = "SmoothPlastic",
+				name = "P60",
+				pos = {0, -0.3, -0.612},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {0.22, 0.04, 0.03},
+			}, {
+				attach = "UpperTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P61",
+				pos = {0, 0, 0.53},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {2.08, 1.62, 0.1},
+			}, {
+				attach = "UpperTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P62",
+				pos = {0, 0.66, 0},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {2.24, 0.34, 1.14},
+			}, {
+				attach = "UpperTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P63",
+				pos = {-1.04, 0, 0},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {0.1, 1.6, 1.06},
+			}, {
+				attach = "UpperTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P64",
+				pos = {-0.66, -0.05, -0.53},
+				rot = {0, 0, -14},
+				shape = "Block",
+				size = {0.72, 1.7, 0.1},
+			}, {
+				attach = "UpperTorso",
+				color = {236, 234, 228},
+				material = "Fabric",
+				name = "P65",
+				pos = {-0.33, -0.05, -0.545},
+				rot = {0, 0, -14},
+				shape = "Block",
+				size = {0.09, 1.72, 0.11},
+			}, {
+				attach = "UpperTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P66",
+				pos = {1.04, 0, 0},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {0.1, 1.6, 1.06},
+			}, {
+				attach = "UpperTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P67",
+				pos = {0.66, -0.05, -0.53},
+				rot = {0, 0, 14},
+				shape = "Block",
+				size = {0.72, 1.7, 0.1},
+			}, {
+				attach = "UpperTorso",
+				color = {236, 234, 228},
+				material = "Fabric",
+				name = "P68",
+				pos = {0.33, -0.05, -0.545},
+				rot = {0, 0, 14},
+				shape = "Block",
+				size = {0.09, 1.72, 0.11},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P69",
+				pos = {0, 0, 0},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {2.12, 0.44, 1.12},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P70",
+				pos = {0.2364, -1.1837, 0.7568},
+				rot = {-9.1734, 11.1097, 1.7823},
+				shape = "Block",
+				size = {0.62, 2.1944, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {236, 234, 228},
+				material = "SmoothPlastic",
+				name = "P71",
+				pos = {0.1233, -2.444, 0.9828},
+				rot = {-9.1734, 11.1097, -178.2177},
+				shape = "Wedge",
+				size = {0.2976, 0.3976, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P72",
+				pos = {0.4258, -2.3932, 0.9145},
+				rot = {-9.1734, 11.1097, -178.2177},
+				shape = "Wedge",
+				size = {0.2976, 0.2947, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P73",
+				pos = {0.6672, -1.1156, 0.6326},
+				rot = {-10.7849, 33.2799, 5.9672},
+				shape = "Block",
+				size = {0.62, 2.0566, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P74",
+				pos = {0.6451, -2.329, 0.8785},
+				rot = {-10.7849, 33.2799, -174.0328},
+				shape = "Wedge",
+				size = {0.2976, 0.4405, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {236, 234, 228},
+				material = "SmoothPlastic",
+				name = "P75",
+				pos = {0.9005, -2.3029, 0.7029},
+				rot = {-10.7849, 33.2799, -174.0328},
+				shape = "Wedge",
+				size = {0.2976, 0.3876, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P76",
+				pos = {1.0113, -1.2132, 0.4313},
+				rot = {-15.912, 55.2084, 13.1768},
+				shape = "Block",
+				size = {0.62, 2.2541, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {236, 234, 228},
+				material = "SmoothPlastic",
+				name = "P77",
+				pos = {1.102, -2.5555, 0.6783},
+				rot = {-15.912, 55.2084, -166.8232},
+				shape = "Wedge",
+				size = {0.2976, 0.5039, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P78",
+				pos = {1.265, -2.4856, 0.4144},
+				rot = {-15.912, 55.2084, -166.8232},
+				shape = "Wedge",
+				size = {0.2976, 0.3625, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P79",
+				pos = {1.1818, -1.1417, 0.1492},
+				rot = {-39.0715, 75.6293, 38.1833},
+				shape = "Block",
+				size = {0.62, 2.1093, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P80",
+				pos = {1.3382, -2.3428, 0.3384},
+				rot = {-39.0715, 75.6293, -141.8167},
+				shape = "Wedge",
+				size = {0.2976, 0.3629, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {236, 234, 228},
+				material = "SmoothPlastic",
+				name = "P81",
+				pos = {1.4054, -2.386, 0.0357},
+				rot = {-39.0715, 75.6293, -141.8167},
+				shape = "Wedge",
+				size = {0.2976, 0.4503, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P82",
+				pos = {1.1757, -1.1023, -0.148},
+				rot = {-140.9285, 75.6293, 141.8167},
+				shape = "Block",
+				size = {0.62, 2.0296, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {236, 234, 228},
+				material = "SmoothPlastic",
+				name = "P83",
+				pos = {1.386, -2.2616, -0.0318},
+				rot = {-140.9285, 75.6293, -38.1833},
+				shape = "Wedge",
+				size = {0.2976, 0.3578, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P84",
+				pos = {1.3362, -2.3303, -0.338},
+				rot = {-140.9285, 75.6293, -38.1833},
+				shape = "Wedge",
+				size = {0.2976, 0.4969, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P85",
+				pos = {1.0021, -1.143, -0.4251},
+				rot = {-164.088, 55.2084, 166.8232},
+				shape = "Block",
+				size = {0.62, 2.112, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P86",
+				pos = {1.2566, -2.4221, -0.4088},
+				rot = {-164.088, 55.2084, -13.1768},
+				shape = "Wedge",
+				size = {0.2976, 0.5181, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {236, 234, 228},
+				material = "SmoothPlastic",
+				name = "P87",
+				pos = {1.0758, -2.3566, -0.6608},
+				rot = {-164.088, 55.2084, -13.1768},
+				shape = "Wedge",
+				size = {0.2976, 0.3855, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P88",
+				pos = {0.6756, -1.2117, -0.6453},
+				rot = {-169.2151, 33.2799, 174.0328},
+				shape = "Block",
+				size = {0.62, 2.2511, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {236, 234, 228},
+				material = "SmoothPlastic",
+				name = "P89",
+				pos = {0.918, -2.5016, -0.729},
+				rot = {-169.2151, 33.2799, -5.9672},
+				shape = "Wedge",
+				size = {0.2976, 0.4008, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P90",
+				pos = {0.6566, -2.4601, -0.8958},
+				rot = {-169.2151, 33.2799, -5.9672},
+				shape = "Wedge",
+				size = {0.2976, 0.317, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P91",
+				pos = {-0.6722, -1.1733, -0.6402},
+				rot = {-169.2151, -33.2799, -174.0328},
+				shape = "Block",
+				size = {0.62, 2.1733, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P92",
+				pos = {-0.651, -2.3961, -0.8874},
+				rot = {-169.2151, -33.2799, 5.9672},
+				shape = "Wedge",
+				size = {0.2976, 0.3428, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {236, 234, 228},
+				material = "SmoothPlastic",
+				name = "P93",
+				pos = {-0.9158, -2.4767, -0.7258},
+				rot = {-169.2151, -33.2799, 5.9672},
+				shape = "Wedge",
+				size = {0.2976, 0.506, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P94",
+				pos = {-1.0085, -1.1915, -0.4294},
+				rot = {-164.088, -55.2084, -166.8232},
+				shape = "Block",
+				size = {0.62, 2.2103, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {236, 234, 228},
+				material = "SmoothPlastic",
+				name = "P95",
+				pos = {-1.0906, -2.4689, -0.6707},
+				rot = {-164.088, -55.2084, 13.1768},
+				shape = "Wedge",
+				size = {0.2976, 0.4163, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P96",
+				pos = {-1.2687, -2.5137, -0.4169},
+				rot = {-164.088, -55.2084, 13.1768},
+				shape = "Wedge",
+				size = {0.2976, 0.5071, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P97",
+				pos = {-1.186, -1.1687, -0.1501},
+				rot = {-140.9285, -75.6293, -141.8167},
+				shape = "Block",
+				size = {0.62, 2.1641, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P98",
+				pos = {-1.3584, -2.4732, -0.3424},
+				rot = {-140.9285, -75.6293, 38.1833},
+				shape = "Wedge",
+				size = {0.2976, 0.5173, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {236, 234, 228},
+				material = "SmoothPlastic",
+				name = "P99",
+				pos = {-1.4144, -2.4445, -0.0375},
+				rot = {-140.9285, -75.6293, 38.1833},
+				shape = "Wedge",
+				size = {0.2976, 0.4591, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P100",
+				pos = {-1.1776, -1.1142, 0.1484},
+				rot = {-39.0715, -75.6293, -38.1833},
+				shape = "Block",
+				size = {0.62, 2.0537, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {236, 234, 228},
+				material = "SmoothPlastic",
+				name = "P101",
+				pos = {-1.39, -2.2874, 0.0326},
+				rot = {-39.0715, -75.6293, 141.8167},
+				shape = "Wedge",
+				size = {0.2976, 0.3619, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P102",
+				pos = {-1.3393, -2.3503, 0.3386},
+				rot = {-39.0715, -75.6293, 141.8167},
+				shape = "Wedge",
+				size = {0.2976, 0.4894, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P103",
+				pos = {-0.9967, -1.1025, 0.4216},
+				rot = {-15.912, -55.2084, -13.1768},
+				shape = "Block",
+				size = {0.62, 2.03, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P104",
+				pos = {-1.2461, -2.3424, 0.4018},
+				rot = {-15.912, -55.2084, 166.8232},
+				shape = "Wedge",
+				size = {0.2976, 0.5207, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {236, 234, 228},
+				material = "SmoothPlastic",
+				name = "P105",
+				pos = {-1.0598, -2.2351, 0.6501},
+				rot = {-15.912, -55.2084, 166.8232},
+				shape = "Wedge",
+				size = {0.2976, 0.3035, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P106",
+				pos = {-0.6745, -1.1988, 0.6436},
+				rot = {-10.7849, -33.2799, -5.9672},
+				shape = "Block",
+				size = {0.62, 2.2249, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {236, 234, 228},
+				material = "SmoothPlastic",
+				name = "P107",
+				pos = {-0.9173, -2.4935, 0.728},
+				rot = {-10.7849, -33.2799, 174.0328},
+				shape = "Wedge",
+				size = {0.2976, 0.4368, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P108",
+				pos = {-0.6574, -2.4693, 0.897},
+				rot = {-10.7849, -33.2799, 174.0328},
+				shape = "Wedge",
+				size = {0.2976, 0.3878, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P109",
+				pos = {-0.2362, -1.1768, 0.7557},
+				rot = {-9.1734, -11.1097, -1.7823},
+				shape = "Block",
+				size = {0.62, 2.1804, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P110",
+				pos = {-0.4274, -2.4454, 0.9226},
+				rot = {-9.1734, -11.1097, 178.2177},
+				shape = "Wedge",
+				size = {0.2976, 0.4285, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {236, 234, 228},
+				material = "SmoothPlastic",
+				name = "P111",
+				pos = {-0.1226, -2.42, 0.9791},
+				rot = {-9.1734, -11.1097, 178.2177},
+				shape = "Wedge",
+				size = {0.2976, 0.3771, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {236, 234, 228},
+				material = "Fabric",
+				name = "P112",
+				pos = {-0.2, -1.15, -0.66},
+				rot = {-9, 0, 0},
+				shape = "Block",
+				size = {0.1, 2.1, 0.09},
+			}, {
+				attach = "LowerTorso",
+				color = {236, 234, 228},
+				material = "Fabric",
+				name = "P113",
+				pos = {0.2, -1.15, -0.66},
+				rot = {-9, 0, 0},
+				shape = "Block",
+				size = {0.1, 2.1, 0.09},
+			}, {
+				attach = "LeftUpperArm",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P114",
+				pos = {0, 0.38, 0},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {1.1, 0.5, 1.1},
+			}, {
+				attach = "LeftUpperArm",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P115",
+				pos = {0.5262, -0.035, 0.1915},
+				rot = {-0, 70, -180},
+				shape = "Wedge",
+				size = {0.4, 0.35, 0.06},
+			}, {
+				attach = "LeftUpperArm",
+				color = {236, 234, 228},
+				material = "SmoothPlastic",
+				name = "P116",
+				pos = {-0.1915, -0.035, 0.5262},
+				rot = {-0, -20, -180},
+				shape = "Wedge",
+				size = {0.4, 0.35, 0.06},
+			}, {
+				attach = "LeftUpperArm",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P117",
+				pos = {-0.5262, -0.035, -0.1915},
+				rot = {180, -70, -0},
+				shape = "Wedge",
+				size = {0.4, 0.35, 0.06},
+			}, {
+				attach = "LeftUpperArm",
+				color = {236, 234, 228},
+				material = "SmoothPlastic",
+				name = "P118",
+				pos = {0.1915, -0.035, -0.5262},
+				rot = {-180, 20, -0},
+				shape = "Wedge",
+				size = {0.4, 0.35, 0.06},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P119",
+				pos = {0.56, 0.52, 0},
+				rot = {6.4857, 0, -90},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P120",
+				pos = {0.4735, 0.4841, 0.299},
+				rot = {7.6579, -32.0446, 4.0806},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P121",
+				pos = {0.2406, 0.4483, 0.5057},
+				rot = {14.8189, -63.7917, -76.6471},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P122",
+				pos = {-0.0666, 0.4124, 0.556},
+				rot = {136.2809, -80.5936, 136.6682},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P123",
+				pos = {-0.3532, 0.3766, 0.4346},
+				rot = {169.7826, -50.4476, 82.0881},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P124",
+				pos = {-0.5307, 0.3407, 0.1788},
+				rot = {173.1594, -18.4972, 177.8204},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P125",
+				pos = {-0.5442, 0.3048, -0.1322},
+				rot = {173.3274, 13.5661, 91.5719},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P126",
+				pos = {-0.3895, 0.269, -0.4024},
+				rot = {170.7172, 45.5535, -173.3445},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P127",
+				pos = {-0.1145, 0.2331, -0.5482},
+				rot = {150.9157, 76.5633, 118.4138},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P128",
+				pos = {0.196, 0.1972, -0.5246},
+				rot = {17.9977, 68.5571, -16.8247},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P129",
+				pos = {0.4458, 0.1614, -0.3389},
+				rot = {8.1269, 36.9631, -94.9077},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P130",
+				pos = {0.5579, 0.1255, -0.0485},
+				rot = {6.5099, 4.9337, -0.5623},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P131",
+				pos = {0.4976, 0.0897, 0.2569},
+				rot = {7.291, -27.1212, -86.6619},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P132",
+				pos = {0.2835, 0.0538, 0.4829},
+				rot = {12.6564, -58.9672, 10.8917},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P133",
+				pos = {-0.0182, 0.0179, 0.5597},
+				rot = {105.9514, -83.2534, 16.0569},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P134",
+				pos = {-0.3143, -0.0179, 0.4635},
+				rot = {168.5483, -55.325, 170.5416},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P135",
+				pos = {-0.5132, -0.0538, 0.2241},
+				rot = {172.9289, -23.4262, 87.1767},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P136",
+				pos = {-0.5536, -0.0897, -0.0846},
+				rot = {173.4397, 8.6336, -179.011},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P137",
+				pos = {-0.4229, -0.1255, -0.3671},
+				rot = {171.4383, 40.6479, 95.6011},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P138",
+				pos = {-0.1615, -0.1614, -0.5362},
+				rot = {158.4825, 72.0638, -159.4388},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P139",
+				pos = {0.1498, -0.1972, -0.5396},
+				rot = {23.0223, 73.2127, -112.1377},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P140",
+				pos = {0.4148, -0.2331, -0.3762},
+				rot = {8.7254, 41.8752, -5.8493},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P141",
+				pos = {0.5516, -0.269, -0.0966},
+				rot = {6.5835, 9.8668, -91.133},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P142",
+				pos = {0.518, -0.3048, 0.2129},
+				rot = {7.0071, -22.1942, 2.6583},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P143",
+				pos = {0.3242, -0.3407, 0.4566},
+				rot = {11.1085, -54.1075, -80.962},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P144",
+				pos = {0.0303, -0.3766, 0.5592},
+				rot = {64.5348, -82.8129, 64.3589},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P145",
+				pos = {-0.273, -0.4124, 0.489},
+				rot = {166.872, -60.1773, 78.5614},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P146",
+				pos = {-0.4919, -0.4483, 0.2677},
+				rot = {172.6257, -28.3524, 176.4829},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P147",
+				pos = {-0.5588, -0.4841, -0.0364},
+				rot = {173.5007, 3.7003, 90.4212},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightUpperArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P148",
+				pos = {-0.453, -0.52, -0.3292},
+				rot = {172.0012, 35.734, -175.3085},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P149",
+				pos = {0.56, 0.46, 0},
+				rot = {6.4857, 0, -90},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P150",
+				pos = {0.469, 0.4232, 0.306},
+				rot = {7.7298, -32.8811, 4.2145},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P151",
+				pos = {0.2256, 0.3864, 0.5125},
+				rot = {15.7567, -65.4203, -75.6091},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P152",
+				pos = {-0.0911, 0.3496, 0.5525},
+				rot = {145.0468, -78.6291, 145.5783},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P153",
+				pos = {-0.3782, 0.3128, 0.413},
+				rot = {170.4447, -47.1211, 82.9678},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P154",
+				pos = {-0.5424, 0.276, 0.1393},
+				rot = {173.3059, -14.3059, 178.3388},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P155",
+				pos = {-0.5304, 0.2392, -0.1797},
+				rot = {173.1554, 18.5958, 92.192},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P156",
+				pos = {-0.346, 0.2024, -0.4403},
+				rot = {169.5746, 51.3757, -171.82},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P157",
+				pos = {-0.0492, 0.1656, -0.5578},
+				rot = {127.6961, 81.7929, 142.0181},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P158",
+				pos = {0.2636, 0.1288, -0.4941},
+				rot = {13.5778, 61.2402, -11.9543},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P159",
+				pos = {0.4907, 0.092, -0.2698},
+				rot = {7.3916, 28.5986, -93.5534},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P160",
+				pos = {0.5584, 0.0552, 0.0422},
+				rot = {6.504, -4.2923, 0.4889},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P161",
+				pos = {0.4446, 0.0184, 0.3404},
+				rot = {8.1481, -37.1598, -85.0571},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P162",
+				pos = {0.1864, -0.0184, 0.5281},
+				rot = {18.8588, -69.5464, 17.7467},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P163",
+				pos = {-0.1324, -0.0552, 0.5441},
+				rot = {154.327, -74.887, 65.1058},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P164",
+				pos = {-0.4082, -0.092, 0.3833},
+				rot = {171.1362, -42.8566, 173.9452},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P165",
+				pos = {-0.5514, -0.1288, 0.098},
+				rot = {173.4135, -10.0148, 88.8497},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P166",
+				pos = {-0.5153, -0.1656, -0.2192},
+				rot = {172.9576, 22.8841, -177.2497},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P167",
+				pos = {-0.3119, -0.2024, -0.4651},
+				rot = {168.462, 55.6169, 99.5631},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P168",
+				pos = {-0.007, -0.2392, -0.56},
+				rot = {96.3077, 83.4747, -96.3485},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P169",
+				pos = {0.3001, -0.276, -0.4728},
+				rot = {11.9784, 57.0267, -100.0923},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P170",
+				pos = {0.5097, -0.3128, -0.2321},
+				rot = {7.12, 24.3132, -2.9441},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P171",
+				pos = {0.5536, -0.3496, 0.0841},
+				rot = {6.5595, -8.5843, -89.0167},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P172",
+				pos = {0.4177, -0.3864, 0.373},
+				rot = {8.6653, -41.4334, 5.7589},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P173",
+				pos = {0.1461, -0.4232, 0.5406},
+				rot = {23.5489, -73.5776, -67.3127},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightLowerArm",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P174",
+				pos = {-0.173, -0.46, 0.5326},
+				rot = {159.8023, -70.9037, 160.8306},
+				shape = "Block",
+				size = {0.1, 0.1, 0.24},
+			}, {
+				attach = "RightHand",
+				color = {12, 12, 14},
+				material = "Fabric",
+				name = "SwordHandle",
+				pos = {0, -0.2, 0},
+				rot = {-50, 0, 0},
+				shape = "Block",
+				size = {0.26, 0.26, 0.9},
+			}, {
+				attach = "RightHand",
+				color = {26, 26, 30},
+				material = "Metal",
+				name = "P176",
+				pos = {0, -0.583, -0.3214},
+				rot = {-50, 0, 45},
+				shape = "Block",
+				size = {0.5, 0.5, 0.08},
+			}, {
+				attach = "RightHand",
+				color = {50, 50, 56},
+				material = "Metal",
+				name = "P177",
+				pos = {0, -0.583, -0.3214},
+				rot = {-50, 0, 0},
+				shape = "Block",
+				size = {0.36, 0.36, 0.1},
+			}, {
+				attach = "RightHand",
+				attachments = {{
+					name = "TrailA",
+					pos = {0, 0, 1.65},
+				}, {
+					name = "TrailB",
+					pos = {0, 0, -1.8},
+				}, {
+					name = "Tip",
+					pos = {0, 0, -1.8},
+				}},
+				color = {24, 24, 28},
+				material = "Metal",
+				name = "Blade",
+				pos = {0, -2.0002, -1.5106},
+				rot = {-50, 0, 0},
+				shape = "Block",
+				size = {0.1, 0.44, 3.6},
+			}, {
+				attach = "RightHand",
+				color = {168, 170, 182},
+				material = "Metal",
+				name = "P179",
+				pos = {0, -2.1671, -1.3895},
+				rot = {-50, 0, 0},
+				shape = "Block",
+				size = {0.105, 0.05, 3.5},
+			}, {
+				attach = "RightHand",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P180",
+				pos = {0, 0.1059, 0.4133},
+				rot = {-20, 0, -0},
+				shape = "Block",
+				size = {0.11, 0.11, 0.26},
+			}, {
+				attach = "RightHand",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P181",
+				pos = {0, 0.1385, 0.6234},
+				rot = {-8, 0, 90},
+				shape = "Block",
+				size = {0.11, 0.11, 0.26},
+			}, {
+				attach = "RightHand",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P182",
+				pos = {0, 0.171, 0.8335},
+				rot = {4, 0, -0},
+				shape = "Block",
+				size = {0.11, 0.11, 0.26},
+			}, {
+				attach = "RightHand",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P183",
+				pos = {0, 0.2036, 1.0436},
+				rot = {16, 0, 90},
+				shape = "Block",
+				size = {0.11, 0.11, 0.26},
+			}, {
+				attach = "RightHand",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P184",
+				pos = {0, 0.2362, 1.2537},
+				rot = {28, 0, -0},
+				shape = "Block",
+				size = {0.11, 0.11, 0.26},
+			}, {
+				attach = "RightHand",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P185",
+				pos = {0, 0.2688, 1.4638},
+				rot = {40, 0, 90},
+				shape = "Block",
+				size = {0.11, 0.11, 0.26},
+			}},
+		},
+		Mugetsu = {
+			chains = {{
+				attach = "Head",
+				bend = -3,
+				color = {12, 12, 14},
+				depth = 0.337,
+				lengths = {0.853, 1.009, 1.047, 0.97},
+				material = "SmoothPlastic",
+				name = "Mane1",
+				pos = {-0.5753, 0.2008, -0.02},
+				rot = {-122.2775, -70.5477, -111.9932},
+				width = 0.776,
+			}, {
+				attach = "Head",
+				bend = -3,
+				color = {12, 12, 14},
+				depth = 0.262,
+				lengths = {0.864, 1.021, 1.06, 0.981},
+				material = "SmoothPlastic",
+				name = "Mane2",
+				pos = {-0.5705, 0.2016, 0.1491},
+				rot = {-68.3227, -69.1984, -59.7366},
+				width = 0.919,
+			}, {
+				attach = "Head",
+				bend = -3,
+				color = {12, 12, 14},
+				depth = 0.324,
+				lengths = {0.795, 0.939, 0.975, 0.903},
+				material = "SmoothPlastic",
+				name = "Mane3",
+				pos = {-0.5117, 0.2118, 0.3089},
+				rot = {-39.5615, -56.394, -31.8384},
+				width = 0.951,
+			}, {
+				attach = "Head",
+				bend = -3,
+				color = {12, 12, 14},
+				depth = 0.294,
+				lengths = {1.283, 1.517, 1.575, 1.459},
+				material = "SmoothPlastic",
+				name = "Mane4",
+				pos = {-0.4046, 0.2302, 0.4441},
+				rot = {-27.3134, -40.1725, -20.4047},
+				width = 0.88,
+			}, {
+				attach = "Head",
+				bend = -3,
+				color = {12, 12, 14},
+				depth = 0.285,
+				lengths = {1.191, 1.408, 1.462, 1.353},
+				material = "SmoothPlastic",
+				name = "Mane5",
+				pos = {-0.2591, 0.2553, 0.542},
+				rot = {-20.8102, -23.0991, -14.6167},
+				width = 0.955,
+			}, {
+				attach = "Head",
+				bend = -3,
+				color = {12, 12, 14},
+				depth = 0.321,
+				lengths = {1.177, 1.39, 1.444, 1.337},
+				material = "SmoothPlastic",
+				name = "Mane6",
+				pos = {-0.0892, 0.2846, 0.5935},
+				rot = {-16.722, -5.8863, -11.1278},
+				width = 0.783,
+			}, {
+				attach = "Head",
+				bend = -3,
+				color = {12, 12, 14},
+				depth = 0.336,
+				lengths = {1.015, 1.2, 1.246, 1.154},
+				material = "SmoothPlastic",
+				name = "Mane7",
+				pos = {0.0892, 0.2846, 0.5935},
+				rot = {-13.8422, 11.2566, -8.7666},
+				width = 0.906,
+			}, {
+				attach = "Head",
+				bend = -3,
+				color = {12, 12, 14},
+				depth = 0.312,
+				lengths = {1.019, 1.205, 1.251, 1.158},
+				material = "SmoothPlastic",
+				name = "Mane8",
+				pos = {0.2591, 0.2553, 0.542},
+				rot = {-11.597, 28.3148, -7.0796},
+				width = 0.878,
+			}, {
+				attach = "Head",
+				bend = -3,
+				color = {12, 12, 14},
+				depth = 0.281,
+				lengths = {1.274, 1.506, 1.564, 1.448},
+				material = "SmoothPlastic",
+				name = "Mane9",
+				pos = {0.4046, 0.2302, 0.4441},
+				rot = {-9.5708, 45.3502, -5.9616},
+				width = 0.875,
+			}, {
+				attach = "Head",
+				bend = -3,
+				color = {12, 12, 14},
+				depth = 0.332,
+				lengths = {0.837, 0.989, 1.028, 0.951},
+				material = "SmoothPlastic",
+				name = "Mane10",
+				pos = {0.5117, 0.2118, 0.3089},
+				rot = {-7.0944, 62.4427, -5.7715},
+				width = 0.988,
+			}, {
+				attach = "Head",
+				bend = -3,
+				color = {12, 12, 14},
+				depth = 0.268,
+				lengths = {0.777, 0.919, 0.954, 0.883},
+				material = "SmoothPlastic",
+				name = "Mane11",
+				pos = {0.5705, 0.2016, 0.1491},
+				rot = {-0.2506, 79.6236, -10.2074},
+				width = 0.728,
+			}, {
+				attach = "Head",
+				bend = -3,
+				color = {12, 12, 14},
+				depth = 0.271,
+				lengths = {0.754, 0.891, 0.925, 0.856},
+				material = "SmoothPlastic",
+				name = "Mane12",
+				pos = {0.5753, 0.2008, -0.02},
+				rot = {157.2486, 82.5637, -166.2274},
+				width = 0.834,
+			}, {
+				attach = "Head",
+				bend = -2,
+				color = {12, 12, 14},
+				depth = 0.26,
+				lengths = {0.8, 0.9, 0.9, 0.8},
+				material = "SmoothPlastic",
+				name = "FrontLock-1",
+				pos = {-0.6, 0, -0.2},
+				rot = {-81.4692, -76.113, -90},
+				width = 0.55,
+			}, {
+				attach = "Head",
+				bend = -2,
+				color = {12, 12, 14},
+				depth = 0.26,
+				lengths = {0.8, 0.9, 0.9, 0.8},
+				material = "SmoothPlastic",
+				name = "FrontLock1",
+				pos = {0.6, 0, -0.2},
+				rot = {-81.4692, 76.113, 90},
+				width = 0.55,
+			}},
+			hideFace = true,
+			limbColors = {
+				Head = {232, 192, 152},
+				LeftFoot = {12, 12, 14},
+				LeftHand = {232, 192, 152},
+				LeftLowerArm = {232, 192, 152},
+				LeftLowerLeg = {16, 16, 20},
+				LeftUpperArm = {232, 192, 152},
+				LeftUpperLeg = {16, 16, 20},
+				LowerTorso = {16, 16, 20},
+				RightFoot = {12, 12, 14},
+				RightHand = {34, 41, 54},
+				RightLowerArm = {34, 41, 54},
+				RightLowerLeg = {16, 16, 20},
+				RightUpperArm = {34, 41, 54},
+				RightUpperLeg = {16, 16, 20},
+				UpperTorso = {34, 41, 54},
+			},
+			parts = {{
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P1",
+				pos = {0, 0.45, 0.06},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {1.34, 0.55, 1.32},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P2",
+				pos = {0, 0, 0.5},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {1.32, 1, 0.42},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P3",
+				pos = {-0.66, 0.12, 0.12},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {0.18, 0.85, 1},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P4",
+				pos = {0.66, 0.12, 0.12},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {0.18, 0.85, 1},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P5",
+				pos = {-0.0338, 0.9707, 0.4842},
+				rot = {42.2893, 1.6888, 1.8558},
+				shape = "Wedge",
+				size = {0.4289, 0.9683, 0.2479},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P6",
+				pos = {-0.0338, 0.9707, 0.4842},
+				rot = {-90, 87.491, 132.3167},
+				shape = "Wedge",
+				size = {0.4289, 0.9683, 0.2479},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P7",
+				pos = {0.1568, 0.9972, 0.4374},
+				rot = {38.3089, -6.9424, -8.6988},
+				shape = "Wedge",
+				size = {0.4531, 1.0053, 0.2512},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P8",
+				pos = {0.1568, 0.9972, 0.4374},
+				rot = {90, 78.8871, -51.1624},
+				shape = "Wedge",
+				size = {0.4531, 1.0053, 0.2512},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P9",
+				pos = {0.1655, 0.9611, 0.1972},
+				rot = {27.1947, -5.6659, -10.8766},
+				shape = "Wedge",
+				size = {0.3404, 0.805, 0.2371},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P10",
+				pos = {0.1655, 0.9611, 0.1972},
+				rot = {90, 77.7519, -62.2655},
+				shape = "Wedge",
+				size = {0.3404, 0.805, 0.2371},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P11",
+				pos = {-0.0085, 0.9572, 0.1026},
+				rot = {22.4541, 0.2455, 0.594},
+				shape = "Wedge",
+				size = {0.4511, 0.7449, 0.2232},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P12",
+				pos = {-0.0085, 0.9572, 0.1026},
+				rot = {-90, 89.3573, 112.4554},
+				shape = "Wedge",
+				size = {0.4511, 0.7449, 0.2232},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P13",
+				pos = {-0.1457, 0.9356, 0.1629},
+				rot = {26.1197, 4.9764, 10.0327},
+				shape = "Wedge",
+				size = {0.4797, 0.7352, 0.2739},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P14",
+				pos = {-0.1457, 0.9356, 0.1629},
+				rot = {-90, 78.8122, 116.5567},
+				shape = "Wedge",
+				size = {0.4797, 0.7352, 0.2739},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P15",
+				pos = {-0.1458, 0.9716, 0.4233},
+				rot = {38.6992, 6.7305, 8.3229},
+				shape = "Wedge",
+				size = {0.3448, 0.9417, 0.2329},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P16",
+				pos = {-0.1458, 0.9716, 0.4233},
+				rot = {-90, 79.3111, 129.1895},
+				shape = "Wedge",
+				size = {0.3448, 0.9417, 0.2329},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P17",
+				pos = {0.1561, 0.7878, 0.7633},
+				rot = {58.8443, -13.5407, -8.0567},
+				shape = "Wedge",
+				size = {0.4733, 0.9733, 0.2368},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P18",
+				pos = {0.1561, 0.7878, 0.7633},
+				rot = {90, 74.2823, -30.1977},
+				shape = "Wedge",
+				size = {0.4733, 0.9733, 0.2368},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P19",
+				pos = {0.4577, 0.884, 0.7677},
+				rot = {45.5352, -26.6528, -23.763},
+				shape = "Wedge",
+				size = {0.3575, 1.2961, 0.2928},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P20",
+				pos = {0.4577, 0.884, 0.7677},
+				rot = {90, 54.8821, -38.7586},
+				shape = "Wedge",
+				size = {0.3575, 1.2961, 0.2928},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P21",
+				pos = {0.6504, 0.9075, 0.3869},
+				rot = {24.8299, -22.0482, -39.0524},
+				shape = "Wedge",
+				size = {0.388, 1.1739, 0.2485},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P22",
+				pos = {0.6504, 0.9075, 0.3869},
+				rot = {90, 46.0361, -57.2657},
+				shape = "Wedge",
+				size = {0.388, 1.1739, 0.2485},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P23",
+				pos = {-0.5997, 0.8562, 0.3636},
+				rot = {25.7709, 22.7093, 38.6468},
+				shape = "Wedge",
+				size = {0.4756, 1.0159, 0.2894},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P24",
+				pos = {-0.5997, 0.8562, 0.3636},
+				rot = {-90, 46.0927, 123.8266},
+				shape = "Wedge",
+				size = {0.4756, 1.0159, 0.2894},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P25",
+				pos = {-0.4818, 0.881, 0.734},
+				rot = {43.5618, 27.1347, 25.6212},
+				shape = "Wedge",
+				size = {0.4213, 1.2709, 0.273},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P26",
+				pos = {-0.4818, 0.881, 0.734},
+				rot = {-90, 53.3629, 139.8436},
+				shape = "Wedge",
+				size = {0.4213, 1.2709, 0.273},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P27",
+				pos = {-0.251, 0.831, 0.8087},
+				rot = {55.7993, 19.1522, 12.5695},
+				shape = "Wedge",
+				size = {0.4558, 1.1391, 0.2201},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P28",
+				pos = {-0.251, 0.831, 0.8087},
+				rot = {-90, 67.2217, 147.9282},
+				shape = "Wedge",
+				size = {0.4558, 1.1391, 0.2201},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P29",
+				pos = {0.5952, 0.6231, 1.0449},
+				rot = {42.3351, -50.3127, -40.187},
+				shape = "Wedge",
+				size = {0.3973, 1.5015, 0.2365},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P30",
+				pos = {0.5952, 0.6231, 1.0449},
+				rot = {90, 29.1995, -28.1683},
+				shape = "Wedge",
+				size = {0.3973, 1.5015, 0.2365},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P31",
+				pos = {0.7785, 0.6059, 0.7121},
+				rot = {22.6835, -43.589, -58.7753},
+				shape = "Wedge",
+				size = {0.4793, 1.2406, 0.2387},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P32",
+				pos = {0.7785, 0.6059, 0.7121},
+				rot = {90, 22.0537, -41.9343},
+				shape = "Wedge",
+				size = {0.4793, 1.2406, 0.2387},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P33",
+				pos = {0.8723, 0.6066, 0.3754},
+				rot = {12.2512, -30.3536, -66.7468},
+				shape = "Wedge",
+				size = {0.4405, 1.0885, 0.2993},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P34",
+				pos = {0.8723, 0.6066, 0.3754},
+				rot = {90, 19.9182, -57.4872},
+				shape = "Wedge",
+				size = {0.4405, 1.0885, 0.2993},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P35",
+				pos = {-0.9557, 0.638, 0.4757},
+				rot = {13.0987, 31.9364, 66.2566},
+				shape = "Wedge",
+				size = {0.4272, 1.3294, 0.2181},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P36",
+				pos = {-0.9557, 0.638, 0.4757},
+				rot = {-90, 19.9803, 124.2535},
+				shape = "Wedge",
+				size = {0.4272, 1.3294, 0.2181},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P37",
+				pos = {-0.7522, 0.6018, 0.7302},
+				rot = {24.1363, 44.6525, 57.48},
+				shape = "Wedge",
+				size = {0.4698, 1.2211, 0.2347},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P38",
+				pos = {-0.7522, 0.6018, 0.7302},
+				rot = {-90, 22.4846, 139.5194},
+				shape = "Wedge",
+				size = {0.4698, 1.2211, 0.2347},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P39",
+				pos = {-0.3363, 0.5835, 1.0099},
+				rot = {61.3126, 45.2007, 21.2202},
+				shape = "Wedge",
+				size = {0.3545, 1.1994, 0.2066},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P40",
+				pos = {-0.3363, 0.5835, 1.0099},
+				rot = {-90, 41.06, 160.2302},
+				shape = "Wedge",
+				size = {0.3545, 1.1994, 0.2066},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P41",
+				pos = {0.1327, 0.6078, 1.1805},
+				rot = {75.2203, -22.0219, -5.6497},
+				shape = "Wedge",
+				size = {0.3925, 1.444, 0.2683},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P42",
+				pos = {0.1327, 0.6078, 1.1805},
+				rot = {90, 67.2999, -13.6795},
+				shape = "Wedge",
+				size = {0.3925, 1.444, 0.2683},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P43",
+				pos = {0.8233, 0.3098, 0.9295},
+				rot = {-4.5139, -54.3745, -95.5473},
+				shape = "Wedge",
+				size = {0.4742, 1.4493, 0.2407},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P44",
+				pos = {0.8233, 0.3098, 0.9295},
+				rot = {90, -3.2279, -35.4983},
+				shape = "Wedge",
+				size = {0.4742, 1.4493, 0.2407},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P45",
+				pos = {1.1682, 0.3025, 0.3176},
+				rot = {-1.1934, -24.3789, -92.8891},
+				shape = "Wedge",
+				size = {0.4227, 1.4807, 0.2883},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P46",
+				pos = {1.1682, 0.3025, 0.3176},
+				rot = {90, -2.6313, -65.5936},
+				shape = "Wedge",
+				size = {0.4227, 1.4807, 0.2883},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P47",
+				pos = {-0.9709, 0.3112, 0.1767},
+				rot = {-1.0594, 21.7682, 92.8547},
+				shape = "Wedge",
+				size = {0.4527, 1.0347, 0.2774},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P48",
+				pos = {-0.9709, 0.3112, 0.1767},
+				rot = {-90, -2.651, 111.7927},
+				shape = "Wedge",
+				size = {0.4527, 1.0347, 0.2774},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P49",
+				pos = {-0.8509, 0.31, 0.8796},
+				rot = {-4.0255, 52.2617, 95.0853},
+				shape = "Wedge",
+				size = {0.3473, 1.4185, 0.2258},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P50",
+				pos = {-0.8509, 0.31, 0.8796},
+				rot = {-90, -3.1099, 142.371},
+				shape = "Wedge",
+				size = {0.3473, 1.4185, 0.2258},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P51",
+				pos = {-0.3752, 0.3153, 1.0746},
+				rot = {-20.591, 72.7689, 111.4723},
+				shape = "Wedge",
+				size = {0.3639, 1.2098, 0.2069},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P52",
+				pos = {-0.3752, 0.3153, 1.0746},
+				rot = {-90, -6.2251, 163.9007},
+				shape = "Wedge",
+				size = {0.3639, 1.2098, 0.2069},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P53",
+				pos = {0.2023, 0.312, 1.2446},
+				rot = {-56.7292, -75.3619, -147.5905},
+				shape = "Wedge",
+				size = {0.4777, 1.4496, 0.2746},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P54",
+				pos = {0.2023, 0.312, 1.2446},
+				rot = {90, -12.3188, -7.969},
+				shape = "Wedge",
+				size = {0.4777, 1.4496, 0.2746},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P55",
+				pos = {-0.5043, 0.266, -0.6454},
+				rot = {-162.1997, 2.1883, 6.7823},
+				shape = "Wedge",
+				size = {0.26, 0.75, 0.14},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P56",
+				pos = {-0.253, 0.4207, -0.595},
+				rot = {-162.0111, 1.1539, 3.5488},
+				shape = "Wedge",
+				size = {0.24, 0.42, 0.14},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P57",
+				pos = {0, 0.3253, -0.6261},
+				rot = {-161.9395, 0, -0},
+				shape = "Wedge",
+				size = {0.13, 0.62, 0.14},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P58",
+				pos = {0.253, 0.4207, -0.595},
+				rot = {-162.0111, -1.1539, -3.5488},
+				shape = "Wedge",
+				size = {0.24, 0.42, 0.14},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P59",
+				pos = {0.5043, 0.266, -0.6454},
+				rot = {-162.1997, -2.1883, -6.7823},
+				shape = "Wedge",
+				size = {0.26, 0.75, 0.14},
+			}, {
+				attach = "Head",
+				color = {34, 41, 54},
+				material = "Fabric",
+				name = "P60",
+				pos = {0, -0.3, 0},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {1.26, 0.52, 1.26},
+			}, {
+				attach = "Head",
+				color = {54, 63, 82},
+				material = "Fabric",
+				name = "P61",
+				pos = {0, -0.17, -0.64},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {1, 0.07, 0.05},
+			}, {
+				attach = "Head",
+				color = {24, 29, 38},
+				material = "Fabric",
+				name = "P62",
+				pos = {0, -0.38, -0.64},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {0.9, 0.06, 0.05},
+			}, {
+				attach = "Head",
+				color = {200, 24, 34},
+				material = "Neon",
+				name = "P63",
+				pos = {-0.25, 0.1, -0.615},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {0.26, 0.09, 0.04},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P64",
+				pos = {-0.26, 0.19, -0.615},
+				rot = {0, 0, 14},
+				shape = "Block",
+				size = {0.32, 0.06, 0.04},
+			}, {
+				attach = "Head",
+				color = {200, 24, 34},
+				material = "Neon",
+				name = "P65",
+				pos = {0.25, 0.1, -0.615},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {0.26, 0.09, 0.04},
+			}, {
+				attach = "Head",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P66",
+				pos = {0.26, 0.19, -0.615},
+				rot = {0, 0, -14},
+				shape = "Block",
+				size = {0.32, 0.06, 0.04},
+			}, {
+				attach = "UpperTorso",
+				color = {54, 63, 82},
+				material = "Fabric",
+				name = "P67",
+				pos = {0, 0.62, 0},
+				rot = {0, 0, -8},
+				shape = "Block",
+				size = {2.04, 0.14, 1.04},
+			}, {
+				attach = "UpperTorso",
+				color = {54, 63, 82},
+				material = "Fabric",
+				name = "P68",
+				pos = {0, 0.37, 0},
+				rot = {0, 0, 8},
+				shape = "Block",
+				size = {2.04, 0.14, 1.04},
+			}, {
+				attach = "UpperTorso",
+				color = {54, 63, 82},
+				material = "Fabric",
+				name = "P69",
+				pos = {0, 0.12, 0},
+				rot = {0, 0, -8},
+				shape = "Block",
+				size = {2.04, 0.14, 1.04},
+			}, {
+				attach = "UpperTorso",
+				color = {54, 63, 82},
+				material = "Fabric",
+				name = "P70",
+				pos = {0, -0.13, 0},
+				rot = {0, 0, 8},
+				shape = "Block",
+				size = {2.04, 0.14, 1.04},
+			}, {
+				attach = "UpperTorso",
+				color = {54, 63, 82},
+				material = "Fabric",
+				name = "P71",
+				pos = {0, -0.38, 0},
+				rot = {0, 0, -8},
+				shape = "Block",
+				size = {2.04, 0.14, 1.04},
+			}, {
+				attach = "UpperTorso",
+				color = {54, 63, 82},
+				material = "Fabric",
+				name = "P72",
+				pos = {0, -0.63, 0},
+				rot = {0, 0, 8},
+				shape = "Block",
+				size = {2.04, 0.14, 1.04},
+			}, {
+				attach = "UpperTorso",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P73",
+				pos = {0.45, 0.35, -0.525},
+				rot = {0, 0, 20},
+				shape = "Block",
+				size = {0.55, 0.3, 0.04},
+			}, {
+				attach = "UpperTorso",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P74",
+				pos = {-0.36, 0.4, 0.525},
+				rot = {0, 0, -20},
+				shape = "Block",
+				size = {0.495, 0.3, 0.04},
+			}, {
+				attach = "UpperTorso",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P75",
+				pos = {0.7, -0.15, -0.525},
+				rot = {0, 0, -15},
+				shape = "Block",
+				size = {0.45, 0.35, 0.04},
+			}, {
+				attach = "UpperTorso",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P76",
+				pos = {-0.56, -0.1, 0.525},
+				rot = {0, 0, 15},
+				shape = "Block",
+				size = {0.405, 0.35, 0.04},
+			}, {
+				attach = "UpperTorso",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P77",
+				pos = {0.2, -0.5, -0.525},
+				rot = {0, 0, 30},
+				shape = "Block",
+				size = {0.6, 0.25, 0.04},
+			}, {
+				attach = "UpperTorso",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P78",
+				pos = {-0.16, -0.45, 0.525},
+				rot = {0, 0, -30},
+				shape = "Block",
+				size = {0.54, 0.25, 0.04},
+			}, {
+				attach = "UpperTorso",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P79",
+				pos = {-0.15, 0.1, -0.525},
+				rot = {0, 0, -25},
+				shape = "Block",
+				size = {0.4, 0.3, 0.04},
+			}, {
+				attach = "UpperTorso",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P80",
+				pos = {0.12, 0.15, 0.525},
+				rot = {0, 0, 25},
+				shape = "Block",
+				size = {0.36, 0.3, 0.04},
+			}, {
+				attach = "UpperTorso",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P81",
+				pos = {0.55, 0.65, -0.525},
+				rot = {0, 0, 5},
+				shape = "Block",
+				size = {0.6, 0.18, 0.04},
+			}, {
+				attach = "UpperTorso",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P82",
+				pos = {-0.44, 0.7, 0.525},
+				rot = {0, 0, -5},
+				shape = "Block",
+				size = {0.54, 0.18, 0.04},
+			}, {
+				attach = "UpperTorso",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P83",
+				pos = {-0.3, -0.45, -0.525},
+				rot = {0, 0, 12},
+				shape = "Block",
+				size = {0.5, 0.2, 0.04},
+			}, {
+				attach = "UpperTorso",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P84",
+				pos = {0.24, -0.4, 0.525},
+				rot = {0, 0, -12},
+				shape = "Block",
+				size = {0.45, 0.2, 0.04},
+			}, {
+				attach = "UpperTorso",
+				color = {232, 192, 152},
+				material = "SmoothPlastic",
+				name = "P85",
+				pos = {-0.62, 0.3, -0.518},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {0.5, 0.42, 0.03},
+			}, {
+				attach = "UpperTorso",
+				color = {232, 192, 152},
+				material = "SmoothPlastic",
+				name = "P86",
+				pos = {-0.78, -0.25, -0.518},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {0.38, 0.4, 0.03},
+			}, {
+				attach = "UpperTorso",
+				color = {232, 192, 152},
+				material = "SmoothPlastic",
+				name = "P87",
+				pos = {-0.4, -0.6, -0.518},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {0.35, 0.22, 0.03},
+			}, {
+				attach = "UpperTorso",
+				color = {232, 192, 152},
+				material = "SmoothPlastic",
+				name = "P88",
+				pos = {-1.012, 0.1, -0.1},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {0.03, 0.9, 0.6},
+			}, {
+				attach = "LeftUpperArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P89",
+				pos = {0.05, 0.45, -0.515},
+				rot = {0, 0, 25.7135},
+				shape = "Block",
+				size = {0.62, 0.1, 0.03},
+			}, {
+				attach = "LeftUpperArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P90",
+				pos = {-0.515, 0.37, 0.05},
+				rot = {10.8726, 0, 0},
+				shape = "Block",
+				size = {0.03, 0.1, 0.62},
+			}, {
+				attach = "LeftUpperArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P91",
+				pos = {-0.1, 0.35, 0.515},
+				rot = {0, 0, -22.4083},
+				shape = "Block",
+				size = {0.5, 0.08, 0.03},
+			}, {
+				attach = "LeftUpperArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P92",
+				pos = {0.05, 0.225, -0.515},
+				rot = {0, 0, 2.7061},
+				shape = "Block",
+				size = {0.62, 0.1, 0.03},
+			}, {
+				attach = "LeftUpperArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P93",
+				pos = {-0.515, 0.145, 0.05},
+				rot = {-12.3006, 0, 0},
+				shape = "Block",
+				size = {0.03, 0.1, 0.62},
+			}, {
+				attach = "LeftUpperArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P94",
+				pos = {-0.1, 0.125, 0.515},
+				rot = {0, 0, -0.368},
+				shape = "Block",
+				size = {0.5, 0.08, 0.03},
+			}, {
+				attach = "LeftUpperArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P95",
+				pos = {0.05, 0, -0.515},
+				rot = {0, 0, -19.6274},
+				shape = "Block",
+				size = {0.62, 0.1, 0.03},
+			}, {
+				attach = "LeftUpperArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P96",
+				pos = {-0.515, -0.08, 0.05},
+				rot = {-23.3744, 0, 0},
+				shape = "Block",
+				size = {0.03, 0.1, 0.62},
+			}, {
+				attach = "LeftUpperArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P97",
+				pos = {-0.1, -0.1, 0.515},
+				rot = {0, 0, -18.9634},
+				shape = "Block",
+				size = {0.5, 0.08, 0.03},
+			}, {
+				attach = "LeftUpperArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P98",
+				pos = {0.05, -0.225, -0.515},
+				rot = {0, 0, -8.5532},
+				shape = "Block",
+				size = {0.62, 0.1, 0.03},
+			}, {
+				attach = "LeftUpperArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P99",
+				pos = {-0.515, -0.305, 0.05},
+				rot = {14.6983, 0, 0},
+				shape = "Block",
+				size = {0.03, 0.1, 0.62},
+			}, {
+				attach = "LeftUpperArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P100",
+				pos = {-0.1, -0.325, 0.515},
+				rot = {0, 0, 3.0022},
+				shape = "Block",
+				size = {0.5, 0.08, 0.03},
+			}, {
+				attach = "LeftUpperArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P101",
+				pos = {0.05, -0.45, -0.515},
+				rot = {0, 0, -31.7673},
+				shape = "Block",
+				size = {0.62, 0.1, 0.03},
+			}, {
+				attach = "LeftUpperArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P102",
+				pos = {-0.515, -0.53, 0.05},
+				rot = {14.7613, 0, 0},
+				shape = "Block",
+				size = {0.03, 0.1, 0.62},
+			}, {
+				attach = "LeftUpperArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P103",
+				pos = {-0.1, -0.55, 0.515},
+				rot = {0, 0, 22.4321},
+				shape = "Block",
+				size = {0.5, 0.08, 0.03},
+			}, {
+				attach = "LeftLowerArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P104",
+				pos = {0.05, 0.45, -0.515},
+				rot = {0, 0, 19.1974},
+				shape = "Block",
+				size = {0.62, 0.1, 0.03},
+			}, {
+				attach = "LeftLowerArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P105",
+				pos = {-0.515, 0.37, 0.05},
+				rot = {20.3508, 0, 0},
+				shape = "Block",
+				size = {0.03, 0.1, 0.62},
+			}, {
+				attach = "LeftLowerArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P106",
+				pos = {-0.1, 0.35, 0.515},
+				rot = {0, 0, -29.5306},
+				shape = "Block",
+				size = {0.5, 0.08, 0.03},
+			}, {
+				attach = "LeftLowerArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P107",
+				pos = {0.05, 0.15, -0.515},
+				rot = {0, 0, -2.5284},
+				shape = "Block",
+				size = {0.62, 0.1, 0.03},
+			}, {
+				attach = "LeftLowerArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P108",
+				pos = {-0.515, 0.07, 0.05},
+				rot = {-30.5556, 0, 0},
+				shape = "Block",
+				size = {0.03, 0.1, 0.62},
+			}, {
+				attach = "LeftLowerArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P109",
+				pos = {-0.1, 0.05, 0.515},
+				rot = {0, 0, 15.8352},
+				shape = "Block",
+				size = {0.5, 0.08, 0.03},
+			}, {
+				attach = "LeftLowerArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P110",
+				pos = {0.05, -0.15, -0.515},
+				rot = {0, 0, -22.7292},
+				shape = "Block",
+				size = {0.62, 0.1, 0.03},
+			}, {
+				attach = "LeftLowerArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P111",
+				pos = {-0.515, -0.23, 0.05},
+				rot = {14.8041, 0, 0},
+				shape = "Block",
+				size = {0.03, 0.1, 0.62},
+			}, {
+				attach = "LeftLowerArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P112",
+				pos = {-0.1, -0.25, 0.515},
+				rot = {0, 0, -14.8256},
+				shape = "Block",
+				size = {0.5, 0.08, 0.03},
+			}, {
+				attach = "LeftLowerArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P113",
+				pos = {0.05, -0.45, -0.515},
+				rot = {0, 0, 13.7713},
+				shape = "Block",
+				size = {0.62, 0.1, 0.03},
+			}, {
+				attach = "LeftLowerArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P114",
+				pos = {-0.515, -0.53, 0.05},
+				rot = {-13.0468, 0, 0},
+				shape = "Block",
+				size = {0.03, 0.1, 0.62},
+			}, {
+				attach = "LeftLowerArm",
+				color = {12, 12, 14},
+				material = "SmoothPlastic",
+				name = "P115",
+				pos = {-0.1, -0.55, 0.515},
+				rot = {0, 0, -27.4853},
+				shape = "Block",
+				size = {0.5, 0.08, 0.03},
+			}, {
+				attach = "RightUpperArm",
+				color = {54, 63, 82},
+				material = "Fabric",
+				name = "P116",
+				pos = {0, 0.35, 0},
+				rot = {0, 0, -2.2226},
+				shape = "Block",
+				size = {1.04, 0.1, 1.04},
+			}, {
+				attach = "RightUpperArm",
+				color = {54, 63, 82},
+				material = "Fabric",
+				name = "P117",
+				pos = {0, 0, 0},
+				rot = {0, 0, -3.8118},
+				shape = "Block",
+				size = {1.04, 0.1, 1.04},
+			}, {
+				attach = "RightUpperArm",
+				color = {54, 63, 82},
+				material = "Fabric",
+				name = "P118",
+				pos = {0, -0.35, 0},
+				rot = {0, 0, 8.0151},
+				shape = "Block",
+				size = {1.04, 0.1, 1.04},
+			}, {
+				attach = "RightLowerArm",
+				color = {54, 63, 82},
+				material = "Fabric",
+				name = "P119",
+				pos = {0, 0.35, 0},
+				rot = {0, 0, -4.0995},
+				shape = "Block",
+				size = {1.04, 0.1, 1.04},
+			}, {
+				attach = "RightLowerArm",
+				color = {54, 63, 82},
+				material = "Fabric",
+				name = "P120",
+				pos = {0, 0, 0},
+				rot = {0, 0, 0.0624},
+				shape = "Block",
+				size = {1.04, 0.1, 1.04},
+			}, {
+				attach = "RightLowerArm",
+				color = {54, 63, 82},
+				material = "Fabric",
+				name = "P121",
+				pos = {0, -0.35, 0},
+				rot = {0, 0, 0.9866},
+				shape = "Block",
+				size = {1.04, 0.1, 1.04},
+			}, {
+				attach = "LowerTorso",
+				color = {20, 22, 28},
+				material = "Fabric",
+				name = "P122",
+				pos = {0, 0, 0},
+				rot = {0, 0, 0},
+				shape = "Block",
+				size = {2.12, 0.44, 1.12},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P123",
+				pos = {0.2021, -1.3439, 0.8512},
+				rot = {-11.1337, 8.8333, 1.731},
+				shape = "Block",
+				size = {0.58, 2.5345, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P124",
+				pos = {0.1015, -2.746, 1.143},
+				rot = {-11.1337, 8.8333, -178.269},
+				shape = "Wedge",
+				size = {0.2784, 0.362, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P125",
+				pos = {0.3899, -2.8111, 1.1102},
+				rot = {-11.1337, 8.8333, -178.269},
+				shape = "Wedge",
+				size = {0.2784, 0.4947, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P126",
+				pos = {0.5807, -1.2792, 0.7566},
+				rot = {-12.3067, 26.4649, 5.553},
+				shape = "Block",
+				size = {0.58, 2.4025, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P127",
+				pos = {0.5768, -2.6988, 1.0683},
+				rot = {-12.3067, 26.4649, -174.447},
+				shape = "Wedge",
+				size = {0.2784, 0.5299, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P128",
+				pos = {0.8379, -2.7289, 0.9419},
+				rot = {-12.3067, 26.4649, -174.447},
+				shape = "Wedge",
+				size = {0.2784, 0.5913, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P129",
+				pos = {0.9005, -1.25, 0.5965},
+				rot = {-15.3707, 43.9568, 10.8027},
+				shape = "Block",
+				size = {0.58, 2.343, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P130",
+				pos = {0.9885, -2.6359, 0.8895},
+				rot = {-15.3707, 43.9568, -169.1973},
+				shape = "Wedge",
+				size = {0.2784, 0.5207, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P131",
+				pos = {1.1905, -2.6134, 0.6813},
+				rot = {-15.3707, 43.9568, -169.1973},
+				shape = "Wedge",
+				size = {0.2784, 0.4748, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P132",
+				pos = {1.1411, -1.2869, 0.3862},
+				rot = {-23.1786, 61.002, 20.5301},
+				shape = "Block",
+				size = {0.58, 2.4182, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P133",
+				pos = {1.3074, -2.6273, 0.6337},
+				rot = {-23.1786, 61.002, -159.4699},
+				shape = "Wedge",
+				size = {0.2784, 0.3528, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P134",
+				pos = {1.456, -2.7246, 0.3839},
+				rot = {-23.1786, 61.002, -159.4699},
+				shape = "Wedge",
+				size = {0.2784, 0.5511, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P135",
+				pos = {1.2767, -1.3482, 0.1349},
+				rot = {-51.1734, 75.8225, 50.305},
+				shape = "Block",
+				size = {0.58, 2.5431, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P136",
+				pos = {1.5304, -2.7876, 0.3219},
+				rot = {-51.1734, 75.8225, -129.695},
+				shape = "Wedge",
+				size = {0.2784, 0.4298, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P137",
+				pos = {1.5748, -2.7828, 0.0354},
+				rot = {-51.1734, 75.8225, -129.695},
+				shape = "Wedge",
+				size = {0.2784, 0.42, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P138",
+				pos = {1.2772, -1.3506, -0.135},
+				rot = {-128.8266, 75.8225, 129.695},
+				shape = "Block",
+				size = {0.58, 2.548, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P139",
+				pos = {1.5705, -2.7604, -0.0347},
+				rot = {-128.8266, 75.8225, -50.305},
+				shape = "Wedge",
+				size = {0.2784, 0.3644, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P140",
+				pos = {1.5244, -2.7563, -0.321},
+				rot = {-128.8266, 75.8225, -50.305},
+				shape = "Wedge",
+				size = {0.2784, 0.3561, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P141",
+				pos = {1.1287, -1.2151, -0.3799},
+				rot = {-156.8214, 61.002, 159.4699},
+				shape = "Block",
+				size = {0.58, 2.272, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P142",
+				pos = {1.4311, -2.5811, -0.3712},
+				rot = {-156.8214, 61.002, -20.5301},
+				shape = "Wedge",
+				size = {0.2784, 0.551, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P143",
+				pos = {1.2982, -2.574, -0.629},
+				rot = {-156.8214, 61.002, -20.5301},
+				shape = "Wedge",
+				size = {0.2784, 0.5366, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P144",
+				pos = {0.9033, -1.2703, -0.5993},
+				rot = {-164.6293, 43.9568, 169.1973},
+				shape = "Block",
+				size = {0.58, 2.3844, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P145",
+				pos = {1.1977, -2.6664, -0.6886},
+				rot = {-164.6293, 43.9568, -10.8027},
+				shape = "Wedge",
+				size = {0.2784, 0.5, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P146",
+				pos = {0.982, -2.5885, -0.883},
+				rot = {-164.6293, 43.9568, -10.8027},
+				shape = "Wedge",
+				size = {0.2784, 0.3412, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P147",
+				pos = {0.5825, -1.2993, -0.7601},
+				rot = {-167.6933, 26.4649, 174.447},
+				shape = "Block",
+				size = {0.58, 2.4434, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P148",
+				pos = {0.8354, -2.7011, -0.9371},
+				rot = {-167.6933, 26.4649, -5.553},
+				shape = "Wedge",
+				size = {0.2784, 0.4529, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P149",
+				pos = {0.5779, -2.7108, -1.0704},
+				rot = {-167.6933, 26.4649, -5.553},
+				shape = "Wedge",
+				size = {0.2784, 0.4726, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P150",
+				pos = {0.1996, -1.2617, -0.8354},
+				rot = {-168.8663, 8.8333, 178.269},
+				shape = "Block",
+				size = {0.58, 2.3668, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P151",
+				pos = {0.3841, -2.6206, -1.0736},
+				rot = {-168.8663, 8.8333, -1.731},
+				shape = "Wedge",
+				size = {0.2784, 0.442, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P152",
+				pos = {0.097, -2.5978, -1.1146},
+				rot = {-168.8663, 8.8333, -1.731},
+				shape = "Wedge",
+				size = {0.2784, 0.3955, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P153",
+				pos = {-0.1981, -1.2115, -0.8258},
+				rot = {-168.8663, -8.8333, -178.269},
+				shape = "Block",
+				size = {0.58, 2.2646, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P154",
+				pos = {-0.0948, -2.5245, -1.1005},
+				rot = {-168.8663, -8.8333, 1.731},
+				shape = "Wedge",
+				size = {0.2784, 0.4506, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P155",
+				pos = {-0.3805, -2.5003, -1.0505},
+				rot = {-168.8663, -8.8333, 1.731},
+				shape = "Wedge",
+				size = {0.2784, 0.4012, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P156",
+				pos = {-0.5833, -1.308, -0.7616},
+				rot = {-167.6933, -26.4649, -174.447},
+				shape = "Block",
+				size = {0.58, 2.4613, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P157",
+				pos = {-0.5829, -2.7672, -1.0802},
+				rot = {-167.6933, -26.4649, 5.553},
+				shape = "Wedge",
+				size = {0.2784, 0.5518, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P158",
+				pos = {-0.8402, -2.7551, -0.9464},
+				rot = {-167.6933, -26.4649, 5.553},
+				shape = "Wedge",
+				size = {0.2784, 0.5271, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P159",
+				pos = {-0.9035, -1.2715, -0.5994},
+				rot = {-164.6293, -43.9568, -169.1973},
+				shape = "Block",
+				size = {0.58, 2.3868, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P160",
+				pos = {-0.9861, -2.6189, -0.8871},
+				rot = {-164.6293, -43.9568, 10.8027},
+				shape = "Wedge",
+				size = {0.2784, 0.3984, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P161",
+				pos = {-1.1939, -2.6382, -0.6847},
+				rot = {-164.6293, -43.9568, 10.8027},
+				shape = "Wedge",
+				size = {0.2784, 0.4377, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P162",
+				pos = {-1.1392, -1.276, -0.3853},
+				rot = {-156.8214, -61.002, -159.4699},
+				shape = "Block",
+				size = {0.58, 2.396, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P163",
+				pos = {-1.3164, -2.6792, -0.6383},
+				rot = {-156.8214, -61.002, 20.5301},
+				shape = "Wedge",
+				size = {0.2784, 0.5028, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P164",
+				pos = {-1.4555, -2.7221, -0.3837},
+				rot = {-156.8214, -61.002, 20.5301},
+				shape = "Wedge",
+				size = {0.2784, 0.5903, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P165",
+				pos = {-1.2515, -1.2169, -0.131},
+				rot = {-128.8266, -75.8225, -129.695},
+				shape = "Block",
+				size = {0.58, 2.2756, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P166",
+				pos = {-1.4831, -2.5413, -0.3144},
+				rot = {-128.8266, -75.8225, 50.305},
+				shape = "Wedge",
+				size = {0.2784, 0.4626, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P167",
+				pos = {-1.5287, -2.5428, -0.0281},
+				rot = {-128.8266, -75.8225, 50.305},
+				shape = "Wedge",
+				size = {0.2784, 0.4659, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P168",
+				pos = {-1.2694, -1.3099, 0.1338},
+				rot = {-51.1734, -75.8225, -50.305},
+				shape = "Block",
+				size = {0.58, 2.4652, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P169",
+				pos = {-1.5744, -2.7805, 0.0353},
+				rot = {-51.1734, -75.8225, 129.695},
+				shape = "Wedge",
+				size = {0.2784, 0.5711, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P170",
+				pos = {-1.5263, -2.7661, 0.3213},
+				rot = {-51.1734, -75.8225, 129.695},
+				shape = "Wedge",
+				size = {0.2784, 0.5418, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P171",
+				pos = {-1.1428, -1.2966, 0.3871},
+				rot = {-23.1786, -61.002, -20.5301},
+				shape = "Block",
+				size = {0.58, 2.438, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P172",
+				pos = {-1.4581, -2.7368, 0.385},
+				rot = {-23.1786, -61.002, 159.4699},
+				shape = "Wedge",
+				size = {0.2784, 0.5363, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P173",
+				pos = {-1.3244, -2.7251, 0.6423},
+				rot = {-23.1786, -61.002, 159.4699},
+				shape = "Wedge",
+				size = {0.2784, 0.5124, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P174",
+				pos = {-0.9116, -1.3308, 0.6076},
+				rot = {-15.3707, -43.9568, -10.8027},
+				shape = "Block",
+				size = {0.58, 2.5077, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P175",
+				pos = {-1.2158, -2.7975, 0.7066},
+				rot = {-15.3707, -43.9568, 169.1973},
+				shape = "Wedge",
+				size = {0.2784, 0.5205, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P176",
+				pos = {-1.0104, -2.7954, 0.9114},
+				rot = {-15.3707, -43.9568, 169.1973},
+				shape = "Wedge",
+				size = {0.2784, 0.5163, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P177",
+				pos = {-0.5773, -1.2405, 0.7499},
+				rot = {-12.3067, -26.4649, -5.553},
+				shape = "Block",
+				size = {0.58, 2.3236, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P178",
+				pos = {-0.8305, -2.645, 0.9274},
+				rot = {-12.3067, -26.4649, 174.447},
+				shape = "Wedge",
+				size = {0.2784, 0.578, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P179",
+				pos = {-0.566, -2.5762, 1.0471},
+				rot = {-12.3067, -26.4649, 174.447},
+				shape = "Wedge",
+				size = {0.2784, 0.4379, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "Fabric",
+				name = "P180",
+				pos = {-0.2006, -1.2948, 0.8418},
+				rot = {-11.1337, -8.8333, -1.731},
+				shape = "Block",
+				size = {0.58, 2.4344, 0.08},
+			}, {
+				attach = "LowerTorso",
+				color = {16, 16, 20},
+				material = "SmoothPlastic",
+				name = "P181",
+				pos = {-0.3878, -2.7418, 1.0969},
+				rot = {-11.1337, -8.8333, 178.269},
+				shape = "Wedge",
+				size = {0.2784, 0.5538, 0.07},
+			}, {
+				attach = "LowerTorso",
+				color = {70, 82, 104},
+				material = "SmoothPlastic",
+				name = "P182",
+				pos = {-0.1019, -2.7598, 1.1457},
+				rot = {-11.1337, -8.8333, 178.269},
+				shape = "Wedge",
+				size = {0.2784, 0.5904, 0.07},
+			}, {
+				attach = "RightHand",
+				color = {12, 12, 14},
+				material = "Fabric",
+				name = "SwordHandle",
+				pos = {0, -0.2, 0},
+				rot = {-50, 0, 0},
+				shape = "Block",
+				size = {0.26, 0.26, 0.9},
+			}, {
+				attach = "RightHand",
+				color = {26, 26, 30},
+				material = "Metal",
+				name = "P184",
+				pos = {0, -0.583, -0.3214},
+				rot = {-50, 0, 0},
+				shape = "Block",
+				size = {0.42, 0.42, 0.08},
+			}, {
+				attach = "RightHand",
+				attachments = {{
+					name = "TrailA",
+					pos = {0, 0, 1.55},
+				}, {
+					name = "TrailB",
+					pos = {0, 0, -1.7},
+				}, {
+					name = "Tip",
+					pos = {0, 0, -1.7},
+				}},
+				color = {7, 7, 9},
+				material = "Metal",
+				name = "Blade",
+				pos = {0, -1.9236, -1.4463},
+				rot = {-50, 0, 0},
+				shape = "Block",
+				size = {0.1, 0.44, 3.4},
+			}, {
+				attach = "RightHand",
+				color = {5, 5, 7},
+				material = "SmoothPlastic",
+				name = "P186",
+				pos = {0, -0.748, -0.747},
+				rot = {-24.8404, 0, -0},
+				shape = "Wedge",
+				size = {0.06, 0.6468, 0.22},
+			}, {
+				attach = "RightHand",
+				color = {5, 5, 7},
+				material = "SmoothPlastic",
+				name = "P187",
+				pos = {0, -1.0698, -1.017},
+				rot = {-17.2067, 0, -0},
+				shape = "Wedge",
+				size = {0.06, 0.4438, 0.22},
+			}, {
+				attach = "RightHand",
+				color = {5, 5, 7},
+				material = "SmoothPlastic",
+				name = "P188",
+				pos = {0, -1.3915, -1.287},
+				rot = {-21.3645, 0, -0},
+				shape = "Wedge",
+				size = {0.06, 0.4674, 0.22},
+			}, {
+				attach = "RightHand",
+				color = {5, 5, 7},
+				material = "SmoothPlastic",
+				name = "P189",
+				pos = {0, -1.7132, -1.557},
+				rot = {-23.0121, 0, -0},
+				shape = "Wedge",
+				size = {0.06, 0.516, 0.22},
+			}, {
+				attach = "RightHand",
+				color = {5, 5, 7},
+				material = "SmoothPlastic",
+				name = "P190",
+				pos = {0, -2.035, -1.8269},
+				rot = {-1.4119, 0, -0},
+				shape = "Wedge",
+				size = {0.06, 0.4408, 0.22},
+			}, {
+				attach = "RightHand",
+				color = {5, 5, 7},
+				material = "SmoothPlastic",
+				name = "P191",
+				pos = {0, -2.3567, -2.0969},
+				rot = {-13.4413, 0, -0},
+				shape = "Wedge",
+				size = {0.06, 0.5727, 0.22},
+			}, {
+				attach = "RightHand",
+				color = {5, 5, 7},
+				material = "SmoothPlastic",
+				name = "P192",
+				pos = {0, -2.6785, -2.3669},
+				rot = {-1.1, 0, -0},
+				shape = "Wedge",
+				size = {0.06, 0.3825, 0.22},
+			}, {
+				attach = "RightHand",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P193",
+				pos = {0, 0.1059, 0.4133},
+				rot = {-20, 0, -0},
+				shape = "Block",
+				size = {0.11, 0.11, 0.26},
+			}, {
+				attach = "RightHand",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P194",
+				pos = {0, 0.1385, 0.6234},
+				rot = {-8, 0, 90},
+				shape = "Block",
+				size = {0.11, 0.11, 0.26},
+			}, {
+				attach = "RightHand",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P195",
+				pos = {0, 0.171, 0.8335},
+				rot = {4, 0, -0},
+				shape = "Block",
+				size = {0.11, 0.11, 0.26},
+			}, {
+				attach = "RightHand",
+				color = {44, 44, 50},
+				material = "Metal",
+				name = "P196",
+				pos = {0, 0.2036, 1.0436},
+				rot = {16, 0, 90},
+				shape = "Block",
+				size = {0.11, 0.11, 0.26},
+			}},
+		},
+	},
+	source = "tools/build_kits.py (referências: docs/referencia/)",
+	version = 2,
+}</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="8">
         <Properties>
           <string name="Name">Maid</string>
           <string name="Source"><![CDATA[--!strict
@@ -264,7 +4435,7 @@ return Maid
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="7">
+      <Item class="ModuleScript" referent="9">
         <Properties>
           <string name="Name">PoseDriver</string>
           <string name="Source"><![CDATA[--!strict
@@ -295,7 +4466,7 @@ end
 
 local STANCE: Pose = {
 	Root = { 0, 0, 0, 0 }, Waist = { 2, 0, 0 }, Neck = { 8, 0, 0 },
-	RightShoulder = { -8, 0, 6 }, RightElbow = { 10, 0, 0 },
+	RightShoulder = { 25, 0, 8 }, RightElbow = { 18, 0, 0 }, -- braço à frente: ponta da lâmina fica acima do chão
 	LeftShoulder = { -5, 0, -8 }, LeftElbow = { 12, 0, 0 },
 	RightHip = { 6, 0, 3 }, RightKnee = { -8, 0, 0 },
 	LeftHip = { -8, 0, -3 }, LeftKnee = { -4, 0, 0 },
@@ -303,7 +4474,7 @@ local STANCE: Pose = {
 
 local GUARD: Pose = {
 	Root = { 4, 0, 0, -0.5 }, Waist = { 6, 0, 0 }, Neck = { 20, 0, 0 },
-	RightShoulder = { 55, 0, -30 }, RightElbow = { 70, 0, 0 },
+	RightShoulder = { 22, 0, -24 }, RightElbow = { 40, 0, 0 }, -- espada baixa na frente do corpo (não cruza o rosto)
 	LeftShoulder = { 30, 0, -10 }, LeftElbow = { 40, 0, 0 },
 	RightHip = { 22, 0, 8 }, RightKnee = { -34, 0, 0 },
 	LeftHip = { -20, 0, -8 }, LeftKnee = { -18, 0, 0 },
@@ -311,7 +4482,7 @@ local GUARD: Pose = {
 
 local FACE_HAND: Pose = {
 	Root = { 0, 0, 0, -0.2 }, Waist = { 18, 0, 0 }, Neck = { 34, 0, 0 },
-	RightShoulder = { 20, 0, 12 }, RightElbow = { 20, 0, 0 },
+	RightShoulder = { 20, 0, 26 }, RightElbow = { 14, 0, 0 }, -- espada afastada para fora: não cruza o rosto nos closes
 	LeftShoulder = { 95, 0, -15 }, LeftElbow = { 105, 0, 0 },
 	RightHip = { 10, 0, 6 }, RightKnee = { -14, 0, 0 },
 	LeftHip = { -10, 0, -6 }, LeftKnee = { -8, 0, 0 },
@@ -343,7 +4514,7 @@ local SLASH: Pose = {
 
 local FINAL: Pose = {
 	Root = { 0, 0, 0, 0 }, Waist = { -3, 0, 0 }, Neck = { 14, 0, 0 },
-	RightShoulder = { -4, 0, 10 }, RightElbow = { 8, 0, 0 },
+	RightShoulder = { 18, 0, 12 }, RightElbow = { 14, 0, 0 },
 	LeftShoulder = { -6, 0, -12 }, LeftElbow = { 10, 0, 0 },
 	RightHip = { 4, 0, 8 }, RightKnee = { -6, 0, 0 },
 	LeftHip = { -6, 0, -8 }, LeftKnee = { -3, 0, 0 },
@@ -426,7 +4597,7 @@ return PoseDriver
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="8">
+      <Item class="ModuleScript" referent="10">
         <Properties>
           <string name="Name">Remotes</string>
           <string name="Source"><![CDATA[--!strict
@@ -472,7 +4643,7 @@ return Remotes
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="9">
+      <Item class="ModuleScript" referent="11">
         <Properties>
           <string name="Name">StateMachine</string>
           <string name="Source"><![CDATA[--!strict
@@ -543,7 +4714,7 @@ return StateMachine
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="10">
+      <Item class="ModuleScript" referent="12">
         <Properties>
           <string name="Name">Timeline</string>
           <string name="Source"><![CDATA[--!strict
@@ -590,51 +4761,52 @@ Timeline.Phases = {
 } :: { Phase }
 
 -- Planos de câmera. "look" e "pos" são relativos ao HumanoidRootPart (CFrame do personagem).
+-- Referências R15 relativas ao HRP: pés -3, quadril 0, peito +1.0, olhos +2.4, topo da cabeça +2.9.
 Timeline.Shots = {
 	-- FASE 1: aproximação lenta por trás, espada baixa
 	{ t = 0, duration = 2.6, ease = "Sine",
-		from = { pos = V(2.5, 3.2, 14), look = V(0, 2.4, 0), fov = 55 },
-		to = { pos = V(1.2, 3.0, 8.5), look = V(0, 2.8, 0), fov = 48 } },
-	-- corte para a lâmina (close na espada)
+		from = { pos = V(2.5, 1.2, 14), look = V(0, 0.6, 0), fov = 55 },
+		to = { pos = V(1.2, 1.0, 8.5), look = V(0, 1.0, 0), fov = 48 } },
+	-- corte para a lâmina (close na espada, que desce da mão direita para frente/baixo)
 	{ t = 2.6, duration = 2.4, ease = "Quad",
-		from = { pos = V(-3.5, 1.2, -4.5), look = V(1.6, 1.0, -1.2), fov = 38 },
-		to = { pos = V(-2.0, 2.4, -3.6), look = V(1.6, 2.8, -1.2), fov = 34 } },
-	-- FASE 2: pose frontal + órbita ascendente
+		from = { pos = V(4.2, -0.4, -5.2), look = V(1.6, -1.6, -0.8), fov = 36 },
+		to = { pos = V(3.0, -1.1, -3.6), look = V(1.6, -2.3, -1.0), fov = 30 } },
+	-- FASE 2: pose frontal + órbita
 	{ t = 5, duration = 4.2, ease = "Orbit",
-		from = { pos = V(0, 3.4, -11), look = V(0, 3, 0), fov = 52 },
-		to = { pos = V(0, 3.4, -11), look = V(0, 3, 0), fov = 44 },
-		orbit = { degrees = 110, radius = 11, height = 3.4 } },
+		from = { pos = V(0, 1.4, -11), look = V(0, 1.0, 0), fov = 52 },
+		to = { pos = V(0, 1.4, -11), look = V(0, 1.0, 0), fov = 44 },
+		orbit = { degrees = 110, radius = 11, height = 1.4 } },
 	-- close dos olhos
 	{ t = 9.2, duration = 2.8, ease = "Expo",
-		from = { pos = V(0.4, 4.15, -4.2), look = V(0, 4.15, 0), fov = 40 },
-		to = { pos = V(0.2, 4.2, -1.7), look = V(0, 4.2, 0), fov = 26 } },
+		from = { pos = V(0.4, 2.4, -4.2), look = V(0, 2.35, 0), fov = 40 },
+		to = { pos = V(0.2, 2.45, -2.4), look = V(0, 2.4, 0), fov = 28 } },
 	-- FASE 3: plano aberto (pilar de energia) com a câmera subindo
 	{ t = 12, duration = 3.0, ease = "Quad",
-		from = { pos = V(0, -0.5, -17), look = V(0, 6, 0), fov = 70 },
-		to = { pos = V(0, 1.5, -13), look = V(0, 9, 0), fov = 62 } },
+		from = { pos = V(0, -2.0, -17), look = V(0, 6, 0), fov = 70 },
+		to = { pos = V(0, -0.5, -13), look = V(0, 8, 0), fov = 62 } },
 	-- close da máscara (rosto)
 	{ t = 15, duration = 2.0, ease = "Quad",
-		from = { pos = V(0.3, 4.3, -2.9), look = V(0, 4.2, 0), fov = 32 },
-		to = { pos = V(0, 4.3, -2.1), look = V(0, 4.2, 0), fov = 28 } },
+		from = { pos = V(0.3, 2.5, -2.9), look = V(0, 2.4, 0), fov = 32 },
+		to = { pos = V(0, 2.5, -2.1), look = V(0, 2.4, 0), fov = 28 } },
 	-- plano de espera durante o flash branco (câmera cai de cima)
 	{ t = 17, duration = 2.0, ease = "Sine",
-		from = { pos = V(0, 14, -3), look = V(0, 2, 0), fov = 60 },
-		to = { pos = V(0, 9, -7), look = V(0, 3, 0), fov = 54 } },
+		from = { pos = V(0, 12, -3), look = V(0, 0, 0), fov = 60 },
+		to = { pos = V(0, 7, -7), look = V(0, 1, 0), fov = 54 } },
 	-- FASE 4: whip rápido para a pose de Mugetsu (impacto em t=19.6)
 	{ t = 19, duration = 0.45, ease = "Expo",
-		from = { pos = V(9, 2.4, -6), look = V(0, 3, 0), fov = 90 },
-		to = { pos = V(1.8, 2.6, -9), look = V(0, 3.2, 0), fov = 56 } },
+		from = { pos = V(9, 0.4, -6), look = V(0, 1.2, 0), fov = 90 },
+		to = { pos = V(1.8, 0.6, -9), look = V(0, 1.2, 0), fov = 56 } },
 	{ t = 19.45, duration = 3.6, ease = "Sine",
-		from = { pos = V(1.8, 2.6, -9), look = V(0, 3.2, 0), fov = 56 },
-		to = { pos = V(-2.4, 2.2, -12.5), look = V(0, 3.6, 0), fov = 50 } },
+		from = { pos = V(1.8, 0.6, -9), look = V(0, 1.4, 0), fov = 56 },
+		to = { pos = V(-2.4, 0.2, -12.5), look = V(0, 1.6, 0), fov = 50 } },
 	-- reverso: plano de baixo para cima mostrando o cabelo ao vento
 	{ t = 23.05, duration = 2.95, ease = "Sine",
-		from = { pos = V(-5, 0.6, -8), look = V(0, 3.6, 0), fov = 58 },
-		to = { pos = V(4.5, 1.0, -7), look = V(0, 3.8, 0), fov = 46 } },
+		from = { pos = V(-5, -1.8, -8), look = V(0, 1.6, 0), fov = 58 },
+		to = { pos = V(4.5, -1.4, -7), look = V(0, 1.8, 0), fov = 46 } },
 	-- OUTRO: close do olho vermelho
 	{ t = 26, duration = 4.0, ease = "Quad",
-		from = { pos = V(0.5, 4.25, -3.2), look = V(0, 4.2, 0), fov = 30 },
-		to = { pos = V(0.2, 4.25, -1.6), look = V(0, 4.2, 0), fov = 22 } },
+		from = { pos = V(0.6, 2.45, -3.6), look = V(0, 2.4, 0), fov = 34 },
+		to = { pos = V(0.2, 2.45, -2.4), look = V(0, 2.4, 0), fov = 28 } },
 } :: { Shot }
 
 -- Eventos sincronizados. O servidor e o cliente consomem a mesma lista.
@@ -768,15 +4940,15 @@ return Timeline
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="11">
+  <Item class="ServerScriptService" referent="13">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="12">
+    <Item class="Folder" referent="14">
       <Properties>
         <string name="Name">MugetsuServer</string>
       </Properties>
-      <Item class="ModuleScript" referent="13">
+      <Item class="ModuleScript" referent="15">
         <Properties>
           <string name="Name">AbilityService</string>
           <string name="Source"><![CDATA[--!strict
@@ -979,7 +5151,7 @@ return AbilityService
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="14">
+      <Item class="ModuleScript" referent="16">
         <Properties>
           <string name="Name">ArenaBuilder</string>
           <string name="Source"><![CDATA[--!strict
@@ -1113,7 +5285,7 @@ return ArenaBuilder
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Script" referent="15">
+      <Item class="Script" referent="17">
         <Properties>
           <string name="Name">Main</string>
           <token name="RunContext">0</token>
@@ -1129,32 +5301,34 @@ AbilityService.init()
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="16">
+      <Item class="ModuleScript" referent="18">
         <Properties>
           <string name="Name">ModelKit</string>
           <string name="Source"><![CDATA[--!strict
 -- Kits visuais do personagem (Ichigo / Mugetsu) construídos sobre o rig R15 EXISTENTE.
 -- Nada substitui o corpo: as peças são soldadas aos membros, então o rig, as juntas e as animações
--- continuam compatíveis. A troca de forma faz crossfade de Transparency + troca de cor da pele.
+-- continuam compatíveis. Trocar de forma = alternar Transparency dos kits + cores dos membros.
 --
--- Ponto de integração: se existir ServerStorage.MugetsuAssets.MugetsuKit (Model) com peças que tenham
---   Attribute "AttachTo" (string, nome do membro R15) e "Offset" (CFrame relativo ao membro),
---   mais Attribute "Form" ("Ichigo" | "Mugetsu"), elas são usadas no lugar das peças procedurais.
+-- Os kits vêm de DADOS (fonte única, a mesma da prévia three.js):
+--   * KitDataObj.json        <- tools/import_obj.py  (modelos assets/models/*.obj enviados pelo usuário)
+--   * KitDataProcedural.json <- tools/build_kits.py  (kit procedural mais detalhado, feito a partir das imagens)
+-- Config.Kit.Source escolhe qual usar.
+--
+-- Ponto de integração para arte final: se existir ServerStorage.MugetsuAssets.MugetsuKit (Model) com peças
+-- (ex.: MeshParts importados no Studio) que tenham Attribute "AttachTo" (membro R15), "Offset" (CFrame
+-- relativo ao membro) e "Form" ("Ichigo" | "Mugetsu"), elas substituem os dados daquela forma.
 
 local CollectionService = game:GetService("CollectionService")
 local ServerStorage = game:GetService("ServerStorage")
 local TweenService = game:GetService("TweenService")
 
-local Manifest = require(game:GetService("ReplicatedStorage"):WaitForChild("Mugetsu"):WaitForChild("AssetManifest"))
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Mugetsu")
+local Manifest = require(Shared:WaitForChild("AssetManifest"))
+local Config = require(Shared:WaitForChild("Config"))
 
 export type Form = "Ichigo" | "Mugetsu"
 
 local ModelKit = {}
-
-local SKIN = {
-	Ichigo = Color3.fromRGB(240, 190, 150),
-	Mugetsu = Color3.fromRGB(226, 218, 210),
-}
 
 local LIMBS = {
 	"Head", "UpperTorso", "LowerTorso",
@@ -1164,24 +5338,53 @@ local LIMBS = {
 	"RightUpperLeg", "RightLowerLeg", "RightFoot",
 }
 
-local CF = CFrame.new
-local ANG = CFrame.Angles
 local rad = math.rad
 
-local function makePart(name: string, size: Vector3, color: Color3, material: Enum.Material, parent: Instance): Part
-	local p = Instance.new("Part")
-	p.Name = name
-	p.Size = size
-	p.Color = color
-	p.Material = material
+local function kitData(): any
+	local name = Config.Kit.Source == "Procedural" and "KitDataProcedural" or "KitDataObj"
+	return require(Shared:WaitForChild(name) :: ModuleScript)
+end
+
+local function color(c: { number }): Color3
+	return Color3.fromRGB(c[1], c[2], c[3])
+end
+
+local function vec(v: { number }): Vector3
+	return Vector3.new(v[1], v[2], v[3])
+end
+
+local function cf(pos: { number }, rot: { number }): CFrame
+	return CFrame.new(pos[1], pos[2], pos[3]) * CFrame.Angles(rad(rot[1]), rad(rot[2]), rad(rot[3]))
+end
+
+local function material(name: string?): Enum.Material
+	local ok, m = pcall(function()
+		return (Enum.Material :: any)[name or "SmoothPlastic"]
+	end)
+	return ok and m or Enum.Material.SmoothPlastic
+end
+
+local function newPart(shape: string): BasePart
+	local p: BasePart
+	if shape == "Wedge" then
+		p = Instance.new("WedgePart")
+	else
+		local part = Instance.new("Part")
+		if shape == "Cylinder" then
+			part.Shape = Enum.PartType.Cylinder
+		elseif shape == "Ball" then
+			part.Shape = Enum.PartType.Ball
+		end
+		p = part
+	end
 	p.CanCollide = false
 	p.CanQuery = false
 	p.CanTouch = false
 	p.Massless = true
 	p.Anchored = false
 	p.CastShadow = true
-	p:SetAttribute("BaseTransparency", 0)
-	p.Parent = parent
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
 	return p
 end
 
@@ -1193,171 +5396,55 @@ local function weld(p0: BasePart, p1: BasePart, c0: CFrame)
 	w.Parent = p1
 end
 
--- Cadeia de cabelo: segmentos ligados por Motor6D; o cliente balança via Transform (tag MugetsuHair).
-local function hairStrand(
-	kit: Folder, head: BasePart, name: string, root: CFrame, lengths: { number }, width: number, color: Color3, bend: number
-)
-	local prev: BasePart = head
-	local prevLen = 0
-	for i, len in lengths do
-		local w = width * (1 - (i - 1) * 0.18)
-		local seg = makePart(`{name}_{i}`, Vector3.new(w, len, w * 0.55), color, Enum.Material.SmoothPlastic, kit)
-		local m = Instance.new("Motor6D")
-		m.Part0 = prev
-		m.Part1 = seg
-		if i == 1 then
-			m.C0 = root
-		else
-			m.C0 = CF(0, -prevLen / 2, 0) * ANG(rad(bend), 0, 0)
+local function buildFromData(char: Model, kit: Folder, def: any)
+	for _, d in def.parts do
+		local limb = char:FindFirstChild(d.attach)
+		if limb and limb:IsA("BasePart") then
+			local p = newPart(d.shape)
+			p.Name = d.name
+			p.Size = vec(d.size)
+			p.Color = color(d.color)
+			p.Material = material(d.material)
+			p:SetAttribute("BaseTransparency", d.transparency or 0)
+			for _, a in d.attachments or {} do
+				local at = Instance.new("Attachment")
+				at.Name = a.name
+				at.Position = vec(a.pos)
+				at.Parent = p
+			end
+			p.Parent = kit
+			weld(limb, p, cf(d.pos, d.rot))
 		end
-		m.C1 = CF(0, len / 2, 0)
-		m:SetAttribute("Index", i)
-		m:SetAttribute("Phase", #name * 0.7)
-		m.Parent = seg
-		CollectionService:AddTag(m, "MugetsuHair")
-		prev, prevLen = seg, len
 	end
-end
-
-local function buildIchigo(char: Model, kit: Folder)
-	local head = char:FindFirstChild("Head") :: BasePart
-	local lower = char:FindFirstChild("LowerTorso") :: BasePart
-	local rHand = char:FindFirstChild("RightHand") :: BasePart
-	local upper = char:FindFirstChild("UpperTorso") :: BasePart
-	local rUpper = char:FindFirstChild("RightUpperArm") :: BasePart
-	local orange = Color3.fromRGB(255, 132, 20)
-	local black = Color3.fromRGB(14, 14, 16)
-
-	-- cabelo laranja espetado
-	for i = 1, 11 do
-		local a = (i / 11) * math.pi * 2
-		local spike = makePart(`Spike{i}`, Vector3.new(0.34, 0.9, 0.34), orange, Enum.Material.SmoothPlastic, kit)
-		weld(head, spike, CF(math.cos(a) * 0.5, 0.62, math.sin(a) * 0.45) * ANG(math.sin(a) * 0.7, 0, -math.cos(a) * 0.7))
-	end
-	local cap = makePart("HairCap", Vector3.new(1.15, 0.5, 1.1), orange, Enum.Material.SmoothPlastic, kit)
-	weld(head, cap, CF(0, 0.45, 0.05))
-
-	-- shihakushō: abas e traseira
-	local back = makePart("CoatBack", Vector3.new(2.1, 3.5, 0.15), black, Enum.Material.Fabric, kit)
-	weld(lower, back, CF(0, -1.7, 0.62) * ANG(rad(6), 0, 0))
-	for _, s in { -1, 1 } do
-		local flap = makePart("CoatFlap", Vector3.new(0.15, 3.2, 1.1), black, Enum.Material.Fabric, kit)
-		weld(lower, flap, CF(s * 1.12, -1.6, 0.1) * ANG(0, 0, rad(-s * 6)))
-	end
-	local sash = makePart("Sash", Vector3.new(2.15, 0.35, 1.1), Color3.fromRGB(235, 235, 235), Enum.Material.Fabric, kit)
-	weld(lower, sash, CF(0, 0.15, 0))
-	local collar = makePart("Collar", Vector3.new(2.1, 0.5, 1.05), black, Enum.Material.Fabric, kit)
-	weld(upper, collar, CF(0, 0.55, 0.05))
-
-	-- braço direito enfaixado
-	local wrap = makePart("ArmWrap", Vector3.new(1.15, 1.3, 1.15), Color3.fromRGB(215, 205, 190), Enum.Material.Fabric, kit)
-	weld(rUpper, wrap, CF(0, 0, 0))
-
-	-- Tensa Zangetsu (Bankai): lâmina negra
-	local handle = makePart("SwordHandle", Vector3.new(0.28, 0.28, 1.1), black, Enum.Material.Metal, kit)
-	weld(rHand, handle, CF(0, -0.2, 0) * ANG(rad(-67), 0, 0))
-	local blade = makePart("Blade", Vector3.new(0.12, 0.55, 4.6), Color3.fromRGB(10, 10, 12), Enum.Material.Metal, kit)
-	weld(handle, blade, CF(0, 0, -(0.55 + 2.3)))
-	local edgeA = Instance.new("Attachment")
-	edgeA.Name = "TrailA"
-	edgeA.Position = Vector3.new(0, 0.27, -2.2)
-	edgeA.Parent = blade
-	local edgeB = Instance.new("Attachment")
-	edgeB.Name = "TrailB"
-	edgeB.Position = Vector3.new(0, -0.27, -2.2)
-	edgeB.Parent = blade
-	local tip = Instance.new("Attachment")
-	tip.Name = "Tip"
-	tip.Position = Vector3.new(0, 0, -2.3)
-	tip.Parent = blade
-end
-
-local function buildMugetsu(char: Model, kit: Folder)
-	local head = char:FindFirstChild("Head") :: BasePart
-	local lower = char:FindFirstChild("LowerTorso") :: BasePart
-	local upper = char:FindFirstChild("UpperTorso") :: BasePart
-	local rHand = char:FindFirstChild("RightHand") :: BasePart
-	local rUpper = char:FindFirstChild("RightUpperArm") :: BasePart
-	local rLower = char:FindFirstChild("RightLowerArm") :: BasePart
-	local black = Color3.fromRGB(8, 8, 10)
-
-	-- cabelo longo: cortina frontal + mechas laterais + cascata traseira
-	local strands = {
-		{ "BackA", CF(0, 0.55, 0.38) * ANG(0, 0, 0) * ANG(rad(-40), 0, 0), { 1.3, 1.5, 1.7, 1.9 }, 0.55, -6 },
-		{ "BackB", CF(0.3, 0.5, 0.35) * ANG(0, rad(-25), 0) * ANG(rad(-38), 0, 0), { 1.2, 1.5, 1.8, 1.8 }, 0.45, -7 },
-		{ "BackC", CF(-0.3, 0.5, 0.35) * ANG(0, rad(25), 0) * ANG(rad(-38), 0, 0), { 1.2, 1.5, 1.8, 1.8 }, 0.45, -7 },
-		{ "BackD", CF(0.5, 0.4, 0.25) * ANG(0, rad(-60), 0) * ANG(rad(-30), 0, 0), { 1.0, 1.3, 1.6 }, 0.4, -6 },
-		{ "BackE", CF(-0.5, 0.4, 0.25) * ANG(0, rad(60), 0) * ANG(rad(-30), 0, 0), { 1.0, 1.3, 1.6 }, 0.4, -6 },
-		{ "SideR", CF(0.55, 0.25, -0.1) * ANG(0, rad(-90), 0) * ANG(rad(-8), 0, 0), { 0.9, 1.1, 1.3 }, 0.3, -4 },
-		{ "SideL", CF(-0.55, 0.25, -0.1) * ANG(0, rad(90), 0) * ANG(rad(-8), 0, 0), { 0.9, 1.1, 1.3 }, 0.3, -4 },
-		{ "BangR", CF(0.3, 0.6, -0.45) * ANG(rad(8), 0, rad(-6)), { 0.8, 0.9 }, 0.26, -3 },
-		{ "BangL", CF(-0.3, 0.6, -0.45) * ANG(rad(8), 0, rad(6)), { 0.8, 0.9 }, 0.26, -3 },
-	}
-	for _, s in strands do
-		hairStrand(kit, head, s[1], s[2], s[3], s[4], black, s[5])
-	end
-	local crown = makePart("HairCrown", Vector3.new(1.2, 0.55, 1.15), black, Enum.Material.SmoothPlastic, kit)
-	weld(head, crown, CF(0, 0.5, 0.08))
-
-	-- máscara na parte inferior do rosto
-	local mask = makePart("FaceMask", Vector3.new(1.05, 0.5, 0.2), Color3.fromRGB(86, 104, 118), Enum.Material.Fabric, kit)
-	weld(head, mask, CF(0, -0.22, -0.52))
-	-- olhos vermelhos (brilho mínimo, só detalhe)
-	for _, s in { -1, 1 } do
-		local eye = makePart("Eye", Vector3.new(0.22, 0.08, 0.05), Color3.fromRGB(200, 20, 30), Enum.Material.Neon, kit)
-		weld(head, eye, CF(s * 0.25, 0.1, -0.53))
-	end
-
-	-- bandagem do torso (faixas diagonais) e braço direito
-	for i = 1, 6 do
-		local band = makePart(`Wrap{i}`, Vector3.new(2.08, 0.2, 1.08), Color3.fromRGB(205, 205, 200), Enum.Material.Fabric, kit)
-		weld(upper, band, CF(0, 0.65 - i * 0.24, 0) * ANG(0, 0, rad(i % 2 == 0 and 5 or -5)))
-	end
-	for i = 1, 4 do
-		local stripe = makePart(`Stripe{i}`, Vector3.new(1.08, 0.12, 1.08), black, Enum.Material.SmoothPlastic, kit)
-		weld(rUpper, stripe, CF(0, 0.5 - i * 0.28, 0) * ANG(0, rad(i * 14), rad(8)))
-	end
-	local armBand = makePart("ForearmWrap", Vector3.new(1.08, 1.0, 1.08), Color3.fromRGB(205, 205, 200), Enum.Material.Fabric, kit)
-	weld(rLower, armBand, CF(0, 0.1, 0))
-
-	-- casaco longo rasgado
-	local coatBack = makePart("CoatBack", Vector3.new(2.3, 4.2, 0.12), black, Enum.Material.Fabric, kit)
-	weld(lower, coatBack, CF(0, -2.1, 0.66) * ANG(rad(8), 0, 0))
-	for i = 1, 5 do
-		local tatter = makePart(`Tatter{i}`, Vector3.new(0.42, 1.4 + (i % 3) * 0.5, 0.1), black, Enum.Material.Fabric, kit)
-		weld(lower, tatter, CF(-0.92 + (i - 1) * 0.46, -4.6 - (i % 3) * 0.1, 0.72) * ANG(rad(10 + i * 2), 0, rad((i - 3) * 3)))
-	end
-	for _, s in { -1, 1 } do
-		local flap = makePart("CoatFlap", Vector3.new(0.14, 3.6, 1.2), black, Enum.Material.Fabric, kit)
-		weld(lower, flap, CF(s * 1.14, -1.8, 0.1) * ANG(0, 0, rad(-s * 9)))
-	end
-	local belt = makePart("Belt", Vector3.new(2.15, 0.3, 1.1), black, Enum.Material.Fabric, kit)
-	weld(lower, belt, CF(0, 0.15, 0))
-
-	-- Tensa Zangetsu (Mugetsu): katana negra com corrente no pomo
-	local handle = makePart("SwordHandle", Vector3.new(0.26, 0.26, 1.2), black, Enum.Material.Metal, kit)
-	weld(rHand, handle, CF(0, -0.2, 0) * ANG(rad(-67), 0, 0))
-	local guard = makePart("Guard", Vector3.new(0.55, 0.55, 0.12), Color3.fromRGB(25, 25, 28), Enum.Material.Metal, kit)
-	weld(handle, guard, CF(0, 0, -0.66))
-	local blade = makePart("Blade", Vector3.new(0.1, 0.5, 4.2), black, Enum.Material.Metal, kit)
-	weld(handle, blade, CF(0, 0, -(0.7 + 2.1)))
-	local a = Instance.new("Attachment")
-	a.Name = "TrailA"
-	a.Position = Vector3.new(0, 0.25, -2.0)
-	a.Parent = blade
-	local b = Instance.new("Attachment")
-	b.Name = "TrailB"
-	b.Position = Vector3.new(0, -0.25, -2.0)
-	b.Parent = blade
-	local tip = Instance.new("Attachment")
-	tip.Name = "Tip"
-	tip.Position = Vector3.new(0, 0, -2.1)
-	tip.Parent = blade
-	local prev: BasePart = handle
-	for i = 1, 4 do
-		local link = makePart(`Chain{i}`, Vector3.new(0.14, 0.14, 0.34), Color3.fromRGB(60, 60, 66), Enum.Material.Metal, kit)
-		weld(prev, link, CF(0.0, -0.05 * i, (i == 1 and 0.78 or 0.3)) * ANG(rad(14), 0, 0))
-		prev = link
+	-- mechas de cabelo: segmentos ligados por Motor6D (o cliente balança via Transform; tag MugetsuHair)
+	for _, c in def.chains do
+		local head = char:FindFirstChild(c.attach)
+		if head and head:IsA("BasePart") then
+			local prev: BasePart = head
+			local prevLen = 0
+			for i, len in c.lengths do
+				local last = i == #c.lengths
+				local w = c.width * (1 - (i - 1) * 0.18)
+				local seg = newPart(last and "Wedge" or "Block")
+				seg.Name = `{c.name}_{i}`
+				seg.Size = Vector3.new(w, len, c.depth)
+				seg.Color = color(c.color)
+				seg.Material = material(c.material)
+				seg:SetAttribute("BaseTransparency", 0)
+				seg.Parent = kit
+				local m = Instance.new("Motor6D")
+				m.Part0 = prev
+				m.Part1 = seg
+				m.C0 = i == 1 and cf(c.pos, c.rot) or CFrame.new(0, -prevLen / 2, 0) * CFrame.Angles(rad(c.bend), 0, 0)
+				-- último segmento é uma cunha virada (ponta para baixo)
+				m.C1 = CFrame.new(0, len / 2, 0) * (last and CFrame.Angles(0, 0, math.pi) or CFrame.identity)
+				m:SetAttribute("Index", i)
+				m:SetAttribute("Phase", #c.name * 0.7 + (i - 1))
+				m.Parent = seg
+				CollectionService:AddTag(m, "MugetsuHair")
+				prev, prevLen = seg, len
+			end
+		end
 	end
 end
 
@@ -1417,6 +5504,31 @@ local function setKitTransparency(kit: Folder, hidden: boolean)
 	end
 end
 
+local function applyLimbColors(char: Model, form: Form)
+	local def = kitData().forms[form]
+	if not def then
+		return
+	end
+	for _, n in LIMBS do
+		local p = char:FindFirstChild(n)
+		local c = def.limbColors[n]
+		if p and p:IsA("BasePart") and c then
+			p.Color = color(c)
+		end
+	end
+	-- as roupas do avatar (Shirt/Pants) cobririam as cores dos membros: ficam ocultas enquanto o kit existe
+	for _, inst in char:GetChildren() do
+		if inst:IsA("Shirt") or inst:IsA("Pants") or inst:IsA("ShirtGraphic") then
+			inst.Parent = nil
+		end
+	end
+	local head = char:FindFirstChild("Head")
+	local face = head and head:FindFirstChildOfClass("Decal")
+	if face and def.hideFace then
+		face.Transparency = 1 -- o rosto vem do kit (olhos/sobrancelhas/máscara)
+	end
+end
+
 function ModelKit.isR15(char: Model): boolean
 	local hum = char:FindFirstChildOfClass("Humanoid")
 	return hum ~= nil and hum.RigType == Enum.HumanoidRigType.R15
@@ -1430,40 +5542,20 @@ function ModelKit.build(char: Model)
 	local root = Instance.new("Folder")
 	root.Name = "MugetsuKits"
 	tagAuraAnchors(char)
-
+	local data = kitData()
 	for _, form in { "Ichigo", "Mugetsu" } :: { Form } do
 		local kit = Instance.new("Folder")
 		kit.Name = form
 		kit.Parent = root
 		if not tryCustomKit(char, form, kit) then
-			if form == "Ichigo" then
-				buildIchigo(char, kit)
-			else
-				buildMugetsu(char, kit)
-			end
+			buildFromData(char, kit, data.forms[form])
 		end
 	end
 	root.Parent = char
 	setKitTransparency(root.Ichigo, false)
 	setKitTransparency(root.Mugetsu, true)
 	root:SetAttribute("Form", "Ichigo")
-
-	local original = {}
-	for _, n in LIMBS do
-		local p = char:FindFirstChild(n)
-		if p and p:IsA("BasePart") then
-			original[n] = p.Color
-		end
-	end
-	for n, c in original do
-		(root :: Instance):SetAttribute("Skin_" .. n, c)
-	end
-	for _, n in LIMBS do
-		local p = char:FindFirstChild(n) :: BasePart?
-		if p then
-			p.Color = SKIN.Ichigo
-		end
-	end
+	applyLimbColors(char, "Ichigo")
 end
 
 local function fadeKit(kit: Folder, toHidden: boolean, duration: number)
@@ -1493,12 +5585,7 @@ function ModelKit.setForm(char: Model, form: Form, fadeTime: number)
 	fadeKit(root:FindFirstChild(other) :: Folder, true, fadeTime)
 	fadeKit(root:FindFirstChild(form) :: Folder, false, fadeTime)
 	root:SetAttribute("Form", form)
-	for _, n in LIMBS do
-		local p = char:FindFirstChild(n) :: BasePart?
-		if p then
-			p.Color = SKIN[form]
-		end
-	end
+	applyLimbColors(char, form)
 end
 
 function ModelKit.getBlade(char: Model): BasePart?
@@ -1513,7 +5600,7 @@ return ModelKit
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="17">
+      <Item class="ModuleScript" referent="19">
         <Properties>
           <string name="Name">RateLimiter</string>
           <string name="Source"><![CDATA[--!strict
@@ -1544,7 +5631,7 @@ return RateLimiter
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="18">
+      <Item class="ModuleScript" referent="20">
         <Properties>
           <string name="Name">TransformationService</string>
           <string name="Source"><![CDATA[--!strict
@@ -1681,7 +5768,7 @@ local function onServerEvent(s: Session, name: string)
 		s.machine:transition("Climax")
 	elseif name == "MorphSwap" then
 		if not s.swapped then
-			ModelKit.setForm(s.character, "Mugetsu", 0.5)
+			ModelKit.setForm(s.character, "Mugetsu", 0) -- instantâneo: a tela está toda branca neste instante
 			s.swapped = true
 			s.player:SetAttribute("MugetsuForm", true)
 			-- agenda o retorno à forma normal
@@ -1868,19 +5955,19 @@ return TransformationService
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="19">
+  <Item class="StarterPlayer" referent="21">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="20">
+    <Item class="StarterPlayerScripts" referent="22">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="21">
+      <Item class="Folder" referent="23">
         <Properties>
           <string name="Name">MugetsuClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="22">
+        <Item class="ModuleScript" referent="24">
           <Properties>
             <string name="Name">AbilityClient</string>
             <string name="Source"><![CDATA[--!strict
@@ -2024,7 +6111,7 @@ return AbilityClient
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="23">
+        <Item class="ModuleScript" referent="25">
           <Properties>
             <string name="Name">AudioDirector</string>
             <string name="Source"><![CDATA[--!strict
@@ -2113,7 +6200,7 @@ return AudioDirector
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="24">
+        <Item class="ModuleScript" referent="26">
           <Properties>
             <string name="Name">CameraDirector</string>
             <string name="Source"><![CDATA[--!strict
@@ -2269,7 +6356,7 @@ return CameraDirector
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="25">
+        <Item class="ModuleScript" referent="27">
           <Properties>
             <string name="Name">CutsceneController</string>
             <string name="Source"><![CDATA[--!strict
@@ -2378,6 +6465,9 @@ end
 H.Lighting = function(ctx, arg)
 	if ctx.isOwner then
 		LightingDirector.apply(arg, arg == "Mugetsu" and 0.1 or 1.0)
+	end
+	if arg == "Mugetsu" then
+		ctx.vfx:faceLight(ctx.char, Color3.fromRGB(225, 230, 242), 2.4, 12)
 	end
 end
 H.AuraWhispers = function(ctx)
@@ -2501,7 +6591,7 @@ H.ReleaseImpact = function(ctx)
 	ctx.vfx:lightPulse(ctx.root.Position + Vector3.new(0, 2, 0), VFX.Colors.White, 10, 90, 0.7)
 	HairSway.gust(1, 3)
 	if ctx.isOwner then
-		Hud.flash(Color3.new(1, 1, 1), 0.06, 0.4)
+		Hud.flash(Color3.new(1, 1, 1), 0.05, 0.25)
 		CameraDirector.shake(0.8, 0.7)
 		CameraDirector.punchFov(14, 0.5)
 		LightingDirector.pulse(1.2)
@@ -2779,7 +6869,7 @@ return CutsceneController
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="26">
+        <Item class="ModuleScript" referent="28">
           <Properties>
             <string name="Name">HairSway</string>
             <string name="Source"><![CDATA[--!strict
@@ -2847,7 +6937,7 @@ return HairSway
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="27">
+        <Item class="ModuleScript" referent="29">
           <Properties>
             <string name="Name">Hud</string>
             <string name="Source"><![CDATA[--!strict
@@ -3079,7 +7169,7 @@ return Hud
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="28">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">InputController</string>
             <string name="Source"><![CDATA[--!strict
@@ -3161,7 +7251,7 @@ return InputController
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="29">
+        <Item class="ModuleScript" referent="31">
           <Properties>
             <string name="Name">LightingDirector</string>
             <string name="Source"><![CDATA[--!strict
@@ -3192,8 +7282,8 @@ local PRESETS = {
 		haze = { Density = 0.38, Color = Color3.fromRGB(90, 104, 130) },
 	},
 	Night = {
-		ClockTime = 0.5, Brightness = 0.6, ExposureCompensation = -0.8,
-		Ambient = Color3.fromRGB(20, 40, 90), OutdoorAmbient = Color3.fromRGB(26, 52, 110),
+		ClockTime = 0.5, Brightness = 0.9, ExposureCompensation = -0.5,
+		Ambient = Color3.fromRGB(44, 72, 135), OutdoorAmbient = Color3.fromRGB(50, 84, 155),
 		ColorShift_Top = Color3.fromRGB(80, 150, 255),
 		cc = { Saturation = -0.1, Contrast = 0.35, Brightness = -0.1, TintColor = Color3.fromRGB(170, 200, 255) },
 		bloom = { Intensity = 0.9, Size = 32, Threshold = 0.9 },
@@ -3348,7 +7438,7 @@ return LightingDirector
 ]]></string>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="30">
+        <Item class="LocalScript" referent="32">
           <Properties>
             <string name="Name">Main</string>
             <string name="Source"><![CDATA[--!strict
@@ -3400,7 +7490,7 @@ end
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="31">
+        <Item class="ModuleScript" referent="33">
           <Properties>
             <string name="Name">PoseApplier</string>
             <string name="Source"><![CDATA[--!strict
@@ -3595,7 +7685,7 @@ return PoseApplier
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="32">
+        <Item class="ModuleScript" referent="34">
           <Properties>
             <string name="Name">Quality</string>
             <string name="Source"><![CDATA[--!strict
@@ -3633,7 +7723,7 @@ return Quality
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="33">
+        <Item class="ModuleScript" referent="35">
           <Properties>
             <string name="Name">VFX</string>
             <string name="Source"><![CDATA[--!strict
@@ -3909,18 +7999,50 @@ end
 ------------------------------------------------------------------------------------------------
 -- Anéis, ondas de choque
 ------------------------------------------------------------------------------------------------
+-- Anel VAZADO sem assets: peça plana invisível com SurfaceGui (Frame redondo só com contorno).
+-- (Uma peça Cylinder é maciça e viraria um disco tampando o chão.)
 function Session.ring(self: Session, origin: CFrame, maxRadius: number, duration: number, color: Color3, thickness: number, tilt: CFrame?)
-	local p = acquire("Cylinder")
+	local p = acquire("Block")
 	if not p then
 		return
 	end
-	p.Color = color
-	local base = origin * (tilt or CFrame.identity) * CFrame.Angles(0, 0, math.rad(90))
+	p.Material = Enum.Material.SmoothPlastic
+	p.Transparency = 1
+	local base = origin * (tilt or CFrame.identity)
+	local strokes: { UIStroke } = {}
+	for _, face in { Enum.NormalId.Top, Enum.NormalId.Bottom } do
+		local sg = Instance.new("SurfaceGui")
+		sg.Face = face
+		sg.LightInfluence = 0
+		sg.Brightness = 2
+		sg.CanvasSize = Vector2.new(512, 512)
+		sg.SizingMode = Enum.SurfaceGuiSizingMode.FixedSize
+		sg.Parent = p
+		local f = Instance.new("Frame")
+		f.Size = UDim2.fromScale(1, 1)
+		f.BackgroundTransparency = 1
+		f.BorderSizePixel = 0
+		f.Parent = sg
+		local c = Instance.new("UICorner")
+		c.CornerRadius = UDim.new(0.5, 0)
+		c.Parent = f
+		local st = Instance.new("UIStroke")
+		st.Color = color
+		st.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		st.Thickness = 8
+		st.Parent = f
+		table.insert(strokes, st)
+	end
 	run(self, duration, function(k)
-		local r = maxRadius * easeOut(k)
-		p.Size = Vector3.new(thickness * (1 - k * 0.7), r * 2, r * 2)
+		local r = math.max(maxRadius * easeOut(k), 0.5)
+		p.Size = Vector3.new(r * 2, 0.2, r * 2)
 		p.CFrame = base
-		p.Transparency = k ^ 2
+		-- espessura em studs convertida para pixels do canvas (512 px cobrem 2r studs)
+		local px = math.max(1, thickness * (1 - k * 0.7) * 256 / r)
+		for _, st in strokes do
+			st.Thickness = px
+			st.Transparency = k ^ 2
+		end
 	end, function()
 		release(p)
 	end)
@@ -4154,6 +8276,25 @@ function Session.tendrils(self: Session, center: Vector3, count: number, duratio
 	end
 end
 
+-- Luz de preenchimento presa à cabeça: mantém o rosto legível nos closes sob iluminação escura.
+function Session.faceLight(self: Session, char: Model, color: Color3, brightness: number, range: number)
+	local head = char:FindFirstChild("Head")
+	if not (head and head:IsA("BasePart")) then
+		return
+	end
+	local at = Instance.new("Attachment")
+	at.Name = "MugetsuFaceLight"
+	at.Position = Vector3.new(0.6, 0.5, -2.4)
+	at.Parent = head
+	local l = Instance.new("PointLight")
+	l.Color = color
+	l.Brightness = brightness
+	l.Range = range
+	l.Shadows = false
+	l.Parent = at
+	track(self, at)
+end
+
 function Session.swordTrail(self: Session, blade: BasePart, duration: number)
 	local a, b = blade:FindFirstChild("TrailA"), blade:FindFirstChild("TrailB")
 	if not (a and b) then
@@ -4174,8 +8315,9 @@ function Session.swordTrail(self: Session, blade: BasePart, duration: number)
 		track(self, t)
 		return t
 	end
-	mk(BLACK, 5, 0)
-	mk(WHITE, 1.6, 1)
+	-- TrailA = base da lâmina, TrailB = ponta: largura 1 = lâmina inteira (arco de corte)
+	mk(BLACK, 1, 0)
+	mk(WHITE, 0.35, 1)
 	task.delay(duration, function()
 		-- os Trails são destruídos por Session:clean(); aqui só desligamos a emissão
 		for _, c in blade:GetChildren() do
@@ -4242,23 +8384,35 @@ function Session.environmentReact(self: Session, origin: Vector3, radius: number
 	end)
 end
 
--- Projétil do Getsuga: crescente negro com borda branca; posição = origem + dir * velocidade * (tempo do servidor).
+-- Projétil do Getsuga: crescente vertical (arco de segmentos que afinam nas pontas) negro com borda
+-- branca. Posição = origem + dir * velocidade * (tempo do servidor), igual em todos os clientes.
 function Session.projectile(self: Session, origin: Vector3, dir: Vector3, speed: number, range: number, width: number, serverStart: number)
-	local core = acquire("Cylinder")
-	local rim = acquire("Cylinder")
-	if not (core and rim) then
-		if core then
-			release(core)
+	local SEG = 11
+	local radius = width * 0.6
+	local maxAngle = math.rad(68)
+	local core: { Part } = {}
+	local rim: { Part } = {}
+	for i = 1, SEG do
+		local c = acquire("Block")
+		local r = acquire("Block")
+		if not (c and r) then
+			if c then
+				release(c)
+			end
+			if r then
+				release(r)
+			end
+			break
 		end
-		if rim then
-			release(rim)
-		end
+		c.Color = BLACK
+		c.Material = Enum.Material.SmoothPlastic
+		r.Color = WHITE
+		table.insert(core, c)
+		table.insert(rim, r)
+	end
+	if #core == 0 then
 		return
 	end
-	core.Color = BLACK
-	rim.Color = WHITE
-	local look = CFrame.lookAt(Vector3.zero, dir)
-	local disc = CFrame.Angles(0, math.rad(90), 0) -- eixo do cilindro (X) aponta para a frente
 	local emitterPart = Instance.new("Part")
 	emitterPart.Anchored = true
 	emitterPart.CanCollide = false
@@ -4271,27 +8425,38 @@ function Session.projectile(self: Session, origin: Vector3, dir: Vector3, speed:
 	local trail = emitter(emitterPart, {
 		Texture = SMOKE, Color = ColorSequence.new(BLACK), LightEmission = 0, Rate = 40 * self.q.ParticleScale,
 		Lifetime = NumberRange.new(0.5, 0.9),
-		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, width * 0.5), NumberSequenceKeypoint.new(1, width * 0.9) }),
+		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, width * 0.4), NumberSequenceKeypoint.new(1, width * 0.8) }),
 		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 1) }),
 		Speed = NumberRange.new(0, 2), SpreadAngle = Vector2.new(25, 25),
 	})
+	local basis = CFrame.lookAt(Vector3.zero, dir)
+	local n = #core
+	local segLen = 2 * radius * math.sin(maxAngle) / (n - 1) * 1.15
 	local duration = range / speed
 	local startDelay = math.max(0, serverStart - Workspace:GetServerTimeNow())
 	run(self, duration + startDelay, function()
 		local d = math.clamp((Workspace:GetServerTimeNow() - serverStart) * speed, 0, range)
 		local pos = origin + dir * d
 		local fade = math.clamp((d - range * 0.8) / (range * 0.2), 0, 1)
-		core.Size = Vector3.new(1.0, width * 1.5, width * 1.5)
-		rim.Size = Vector3.new(0.5, width * 1.65, width * 1.65)
-		core.CFrame = CFrame.new(pos) * look.Rotation * disc * CFrame.Angles(0, 0, 0)
-		rim.CFrame = CFrame.new(pos - dir * 0.6) * look.Rotation * disc
-		core.Transparency = fade
-		rim.Transparency = fade
+		local frame = CFrame.new(pos) * basis.Rotation
+		for i = 1, n do
+			local theta = -maxAngle + (i - 1) / (n - 1) * 2 * maxAngle
+			local thick = 0.3 + 1.3 * math.cos(theta / maxAngle * math.pi / 2)
+			local local_ = CFrame.new(0, radius * math.sin(theta), -(radius * math.cos(theta) - radius)) * CFrame.Angles(-theta, 0, 0)
+			core[i].Size = Vector3.new(width * 0.35, segLen, thick)
+			core[i].CFrame = frame * local_
+			core[i].Transparency = fade
+			rim[i].Size = Vector3.new(width * 0.3, segLen, 0.18)
+			rim[i].CFrame = frame * local_ * CFrame.new(0, 0, -(thick / 2 + 0.05))
+			rim[i].Transparency = fade
+		end
 		emitterPart.Position = pos
 	end, function()
 		trail.Rate = 0
-		release(core)
-		release(rim)
+		for i = 1, n do
+			release(core[i])
+			release(rim[i])
+		end
 		task.delay(1, function()
 			emitterPart:Destroy()
 		end)
@@ -4313,7 +8478,7 @@ return VFX
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="34">
+  <Item class="Workspace" referent="36">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

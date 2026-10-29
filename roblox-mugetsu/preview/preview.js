@@ -59,111 +59,105 @@ for (let i = 0; i < 22; i++) {
   reactive.push({ m, base: m.position.clone(), amp: 1 });
 }
 
-// ------------------------------------------------------------------ personagem (R15 em blocos)
-const skinMat = std(0xf0be96, 0.7);
-const pantsMat = std(0x0d0d10, 0.9);
-const blackMat = std(0x08080a, 0.85);
-const orangeMat = std(0xff8414, 0.8);
-const whiteMat = std(0xd8d8d2, 0.9);
-const metalMat = std(0x0a0a0c, 0.35);
+// ------------------------------------------------------------------ personagem (R15 em blocos) + kits do KitData.json
 function box(w, h, d, mat, parent, pos = [0, 0, 0], rot = [0, 0, 0]) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
   m.position.set(...pos); m.rotation.set(rad(rot[0]), rad(rot[1]), rad(rot[2]), "XYZ"); m.castShadow = true; parent.add(m); return m;
 }
 const G = (parent, pos = [0, 0, 0]) => { const g = new THREE.Group(); g.position.set(...pos); parent.add(g); return g; };
-const J = {}; // junta -> Group (rotação = Transform)
+const J = {}; // junta -> Group (rotação = Motor6D.Transform)
+const LIMB = {}; // nome do membro R15 -> Group no CENTRO da peça (mesma referência dos offsets do Roblox)
+const limbMat = {};
+function limb(name, parent, pos, size) { const g = G(parent, pos); limbMat[name] = std(0xffffff, 0.75); box(...size, limbMat[name], g); LIMB[name] = g; return g; }
 const root = G(scene, [0, 3, 0]); J.Root = root;
-const lowerC = G(root); box(2, 0.4, 1, pantsMat, lowerC);
+const lowerC = limb("LowerTorso", root, [0, 0, 0], [2, 0.4, 1]);
 const waist = G(root, [0, 0.2, 0]); J.Waist = waist;
-const upperC = G(waist, [0, 0.8, 0]); box(2, 1.6, 1, skinMat, upperC);
+const upperC = limb("UpperTorso", waist, [0, 0.8, 0], [2, 1.6, 1]);
 const neck = G(waist, [0, 1.6, 0]); J.Neck = neck;
-const headC = G(neck, [0, 0.6, 0]); box(1.2, 1.2, 1.2, skinMat, headC);
+const headC = limb("Head", neck, [0, 0.6, 0], [1.2, 1.2, 1.2]);
 function arm(side) {
-  const s = side === "R" ? 1 : -1;
-  const sh = G(waist, [s * 1.25, 1.4, 0]); J[side === "R" ? "RightShoulder" : "LeftShoulder"] = sh;
-  const upC = G(sh, [0, -0.6, 0]); box(1, 1.2, 1, skinMat, upC);
-  const el = G(sh, [0, -1.2, 0]); J[side === "R" ? "RightElbow" : "LeftElbow"] = el;
-  const loC = G(el, [0, -0.55, 0]); box(1, 1.1, 1, skinMat, loC);
-  const wr = G(el, [0, -1.1, 0]); const handC = G(wr, [0, -0.2, 0]); box(0.9, 0.4, 0.9, skinMat, handC);
+  const s = side === "R" ? 1 : -1, P = side === "R" ? "Right" : "Left";
+  const sh = G(waist, [s * 1.25, 1.4, 0]); J[P + "Shoulder"] = sh;
+  const upC = limb(P + "UpperArm", sh, [0, -0.6, 0], [1, 1.2, 1]);
+  const el = G(sh, [0, -1.2, 0]); J[P + "Elbow"] = el;
+  const loC = limb(P + "LowerArm", el, [0, -0.55, 0], [1, 1.1, 1]);
+  const wr = G(el, [0, -1.1, 0]); const handC = limb(P + "Hand", wr, [0, -0.2, 0], [0.9, 0.4, 0.9]);
   return { upC, loC, handC };
 }
 const R = arm("R"), L = arm("L");
 function leg(side) {
-  const s = side === "R" ? 1 : -1;
-  const hip = G(root, [s * 0.5, -0.2, 0]); J[side === "R" ? "RightHip" : "LeftHip"] = hip;
-  box(1, 1.2, 1, pantsMat, G(hip, [0, -0.6, 0]));
-  const kn = G(hip, [0, -1.2, 0]); J[side === "R" ? "RightKnee" : "LeftKnee"] = kn;
-  box(1, 1.2, 1, pantsMat, G(kn, [0, -0.6, 0])); box(1.1, 0.3, 1.2, blackMat, G(kn, [0, -1.35, 0.1]));
+  const s = side === "R" ? 1 : -1, P = side === "R" ? "Right" : "Left";
+  const hip = G(root, [s * 0.5, -0.2, 0]); J[P + "Hip"] = hip;
+  limb(P + "UpperLeg", hip, [0, -0.6, 0], [1, 1.2, 1]);
+  const kn = G(hip, [0, -1.2, 0]); J[P + "Knee"] = kn;
+  limb(P + "LowerLeg", kn, [0, -0.6, 0], [1, 1.2, 1]); limb(P + "Foot", kn, [0, -1.35, 0.1], [1.1, 0.3, 1.2]);
 }
 leg("R"); leg("L");
 
-// kits ------------------------------------------------------------------------------------------
-const kitI = new THREE.Group(), kitM = new THREE.Group(); scene.add(kitI, kitM);
-function put(kit, host, fn) { const g = new THREE.Group(); host.add(g); kit.userData.groups = (kit.userData.groups || []).concat(g); fn(g); return g; }
-const ichigo = [];
-put(kitI, headC, (g) => {
-  box(1.15, 0.5, 1.1, orangeMat, g, [0, 0.45, 0.05]);
-  for (let i = 1; i <= 11; i++) { const a = (i / 11) * Math.PI * 2; box(0.34, 0.9, 0.34, orangeMat, g, [Math.cos(a) * 0.5, 0.62, Math.sin(a) * 0.45], [Math.sin(a) * 40, 0, -Math.cos(a) * 40]); }
-});
-put(kitI, lowerC, (g) => {
-  box(2.1, 3.5, 0.15, blackMat, g, [0, -1.7, 0.62], [6, 0, 0]);
-  for (const s of [-1, 1]) box(0.15, 3.2, 1.1, blackMat, g, [s * 1.12, -1.6, 0.1], [0, 0, -s * 6]);
-  box(2.15, 0.35, 1.1, whiteMat, g, [0, 0.15, 0]);
-});
-put(kitI, upperC, (g) => { box(2.1, 0.5, 1.05, blackMat, g, [0, 0.55, 0.05]); box(2.1, 1.1, 0.12, blackMat, g, [0, 0.2, 0.56]); });
-put(kitI, headC, (g) => { for (const s of [-1, 1]) box(0.2, 0.1, 0.05, blackMat, g, [s * 0.25, 0.1, -0.62]); }); // olhos (só no preview: no Roblox vem do rosto do avatar)
-put(kitI, R.upC, (g) => box(1.15, 1.3, 1.15, std(0xd7cdbe, 0.95), g));
-function sword(parent, mugetsu) {
-  const g = G(parent, [0, -0.2, 0]); g.rotation.x = rad(-50);
-  const hl = 0.9, bl = mugetsu ? 3.4 : 3.6, bz = mugetsu ? 0.55 + 1.7 : 0.45 + 1.8;
-  box(mugetsu ? 0.26 : 0.28, mugetsu ? 0.26 : 0.28, hl, metalMat, g);
-  const blade = box(mugetsu ? 0.1 : 0.12, mugetsu ? 0.5 : 0.55, bl, std(0x050507, 0.25), g, [0, 0, -bz]);
-  const base = G(g, [0, 0, -bz + bl / 2]); const tip = G(g, [0, 0, -bz - bl / 2]);
-  if (mugetsu) {
-    box(0.55, 0.55, 0.12, metalMat, g, [0, 0, -0.5]);
-    for (let i = 1; i <= 4; i++) box(0.14, 0.14, 0.34, std(0x3c3c42, 0.4), g, [0, -0.05 * i - 0.1 * i * i * 0.2, (i === 1 ? 0.6 : 0.6 + 0.3 * (i - 1))], [14 + i * 8, 0, 0]);
-  }
-  return { g, base, tip, blade };
+// WedgePart do Roblox: corte em Y-Z com face vertical atrás (+Z), base embaixo e rampa subindo de frente-baixo
+// para trás-cima. A aresta de cima (a "ponta") fica em +Y.
+function wedgeGeo(w, h, d) {
+  const x0 = -w / 2, x1 = w / 2, A = [-h / 2, -d / 2], B = [-h / 2, d / 2], C = [h / 2, d / 2];
+  const v = (x, p) => [x, p[0], p[1]];
+  const tri = [v(x0, A), v(x0, C), v(x0, B), v(x1, A), v(x1, B), v(x1, C),
+    v(x0, A), v(x0, B), v(x1, B), v(x0, A), v(x1, B), v(x1, A),
+    v(x0, B), v(x0, C), v(x1, C), v(x0, B), v(x1, C), v(x1, B),
+    v(x0, A), v(x1, A), v(x1, C), v(x0, A), v(x1, C), v(x0, C)].flat();
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(tri, 3)); g.computeVertexNormals(); return g;
 }
-const swordI = sword(R.handC, false); // (anexado à mão; visibilidade controlada em setForm)
-const swordM = sword(R.handC, true);
+const matCache = {};
+function kitMat(c, material) {
+  const key = c.join(",") + material;
+  if (!matCache[key]) {
+    const col = new THREE.Color(c[0] / 255, c[1] / 255, c[2] / 255);
+    matCache[key] = material === "Neon" ? new THREE.MeshBasicMaterial({ color: col })
+      : new THREE.MeshStandardMaterial({ color: col, roughness: material === "Metal" ? 0.35 : material === "Fabric" ? 0.95 : 0.6, metalness: material === "Metal" ? 0.55 : 0, side: THREE.DoubleSide });
+  }
+  return matCache[key];
+}
 const hair = [];
-put(kitM, headC, (g) => {
-  const defs = [["BackA", [0, 0.55, 0.38], 0, -40, 0, [1.3, 1.5, 1.7, 1.9], 1.3, -6], ["BackB", [0.3, 0.5, 0.35], -25, -38, 0, [1.2, 1.5, 1.8, 1.8], 0.95, -7],
-    ["BackC", [-0.3, 0.5, 0.35], 25, -38, 0, [1.2, 1.5, 1.8, 1.8], 0.95, -7], ["BackD", [0.5, 0.4, 0.25], -60, -30, 0, [1.0, 1.3, 1.6], 0.8, -6],
-    ["BackE", [-0.5, 0.4, 0.25], 60, -30, 0, [1.0, 1.3, 1.6], 0.8, -6], ["SideR", [0.55, 0.25, -0.1], -90, -8, 0, [0.9, 1.1, 1.3], 0.55, -4],
-    ["SideL", [-0.55, 0.25, -0.1], 90, -8, 0, [0.9, 1.1, 1.3], 0.55, -4], ["BangR", [0.3, 0.6, -0.45], 0, 8, -6, [0.8, 0.9], 0.26, -3],
-    ["BangL", [-0.3, 0.6, -0.45], 0, 8, 6, [0.8, 0.9], 0.26, -3]];
-  for (const [name, pos, yaw, pitch, roll, lens, width, bend] of defs) {
-    let parent = g, first = true;
-    lens.forEach((len, i) => {
-      const w = width * (1 - i * 0.18);
+const kits = {};
+const KIT_SRC = new URLSearchParams(location.search).get("kit") === "procedural" ? "procedural" : "obj"; // igual a Config.Kit.Source
+function shapeGeo(p) {
+  if (p.shape === "Wedge") return wedgeGeo(...p.size);
+  if (p.shape === "Ball") return new THREE.SphereGeometry(p.size[0] / 2, 14, 10);
+  if (p.shape === "Cylinder") { const g = new THREE.CylinderGeometry(0.5, 0.5, 1, 14); g.rotateZ(-Math.PI / 2); g.scale(p.size[0], p.size[1], p.size[2]); return g; } // eixo X, como no Roblox
+  return new THREE.BoxGeometry(...p.size);
+}
+function buildKit(name) {
+  const def = DATA.kits[KIT_SRC].forms[name], groups = [], named = {};
+  for (const p of def.parts) {
+    const host = LIMB[p.attach]; if (!host) { console.warn("membro desconhecido", p.attach); continue; }
+    const geo = shapeGeo(p);
+    const m = new THREE.Mesh(geo, kitMat(p.color, p.material));
+    m.position.set(...p.pos); m.rotation.set(rad(p.rot[0]), rad(p.rot[1]), rad(p.rot[2]), "XYZ"); m.castShadow = true;
+    host.add(m); groups.push(m); named[p.name] = m;
+    for (const a of p.attachments || []) { const o = new THREE.Object3D(); o.name = a.name; o.position.set(...a.pos); m.add(o); named[a.name] = o; }
+  }
+  for (const c of def.chains) {
+    let parent = LIMB[c.attach];
+    c.lengths.forEach((len, i) => {
       const jg = new THREE.Group();
-      if (first) { jg.position.set(...pos); const m4 = new THREE.Matrix4().makeRotationY(rad(yaw)).multiply(new THREE.Matrix4().makeRotationX(rad(pitch))).multiply(new THREE.Matrix4().makeRotationZ(rad(roll))); jg.quaternion.setFromRotationMatrix(m4); first = false; }
-      else jg.position.set(0, -lens[i - 1], 0);
-      parent.add(jg); box(w, len, w * 0.55, blackMat, jg, [0, -len / 2, 0]);
-      hair.push({ jg, idx: i + 1, ph: name.length * 0.7, bend: i === 0 ? 0 : rad(bend) });
+      if (i === 0) { jg.position.set(...c.pos); jg.rotation.set(rad(c.rot[0]), rad(c.rot[1]), rad(c.rot[2]), "XYZ"); groups.push(jg); }
+      else jg.position.set(0, -c.lengths[i - 1], 0);
+      parent.add(jg);
+      const w = c.width * (1 - i * 0.18);
+      const last = i === c.lengths.length - 1;
+      const seg = new THREE.Mesh(last ? wedgeGeo(w, len, c.depth) : new THREE.BoxGeometry(w, len, c.depth), kitMat(c.color, c.material));
+      seg.position.set(0, -len / 2, 0); if (last) seg.rotation.z = Math.PI; seg.castShadow = true; jg.add(seg);
+      if (name === "Mugetsu") hair.push({ jg, idx: i + 1, ph: c.name.length * 0.7 + i, bend: i === 0 ? null : rad(c.bend), base: i === 0 ? jg.rotation.clone() : null });
       parent = jg;
     });
   }
-  box(1.2, 0.55, 1.15, blackMat, g, [0, 0.5, 0.08]);
-  box(1.05, 0.5, 0.2, std(0x566876, 0.95), g, [0, -0.22, -0.62]);
-  for (const s of [-1, 1]) box(0.22, 0.08, 0.05, new THREE.MeshBasicMaterial({ color: 0xc8141e }), g, [s * 0.25, 0.1, -0.62]);
-});
-put(kitM, upperC, (g) => { for (let i = 1; i <= 6; i++) box(2.08, 0.2, 1.08, whiteMat, g, [0, 0.65 - i * 0.24 - 0.0, 0], [0, 0, i % 2 ? -5 : 5]); });
-put(kitM, R.upC, (g) => { for (let i = 1; i <= 4; i++) box(1.08, 0.12, 1.08, blackMat, g, [0, 0.5 - i * 0.28, 0], [0, i * 14, 8]); });
-put(kitM, R.loC, (g) => box(1.08, 1.0, 1.08, whiteMat, g, [0, 0.1, 0]));
-put(kitM, lowerC, (g) => {
-  box(2.3, 4.2, 0.12, blackMat, g, [0, -2.1, 0.66], [8, 0, 0]);
-  for (let i = 1; i <= 5; i++) box(0.42, 1.4 + (i % 3) * 0.5, 0.1, blackMat, g, [-0.92 + (i - 1) * 0.46, -4.6 - (i % 3) * 0.1, 0.72], [10 + i * 2, 0, (i - 3) * 3]);
-  for (const s of [-1, 1]) box(0.14, 3.6, 1.2, blackMat, g, [s * 1.14, -1.8, 0.1], [0, 0, -s * 9]);
-  box(2.15, 0.3, 1.1, blackMat, g, [0, 0.15, 0]);
-});
-// o casaco do Mugetsu desce além do chão no modelo bruto: o preview não corta, só mostra
+  kits[name] = { groups, named, colors: def.limbColors };
+}
+buildKit("Ichigo"); buildKit("Mugetsu");
+const swordM = { base: kits.Mugetsu.named.TrailA, tip: kits.Mugetsu.named.TrailB };
+let currentForm = null;
 function setForm(f) {
-  kitI.userData.groups.forEach((g) => (g.visible = f === "Ichigo")); kitM.userData.groups.forEach((g) => (g.visible = f === "Mugetsu"));
-  swordI.g.visible = f === "Ichigo"; swordM.g.visible = f === "Mugetsu";
-  skinMat.color.set(f === "Mugetsu" ? 0xe2dad2 : 0xf0be96);
+  if (f === currentForm) return; currentForm = f;
+  for (const [n, k] of Object.entries(kits)) k.groups.forEach((g) => (g.visible = n === f));
+  for (const [limbName, c] of Object.entries(kits[f].colors)) limbMat[limbName]?.color.setRGB(c[0] / 255, c[1] / 255, c[2] / 255);
 }
 
 // ------------------------------------------------------------------ pose (porta do PoseDriver.sample)
@@ -200,11 +194,15 @@ function applyPose(t) {
   scene.updateMatrixWorld(true);
 }
 let windGust = 0;
+// igual ao HairSway.luau: Transform = Angles(sx, 0, sz) aplicado DEPOIS do C0 em todo segmento (inclusive a raiz)
+const _q = new THREE.Quaternion(), _e = new THREE.Euler();
 function swayHair(t) {
   for (const h of hair) {
     const amp = rad(3 + h.idx * 2.2) * (1 + windGust * 2.5);
     const sx = Math.sin(t * 1.6 + h.ph + h.idx * 0.7) * amp, sz = Math.sin(t * 1.1 + h.ph * 1.3 + h.idx * 0.5) * amp * 0.8;
-    if (h.idx > 1) h.jg.rotation.set(h.bend + sx, 0, sz, "XYZ");
+    _q.setFromEuler(_e.set(sx, 0, sz, "XYZ"));
+    if (h.idx === 1) h.jg.quaternion.setFromEuler(h.base).multiply(_q);
+    else h.jg.quaternion.setFromEuler(_e.set(h.bend, 0, 0, "XYZ")).multiply(_q);
   }
 }
 
@@ -390,11 +388,12 @@ function render(t) {
   const W = canvas.clientWidth, H = canvas.clientHeight;
   if (canvas.width !== W || canvas.height !== H) { renderer.setSize(W, H, false); camera.aspect = W / H; }
   // forma
-  setForm(t >= evT("MorphSwap") ? "Mugetsu" : "Ichigo");
+  const studio = window.__studio; // depuração: luz neutra, sem efeitos/overlays (vistas do modelo)
+  setForm(studio?.form ?? (t >= evT("MorphSwap") ? "Mugetsu" : "Ichigo"));
   windGust = t >= evT("ReleaseImpact") ? Math.max(0, 1 - (t - evT("ReleaseImpact")) / 3) : 0;
   applyPose(t); swayHair(t); scene.updateMatrixWorld(true);
   // iluminação
-  const P = preset(t);
+  const P = studio ? { bg: [38, 40, 46], hs: [235, 235, 240], hg: [70, 70, 76], hi: 1.3, sc: [255, 250, 240], si: 2.4, sat: 1, con: 1, br: 1 } : preset(t);
   scene.background = rgb(P.bg); scene.fog.color.copy(rgb(P.bg));
   hemi.color.copy(rgb(P.hs)); hemi.groundColor.copy(rgb(P.hg)); hemi.intensity = P.hi; sun.color.copy(rgb(P.sc)); sun.intensity = P.si;
   // luzes pontuais de pulso
@@ -406,7 +405,7 @@ function render(t) {
   pFace.intensity = t >= evT("Lighting", 1) ? 50 : 0;
   // partículas e formas
   smokeL.reset(); sparkL.reset(); shardN = 0; ringN = 0; ringMeshes.forEach((m) => (m.visible = false));
-  emitAura(t);
+  if (!studio) emitAura(t);
   const floorPos = [0, 0.05, 0];
   const chestFn = () => { const c = wp(upperC); return [c.x, c.y, c.z]; };
   const eg = evT("EnergyGather");
@@ -444,6 +443,13 @@ function render(t) {
   let pulse = 0; for (const e of evAll("PulseLight")) { const a = t - e.t; if (a >= 0 && a < 0.45) pulse += e.arg * 0.5 * (1 - a / 0.45) * 0.25; }
   if (t >= rel && t < rel + 0.45) pulse += 0.3 * (1 - (t - rel) / 0.45);
   canvas.style.filter = isImp ? "grayscale(1) contrast(1.9) brightness(1.1)" : `saturate(${P.sat}) contrast(${P.con}) brightness(${P.br + pulse})`;
+  if (studio) {
+    smokeL.reset(); sparkL.reset(); smokeL.flush(); sparkL.flush(); shardMesh.count = 0; ringMeshes.forEach((m) => (m.visible = false));
+    dome.visible = spireO.visible = spireI.visible = trailBlack.visible = trailWhite.visible = false; tendrilMeshes.forEach((m) => (m.visible = false));
+    pBlue.intensity = pWhite.intensity = pEye.intensity = pMask.intensity = pFace.intensity = 0;
+    fadeEl.style.opacity = flashEl.style.opacity = 0; barT.style.height = barB.style.height = "0"; canvas.style.filter = "none";
+    sun.position.set(-30, 60, -50);
+  } else sun.position.set(40, 70, -30);
   renderer.render(scene, camera);
   // legenda
   const phase = DATA.events.filter((e) => e.t <= t).slice(-1)[0];
@@ -456,6 +462,7 @@ let t = 0, playing = true, last = performance.now();
 const seek = el("seek"), play = el("play");
 window.seek = (v) => { t = v; playing = false; render(t); };
 window.__ready = true;
+window.__bladeAt = (tt) => { applyPose(tt); setForm(tt >= evT("MorphSwap") ? "Mugetsu" : "Ichigo"); scene.updateMatrixWorld(true); const k = kits[currentForm].named; const r = (o) => wp(o).toArray().map((v, i) => +(v - (i === 1 ? 3 : 0)).toFixed(2)); return { base: r(k.TrailA), tip: r(k.TrailB), hand: r(R.handC), head: r(headC) }; }; // depuração (relativo ao HRP)
 seek.addEventListener("input", () => { t = +seek.value; playing = false; play.textContent = "▶"; });
 play.addEventListener("click", () => { playing = !playing; play.textContent = playing ? "⏸" : "▶"; });
 if (new URLSearchParams(location.search).has("shot")) { document.body.classList.add("shot"); playing = false; }
