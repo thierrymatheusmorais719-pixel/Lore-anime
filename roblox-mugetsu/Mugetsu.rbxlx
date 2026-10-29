@@ -5471,6 +5471,7 @@ local AbilityService = require(script.Parent:WaitForChild("AbilityService"))
 ArenaBuilder.build()
 TransformationService.init()
 AbilityService.init()
+print("[Mugetsu] servidor pronto")
 ]]></string>
         </Properties>
       </Item>
@@ -5989,6 +5990,9 @@ local LAYERED = {
 }
 
 local typeCache: { [number]: string } = {}
+
+-- avisos na tela do jogador (o TransformationService conecta ao remote Notify)
+SkinService.onError = function(_player: Player, _msg: string) end
 local originals: { [Player]: HumanoidDescription } = {}
 
 local function assetTypeName(id: number): string?
@@ -6005,6 +6009,7 @@ local function assetTypeName(id: number): string?
 	for _, e in Enum.AssetType:GetEnumItems() do
 		if e.Value == info.AssetTypeId then
 			typeCache[id] = e.Name
+			print(`[Mugetsu] item {id} = {e.Name} ("{info.Name}")`)
 			return e.Name
 		end
 	end
@@ -6117,12 +6122,17 @@ function SkinService.apply(player: Player, form: string): boolean
 	if not base then
 		return false
 	end
-	local desc = SkinService.describe(base, expand(list))
+	local ids = expand(list)
+	print(`[Mugetsu] aplicando skin {form} em {player.Name}: {#ids} itens`)
+	local desc = SkinService.describe(base, ids)
 	local ok, err = pcall(function()
 		hum:ApplyDescription(desc)
 	end)
-	if not ok then
+	if ok then
+		print(`[Mugetsu] skin {form} aplicada`)
+	else
 		warn(`[Mugetsu] falha ao aplicar a skin {form}: {err}`)
+		SkinService.onError(player, `Falha na skin {form}: {err}`)
 	end
 	return ok
 end
@@ -6385,6 +6395,10 @@ function TransformationService.isInCutscene(player: Player): boolean
 end
 
 local function reject(player: Player, msg: string)
+	print(`[Mugetsu] transformação recusada para {player.Name}: {msg}`)
+	notify:FireClient(player, { kind = "warn", text = msg })
+end
+SkinService.onError = function(player: Player, msg: string)
 	notify:FireClient(player, { kind = "warn", text = msg })
 end
 
@@ -6412,7 +6426,11 @@ function TransformationService.request(player: Player)
 		return reject(player, `Aguarde {math.ceil(AbilityMath.remaining(transformCooldownReadyAt[player], now))}s.`)
 	end
 
-	ModelKit.build(char)
+	print(`[Mugetsu] transformação iniciada para {player.Name}`)
+	local okBuild, errBuild = pcall(ModelKit.build, char)
+	if not okBuild then
+		warn(`[Mugetsu] erro ao montar o kit: {errBuild}`)
+	end
 	transformCooldownReadyAt[player] = now + Config.Transform.Cooldown
 
 	local saved: Saved = {
@@ -7352,6 +7370,7 @@ local function run(ctx: Ctx)
 end
 
 function CutsceneController.startOwner(payload: { startTime: number, duration: number })
+	print("[Mugetsu] cutscene recebida pelo cliente")
 	if ownerCtx then
 		teardownOwner("restart")
 	end
@@ -8055,6 +8074,7 @@ for _, a in { "MugetsuForm", "MugetsuCutscene", "MugetsuAbilityReady" } do
 end
 refreshButtons()
 
+print("[Mugetsu] cliente pronto: aperte " .. require(Shared:WaitForChild("Config")).Transform.Keybind.Name .. " para transformar")
 local missing = AudioDirector.missing()
 if #missing > 0 then
 	print("[Mugetsu] sons ainda sem ID no AssetManifest: " .. table.concat(missing, ", "))

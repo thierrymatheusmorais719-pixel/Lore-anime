@@ -32,6 +32,9 @@ local LAYERED = {
 }
 
 local typeCache: { [number]: string } = {}
+
+-- avisos na tela do jogador (o TransformationService conecta ao remote Notify)
+SkinService.onError = function(_player: Player, _msg: string) end
 local originals: { [Player]: HumanoidDescription } = {}
 
 local function assetTypeName(id: number): string?
@@ -48,6 +51,7 @@ local function assetTypeName(id: number): string?
 	for _, e in Enum.AssetType:GetEnumItems() do
 		if e.Value == info.AssetTypeId then
 			typeCache[id] = e.Name
+			print(`[Mugetsu] item {id} = {e.Name} ("{info.Name}")`)
 			return e.Name
 		end
 	end
@@ -160,12 +164,17 @@ function SkinService.apply(player: Player, form: string): boolean
 	if not base then
 		return false
 	end
-	local desc = SkinService.describe(base, expand(list))
+	local ids = expand(list)
+	print(`[Mugetsu] aplicando skin {form} em {player.Name}: {#ids} itens`)
+	local desc = SkinService.describe(base, ids)
 	local ok, err = pcall(function()
 		hum:ApplyDescription(desc)
 	end)
-	if not ok then
+	if ok then
+		print(`[Mugetsu] skin {form} aplicada`)
+	else
 		warn(`[Mugetsu] falha ao aplicar a skin {form}: {err}`)
+		SkinService.onError(player, `Falha na skin {form}: {err}`)
 	end
 	return ok
 end

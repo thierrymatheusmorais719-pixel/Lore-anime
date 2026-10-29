@@ -219,6 +219,10 @@ function TransformationService.isInCutscene(player: Player): boolean
 end
 
 local function reject(player: Player, msg: string)
+	print(`[Mugetsu] transformação recusada para {player.Name}: {msg}`)
+	notify:FireClient(player, { kind = "warn", text = msg })
+end
+SkinService.onError = function(player: Player, msg: string)
 	notify:FireClient(player, { kind = "warn", text = msg })
 end
 
@@ -246,7 +250,11 @@ function TransformationService.request(player: Player)
 		return reject(player, `Aguarde {math.ceil(AbilityMath.remaining(transformCooldownReadyAt[player], now))}s.`)
 	end
 
-	ModelKit.build(char)
+	print(`[Mugetsu] transformação iniciada para {player.Name}`)
+	local okBuild, errBuild = pcall(ModelKit.build, char)
+	if not okBuild then
+		warn(`[Mugetsu] erro ao montar o kit: {errBuild}`)
+	end
 	transformCooldownReadyAt[player] = now + Config.Transform.Cooldown
 
 	local saved: Saved = {

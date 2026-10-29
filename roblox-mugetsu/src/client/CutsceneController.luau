@@ -419,6 +419,7 @@ local function run(ctx: Ctx)
 end
 
 function CutsceneController.startOwner(payload: { startTime: number, duration: number })
+	print("[Mugetsu] cutscene recebida pelo cliente")
 	if ownerCtx then
 		teardownOwner("restart")
 	end

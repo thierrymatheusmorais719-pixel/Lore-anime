@@ -40,6 +40,7 @@ for _, a in { "MugetsuForm", "MugetsuCutscene", "MugetsuAbilityReady" } do
 end
 refreshButtons()
 
+print("[Mugetsu] cliente pronto: aperte " .. require(Shared:WaitForChild("Config")).Transform.Keybind.Name .. " para transformar")
 local missing = AudioDirector.missing()
 if #missing > 0 then
 	print("[Mugetsu] sons ainda sem ID no AssetManifest: " .. table.concat(missing, ", "))
