@@ -33,6 +33,8 @@ Config.Skins = {
 	Mugetsu = {
 		17328647456, -- cabeça do Ichigo Mugetsu
 		9343723027, -- calça
+		17294810126, -- cabelo
+		9344437581, -- roupa
 		-- máscara: aguardando o ID
 	},
 	-- "Form": volta a aparência original quando a forma Mugetsu acaba (FormDuration) ou é cancelada.
