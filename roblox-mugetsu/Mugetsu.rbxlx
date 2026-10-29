@@ -184,7 +184,7 @@ Config.Skins = {
 		9343723027, -- calça
 		17294810126, -- cabelo
 		9344437581, -- roupa
-		-- máscara: aguardando o ID
+		17328724476, -- máscara
 	},
 	-- "Form": volta a aparência original quando a forma Mugetsu acaba (FormDuration) ou é cancelada.
 	-- "Cutscene": volta logo que a cutscene termina.
