@@ -180,6 +180,9 @@ Config.Skins = {
 	Enabled = true,
 	Ichigo = {
 		12139415715, -- roupa
+		75910422606049, -- cabelo
+		17328647456, -- rosto/cabeça
+		9228951784, -- calça
 	},
 	Mugetsu = {
 		17328647456, -- cabeça do Ichigo Mugetsu
