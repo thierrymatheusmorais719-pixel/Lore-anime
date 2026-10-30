@@ -146,7 +146,7 @@ end
 local Session = {}
 Session.__index = Session
 export type Session = typeof(setmetatable(
-	{} :: { instances: { Instance }, myActors: { Actor }, q: any, aura: { emitters: { ParticleEmitter }, base: { number } }?, dead: boolean },
+	{} :: { instances: { Instance }, myActors: { Actor }, q: any, aura: { emitters: { ParticleEmitter }, base: { number } }?, dead: boolean, debris: any? },
 	Session
 ))
 
@@ -732,6 +732,221 @@ function Session.projectile(self: Session, origin: Vector3, dir: Vector3, speed:
 		task.delay(1, function()
 			emitterPart:Destroy()
 		end)
+	end)
+end
+
+------------------------------------------------------------------------------------------------
+-- "1000x": pedras levitando -> arremessadas, rachaduras no chão, espiral negra, impact frames
+------------------------------------------------------------------------------------------------
+local GRAVITY = 70
+
+-- Pedras sobem do chão e orbitam devagar até debrisBlast(); aí voam para fora girando e somem.
+function Session.levitateStart(self: Session, floorPos: Vector3)
+	local n = math.max(6, math.floor(22 * self.q.ParticleScale))
+	local rng = Random.new(91)
+	type Rock = { part: Part, ang: number, r: number, h: number, spin: Vector3, bob: number, size: number,
+		blastFrom: Vector3?, vel: Vector3? }
+	local rocks: { Rock } = {}
+	for i = 1, n do
+		local p = acquire("Block")
+		if not p then
+			break
+		end
+		p.Material = Enum.Material.Slate
+		local g = rng:NextInteger(70, 110)
+		p.Color = Color3.fromRGB(g, g - 6, g - 14)
+		local sz = rng:NextNumber(0.35, 1.0)
+		p.Size = Vector3.new(sz, sz * rng:NextNumber(0.5, 0.9), sz * rng:NextNumber(0.7, 1.2))
+		table.insert(rocks, {
+			part = p, ang = rng:NextNumber(0, math.pi * 2), r = rng:NextNumber(4, 8), h = rng:NextNumber(0.3, 2.4),
+			spin = Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(-1, 1), rng:NextNumber(-1, 1)),
+			bob = rng:NextNumber(0, 6), size = sz,
+		})
+	end
+	local state = { blastAt = nil :: number? }
+	self.debris = state
+	local start = os.clock()
+	run(self, 17, function()
+		local t = os.clock() - start
+		local rise = easeOut(math.min(t / 2.2, 1))
+		for _, rk in rocks do
+			local pos: Vector3
+			local spinT = t
+			if state.blastAt and rk.blastFrom and rk.vel then
+				local bt = os.clock() - state.blastAt
+				pos = rk.blastFrom + rk.vel * bt + Vector3.new(0, -0.5 * GRAVITY * bt * bt, 0)
+				pos = Vector3.new(pos.X, math.max(pos.Y, floorPos.Y + rk.size * 0.3), pos.Z)
+				rk.part.Transparency = math.clamp((bt - 1.4) / 1.0, 0, 1)
+				spinT = t + bt * 6 -- gira mais rápido no voo
+			else
+				local a = rk.ang + t * 0.25
+				pos = floorPos + Vector3.new(math.cos(a) * rk.r, rk.h * rise + math.sin(t * 1.3 + rk.bob) * 0.35, math.sin(a) * rk.r)
+				rk.part.Transparency = 0
+			end
+			rk.part.CFrame = CFrame.new(pos) * CFrame.Angles(rk.spin.X * spinT, rk.spin.Y * spinT, rk.spin.Z * spinT)
+		end
+	end, function()
+		for _, rk in rocks do
+			release(rk.part)
+		end
+	end)
+	-- guarda o necessário para o arremesso
+	state.rocks = rocks
+	state.floor = floorPos
+end
+
+function Session.debrisBlast(self: Session)
+	local st = self.debris
+	if not st or st.blastAt then
+		return
+	end
+	local rng = Random.new(17)
+	for _, rk in st.rocks do
+		local from = rk.part.Position
+		local out = Vector3.new(from.X - st.floor.X, 0, from.Z - st.floor.Z)
+		out = out.Magnitude > 0.1 and out.Unit or Vector3.new(1, 0, 0)
+		rk.blastFrom = from
+		rk.vel = out * rng:NextNumber(40, 85) + Vector3.new(0, rng:NextNumber(12, 30), 0)
+	end
+	st.blastAt = os.clock()
+end
+
+-- Rachaduras em raio a partir dos pés: linha escura com brilho branco por dentro, crescendo rápido.
+function Session.cracks(self: Session, floorPos: Vector3)
+	local lines = self.q.Shards >= 40 and 14 or (self.q.Shards >= 25 and 10 or 6)
+	local rng = Random.new(5)
+	type Seg = { dark: Part, glow: Part, a: Vector3, b: Vector3, t0: number }
+	local segs: { Seg } = {}
+	for i = 1, lines do
+		local ang = (i / lines) * math.pi * 2 + rng:NextNumber(-0.2, 0.2)
+		local p = floorPos + Vector3.new(0, 0.04, 0)
+		local dist = 0
+		for k = 1, 6 do
+			ang += rng:NextNumber(-0.35, 0.35)
+			local len = rng:NextNumber(1.6, 3.6) * (1 - k * 0.08)
+			local q = p + Vector3.new(math.cos(ang) * len, 0, math.sin(ang) * len)
+			local dark, glow = acquire("Block"), acquire("Block")
+			if not (dark and glow) then
+				if dark then release(dark) end
+				if glow then release(glow) end
+				break
+			end
+			dark.Material = Enum.Material.SmoothPlastic
+			dark.Color = Color3.fromRGB(18, 18, 22)
+			glow.Color = WHITE
+			table.insert(segs, { dark = dark, glow = glow, a = p, b = q, t0 = dist / 26 })
+			dist += len
+			p = q
+		end
+	end
+	run(self, 6.5, function(k)
+		local t = k * 6.5
+		for _, sg in segs do
+			local g = math.clamp((t - sg.t0) / 0.12, 0, 1)
+			local b = sg.a:Lerp(sg.b, g)
+			local len = (b - sg.a).Magnitude
+			local mid = (sg.a + b) / 2
+			local cf = len > 0.01 and CFrame.lookAt(mid, b) or CFrame.new(mid)
+			sg.dark.Size = Vector3.new(0.28, 0.06, math.max(len, 0.01))
+			sg.dark.CFrame = cf
+			sg.glow.Size = Vector3.new(0.09, 0.07, math.max(len, 0.01))
+			sg.glow.CFrame = cf * CFrame.new(0, 0.01, 0)
+			local fade = math.clamp((t - 3.5) / 3.0, 0, 1)
+			sg.dark.Transparency = g > 0 and fade or 1
+			sg.glow.Transparency = g > 0 and math.max(fade, math.clamp((t - 1.2) / 2.0, 0, 0.85)) or 1
+		end
+	end, function()
+		for _, sg in segs do
+			release(sg.dark)
+			release(sg.glow)
+		end
+	end)
+end
+
+-- Espiral de energia negra (com um fio branco) subindo em volta do corpo.
+function Session.spiral(self: Session, floorPos: Vector3, duration: number)
+	local per = math.max(8, math.floor(16 * self.q.ParticleScale))
+	type Bead = { part: Part, strand: number, u0: number }
+	local beads: { Bead } = {}
+	for strand = 1, 3 do
+		for i = 1, per do
+			local p = acquire("Ball")
+			if not p then
+				break
+			end
+			p.Color = strand == 3 and WHITE or BLACK
+			table.insert(beads, { part = p, strand = strand, u0 = i / per })
+		end
+	end
+	run(self, duration, function(k)
+		local t = k * duration
+		local env = math.min(k / 0.15, 1) * math.clamp((1 - k) / 0.2, 0, 1)
+		for _, bd in beads do
+			local u = (bd.u0 + t * 0.55) % 1
+			local ang = bd.strand * (math.pi * 2 / 3) + u * math.pi * 5 + t * 2.2
+			local r = 3.4 * (1 - u * 0.55)
+			bd.part.Size = Vector3.one * (bd.strand == 3 and 0.35 or 0.7) * (1 - u * 0.6)
+			bd.part.CFrame = CFrame.new(floorPos + Vector3.new(math.cos(ang) * r, u * 13, math.sin(ang) * r))
+			bd.part.Transparency = 1 - env * (1 - u * 0.8)
+		end
+	end, function()
+		for _, bd in beads do
+			release(bd.part)
+		end
+	end)
+end
+
+-- Impact frames de anime: fundo preto com silhueta branca, depois o inverso, ~2 quadros cada.
+-- withBackdrop = true só para o dono da cena (a parede de fundo é posicionada pela câmera dele).
+function Session.impactSilhouette(self: Session, char: Model, withBackdrop: boolean)
+	local hl = Instance.new("Highlight")
+	hl.Adornee = char
+	hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	hl.FillTransparency = 0
+	hl.OutlineTransparency = 1
+	hl.FillColor = Color3.new(1, 1, 1)
+	hl.Parent = getFolder()
+	track(self, hl)
+	local wall: Part? = nil
+	local floor: Part? = nil
+	local cam = Workspace.CurrentCamera
+	local root = char:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if withBackdrop and cam and root then
+		local look = cam.CFrame.LookVector
+		local w = Instance.new("Part")
+		w.Anchored, w.CanCollide, w.CanQuery, w.CanTouch, w.CastShadow = true, false, false, false, false
+		w.Material = Enum.Material.Neon
+		w.Size = Vector3.new(800, 800, 1)
+		w.CFrame = CFrame.lookAt(cam.CFrame.Position + look * 70, cam.CFrame.Position)
+		w.Color = Color3.new(0, 0, 0)
+		w.Parent = getFolder()
+		local f = w:Clone()
+		f.Size = Vector3.new(500, 0.2, 500)
+		f.CFrame = CFrame.new(root.Position - Vector3.new(0, 2.85, 0))
+		f.Parent = getFolder()
+		track(self, w)
+		track(self, f)
+		wall, floor = w, f
+	end
+	local function phase(bg: Color3, fill: Color3)
+		hl.FillColor = fill
+		if wall and floor then
+			wall.Color = bg
+			floor.Color = bg
+		end
+	end
+	phase(Color3.new(0, 0, 0), Color3.new(1, 1, 1))
+	task.delay(0.08, function()
+		phase(Color3.new(1, 1, 1), Color3.new(0, 0, 0))
+	end)
+	task.delay(0.16, function()
+		hl:Destroy()
+		if wall then
+			wall:Destroy()
+		end
+		if floor then
+			floor:Destroy()
+		end
 	end)
 end
 

@@ -57,10 +57,11 @@ Timeline.Shots = {
 		from = { pos = V(0, 1.4, -11), look = V(0, 1.0, 0), fov = 52 },
 		to = { pos = V(0, 1.4, -11), look = V(0, 1.0, 0), fov = 44 },
 		orbit = { degrees = 110, radius = 11, height = 1.4 } },
-	-- close dos olhos
-	{ t = 9.2, duration = 2.8, ease = "Expo",
-		from = { pos = V(0.4, 2.4, -4.2), look = V(0, 2.35, 0), fov = 40 },
-		to = { pos = V(0.2, 2.45, -2.4), look = V(0, 2.4, 0), fov = 28 } },
+	-- close dos olhos com DOLLY ZOOM (efeito vertigem): a câmera avança enquanto o FOV abre na mesma
+	-- proporção (distância * tan(fov/2) constante) -> o rosto fica do mesmo tamanho e o fundo "estica"
+	{ t = 9.2, duration = 2.8, ease = "Sine",
+		from = { pos = V(0.4, 2.4, -6.0), look = V(0, 2.35, 0), fov = 22 },
+		to = { pos = V(0.2, 2.45, -2.4), look = V(0, 2.4, 0), fov = 52 } },
 	-- FASE 3: plano aberto (pilar de energia) com a câmera subindo
 	{ t = 12, duration = 3.0, ease = "Quad",
 		from = { pos = V(0, -2.0, -17), look = V(0, 6, 0), fov = 70 },
@@ -98,19 +99,24 @@ Timeline.Events = {
 	{ t = 0.2, name = "Anim", arg = "Prepare" },
 	{ t = 0.5, name = "Lighting", arg = "Cold" },
 	{ t = 1.0, name = "AuraWhispers" },
+	{ t = 1.2, name = "TitleCard", arg = "Ichigo" }, -- 黒崎 一護 / FINAL GETSUGA TENSHŌ
 	{ t = 2.6, name = "SwordGlint" },
 	{ t = 4.7, name = "PauseBeat" },
 	{ t = 5.0, name = "Anim", arg = "Concentrate" },
 	{ t = 5.0, name = "EnergyGather", arg = 1 },
+	{ t = 6.0, name = "Levitate" }, -- pedras sobem e orbitam até o golpe
 	{ t = 6.5, name = "GroundShards" },
 	{ t = 7.0, name = "PulseLight", arg = 0.5 },
 	{ t = 8.0, name = "PulseLight", arg = 0.7 },
 	{ t = 9.0, name = "PulseLight", arg = 0.9 },
 	{ t = 9.2, name = "EyeReiatsu" },
+	{ t = 9.2, name = "SpeedLines", arg = 0.7 },
 	{ t = 11.6, name = "PressureWave", arg = 1 },
 	{ t = 12.0, name = "Anim", arg = "Transform" },
 	{ t = 12.0, name = "BlueSpire" },
+	{ t = 12.3, name = "Spiral" }, -- espiral negra/branca dentro do pilar azul (plano aberto)
 	{ t = 14.8, name = "MaskForm" },
+	{ t = 14.85, name = "SpeedLines", arg = 0.9 },
 	{ t = 15.2, name = "ShakeSmall" },
 	{ t = 16.6, name = "BeginFade", arg = "White" },
 	{ t = 17.0, name = "WhiteOut" },
@@ -120,7 +126,11 @@ Timeline.Events = {
 	{ t = 19.0, name = "Anim", arg = "Release" },
 	{ t = 19.0, name = "WhiteOutEnd" },
 	{ t = 19.45, name = "SwordSlash" }, -- rastro liga no começo do corte
-	{ t = 19.6, name = "ReleaseImpact" }, -- clímax: lâmina termina o corte = flash, anéis, shockwave, tremor
+	{ t = 19.6, name = "ReleaseImpact" }, -- clímax: lâmina termina o corte = anéis, shockwave, tremor
+	{ t = 19.6, name = "ImpactSilhouette" }, -- frames de impacto: silhueta branca no preto -> preta no branco
+	{ t = 19.6, name = "GroundCracks" },
+	{ t = 19.6, name = "DebrisBlast" },
+	{ t = 19.75, name = "SpeedLines", arg = 1.2 },
 	{ t = 19.9, name = "EnvironmentReact" },
 	{ t = 20.8, name = "ImpactFrame" },
 	{ t = 22.0, name = "Anim", arg = "FinalPose" },
@@ -128,6 +138,7 @@ Timeline.Events = {
 	{ t = 25.4, name = "FadeToBlack" },
 	{ t = 26.0, name = "Lighting", arg = "Mugetsu" },
 	{ t = 27.5, name = "FadeFromBlack" },
+	{ t = 27.7, name = "MugetsuTitle" }, -- 無月
 	{ t = 29.4, name = "EnableAbility" },
 	{ t = 30.0, name = "End" },
 } :: { Event }

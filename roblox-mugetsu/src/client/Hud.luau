@@ -170,11 +170,166 @@ function Hud.flash(color: Color3, hold: number, out: number)
 	end)
 end
 
+-- Linhas de velocidade (anime): traços radiais saindo do centro, alternando preto e branco para ler em
+-- qualquer fundo. intensity ~0.5..1.5 controla quantidade, comprimento e duração.
+local speedLayer: Frame? = nil
+local speedConn: RBXScriptConnection? = nil
+function Hud.speedLines(intensity: number)
+	if speedConn then
+		speedConn:Disconnect()
+		speedConn = nil
+	end
+	if speedLayer then
+		speedLayer:Destroy()
+	end
+	local layer = Instance.new("Frame")
+	layer.Name = "SpeedLines"
+	layer.BackgroundTransparency = 1
+	layer.Size = UDim2.fromScale(1, 1)
+	layer.ZIndex = 15
+	layer.ClipsDescendants = true
+	layer.Parent = gui
+	speedLayer = layer
+	local n = math.floor(36 + 24 * intensity)
+	local rng = Random.new(os.clock() * 1000)
+	local lines = {}
+	for i = 1, n do
+		local f = Instance.new("Frame")
+		f.BorderSizePixel = 0
+		f.AnchorPoint = Vector2.new(0.5, 0.5)
+		f.BackgroundColor3 = i % 3 == 0 and Color3.new(0, 0, 0) or Color3.new(1, 1, 1)
+		f.ZIndex = 15
+		f.Parent = layer
+		table.insert(lines, { f = f, ang = rng:NextNumber(0, math.pi * 2), r0 = rng:NextNumber(0.28, 0.45),
+			len = rng:NextNumber(0.25, 0.6) * (0.7 + 0.3 * intensity), w = rng:NextInteger(2, 5), sp = rng:NextNumber(0.6, 1.3) })
+	end
+	local duration = 0.35 + 0.25 * intensity
+	local start = os.clock()
+	speedConn = RunService.RenderStepped:Connect(function()
+		local k = (os.clock() - start) / duration
+		if k >= 1 then
+			if speedConn then
+				speedConn:Disconnect()
+				speedConn = nil
+			end
+			layer:Destroy()
+			if speedLayer == layer then
+				speedLayer = nil
+			end
+			return
+		end
+		local vp = gui.AbsoluteSize
+		local half = math.max(vp.X, vp.Y) * 0.5
+		for _, l in lines do
+			local r = (l.r0 + k * 0.35 * l.sp) * half
+			local len = l.len * half * (1 - k * 0.5)
+			local cx, cy = vp.X / 2 + math.cos(l.ang) * (r + len / 2), vp.Y / 2 + math.sin(l.ang) * (r + len / 2)
+			l.f.Position = UDim2.fromOffset(cx, cy)
+			l.f.Size = UDim2.fromOffset(len, l.w)
+			l.f.Rotation = math.deg(l.ang)
+			l.f.BackgroundTransparency = 0.15 + 0.85 * k
+		end
+	end)
+end
+
+local cards: { Instance } = {}
+local function label(parent: Instance, text: string, size: number, font: Enum.Font, color: Color3, y: number, align: Enum.TextXAlignment): TextLabel
+	local t = Instance.new("TextLabel")
+	t.BackgroundTransparency = 1
+	t.Text = text
+	t.Font = font
+	t.TextSize = size
+	t.TextColor3 = color
+	t.TextStrokeTransparency = 0.4
+	t.TextXAlignment = align
+	t.Size = UDim2.new(1, 0, 0, size + 6)
+	t.Position = UDim2.fromOffset(0, y)
+	t.ZIndex = 25
+	t.Parent = parent
+	return t
+end
+
+-- Cartão de apresentação no canto (nome em japonês + romaji + nome do golpe), entra deslizando.
+function Hud.titleCard(big: string, mid: string, small: string)
+	local box = Instance.new("CanvasGroup")
+	box.Name = "TitleCard"
+	box.BackgroundTransparency = 1
+	box.Size = UDim2.fromOffset(620, 150)
+	box.AnchorPoint = Vector2.new(0, 1)
+	box.Position = UDim2.new(0, -40, 0.84, 0)
+	box.GroupTransparency = 1
+	box.ZIndex = 25
+	box.Parent = gui
+	table.insert(cards, box)
+	local bar = Instance.new("Frame")
+	bar.BorderSizePixel = 0
+	bar.BackgroundColor3 = Color3.fromRGB(255, 128, 26)
+	bar.Size = UDim2.fromOffset(6, 128)
+	bar.Position = UDim2.fromOffset(0, 10)
+	bar.Parent = box
+	local inner = Instance.new("Frame")
+	inner.BackgroundTransparency = 1
+	inner.Size = UDim2.new(1, -24, 1, 0)
+	inner.Position = UDim2.fromOffset(20, 0)
+	inner.Parent = box
+	label(inner, big, 58, Enum.Font.GothamBlack, Color3.new(1, 1, 1), 4, Enum.TextXAlignment.Left)
+	label(inner, mid, 22, Enum.Font.GothamBold, Color3.fromRGB(230, 230, 236), 74, Enum.TextXAlignment.Left)
+	label(inner, small, 16, Enum.Font.GothamMedium, Color3.fromRGB(255, 160, 80), 104, Enum.TextXAlignment.Left)
+	TweenService:Create(box, TweenInfo.new(0.6, Enum.EasingStyle.Quint), { Position = UDim2.new(0, 48, 0.84, 0), GroupTransparency = 0 }):Play()
+	task.delay(3.1, function()
+		if box.Parent then
+			TweenService:Create(box, TweenInfo.new(0.5, Enum.EasingStyle.Sine), { GroupTransparency = 1, Position = UDim2.new(0, 80, 0.84, 0) }):Play()
+		end
+	end)
+end
+
+-- Título que "bate" na tela (escala 2.6 -> 1 com overshoot), centralizado.
+function Hud.slamTitle(big: string, small: string)
+	local box = Instance.new("CanvasGroup")
+	box.Name = "SlamTitle"
+	box.BackgroundTransparency = 1
+	box.AnchorPoint = Vector2.new(0.5, 0.5)
+	box.Position = UDim2.fromScale(0.5, 0.5)
+	box.Size = UDim2.fromOffset(700, 260)
+	box.ZIndex = 26
+	box.Parent = gui
+	table.insert(cards, box)
+	local scale = Instance.new("UIScale")
+	scale.Scale = 2.6
+	scale.Parent = box
+	local b = label(box, big, 150, Enum.Font.GothamBlack, Color3.new(1, 1, 1), 0, Enum.TextXAlignment.Center)
+	b.TextStrokeTransparency = 0
+	b.TextStrokeColor3 = Color3.fromRGB(150, 10, 20)
+	label(box, small, 28, Enum.Font.GothamBold, Color3.fromRGB(220, 220, 228), 178, Enum.TextXAlignment.Center)
+	local line = Instance.new("Frame")
+	line.BorderSizePixel = 0
+	line.BackgroundColor3 = Color3.fromRGB(190, 22, 34)
+	line.AnchorPoint = Vector2.new(0.5, 0)
+	line.Position = UDim2.new(0.5, 0, 0, 168)
+	line.Size = UDim2.fromOffset(0, 3)
+	line.ZIndex = 26
+	line.Parent = box
+	TweenService:Create(scale, TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+	TweenService:Create(line, TweenInfo.new(0.5, Enum.EasingStyle.Quint), { Size = UDim2.fromOffset(420, 3) }):Play()
+end
+
 -- Restaura barras e fades imediatamente (cancelamento seguro).
 function Hud.resetCinematic()
 	Hud.setLetterbox(false, 0.25)
 	fade.BackgroundTransparency = 1
 	flash.BackgroundTransparency = 1
+	if speedConn then
+		speedConn:Disconnect()
+		speedConn = nil
+	end
+	if speedLayer then
+		speedLayer:Destroy()
+		speedLayer = nil
+	end
+	for _, c in cards do
+		c:Destroy()
+	end
+	cards = {}
 end
 
 function Hud.showButtons(transformVisible: boolean, abilityVisible: boolean)

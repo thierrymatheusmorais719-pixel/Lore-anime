@@ -252,6 +252,7 @@ function makeLayer(cap, additive, uni) {
   const pts = new THREE.Points(geo, mat); pts.frustumCulled = false; scene.add(pts);
   let n = 0;
   return {
+    pts,
     reset() { n = 0; },
     push(x, y, z, s, a, r, g, b) { if (n >= cap || a <= 0.002) return; pos[n * 3] = x; pos[n * 3 + 1] = y; pos[n * 3 + 2] = z; size[n] = s; alpha[n] = a; col[n * 3] = r; col[n * 3 + 1] = g; col[n * 3 + 2] = b; n++; },
     flush() { geo.setDrawRange(0, n); for (const k of ["position", "aSize", "aAlpha", "aColor"]) geo.attributes[k].needsUpdate = true; },
@@ -380,6 +381,82 @@ function trailPush(t) {
   const fade = age > 0.9 ? 1 - (age - 0.9) / 0.4 : 1; trailBlack.material.opacity = 0.9 * fade; trailWhite.material.opacity = 0.9 * fade; trailBlack.visible = trailWhite.visible = true;
 }
 
+// ------------------------------------------------------------------ "1000x": pedras, rachaduras, espiral, silhueta (igual ao VFX.luau)
+const ROCKS = Array.from({ length: 22 }, (_, i) => ({ ang: hash(i + 900) * 6.283, r: lerp(4, 8, hash(i + 901)), h: lerp(0.3, 2.4, hash(i + 902)),
+  spin: [hash(i + 903) * 2 - 1, hash(i + 904) * 2 - 1, hash(i + 905) * 2 - 1], bob: hash(i + 906) * 6, size: lerp(0.35, 1.0, hash(i + 907)),
+  vel: lerp(40, 85, hash(i + 908)), vy: lerp(12, 30, hash(i + 909)) }));
+const rockMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.7, 0.95), std(0x5c5650, 1), ROCKS.length);
+rockMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); rockMesh.castShadow = true; rockMesh.frustumCulled = false; scene.add(rockMesh);
+function rocksPush(t) {
+  const t0 = evT("Levitate"), tb = evT("DebrisBlast"); let n = 0;
+  if (t >= t0 && t < t0 + 17) ROCKS.forEach((rk) => {
+    const lt = t - t0, rise = 1 - Math.pow(1 - Math.min(lt / 2.2, 1), 2);
+    const orbit = (tt) => { const a = rk.ang + tt * 0.25; return new THREE.Vector3(Math.cos(a) * rk.r, rk.h * Math.min(tt / 2.2, 1) + Math.sin(tt * 1.3 + rk.bob) * 0.35, Math.sin(a) * rk.r); };
+    let p = orbit(lt), vis = 1, spinT = lt;
+    if (t >= tb) {
+      const bt = t - tb, from = orbit(tb - t0), out = new THREE.Vector3(from.x, 0, from.z).normalize();
+      p = from.clone().add(out.multiplyScalar(rk.vel * bt)); p.y = Math.max(from.y + rk.vy * bt - 35 * bt * bt, rk.size * 0.3); vis = 1 - clamp((bt - 1.4) / 1.0); spinT = lt + bt * 6;
+    } else p.y = rk.h * rise + Math.sin(lt * 1.3 + rk.bob) * 0.35;
+    if (vis <= 0.02) return;
+    dummy.position.copy(p); dummy.rotation.set(rk.spin[0] * spinT, rk.spin[1] * spinT, rk.spin[2] * spinT); dummy.scale.setScalar(rk.size * vis); dummy.updateMatrix(); rockMesh.setMatrixAt(n++, dummy.matrix);
+  });
+  rockMesh.count = n; rockMesh.instanceMatrix.needsUpdate = true;
+}
+const CRACKS = []; { let k = 0; for (let i = 0; i < 14; i++) { let ang = (i / 14) * 6.283 + (hash(i + 700) - 0.5) * 0.4, p = [0, 0], dist = 0;
+  for (let s = 1; s <= 6; s++) { ang += (hash(k + 710) - 0.5) * 0.7; const len = lerp(1.6, 3.6, hash(k + 720)) * (1 - s * 0.08); const q = [p[0] + Math.cos(ang) * len, p[1] + Math.sin(ang) * len];
+    CRACKS.push({ a: p, b: q, t0: dist / 26 }); dist += len; p = q; k++; } } }
+const crackDark = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0x121216, roughness: 1, transparent: true }), CRACKS.length);
+const crackGlow = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true }), CRACKS.length);
+for (const m of [crackDark, crackGlow]) { m.frustumCulled = false; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(m); }
+function cracksPush(t) {
+  const age = t - evT("GroundCracks"); let n = 0;
+  if (age >= 0 && age < 6.5) for (const c of CRACKS) {
+    const g = clamp((age - c.t0) / 0.12); if (g <= 0) continue;
+    const bx = lerp(c.a[0], c.b[0], g), bz = lerp(c.a[1], c.b[1], g), len = Math.hypot(bx - c.a[0], bz - c.a[1]); if (len < 0.01) continue;
+    dummy.position.set((c.a[0] + bx) / 2, 0.06, (c.a[1] + bz) / 2); dummy.rotation.set(0, Math.atan2(bx - c.a[0], bz - c.a[1]), 0);
+    dummy.scale.set(0.28, 0.06, len); dummy.updateMatrix(); crackDark.setMatrixAt(n, dummy.matrix);
+    dummy.scale.set(0.09, 0.07, len); dummy.position.y = 0.08; dummy.updateMatrix(); crackGlow.setMatrixAt(n, dummy.matrix); n++;
+  }
+  const fade = clamp((age - 3.5) / 3.0);
+  crackDark.material.opacity = 1 - fade; crackGlow.material.opacity = 1 - Math.max(fade, clamp((age - 1.2) / 2.0, 0, 0.85));
+  for (const m of [crackDark, crackGlow]) { m.count = n; m.instanceMatrix.needsUpdate = true; }
+}
+const BEADS = []; for (let st = 1; st <= 3; st++) for (let i = 1; i <= 16; i++) BEADS.push({ st, u0: i / 16 });
+const beadBlack = new THREE.InstancedMesh(new THREE.SphereGeometry(0.5, 10, 8), new THREE.MeshBasicMaterial({ color: 0x050506, transparent: true }), BEADS.length);
+const beadWhite = new THREE.InstancedMesh(new THREE.SphereGeometry(0.5, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true }), BEADS.length);
+for (const m of [beadBlack, beadWhite]) { m.frustumCulled = false; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(m); }
+function spiralPush(t) {
+  const t0 = evT("Spiral"), dur = 2.6, k = (t - t0) / dur; let nb = 0, nw = 0;
+  if (k >= 0 && k < 1) {
+    const env = Math.min(k / 0.15, 1) * clamp((1 - k) / 0.2);
+    for (const b of BEADS) {
+      const tt = k * dur, u = (b.u0 + tt * 0.55) % 1, ang = b.st * (6.283 / 3) + u * Math.PI * 5 + tt * 2.2, r = 3.4 * (1 - u * 0.55);
+      dummy.position.set(Math.cos(ang) * r, u * 13 + 0.05, Math.sin(ang) * r); dummy.rotation.set(0, 0, 0);
+      dummy.scale.setScalar((b.st === 3 ? 0.35 : 0.7) * (1 - u * 0.6) * env); dummy.updateMatrix();
+      if (b.st === 3) beadWhite.setMatrixAt(nw++, dummy.matrix); else beadBlack.setMatrixAt(nb++, dummy.matrix);
+    }
+  }
+  beadBlack.count = nb; beadWhite.count = nw; beadBlack.instanceMatrix.needsUpdate = beadWhite.instanceMatrix.needsUpdate = true;
+}
+const SIL_WHITE = new THREE.MeshBasicMaterial({ color: 0xffffff }), SIL_BLACK = new THREE.MeshBasicMaterial({ color: 0x000000 });
+function silhouettePhase(t) { const a = t - evT("ImpactSilhouette"); return a >= 0 && a < 0.08 ? 1 : a >= 0.08 && a < 0.16 ? 2 : 0; }
+const fxCanvas = document.getElementById("fx"), fx2d = fxCanvas.getContext("2d");
+function speedLinesDraw(t) {
+  const W = fxCanvas.clientWidth, H = fxCanvas.clientHeight; if (fxCanvas.width !== W || fxCanvas.height !== H) { fxCanvas.width = W; fxCanvas.height = H; }
+  fx2d.clearRect(0, 0, W, H);
+  for (const e of evAll("SpeedLines")) {
+    const I = e.arg || 1, dur = 0.35 + 0.25 * I, k = (t - e.t) / dur; if (k < 0 || k >= 1) continue;
+    const n = Math.floor(36 + 24 * I), half = Math.max(W, H) / 2;
+    for (let i = 0; i < n; i++) {
+      const ang = hash(i + e.t * 13) * 6.283, r0 = lerp(0.28, 0.45, hash(i + 3 + e.t)), len = lerp(0.25, 0.6, hash(i + 5 + e.t)) * (0.7 + 0.3 * I), sp = lerp(0.6, 1.3, hash(i + 7 + e.t));
+      const r = (r0 + k * 0.35 * sp) * half, L = len * half * (1 - k * 0.5);
+      fx2d.strokeStyle = i % 3 === 0 ? "#000" : "#fff"; fx2d.globalAlpha = 0.85 * (1 - k); fx2d.lineWidth = 2 + (i % 4);
+      fx2d.beginPath(); fx2d.moveTo(W / 2 + Math.cos(ang) * r, H / 2 + Math.sin(ang) * r); fx2d.lineTo(W / 2 + Math.cos(ang) * (r + L), H / 2 + Math.sin(ang) * (r + L)); fx2d.stroke();
+    }
+  }
+  fx2d.globalAlpha = 1;
+}
+
 // ------------------------------------------------------------------ iluminação (porta dos presets do LightingDirector)
 const PRE = {
   Default: { bg: [150, 190, 235], hs: [200, 220, 255], hg: [150, 130, 100], hi: 0.9, sc: [255, 240, 215], si: 2.2, sat: 1, con: 1, br: 1 },
@@ -450,7 +527,7 @@ function render(t) {
   ringPush(t, rel, 0.9, 30, C.black, 3, [rad(18), rad(-12)]); ringPush(t, rel, 1.2 * 0.9, 70 * 1.15, C.white, 0.15);
   const d1 = domePush(t, pw, 1.3, 28, C.blue), d2 = domePush(t, rel, 1.2, 70, C.white); dome.visible = d1 || d2;
   const sp = spirePush(t); if (!sp) spireO.visible = spireI.visible = false;
-  tendrilsPush(t); trailPush(t);
+  tendrilsPush(t); trailPush(t); rocksPush(t); cracksPush(t); spiralPush(t);
   dust(t, pw, floorPos, 24); dust(t, rel, floorPos, 40);
   // cenário reage
   const ea = evT("EnvironmentReact"); const age = t - ea;
@@ -474,6 +551,18 @@ function render(t) {
   let pulse = 0; for (const e of evAll("PulseLight")) { const a = t - e.t; if (a >= 0 && a < 0.45) pulse += e.arg * 0.5 * (1 - a / 0.45) * 0.25; }
   if (t >= rel && t < rel + 0.45) pulse += 0.3 * (1 - (t - rel) / 0.45);
   canvas.style.filter = isImp ? "grayscale(1) contrast(1.9) brightness(1.1)" : `saturate(${P.sat}) contrast(${P.con}) brightness(${P.br + pulse})`;
+  // frames de impacto: só o personagem, chapado, sobre fundo preto (1) ou branco (2)
+  const sil = studio ? 0 : silhouettePhase(t);
+  const envList = [smokeL.pts, sparkL.pts, floor, plate, rockMesh, crackDark, crackGlow, beadBlack, beadWhite, shardMesh, dome, spireO, spireI, trailBlack, trailWhite, ...ringMeshes, ...tendrilMeshes, ...reactive.map((r) => r.m)];
+  const envVis = envList.map((o) => o.visible);
+  if (sil) { envList.forEach((o) => (o.visible = false)); scene.background = new THREE.Color(sil === 1 ? 0x000000 : 0xffffff); scene.fog.color.set(sil === 1 ? 0x000000 : 0xffffff); scene.overrideMaterial = sil === 1 ? SIL_WHITE : SIL_BLACK; canvas.style.filter = "none"; flashEl.style.opacity = 0; fadeEl.style.opacity = 0; }
+  else scene.overrideMaterial = null;
+  if (!studio) speedLinesDraw(t); else fx2d.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+  const card = document.getElementById("card"), slam = document.getElementById("slam");
+  const tc = t - evT("TitleCard"); const ci = studio ? 0 : tc < 0 ? 0 : tc < 0.6 ? tc / 0.6 : tc < 3.1 ? 1 : tc < 3.6 ? 1 - (tc - 3.1) / 0.5 : 0;
+  card.style.opacity = ci; card.style.transform = `translateX(${tc < 0.6 ? (1 - ci) * -90 : tc > 3.1 ? (tc - 3.1) * 64 : 0}px)`;
+  const ts = t - evT("MugetsuTitle"); slam.style.opacity = !studio && ts >= 0 ? 1 : 0;
+  slam.style.transform = `translate(-50%,-50%) scale(${ts < 0 ? 2.6 : ts < 0.22 ? 2.6 - 1.75 * (1 - Math.pow(1 - ts / 0.22, 3)) * 1.0 - 0.0 : 1})`;
   if (studio) {
     smokeL.reset(); sparkL.reset(); smokeL.flush(); sparkL.flush(); shardMesh.count = 0; ringMeshes.forEach((m) => (m.visible = false));
     dome.visible = spireO.visible = spireI.visible = trailBlack.visible = trailWhite.visible = false; tendrilMeshes.forEach((m) => (m.visible = false));
@@ -482,6 +571,7 @@ function render(t) {
     sun.position.set(-30, 60, -50);
   } else sun.position.set(40, 70, -30);
   renderer.render(scene, camera);
+  if (sil) envList.forEach((o, i) => (o.visible = envVis[i]));
   // legenda
   const phase = DATA.events.filter((e) => e.t <= t).slice(-1)[0];
   el("lbl").textContent = `t=${t.toFixed(2)}s · ${currentPhase(t)} · ${phase ? phase.name : ""}`;

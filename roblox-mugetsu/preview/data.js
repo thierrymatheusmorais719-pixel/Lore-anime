@@ -102,19 +102,19 @@ export const DATA = {
   {
    "t": 9.2,
    "duration": 2.8,
-   "ease": "Expo",
+   "ease": "Sine",
    "from": {
     "pos": [
      0.4,
      2.4,
-     -4.2
+     -6.0
     ],
     "look": [
      0.0,
      2.35,
      0.0
     ],
-    "fov": 40.0
+    "fov": 22.0
    },
    "to": {
     "pos": [
@@ -127,7 +127,7 @@ export const DATA = {
      2.4,
      0.0
     ],
-    "fov": 28.0
+    "fov": 52.0
    }
   },
   {
@@ -375,6 +375,11 @@ export const DATA = {
    "arg": null
   },
   {
+   "t": 1.2,
+   "name": "TitleCard",
+   "arg": "Ichigo"
+  },
+  {
    "t": 2.6,
    "name": "SwordGlint",
    "arg": null
@@ -393,6 +398,11 @@ export const DATA = {
    "t": 5.0,
    "name": "EnergyGather",
    "arg": 1.0
+  },
+  {
+   "t": 6.0,
+   "name": "Levitate",
+   "arg": null
   },
   {
    "t": 6.5,
@@ -420,6 +430,11 @@ export const DATA = {
    "arg": null
   },
   {
+   "t": 9.2,
+   "name": "SpeedLines",
+   "arg": 0.7
+  },
+  {
    "t": 11.6,
    "name": "PressureWave",
    "arg": 1.0
@@ -435,9 +450,19 @@ export const DATA = {
    "arg": null
   },
   {
+   "t": 12.3,
+   "name": "Spiral",
+   "arg": null
+  },
+  {
    "t": 14.8,
    "name": "MaskForm",
    "arg": null
+  },
+  {
+   "t": 14.85,
+   "name": "SpeedLines",
+   "arg": 0.9
   },
   {
    "t": 15.2,
@@ -490,6 +515,26 @@ export const DATA = {
    "arg": null
   },
   {
+   "t": 19.6,
+   "name": "ImpactSilhouette",
+   "arg": null
+  },
+  {
+   "t": 19.6,
+   "name": "GroundCracks",
+   "arg": null
+  },
+  {
+   "t": 19.6,
+   "name": "DebrisBlast",
+   "arg": null
+  },
+  {
+   "t": 19.75,
+   "name": "SpeedLines",
+   "arg": 1.2
+  },
+  {
    "t": 19.9,
    "name": "EnvironmentReact",
    "arg": null
@@ -522,6 +567,11 @@ export const DATA = {
   {
    "t": 27.5,
    "name": "FadeFromBlack",
+   "arg": null
+  },
+  {
+   "t": 27.7,
+   "name": "MugetsuTitle",
    "arg": null
   },
   {

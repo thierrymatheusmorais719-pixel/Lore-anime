@@ -230,7 +230,9 @@ H.ReleaseImpact = function(ctx)
 	ctx.vfx:lightPulse(ctx.root.Position + Vector3.new(0, 2, 0), VFX.Colors.White, 10, 90, 0.7)
 	HairSway.gust(1, 3)
 	if ctx.isOwner then
-		Hud.flash(Color3.new(1, 1, 1), 0.05, 0.25)
+		task.delay(0.16, function() -- o flash vem logo depois dos frames de silhueta
+			Hud.flash(Color3.new(1, 1, 1), 0.04, 0.25)
+		end)
 		CameraDirector.shake(0.8, 0.7)
 		CameraDirector.punchFov(14, 0.5)
 		LightingDirector.pulse(1.2)
@@ -265,6 +267,38 @@ end
 H.FadeFromBlack = function(ctx)
 	if ctx.isOwner then
 		Hud.fade(Color3.new(0, 0, 0), 1, 1.4)
+	end
+end
+-- "1000x" ---------------------------------------------------------------------------------------
+H.TitleCard = function(ctx)
+	if ctx.isOwner then
+		Hud.titleCard("黒崎 一護", "KUROSAKI  ICHIGO", "最後の月牙天衝  ·  FINAL GETSUGA TENSHŌ")
+	end
+end
+H.Levitate = function(ctx)
+	ctx.vfx:levitateStart(floorCF(ctx).Position)
+end
+H.SpeedLines = function(ctx, arg)
+	if ctx.isOwner then
+		Hud.speedLines(arg or 1)
+	end
+end
+H.Spiral = function(ctx)
+	ctx.vfx:spiral(floorCF(ctx).Position, 2.6)
+end
+H.ImpactSilhouette = function(ctx)
+	ctx.vfx:impactSilhouette(ctx.char, ctx.isOwner)
+end
+H.GroundCracks = function(ctx)
+	ctx.vfx:cracks(floorCF(ctx).Position)
+end
+H.DebrisBlast = function(ctx)
+	ctx.vfx:debrisBlast()
+end
+H.MugetsuTitle = function(ctx)
+	if ctx.isOwner then
+		Hud.slamTitle("無月", "M U G E T S U")
+		CameraDirector.shake(0.15, 0.3)
 	end
 end
 H.EnableAbility = function(ctx)
