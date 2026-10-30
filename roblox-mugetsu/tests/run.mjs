@@ -100,4 +100,23 @@ return "ALL PASSED " .. passed .. " cenários do ModelKit real"\n`;
 	if (typeof f === "string") { console.log("FAIL compile modelkit sim:", f); failures++; }
 	else { try { const r = String(await f()); console.log(r); if (!/ALL PASSED/.test(r)) failures++; } catch (e) { console.log("FAIL runtime modelkit sim:", e?.message ?? e); failures++; } }
 }
+
+// 5) KeyframeSequences exportadas (animations/*.model.json) batem com a coreografia atual
+{
+	const data = JSON.parse(fs.readFileSync(path.join(root, "preview/data.js"), "utf8").split("=").slice(1).join("=").trim().replace(/;$/, ""));
+	let stale = [];
+	for (const [name, anim] of Object.entries(data.anims)) {
+		const f = path.join(root, "animations", name + ".model.json");
+		if (!fs.existsSync(f)) { stale.push(name + " (sem arquivo)"); continue; }
+		const ks = JSON.parse(fs.readFileSync(f, "utf8"));
+		const times = ks.Children.filter((k) => k.Children.some((c) => c.ClassName === "Pose")).map((k) => k.Properties.Time);
+		const want = anim.keys.map((k) => k.t);
+		if (JSON.stringify(times) !== JSON.stringify(want)) stale.push(name + " (keyframes diferentes)");
+		const marks = ks.Children.flatMap((k) => k.Children.filter((c) => c.ClassName === "KeyframeMarker").map((c) => c.Name)).sort();
+		const wantM = Object.keys(data.markers[name] || {}).sort();
+		if (JSON.stringify(marks) !== JSON.stringify(wantM)) stale.push(name + " (markers diferentes)");
+	}
+	if (stale.length) { console.log("FAIL animações desatualizadas (rode tools/build_animations.py):", stale.join(", ")); failures++; }
+	else console.log(`ALL PASSED animações exportadas (${Object.keys(data.anims).length}) batem com a coreografia`);
+}
 process.exit(failures ? 1 : 0);

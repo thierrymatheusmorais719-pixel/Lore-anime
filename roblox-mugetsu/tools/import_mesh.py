@@ -203,6 +203,20 @@ def main():
             continue
         sub = mesh.submesh([sel], append=True)
         sub = decimate(sub, budget)
+        if name == "Blade":
+            # a espada do modelo foi esculpida atravessada na frente do corpo; as animações usam a
+            # empunhadura do jogo (lâmina saindo da mão para frente/baixo, 50° abaixo da horizontal).
+            # Gira a peça em torno do cabo para essa direção, para as poses apontarem a lâmina certo.
+            cur = (tip - grip) / np.linalg.norm(tip - grip)
+            target = np.array([0.0, -np.sin(np.radians(50)), -np.cos(np.radians(50))])
+            axis = np.cross(cur, target); sa = np.linalg.norm(axis); ca = float(np.dot(cur, target))
+            if sa > 1e-6:
+                k = axis / sa
+                K = np.array([[0, -k[2], k[1]], [k[2], 0, -k[0]], [-k[1], k[0], 0]])
+                Rm = np.eye(3) + sa * K + (1 - ca) * (K @ K)
+                sub = trimesh.Trimesh((sub.vertices - grip) @ Rm.T + grip, sub.faces, process=False)
+                tip = grip + Rm @ (tip - grip)
+                print(f"  espada girada {np.degrees(np.arctan2(sa, ca)):.0f}° para a empunhadura das animações")
         bb = sub.bounds
         center = (bb[0] + bb[1]) / 2  # o Studio coloca a origem do MeshPart no centro da caixa
         info = {"attach": limb, "color": color, "material": material, "triangles": int(len(sub.faces)), "center": [round(float(c), 4) for c in center]}

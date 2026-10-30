@@ -110,7 +110,9 @@ addMod("AssetManifest", { CustomKitPath = { "MugetsuAssets", "MugetsuKit" } })
 addMod("KitDataObj", KITS.obj)
 addMod("KitDataProcedural", KITS.procedural)
 addMod("MeshKitManifest", MESH)
-addMod("Config", function() return __CONFIG() end)
+-- Config real, com a lista de skins controlada pelo teste (SKINS_ICHIGO = nil -> sem skin no Ichigo)
+local CONFIG_REF
+addMod("Config", function() CONFIG_REF = __CONFIG(); CONFIG_REF.Skins.Ichigo = {}; return CONFIG_REF end)
 
 -- personagem R15 com roupa, acessório e rosto
 local LIMBS = { "Head", "UpperTorso", "LowerTorso", "LeftUpperArm", "LeftLowerArm", "LeftHand", "RightUpperArm", "RightLowerArm",
@@ -190,6 +192,19 @@ return function(test, eq)
 			if p:IsA("BasePart") and p.Name ~= "Blade" and p.Name ~= "SwordHandle" and not p.Name:match("^P%d") and not p.Name:match("^S%d") then onlyHand = false end
 		end
 		assert(onlyHand, "forma com skin só recebe peças da espada")
+	end)
+
+	test("modelkit real: com skin nas DUAS formas o kit nunca mexe na roupa do avatar", function()
+		CONFIG_REF.Skins.Ichigo = { 12139415715 }
+		local c = newChar()
+		ModelKit.build(c)
+		assert(c:FindFirstChild("Shirt"), "roupa intacta na forma Ichigo com skin")
+		eq(c:FindFirstChild("OldHair").Handle.Transparency, 0)
+		assert(c:FindFirstChild("MugetsuKits").Ichigo:FindFirstChild("Blade"), "espada do jogo presente")
+		ModelKit.setForm(c, "Mugetsu", 0)
+		ModelKit.refresh(c)
+		assert(c:FindFirstChild("Shirt"), "roupa intacta na forma Mugetsu com skin")
+		CONFIG_REF.Skins.Ichigo = {}
 	end)
 
 	test("modelkit real: restaurar a aparência e voltar ao Ichigo reaplica o kit do Ichigo", function()

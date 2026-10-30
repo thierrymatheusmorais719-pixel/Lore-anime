@@ -480,13 +480,13 @@ export const DATA = {
    "arg": null
   },
   {
-   "t": 19.6,
-   "name": "ReleaseImpact",
+   "t": 19.45,
+   "name": "SwordSlash",
    "arg": null
   },
   {
-   "t": 19.7,
-   "name": "SwordSlash",
+   "t": 19.6,
+   "name": "ReleaseImpact",
    "arg": null
   },
   {
@@ -539,18 +539,18 @@ export const DATA = {
   "STANCE": {
    "Root": [
     0.0,
-    0.0,
+    -4.0,
     0.0,
     0.0
    ],
    "Waist": [
-    2.0,
-    0.0,
+    3.0,
+    -8.0,
     0.0
    ],
    "Neck": [
-    8.0,
-    0.0,
+    12.0,
+    6.0,
     0.0
    ],
    "RightShoulder": [
@@ -560,6 +560,11 @@ export const DATA = {
    ],
    "RightElbow": [
     18.0,
+    0.0,
+    0.0
+   ],
+   "RightWrist": [
+    -8.0,
     0.0,
     0.0
    ],
@@ -575,8 +580,8 @@ export const DATA = {
    ],
    "RightHip": [
     6.0,
-    0.0,
-    3.0
+    -4.0,
+    4.0
    ],
    "RightKnee": [
     -8.0,
@@ -584,12 +589,12 @@ export const DATA = {
     0.0
    ],
    "LeftHip": [
-    -8.0,
-    0.0,
-    -3.0
+    -10.0,
+    6.0,
+    -4.0
    ],
    "LeftKnee": [
-    -4.0,
+    -6.0,
     0.0,
     0.0
    ]
@@ -597,57 +602,67 @@ export const DATA = {
   "GUARD": {
    "Root": [
     4.0,
+    -10.0,
     0.0,
-    0.0,
-    -0.5
+    -0.45
    ],
    "Waist": [
-    6.0,
-    0.0,
+    8.0,
+    -14.0,
     0.0
    ],
    "Neck": [
-    20.0,
-    0.0,
+    22.0,
+    10.0,
     0.0
    ],
    "RightShoulder": [
-    22.0,
-    0.0,
-    -24.0
+    30.0,
+    -10.0,
+    -18.0
    ],
    "RightElbow": [
-    40.0,
+    42.0,
+    0.0,
+    0.0
+   ],
+   "RightWrist": [
+    10.0,
     0.0,
     0.0
    ],
    "LeftShoulder": [
-    30.0,
+    48.0,
     0.0,
-    -10.0
+    30.0
    ],
    "LeftElbow": [
-    40.0,
+    46.0,
+    0.0,
+    0.0
+   ],
+   "LeftWrist": [
+    0.0,
     0.0,
     0.0
    ],
    "RightHip": [
-    22.0,
-    0.0,
+    24.0,
+    -6.0,
     8.0
    ],
    "RightKnee": [
-    -34.0,
+    -36.0,
     0.0,
     0.0
    ],
    "LeftHip": [
-    -20.0,
-    0.0,
+    -18.0,
+    8.0,
     -8.0
    ],
    "LeftKnee": [
-    -18.0,
+    -20.0,
     0.0,
     0.0
    ]
@@ -655,27 +670,32 @@ export const DATA = {
   "FACE_HAND": {
    "Root": [
     0.0,
-    0.0,
+    -6.0,
     0.0,
     -0.2
    ],
    "Waist": [
-    18.0,
-    0.0,
+    16.0,
+    -6.0,
     0.0
    ],
    "Neck": [
-    34.0,
+    30.0,
     0.0,
     0.0
    ],
    "RightShoulder": [
     20.0,
     0.0,
-    26.0
+    36.0
    ],
    "RightElbow": [
     14.0,
+    0.0,
+    0.0
+   ],
+   "RightWrist": [
+    -10.0,
     0.0,
     0.0
    ],
@@ -710,60 +730,128 @@ export const DATA = {
     0.0
    ]
   },
-  "TALL": {
+  "ROAR": {
    "Root": [
+    -6.0,
     0.0,
     0.0,
-    0.0,
-    0.0
+    -0.1
    ],
    "Waist": [
-    -6.0,
+    22.0,
     0.0,
     0.0
    ],
    "Neck": [
-    -8.0,
+    34.0,
     0.0,
     0.0
    ],
    "RightShoulder": [
-    10.0,
+    -12.0,
     0.0,
-    8.0
+    72.0
    ],
    "RightElbow": [
-    8.0,
+    12.0,
+    0.0,
+    0.0
+   ],
+   "RightWrist": [
+    -20.0,
     0.0,
     0.0
    ],
    "LeftShoulder": [
-    10.0,
+    -12.0,
     0.0,
-    -8.0
+    -72.0
    ],
    "LeftElbow": [
-    10.0,
+    12.0,
     0.0,
     0.0
    ],
    "RightHip": [
-    4.0,
+    8.0,
     0.0,
-    6.0
+    10.0
    ],
    "RightKnee": [
-    -6.0,
+    -12.0,
     0.0,
     0.0
    ],
    "LeftHip": [
-    -6.0,
+    -8.0,
     0.0,
-    -6.0
+    -10.0
    ],
    "LeftKnee": [
-    -3.0,
+    -10.0,
+    0.0,
+    0.0
+   ]
+  },
+  "CROUCH": {
+   "Root": [
+    18.0,
+    0.0,
+    0.0,
+    -0.85
+   ],
+   "Waist": [
+    -24.0,
+    0.0,
+    0.0
+   ],
+   "Neck": [
+    -20.0,
+    0.0,
+    0.0
+   ],
+   "RightShoulder": [
+    42.0,
+    0.0,
+    14.0
+   ],
+   "RightElbow": [
+    30.0,
+    0.0,
+    0.0
+   ],
+   "RightWrist": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "LeftShoulder": [
+    40.0,
+    0.0,
+    -16.0
+   ],
+   "LeftElbow": [
+    34.0,
+    0.0,
+    0.0
+   ],
+   "RightHip": [
+    46.0,
+    0.0,
+    8.0
+   ],
+   "RightKnee": [
+    -72.0,
+    0.0,
+    0.0
+   ],
+   "LeftHip": [
+    38.0,
+    0.0,
+    -8.0
+   ],
+   "LeftKnee": [
+    -64.0,
     0.0,
     0.0
    ]
@@ -771,34 +859,39 @@ export const DATA = {
   "WINDUP": {
    "Root": [
     -6.0,
-    0.0,
+    10.0,
     0.0,
     -0.3
    ],
    "Waist": [
     16.0,
-    0.0,
+    14.0,
     0.0
    ],
    "Neck": [
-    10.0,
-    0.0,
+    8.0,
+    -8.0,
     0.0
    ],
    "RightShoulder": [
     150.0,
     0.0,
-    20.0
+    22.0
    ],
    "RightElbow": [
-    40.0,
+    42.0,
+    0.0,
+    0.0
+   ],
+   "RightWrist": [
+    20.0,
     0.0,
     0.0
    ],
    "LeftShoulder": [
-    -20.0,
+    -22.0,
     0.0,
-    -30.0
+    -32.0
    ],
    "LeftElbow": [
     20.0,
@@ -816,12 +909,12 @@ export const DATA = {
     0.0
    ],
    "LeftHip": [
-    20.0,
+    22.0,
     0.0,
     -8.0
    ],
    "LeftKnee": [
-    -30.0,
+    -32.0,
     0.0,
     0.0
    ]
@@ -829,34 +922,39 @@ export const DATA = {
   "SLASH": {
    "Root": [
     12.0,
+    -14.0,
     0.0,
-    0.0,
-    -0.5
+    -0.55
    ],
    "Waist": [
     -24.0,
-    0.0,
+    -16.0,
     0.0
    ],
    "Neck": [
     6.0,
-    0.0,
+    10.0,
     0.0
    ],
    "RightShoulder": [
     20.0,
     0.0,
-    -5.0
+    -6.0
    ],
    "RightElbow": [
-    14.0,
+    12.0,
+    0.0,
+    0.0
+   ],
+   "RightWrist": [
+    -14.0,
     0.0,
     0.0
    ],
    "LeftShoulder": [
-    -40.0,
+    -42.0,
     0.0,
-    -40.0
+    -42.0
    ],
    "LeftElbow": [
     10.0,
@@ -864,12 +962,12 @@ export const DATA = {
     0.0
    ],
    "RightHip": [
-    30.0,
+    32.0,
     0.0,
     8.0
    ],
    "RightKnee": [
-    -42.0,
+    -44.0,
     0.0,
     0.0
    ],
@@ -887,18 +985,18 @@ export const DATA = {
   "FINAL": {
    "Root": [
     0.0,
-    0.0,
+    4.0,
     0.0,
     0.0
    ],
    "Waist": [
     -3.0,
-    0.0,
+    6.0,
     0.0
    ],
    "Neck": [
     14.0,
-    0.0,
+    -4.0,
     0.0
    ],
    "RightShoulder": [
@@ -908,6 +1006,11 @@ export const DATA = {
    ],
    "RightElbow": [
     14.0,
+    0.0,
+    0.0
+   ],
+   "RightWrist": [
+    -6.0,
     0.0,
     0.0
    ],
@@ -923,7 +1026,7 @@ export const DATA = {
    ],
    "RightHip": [
     4.0,
-    0.0,
+    2.0,
     8.0
    ],
    "RightKnee": [
@@ -933,7 +1036,7 @@ export const DATA = {
    ],
    "LeftHip": [
     -6.0,
-    0.0,
+    -2.0,
     -8.0
    ],
    "LeftKnee": [
@@ -941,34 +1044,435 @@ export const DATA = {
     0.0,
     0.0
    ]
+  },
+  "STANCE_LOOK": {
+   "Root": [
+    0.0,
+    -4.0,
+    0.0,
+    0.0
+   ],
+   "Waist": [
+    0.0,
+    -4.0,
+    0.0
+   ],
+   "Neck": [
+    2.0,
+    0.0,
+    0.0
+   ],
+   "RightShoulder": [
+    25.0,
+    0.0,
+    8.0
+   ],
+   "RightElbow": [
+    18.0,
+    0.0,
+    0.0
+   ],
+   "RightWrist": [
+    -8.0,
+    0.0,
+    0.0
+   ],
+   "LeftShoulder": [
+    -5.0,
+    0.0,
+    -8.0
+   ],
+   "LeftElbow": [
+    12.0,
+    0.0,
+    0.0
+   ],
+   "RightHip": [
+    6.0,
+    -4.0,
+    4.0
+   ],
+   "RightKnee": [
+    -8.0,
+    0.0,
+    0.0
+   ],
+   "LeftHip": [
+    -10.0,
+    6.0,
+    -4.0
+   ],
+   "LeftKnee": [
+    -6.0,
+    0.0,
+    0.0
+   ]
+  },
+  "GUARD_EYES": {
+   "Root": [
+    4.0,
+    -10.0,
+    0.0,
+    -0.45
+   ],
+   "Waist": [
+    2.0,
+    -10.0,
+    0.0
+   ],
+   "Neck": [
+    -4.0,
+    4.0,
+    0.0
+   ],
+   "RightShoulder": [
+    30.0,
+    -10.0,
+    -18.0
+   ],
+   "RightElbow": [
+    42.0,
+    0.0,
+    0.0
+   ],
+   "RightWrist": [
+    10.0,
+    0.0,
+    0.0
+   ],
+   "LeftShoulder": [
+    48.0,
+    0.0,
+    30.0
+   ],
+   "LeftElbow": [
+    46.0,
+    0.0,
+    0.0
+   ],
+   "LeftWrist": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "RightHip": [
+    24.0,
+    -6.0,
+    8.0
+   ],
+   "RightKnee": [
+    -36.0,
+    0.0,
+    0.0
+   ],
+   "LeftHip": [
+    -18.0,
+    8.0,
+    -8.0
+   ],
+   "LeftKnee": [
+    -20.0,
+    0.0,
+    0.0
+   ]
+  },
+  "FOLLOW": {
+   "Root": [
+    16.0,
+    -18.0,
+    0.0,
+    -0.6
+   ],
+   "Waist": [
+    -32.0,
+    -22.0,
+    0.0
+   ],
+   "Neck": [
+    6.0,
+    10.0,
+    0.0
+   ],
+   "RightShoulder": [
+    2.0,
+    0.0,
+    -16.0
+   ],
+   "RightElbow": [
+    12.0,
+    0.0,
+    0.0
+   ],
+   "RightWrist": [
+    -14.0,
+    0.0,
+    0.0
+   ],
+   "LeftShoulder": [
+    -42.0,
+    0.0,
+    -42.0
+   ],
+   "LeftElbow": [
+    10.0,
+    0.0,
+    0.0
+   ],
+   "RightHip": [
+    32.0,
+    0.0,
+    8.0
+   ],
+   "RightKnee": [
+    -44.0,
+    0.0,
+    0.0
+   ],
+   "LeftHip": [
+    -16.0,
+    0.0,
+    -8.0
+   ],
+   "LeftKnee": [
+    -6.0,
+    0.0,
+    0.0
+   ]
+  },
+  "FINAL_B": {
+   "Root": [
+    0.0,
+    4.0,
+    0.0,
+    0.0
+   ],
+   "Waist": [
+    -2.0,
+    2.0,
+    0.0
+   ],
+   "Neck": [
+    10.0,
+    6.0,
+    0.0
+   ],
+   "RightShoulder": [
+    18.0,
+    0.0,
+    12.0
+   ],
+   "RightElbow": [
+    14.0,
+    0.0,
+    0.0
+   ],
+   "RightWrist": [
+    -6.0,
+    0.0,
+    0.0
+   ],
+   "LeftShoulder": [
+    -2.0,
+    0.0,
+    -16.0
+   ],
+   "LeftElbow": [
+    10.0,
+    0.0,
+    0.0
+   ],
+   "RightHip": [
+    4.0,
+    2.0,
+    8.0
+   ],
+   "RightKnee": [
+    -6.0,
+    0.0,
+    0.0
+   ],
+   "LeftHip": [
+    -6.0,
+    -2.0,
+    -8.0
+   ],
+   "LeftKnee": [
+    -3.0,
+    0.0,
+    0.0
+   ]
+  },
+  "CAST_LOW": {
+   "Root": [
+    6.0,
+    16.0,
+    0.0,
+    -0.5
+   ],
+   "Waist": [
+    10.0,
+    24.0,
+    0.0
+   ],
+   "Neck": [
+    8.0,
+    -8.0,
+    0.0
+   ],
+   "RightShoulder": [
+    -40.0,
+    0.0,
+    30.0
+   ],
+   "RightElbow": [
+    20.0,
+    0.0,
+    0.0
+   ],
+   "RightWrist": [
+    20.0,
+    0.0,
+    0.0
+   ],
+   "LeftShoulder": [
+    -22.0,
+    0.0,
+    -32.0
+   ],
+   "LeftElbow": [
+    20.0,
+    0.0,
+    0.0
+   ],
+   "RightHip": [
+    -14.0,
+    0.0,
+    8.0
+   ],
+   "RightKnee": [
+    -40.0,
+    0.0,
+    0.0
+   ],
+   "LeftHip": [
+    22.0,
+    0.0,
+    -8.0
+   ],
+   "LeftKnee": [
+    -40.0,
+    0.0,
+    0.0
+   ]
+  },
+  "CAST_UP": {
+   "Root": [
+    12.0,
+    -14.0,
+    0.0,
+    -0.55
+   ],
+   "Waist": [
+    -14.0,
+    -18.0,
+    0.0
+   ],
+   "Neck": [
+    -6.0,
+    8.0,
+    0.0
+   ],
+   "RightShoulder": [
+    115.0,
+    0.0,
+    -22.0
+   ],
+   "RightElbow": [
+    10.0,
+    0.0,
+    0.0
+   ],
+   "RightWrist": [
+    -14.0,
+    0.0,
+    0.0
+   ],
+   "LeftShoulder": [
+    -42.0,
+    0.0,
+    -42.0
+   ],
+   "LeftElbow": [
+    10.0,
+    0.0,
+    0.0
+   ],
+   "RightHip": [
+    32.0,
+    0.0,
+    8.0
+   ],
+   "RightKnee": [
+    -44.0,
+    0.0,
+    0.0
+   ],
+   "LeftHip": [
+    -16.0,
+    0.0,
+    -8.0
+   ],
+   "LeftKnee": [
+    -6.0,
+    0.0,
+    0.0
+   ]
   }
  },
  "anims": {
   "Prepare": {
-   "length": 5.0,
+   "length": 4.8,
    "looped": false,
+   "breath": 1.4,
    "keys": [
     {
      "t": 0.0,
      "pose": "STANCE"
     },
     {
-     "t": 3.5,
-     "pose": "STANCE"
+     "t": 2.2,
+     "pose": "STANCE_LOOK"
     },
     {
-     "t": 5.0,
+     "t": 3.4,
+     "pose": "STANCE_LOOK"
+    },
+    {
+     "t": 4.8,
      "pose": "GUARD"
     }
    ]
   },
   "Concentrate": {
    "length": 7.0,
-   "looped": true,
+   "looped": false,
+   "breath": 0.8,
    "keys": [
     {
      "t": 0.0,
      "pose": "GUARD"
+    },
+    {
+     "t": 3.8,
+     "pose": "GUARD"
+    },
+    {
+     "t": 4.5,
+     "pose": "GUARD_EYES"
+    },
+    {
+     "t": 6.6,
+     "pose": "GUARD_EYES"
     },
     {
      "t": 7.0,
@@ -979,55 +1483,69 @@ export const DATA = {
   "Transform": {
    "length": 7.0,
    "looped": false,
+   "breath": 0.5,
    "keys": [
     {
      "t": 0.0,
      "pose": "GUARD"
     },
     {
-     "t": 1.5,
+     "t": 1.0,
      "pose": "FACE_HAND"
     },
     {
-     "t": 2.8,
+     "t": 2.5,
      "pose": "FACE_HAND"
     },
     {
-     "t": 3.4,
-     "pose": "TALL"
+     "t": 2.85,
+     "pose": "ROAR"
+    },
+    {
+     "t": 4.4,
+     "pose": "ROAR"
+    },
+    {
+     "t": 5.0,
+     "pose": "CROUCH"
     },
     {
      "t": 7.0,
-     "pose": "TALL"
+     "pose": "CROUCH"
     }
    ]
   },
   "Release": {
-   "length": 3.2,
+   "length": 3.0,
    "looped": false,
+   "breath": 0.0,
    "keys": [
     {
      "t": 0.0,
-     "pose": "TALL"
+     "pose": "CROUCH"
     },
     {
-     "t": 0.55,
+     "t": 0.32,
      "pose": "WINDUP"
     },
     {
-     "t": 0.62,
+     "t": 0.46,
      "pose": "WINDUP"
     },
     {
-     "t": 0.78,
+     "t": 0.6,
      "pose": "SLASH"
+    },
+    {
+     "t": 0.85,
+     "pose": "FOLLOW"
     },
     {
      "t": 1.6,
-     "pose": "SLASH"
+     "pose": "FOLLOW"
     },
     {
-     "t": 3.2,
+     "t": 3.0,
      "pose": "FINAL"
     }
    ]
@@ -1035,10 +1553,15 @@ export const DATA = {
   "FinalPose": {
    "length": 4.0,
    "looped": true,
+   "breath": 1.2,
    "keys": [
     {
      "t": 0.0,
      "pose": "FINAL"
+    },
+    {
+     "t": 2.0,
+     "pose": "FINAL_B"
     },
     {
      "t": 4.0,
@@ -1049,28 +1572,45 @@ export const DATA = {
   "GetsugaCast": {
    "length": 1.2,
    "looped": false,
+   "breath": 0.0,
    "keys": [
     {
      "t": 0.0,
      "pose": "FINAL"
     },
     {
-     "t": 0.6,
-     "pose": "WINDUP"
+     "t": 0.55,
+     "pose": "CAST_LOW"
     },
     {
      "t": 0.72,
-     "pose": "WINDUP"
+     "pose": "CAST_LOW"
     },
     {
      "t": 0.9,
-     "pose": "SLASH"
+     "pose": "CAST_UP"
     },
     {
      "t": 1.2,
      "pose": "FINAL"
     }
    ]
+  }
+ },
+ "markers": {
+  "Concentrate": {
+   "Pulse": 2.0
+  },
+  "Transform": {
+   "Mask": 2.8,
+   "Swap": 5.4
+  },
+  "Release": {
+   "Slash": 0.45,
+   "Impact": 0.6
+  },
+  "GetsugaCast": {
+   "Fire": 0.9
   }
  },
  "kits": {

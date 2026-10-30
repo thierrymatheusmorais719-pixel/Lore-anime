@@ -30,13 +30,26 @@ for m in re.finditer(r'\{ t = ([\d.]+), name = "(\w+)"(?:, arg = ([^}]+?))? \}',
     events.append({"t": float(m.group(1)), "name": m.group(2), "arg": arg})
 
 poses = {}
-for m in re.finditer(r"local (\w+): Pose = \{(.*?)\n\}", pd, re.S):
+for m in re.finditer(r"local ([A-Z_]+): Pose = \{(.*?)\n\}", pd, re.S):
     poses[m.group(1)] = {j: [float(x) for x in v.split(",")] for j, v in re.findall(r"(\w+) = \{ ([-\d., ]+) \}", m.group(2))}
+# variações: local X(: Pose)? = with(BASE, { ... })
+for m in re.finditer(r"local ([A-Z_]+)(?:: Pose)? = with\((\w+), \{(.*?)\}\)[^\n]*\n", pd, re.S):
+    base = dict(poses[m.group(2)])
+    base.update({j: [float(x) for x in v.split(",")] for j, v in re.findall(r"(\w+) = \{ ([-\d., ]+) \}", m.group(3))})
+    poses[m.group(1)] = base
 anims = {}
-for m in re.finditer(r"(\w+) = \{ length = ([\d.]+), looped = (\w+), keys = \{(.*?)\} \},?\n", pd, re.S):
-    anims[m.group(1)] = {"length": float(m.group(2)), "looped": m.group(3) == "true",
-                         "keys": [{"t": float(t), "pose": p} for t, p in re.findall(r"P\(([\d.]+), (\w+)\)", m.group(4))]}
+for m in re.finditer(r"(\w+) = \{ length = ([\d.]+), looped = (\w+), breath = ([\d.]+), keys = \{(.*?)\} \},?\n", pd, re.S):
+    anims[m.group(1)] = {"length": float(m.group(2)), "looped": m.group(3) == "true", "breath": float(m.group(4)),
+                         "keys": [{"t": float(t), "pose": p} for t, p in re.findall(r"P\(([\d.]+), (\w+)\)", m.group(5))]}
+for a in anims.values():
+    for k in a["keys"]:
+        assert k["pose"] in poses, f"pose desconhecida: {k['pose']}"
+markers = {}
+mk = pd[pd.index("PoseDriver.Markers = {"):]
+mk = mk[:mk.index("\n}\n")]
+for name, body in re.findall(r"\t(\w+) = \{ ([^}]*) \}", mk):
+    markers[name] = {k: float(v) for k, v in re.findall(r"(\w+) = ([\d.]+)", body)}
 dur = float(re.search(r"Timeline.Duration = ([\d.]+)", tl).group(1))
 kits = {"obj": json.loads((root / "src/shared/KitDataObj.json").read_text()), "procedural": json.loads((root / "src/shared/KitDataProcedural.json").read_text())}
-(root / "preview/data.js").write_text("export const DATA = " + json.dumps({"duration": dur, "shots": shots, "events": events, "poses": poses, "anims": anims, "kits": kits}, indent=1) + ";\n")
+(root / "preview/data.js").write_text("export const DATA = " + json.dumps({"duration": dur, "shots": shots, "events": events, "poses": poses, "anims": anims, "markers": markers, "kits": kits}, indent=1) + ";\n")
 print(len(shots), "planos", len(events), "eventos", len(poses), "poses", list(anims))

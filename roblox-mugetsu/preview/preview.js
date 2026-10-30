@@ -82,7 +82,7 @@ function arm(side) {
   const upC = limb(P + "UpperArm", sh, [0, -0.6, 0], [1, 1.2, 1]);
   const el = G(sh, [0, -1.2, 0]); J[P + "Elbow"] = el;
   const loC = limb(P + "LowerArm", el, [0, -0.55, 0], [1, 1.1, 1]);
-  const wr = G(el, [0, -1.1, 0]); const handC = limb(P + "Hand", wr, [0, -0.2, 0], [0.9, 0.4, 0.9]);
+  const wr = G(el, [0, -1.1, 0]); J[P + "Wrist"] = wr; const handC = limb(P + "Hand", wr, [0, -0.2, 0], [0.9, 0.4, 0.9]);
   return { upC, loC, handC };
 }
 const R = arm("R"), L = arm("L");
@@ -188,7 +188,7 @@ function setForm(f) {
 }
 
 // ------------------------------------------------------------------ pose (porta do PoseDriver.sample)
-const JOINTS = ["Root", "Waist", "Neck", "RightShoulder", "RightElbow", "LeftShoulder", "LeftElbow", "RightHip", "RightKnee", "LeftHip", "LeftKnee"];
+const JOINTS = ["Root", "Waist", "Neck", "RightShoulder", "RightElbow", "RightWrist", "LeftShoulder", "LeftElbow", "LeftWrist", "RightHip", "RightKnee", "LeftHip", "LeftKnee"];
 function samplePose(name, t, intensity) {
   const a = DATA.anims[name]; if (!a) return null;
   const keys = a.keys;
@@ -197,10 +197,14 @@ function samplePose(name, t, intensity) {
   let lo = keys[0], hi = keys[keys.length - 1];
   for (let i = 0; i < keys.length - 1; i++) if (tt >= keys[i].t && tt <= keys[i + 1].t) { lo = keys[i]; hi = keys[i + 1]; break; }
   const span = hi.t - lo.t, k = span > 1e-6 ? smooth((tt - lo.t) / span) : 1;
-  const out = {};
+  const out = {}, Z = [0, 0, 0, 0];
   for (const j of JOINTS) {
-    const A = DATA.poses[lo.pose][j], B = DATA.poses[hi.pose][j]; if (!A || !B) continue;
+    const A = DATA.poses[lo.pose][j] || Z, B = DATA.poses[hi.pose][j] || Z;
     out[j] = [0, 1, 2, 3].map((i) => (A[i] ?? 0) + ((B[i] ?? 0) - (A[i] ?? 0)) * k);
+  }
+  if (a.breath > 0) { // igual ao PoseDriver.sample: respiração por cima
+    const b1 = Math.sin(t * 2.1) * a.breath;
+    out.Waist[0] += b1 * 0.6; out.Neck[0] -= b1 * 0.4; out.RightShoulder[2] += b1 * 0.5; out.LeftShoulder[2] -= b1 * 0.5; out.Root[3] += b1 * 0.012;
   }
   if (name === "Concentrate" && intensity > 0) {
     const amp = intensity * 2.2;

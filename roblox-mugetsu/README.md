@@ -112,6 +112,12 @@ original do jogador: Ichigo antes da cena começar, Mugetsu no início do flash 
 fim da forma (`RestoreAfter = "Form"`) ou da cutscene (`"Cutscene"`). Uma forma com skin usa só a espada do
 jogo (rastro/golpes); sem skin, usa o kit. `src/server/SkinService.luau`.
 
+## Animações
+
+Coreografia procedural em `src/shared/PoseDriver.luau` (funciona sem assets) e exportada como
+KeyframeSequences em `ServerStorage/MugetsuAnimations` para publicar como Animation IDs:
+[`docs/ANIMACOES.md`](docs/ANIMACOES.md).
+
 ## Testes
 
 ```bash

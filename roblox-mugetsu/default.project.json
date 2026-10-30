@@ -4,26 +4,43 @@
     "$className": "DataModel",
     "ReplicatedStorage": {
       "$className": "ReplicatedStorage",
-      "Mugetsu": { "$path": "src/shared" }
+      "Mugetsu": {
+        "$path": "src/shared"
+      }
     },
     "ServerScriptService": {
       "$className": "ServerScriptService",
-      "MugetsuServer": { "$path": "src/server" }
+      "MugetsuServer": {
+        "$path": "src/server"
+      }
     },
     "StarterPlayer": {
       "$className": "StarterPlayer",
       "StarterPlayerScripts": {
         "$className": "StarterPlayerScripts",
-        "MugetsuClient": { "$path": "src/client" }
+        "MugetsuClient": {
+          "$path": "src/client"
+        }
       }
     },
     "Workspace": {
       "$className": "Workspace",
-      "$properties": { "Gravity": 196.2 }
+      "$properties": {
+        "Gravity": 196.2
+      }
     },
     "Lighting": {
       "$className": "Lighting",
-      "$properties": { "GlobalShadows": true, "Technology": "ShadowMap" }
+      "$properties": {
+        "GlobalShadows": true,
+        "Technology": "ShadowMap"
+      }
+    },
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "MugetsuAnimations": {
+        "$path": "animations"
+      }
     }
   }
 }

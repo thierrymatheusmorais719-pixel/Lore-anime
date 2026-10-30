@@ -29,7 +29,9 @@ Config.Kit = {
 -- Uma forma COM skin usa só a espada do jogo (o resto vem da skin); uma forma SEM skin usa o kit.
 Config.Skins = {
 	Enabled = true,
-	Ichigo = {},
+	Ichigo = {
+		12139415715, -- roupa
+	},
 	Mugetsu = {
 		17328647456, -- cabeça do Ichigo Mugetsu
 		9343723027, -- calça

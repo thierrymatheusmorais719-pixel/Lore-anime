@@ -190,11 +190,22 @@ test("posedriver: contínuo (sem saltos > 25°/quadro a 60fps) e extremos exatos
 		end
 	end
 end)
-test("posedriver: ataque tem wind-up -> impacto no tempo esperado (0.62..0.78s)", function()
-	local a = PoseDriver.sample("Release", 0.6)
-	local b = PoseDriver.sample("Release", 0.78)
+test("posedriver: golpe com antecipação -> impacto exatamente no ReleaseImpact (0.6s)", function()
+	local a = PoseDriver.sample("Release", 0.45)
+	local b = PoseDriver.sample("Release", 0.6)
 	assert(a.RightShoulder[1] > 140, "braço levantado no wind-up")
 	assert(b.RightShoulder[1] < 30, "braço desceu no golpe")
+end)
+test("posedriver: markers caem dentro da animação e o impacto coincide com o evento da Timeline", function()
+	for name, ms in PoseDriver.Markers do
+		for m, t in ms do assert(t >= 0 and t <= PoseDriver.length(name), name .. "/" .. m) end
+	end
+	local animStart, impact
+	for _, ev in Timeline.Events do
+		if ev.name == "Anim" and ev.arg == "Release" then animStart = ev.t end
+		if ev.name == "ReleaseImpact" then impact = ev.t end
+	end
+	near(PoseDriver.Markers.Release.Impact, impact - animStart, 1e-6, "marker Impact")
 end)
 test("posedriver: nome desconhecido retorna nil", function()
 	assert(PoseDriver.sample("Nope", 0) == nil)

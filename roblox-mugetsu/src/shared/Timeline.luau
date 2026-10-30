@@ -119,8 +119,8 @@ Timeline.Events = {
 	{ t = 18.7, name = "PauseBeat" },
 	{ t = 19.0, name = "Anim", arg = "Release" },
 	{ t = 19.0, name = "WhiteOutEnd" },
-	{ t = 19.6, name = "ReleaseImpact" }, -- clímax: flash, anéis, shockwave, tremor
-	{ t = 19.7, name = "SwordSlash" },
+	{ t = 19.45, name = "SwordSlash" }, -- rastro liga no começo do corte
+	{ t = 19.6, name = "ReleaseImpact" }, -- clímax: lâmina termina o corte = flash, anéis, shockwave, tremor
 	{ t = 19.9, name = "EnvironmentReact" },
 	{ t = 20.8, name = "ImpactFrame" },
 	{ t = 22.0, name = "Anim", arg = "FinalPose" },
