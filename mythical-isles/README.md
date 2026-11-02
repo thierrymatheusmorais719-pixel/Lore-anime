@@ -4,11 +4,11 @@ Simulador de pets com exploração, **sorte**, **mutações raras**, raridades *
 **combate em equipe**, **inimigos com IA**, **5 bosses com fases**, recompensas, missões, bestiário e
 salvamento. Tudo em **Luau**, organizado para **Rojo**. Mapa, criaturas, bosses, efeitos e interface são
 **gerados por código**: não há assets de terceiros nem IDs inventados (as únicas texturas usadas são as que
-vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_main.dds` e `smoke_main.dds`).
+vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`).
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
 > Luau, contra o dump público da API do Roblox, com 58 testes de lógica, 3297 verificações dos modelos 3D e
-> **97 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> **98 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -108,6 +108,26 @@ de musgo com cachoeiras, cachoeiras caindo da borda da ilha, bonsais, flores rox
     - penhascos naturais atrás do lago.
   - Tudo é colocado sobre o chão real, encontrado por raycast.
 
+**Folhagem e efeitos visuais:**
+- **Folhagem** (`WorldBuilder.foliage`):
+  - Árvores, bonsais, a Árvore Ancestral, moitas, arbustos de flor e os arbustos colhíveis não são mais bolas.
+  - Cada copa é um tufo de folhas individuais (triângulos e lâminas finas com material LeafyGrass) apontando para fora em leque, sobre um miolo escuro facetado.
+  - As folhas de cima são mais claras (luz do sol) e as de baixo mais escuras.
+  - Raízes aparentes em cunha, samambaias de frondes compridas e musgo em placas.
+- **Efeitos visuais** (`client/Controllers/Fx.luau`), montados em camadas:
+  - **Peças de cada efeito:** clarão de luz real (PointLight), faíscas alongadas que caem com a gravidade, brasas, bolas de fogo com fumaça, poeira que se espalha rente ao chão e fragmentos com física que quicam.
+  - **Projéteis:** têm rastro (Trail).
+  - **Tremor de câmera:** acontece perto dos impactos e fica reduzido no modo "efeitos: baixa".
+  - **Golpes comuns:** cada acerto mostra um pequeno impacto.
+  - **Meteoros:** a Chuva Estelar lança meteoros de fogo.
+  - **Golpes dos bosses:** levantam poeira e lascas em toda a área atingida.
+- **Ambiente:**
+  - braseiros da arena com fogo de partículas (chama, brasas e fumaça);
+  - respingos nas cachoeiras;
+  - vaga-lumes de partículas na Árvore Ancestral;
+  - pólen, esporos, cintilações ou névoa, conforme a ilha.
+- **Texturas:** só as embutidas no cliente Roblox (`sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`, em `rbxasset://textures/particles/`).
+
 **Base do simulador**: 5 ilhas (terreno + decoração), 10 ovos com moedas/essência, 5 ovos especiais,
 34 espécies, recursos quebráveis, tesouros, portais, 16 missões de história, 3 diárias por dia (iguais em
 todos os servidores), 9 marcos de coleção, login diário e DataStore com trava de sessão, autosave e
@@ -171,7 +191,7 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **58 testes passando** |
 | Modelos 3D (182 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses) | `python3 tools/run_tests.py luau --smoke` | **3297 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **97 cenários passando** |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **98 cenários passando** (inclui todos os efeitos visuais) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -255,6 +275,8 @@ travamento) foi exercitada.
   de juntas (`Body`, `Neck`, `Leg*`, `Tail*`...) foi pensada para aceitar essas meshes depois.
 - Pets agora têm ~70 peças cada: com muitos jogadores e 4 pets por jogador, confira o desempenho no
   MicroProfiler (dá para baixar detalhes, como dedos e bolhas, se precisar).
+- A Verdant Haven tem ~7.100 peças (a folhagem é feita de folhas individuais); confira o FPS no celular.
+  Os efeitos de partícula não aparecem nas prévias, só no jogo.
 - As prévias em `docs/preview/` são renderizadas fora do Roblox: não mostram a grama animada, as texturas
   dos materiais, as nuvens nem a Atmosphere reais.
 - O PathfindingService real não foi exercitado (no simulador sempre cai na rota alternativa).

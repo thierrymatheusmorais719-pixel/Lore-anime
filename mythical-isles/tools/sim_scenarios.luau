@@ -646,9 +646,19 @@ do
 	local rs = game:GetService("RunService")
 	rs.RenderStepped = SIM.Signal()
 	rs.Stepped = SIM.Signal()
+	local bound = {}
+	function rs.BindToRenderStep(_, name, _priority, fn)
+		bound[name] = fn
+	end
+	function rs.UnbindFromRenderStep(_, name)
+		bound[name] = nil
+	end
 	local function frames(n)
 		for _ = 1, n do
 			rs.Stepped:Fire(SIM.now, 1 / 60)
+			for _, fn in pairs(bound) do
+				fn(1 / 60)
+			end
 			rs.RenderStepped:Fire(1 / 60)
 			SIM.run(1 / 60)
 		end
@@ -691,6 +701,51 @@ do
 	SIM.run(0.5)
 	local res = State.request("Hatch", { egg = "crystal_egg", count = 3 })
 	local Fx = require(__proxy("Client/Controllers/Fx"))
+	-- todos os efeitos visuais (habilidades, inimigos, bosses, recursos) rodam sem erro e limpam as peças
+	do
+		local beforeFx = #SIM.errors
+		local here = lp.Character.PrimaryPart.Position
+		local col = Color3.fromRGB(255, 200, 120)
+		local petModel = workspace.Pets:FindFirstChildWhichIsA("Model", true)
+		local payloads = {
+			{ kind = "bolt", from = here, to = here + Vector3.new(20, 0, 0), color = col },
+			{ kind = "bolt", from = here, to = here + Vector3.new(20, 0, 0), color = col, small = true },
+			{ kind = "orb", from = here, to = here + Vector3.new(0, 0, 20), travel = 0.4, color = col },
+			{ kind = "charge", from = here, to = here + Vector3.new(12, 0, 0), color = col },
+			{ kind = "shield", at = here, model = petModel, duration = 1, color = col },
+			{ kind = "heal", at = here, radius = 20, color = col },
+			{ kind = "haste", at = here, radius = 18, color = col },
+			{ kind = "sense", at = here, radius = 30, color = col },
+			{ kind = "shockwave", at = here, radius = 12, color = col },
+			{ kind = "slam", at = here, radius = 8, color = col },
+			{ kind = "starfall", at = here, radius = 12, color = col },
+			{ kind = "sunder", from = here, to = here + Vector3.new(5, 0, 0), color = col },
+			{ kind = "snare", at = here, radius = 4, duration = 1, color = col },
+			{ kind = "burst", at = here, radius = 5, color = col },
+			{ kind = "bossImpact", at = here, y = here.Y, color = col, shapes = {
+				{ type = "circle", x = here.X, z = here.Z, r = 10 }, { type = "ring", x = here.X, z = here.Z, inner = 6, outer = 14 },
+				{ type = "rect", x = here.X, z = here.Z, dx = 1, dz = 0, length = 30, width = 6 }, { type = "cone", x = here.X, z = here.Z, dx = 0, dz = 1, angle = 60, length = 20 },
+				{ type = "safezones", x = here.X, z = here.Z, r = 20, safe = {} } } },
+		}
+		local okFx, errFx = true, nil
+		for _, pl in ipairs(payloads) do
+			local ok2, e2 = pcall(Fx.play, pl)
+			if not ok2 then
+				okFx, errFx = false, pl.kind .. ": " .. tostring(e2)
+			end
+			frames(2)
+		end
+		frames(200)
+		local leftover = 0
+		for _, d in ipairs(workspace.CurrentCamera:FindFirstChild("LocalFx"):GetChildren()) do
+			if d:IsA("BasePart") and d.Transparency < 1 then
+				leftover += 1
+			end
+		end
+		leftover += #workspace:FindFirstChild("LocalDebris"):GetChildren()
+		check("efeitos visuais: todos os tipos rodam e as peças temporárias somem", okFx and #SIM.errors == beforeFx and leftover == 0,
+			errFx or SIM.errors[beforeFx + 1] or ("sobraram " .. leftover .. " peças"))
+	end
 	before = #SIM.errors
 	ok, err = pcall(Fx.hatch, res.results or {}, Color3.new(1, 1, 1))
 	frames(240)

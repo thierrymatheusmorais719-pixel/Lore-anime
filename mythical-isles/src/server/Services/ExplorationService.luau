@@ -12,6 +12,7 @@ local InventoryLogic = require(Shared.Logic.InventoryLogic)
 local Items = require(Shared.Config.Items)
 local Make = require(Shared.Util.Make)
 local RateLimiter = require(Shared.Util.RateLimiter)
+local WorldBuilder = require(script.Parent.WorldBuilder)
 
 local ExplorationService = {}
 
@@ -52,12 +53,15 @@ local function buildResource(kind: string, pos: Vector3)
 	m.PrimaryPart = base
 	local yaw = CFrame.Angles(0, rng:NextNumber(0, 6.28), 0)
 	if kind == "bloom_bush" then
-		for i, o in ipairs({ { 0, 1.6, 0, 3.4 }, { 1.4, 1.2, 0.6, 2.4 }, { -1.3, 1.1, -0.5, 2.6 } }) do
-			p(m, { Name = "Leaf", Shape = Enum.PartType.Ball, Size = Vector3.one * o[4], CFrame = CF(pos + V(o[1], o[2], o[3])), Color = rgb(80, 150 + i * 10, 70), Material = Enum.Material.Grass })
-		end
+		-- arbusto de folhas (não bolas) com flores de pétalas cruzadas
+		WorldBuilder.foliage(m, pos + V(0, 1.5, 0), V(2.2, 1.4, 2.1), rgb(84, 156, 66), rng, 12, 1, 0.9)
 		for k = 1, 4 do
 			local a = k * 1.6
-			p(m, { Name = "Blossom", Shape = Enum.PartType.Ball, Size = Vector3.one * 0.7, CFrame = CF(pos + V(math.cos(a) * 1.5, 2.6, math.sin(a) * 1.5)), Color = rgb(255, 150, 190), Material = Enum.Material.Neon })
+			local fcf = CF(pos + V(math.cos(a) * 1.6, 2.7, math.sin(a) * 1.5)) * CFrame.Angles(rng:NextNumber(-0.4, 0.4), rng:NextNumber(0, 6.28), 0)
+			for q = 0, 1 do
+				p(m, { Name = "Blossom", Size = V(1.1, 0.1, 0.4), CFrame = fcf * CFrame.Angles(0, q * math.rad(90), 0), Color = rgb(255, 150, 190), Material = Enum.Material.SmoothPlastic })
+			end
+			p(m, { Name = "BlossomCore", Size = V(0.32, 0.16, 0.32), CFrame = fcf * CF(0, 0.06, 0), Color = rgb(255, 225, 120), Material = Enum.Material.Neon })
 		end
 	elseif kind == "crystal_cluster" then
 		for i = 1, 4 do

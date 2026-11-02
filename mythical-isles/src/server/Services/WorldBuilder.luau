@@ -343,29 +343,86 @@ local function cyl(props, a: Vector3, b: Vector3, radius: number)
 	return part(props)
 end
 
--- Copa em camadas: base mais escura e larga, miolo, topo mais claro (luz do sol) e tufos laterais.
-local function canopy(parent, pos: Vector3, size: number, leaf: Color3, rng: Random)
-	ellipsoid({ Name = "Leaves", Size = V(1.25, 0.62, 1.15) * size, CFrame = CF(pos - V(0, size * 0.12, 0)) * ANG(0, rng:NextNumber(0, 6.28), 0),
-		Color = leaf:Lerp(rgb(20, 40, 20), 0.28), Material = Enum.Material.Grass, CanCollide = false, Parent = parent })
-	ellipsoid({ Name = "Leaves", Size = V(1.0, 0.72, 0.95) * size, CFrame = CF(pos + V(0, size * 0.1, 0)),
-		Color = leaf, Material = Enum.Material.Grass, CanCollide = false, Parent = parent })
-	ellipsoid({ Name = "Leaves", Size = V(0.62, 0.45, 0.6) * size, CFrame = CF(pos + V(size * 0.12, size * 0.32, -size * 0.08)),
-		Color = leaf:Lerp(rgb(235, 245, 150), 0.22), Material = Enum.Material.Grass, CanCollide = false, CastShadow = false, Parent = parent })
+-- FOLHAGEM: em vez de bolas, cada copa é um tufo de FOLHAS individuais (triângulos e lâminas finas com
+-- material LeafyGrass) que apontam para fora em leque, sobre um miolo escuro facetado que fecha os buracos.
+-- Folhas de cima recebem tom mais claro (luz do sol); as de baixo, mais escuro (sombra interna).
+local LEAF_LIGHT = rgb(226, 236, 140)
+local LEAF_DARK = rgb(18, 34, 16)
+
+local function wedge(props)
+	props.Anchored = true
+	props.TopSurface = Enum.SurfaceType.Smooth
+	props.BottomSurface = Enum.SurfaceType.Smooth
+	if props.CanCollide == nil then
+		props.CanCollide = false
+	end
+	return Make("WedgePart", props)
+end
+
+-- Folha triangular deitada no plano XZ do referencial `cf`: base na origem, ponta em -Z.
+local function leafTri(parent, cf: CFrame, w: number, len: number, t: number, color: Color3, material: Enum.Material?)
+	local flat = cf * ANG(rad(-90), 0, 0) -- triângulo "em pé" (ápice +Y) deitado com a ponta para -Z
+	for _, side in ipairs({ -1, 1 }) do
+		wedge({ Name = "Leaf", Size = V(t, len, w / 2), CFrame = flat * CF(side * w / 4, len / 2, 0) * ANG(0, side * rad(-90), 0),
+			Color = color, Material = material or Enum.Material.LeafyGrass, Parent = parent })
+	end
+end
+
+-- Tufo de folhas. radii = semi-eixos do tufo; n = nº de folhas; flat < 1 achata (copas em "prato").
+local function foliage(parent, center: Vector3, radii: Vector3, leaf: Color3, rng: Random, n: number?, flat: number?, leafScale: number?)
+	n = n or 16
+	flat = flat or 1
+	local ls = leafScale or 1
+	-- miolo facetado (dois blocos girados), escuro: dá volume e esconde o céu entre as folhas
 	for k = 1, 2 do
-		local a = rng:NextNumber(0, 6.28)
-		ellipsoid({ Name = "Leaves", Size = V(0.5, 0.4, 0.5) * size, CFrame = CF(pos + V(math.cos(a) * size * 0.45, -size * 0.02, math.sin(a) * size * 0.42)),
-			Color = leaf:Lerp(rgb(30, 60, 25), 0.12 * k), Material = Enum.Material.Grass, CanCollide = false, Parent = parent })
+		part({ Name = "LeafCore", Size = V(radii.X * 1.35, radii.Y * 1.15, radii.Z * 1.35) * (k == 1 and 1 or 0.8),
+			CFrame = CF(center + V(0, k == 2 and radii.Y * 0.25 or 0, 0)) * ANG(rng:NextNumber(-0.4, 0.4), rng:NextNumber(0, 6.28), rng:NextNumber(-0.4, 0.4)),
+			Color = leaf:Lerp(LEAF_DARK, 0.3), Material = Enum.Material.LeafyGrass, CanCollide = false, Parent = parent })
+	end
+	local golden = 2.39996
+	for i = 1, n do
+		-- direções bem distribuídas (espiral de Fibonacci), com mais folhas em cima
+		local y = 1 - (i - 0.5) / n * 1.55
+		local r = math.sqrt(math.max(0, 1 - y * y))
+		local th = i * golden + rng:NextNumber(-0.3, 0.3)
+		local dir = V(math.cos(th) * r, y * flat, math.sin(th) * r)
+		if dir.Magnitude < 0.05 then
+			dir = V(1, 0, 0)
+		end
+		dir = dir.Unit
+		local pos = center + V(dir.X * radii.X, dir.Y * radii.Y, dir.Z * radii.Z) * rng:NextNumber(0.55, 0.85)
+		local light = math.clamp(0.5 + dir.Y * 0.5, 0, 1)
+		local color = leaf:Lerp(LEAF_DARK, (1 - light) * 0.2):Lerp(LEAF_LIGHT, light * light * 0.3 + rng:NextNumber(0, 0.08))
+		-- folha aponta para fora, com rolagem aleatória e a ponta caindo um pouco
+		local cf = CF(pos, pos + V(dir.X, dir.Y * 0.6 - 0.15, dir.Z)) * ANG(0, 0, rng:NextNumber(-0.7, 0.7)) * ANG(-rng:NextNumber(0.05, 0.45), 0, 0)
+		local size = math.min(radii.X, radii.Z) * ls
+		if i % 2 == 0 then
+			leafTri(parent, cf, size * rng:NextNumber(0.7, 0.95), size * rng:NextNumber(1.0, 1.35), 0.18, color)
+		else
+			local w, l = size * rng:NextNumber(0.55, 0.8), size * rng:NextNumber(0.9, 1.2)
+			part({ Name = "Leaf", Size = V(w, 0.18, l), CFrame = cf * CF(0, 0, -l * 0.42) * ANG(0, rad(45) * (rng:NextNumber() < 0.5 and 1 or 0), 0),
+				Color = color, Material = Enum.Material.LeafyGrass, CanCollide = false, Parent = parent })
+		end
+	end
+end
+WorldBuilder.foliage = foliage
+
+-- Raízes aparentes: cunhas altas junto ao tronco que descem até o chão.
+local function rootFlares(parent, pos: Vector3, s: number, rng: Random, bark: Color3, count: number?)
+	for k = 1, count or 4 do
+		local a = k / (count or 4) * math.pi * 2 + rng:NextNumber(-0.3, 0.3)
+		local out = V(math.cos(a), 0, math.sin(a))
+		local at = pos + out * 1.5 * s + V(0, 0.9 * s, 0)
+		-- WedgePart: lado alto em +Z; virado para que o lado alto fique junto ao tronco e a rampa desça para fora
+		wedge({ Name = "Root", Size = V(0.9 * s, 1.9 * s, 2.6 * s), CFrame = CF(at, at + out), Color = bark:Lerp(rgb(0, 0, 0), 0.15), Material = Enum.Material.Wood,
+			CanCollide = true, Parent = parent })
 	end
 end
 
 -- Árvore frondosa: raízes, tronco afunilado e levemente torto, galhos e várias copas.
 local function oakTree(parent, pos: Vector3, s: number, rng: Random, bark: Color3, leaf: Color3, glow: Color3?)
 	local model = Make("Model", { Name = "Tree", Parent = parent })
-	for k = 1, 4 do
-		local a = k / 4 * math.pi * 2 + rng:NextNumber(-0.3, 0.3)
-		ellipsoid({ Name = "RootFlare", Size = V(1.1, 1.3, 3.6) * s, CFrame = CF(pos + V(math.cos(a) * 1.1 * s, 0.35 * s, math.sin(a) * 1.1 * s)) * ANG(0, -a + math.pi / 2, 0) * ANG(rad(-14), 0, 0),
-			Color = bark:Lerp(rgb(0, 0, 0), 0.15), Material = Enum.Material.Wood, Parent = model })
-	end
+	rootFlares(model, pos, s, rng, bark, 5)
 	local radii = { 1.15, 0.92, 0.7 }
 	local lens = { 4.6, 4.0, 3.4 }
 	local cur = pos
@@ -390,7 +447,7 @@ local function oakTree(parent, pos: Vector3, s: number, rng: Random, bark: Color
 	table.insert(tops, cur + V(0, 1.2 * s, 0))
 	for i, t in ipairs(tops) do
 		local size = (i == #tops and 7.5 or rng:NextNumber(4.8, 6)) * s
-		canopy(model, t + V(0, size * 0.2, 0), size, leaf:Lerp(rgb(255, 255, 255), rng:NextNumber(0, 0.06)), rng)
+		foliage(model, t + V(0, size * 0.2, 0), V(0.78, 0.52, 0.72) * size, leaf, rng, i == #tops and 26 or 20, 1, 0.7)
 	end
 	if glow then
 		for k = 1, 4 do
@@ -441,32 +498,98 @@ local function rockCluster(parent, pos: Vector3, s: number, rng: Random, color: 
 		local r = part({ Name = "Rock", Size = sz, CFrame = CF(pos + off + V(0, sz.Y * 0.28, 0)) * ANG(rng:NextNumber(-0.35, 0.35), rng:NextNumber(0, 6.28), rng:NextNumber(-0.35, 0.35)),
 			Color = color:Lerp(rgb(255, 255, 255), rng:NextNumber(0, 0.1)), Material = material, Parent = model })
 		if moss and k == 1 then
-			ellipsoid({ Name = "Moss", Size = V(sz.X * 0.95, sz.Y * 0.32, sz.Z * 0.9), CFrame = r.CFrame * CF(0, sz.Y * 0.42, 0), Color = moss, Material = Enum.Material.Grass, CanCollide = false, Parent = model })
+			-- musgo: placa fina e irregular por cima da pedra (não uma bola)
+			part({ Name = "Moss", Size = V(sz.X * 0.92, 0.35, sz.Z * 0.85), CFrame = r.CFrame * CF(0, sz.Y * 0.5, 0) * ANG(0, rad(20), 0), Color = moss, Material = Enum.Material.LeafyGrass,
+				CanCollide = false, Parent = model })
 		end
 	end
 	return model
 end
 WorldBuilder.rockCluster = rockCluster
 
--- Moita: vários volumes de folhagem em tons diferentes.
+-- Fogo de partículas (textura de fogo embutida no cliente): chama, brasas subindo e fumaça.
+function WorldBuilder.fire(holder: BasePart, color: Color3, scale: number)
+	local function e(props)
+		local pe = Instance.new("ParticleEmitter")
+		for k, v in pairs(props) do
+			(pe :: any)[k] = v
+		end
+		pe.Parent = holder
+		return pe
+	end
+	local s = scale or 1
+	e({ Name = "Flame", Texture = "rbxasset://textures/particles/fire_main.dds", Color = ColorSequence.new(rgb(255, 240, 200), color), LightEmission = 1, LightInfluence = 0,
+		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1.2 * s), NumberSequenceKeypoint.new(0.5, 1.6 * s), NumberSequenceKeypoint.new(1, 0.2 * s) }),
+		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(0.7, 0.5), NumberSequenceKeypoint.new(1, 1) }),
+		Lifetime = NumberRange.new(0.5, 0.9), Rate = 26, Speed = NumberRange.new(2, 4), SpreadAngle = Vector2.new(12, 12), Acceleration = V(0, 4, 0),
+		RotSpeed = NumberRange.new(-40, 40), Rotation = NumberRange.new(0, 360) })
+	e({ Name = "Embers", Texture = "rbxasset://textures/particles/sparkles_main.dds", Color = ColorSequence.new(rgb(255, 200, 120)), LightEmission = 1, LightInfluence = 0,
+		Size = NumberSequence.new(0.18 * s, 0), Lifetime = NumberRange.new(1, 2), Rate = 6, Speed = NumberRange.new(3, 6), SpreadAngle = Vector2.new(25, 25),
+		Acceleration = V(0, 2, 0), Drag = 0.6 })
+	e({ Name = "Smoke", Texture = "rbxasset://textures/particles/smoke_main.dds", Color = ColorSequence.new(rgb(70, 66, 64)), LightEmission = 0, LightInfluence = 1,
+		Size = NumberSequence.new(1 * s, 4 * s), Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.75), NumberSequenceKeypoint.new(1, 1) }),
+		Lifetime = NumberRange.new(2, 3.5), Rate = 4, Speed = NumberRange.new(2, 4), SpreadAngle = Vector2.new(10, 10), Acceleration = V(0.6, 1.5, 0),
+		RotSpeed = NumberRange.new(-15, 15), Rotation = NumberRange.new(0, 360) })
+end
+
+-- Partículas ambientes (texturas embutidas no cliente Roblox): pólen e vaga-lumes, esporos, cintilação.
+local AMBIENT = {
+	pollen = { tex = "rbxasset://textures/particles/sparkles_main.dds", color = rgb(255, 246, 190), size = 0.18, rate = 3, life = 7, speed = 0.4, emission = 0.6 },
+	fireflies = { tex = "rbxasset://textures/particles/sparkles_main.dds", color = rgb(210, 255, 150), size = 0.35, rate = 2, life = 5, speed = 0.6, emission = 1, light = true },
+	spores = { tex = "rbxasset://textures/particles/sparkles_main.dds", color = rgb(150, 255, 220), size = 0.25, rate = 4, life = 8, speed = 0.3, emission = 1 },
+	glints = { tex = "rbxasset://textures/particles/sparkles_main.dds", color = rgb(200, 220, 255), size = 0.3, rate = 3, life = 2.5, speed = 0.1, emission = 1 },
+	mist = { tex = "rbxasset://textures/particles/smoke_main.dds", color = rgb(240, 246, 255), size = 6, rate = 0.6, life = 9, speed = 0.5, emission = 0, transparency = 0.82 },
+}
+function WorldBuilder.ambient(parent: Instance, pos: Vector3, kind: string, spread: number?)
+	local cfg = AMBIENT[kind]
+	if not cfg then
+		return nil
+	end
+	local sp = spread or 12
+	local anchor = part({ Name = "Ambient_" .. kind, Size = V(sp, 3, sp), CFrame = CF(pos), Transparency = 1, CanCollide = false, CanQuery = false, CanTouch = false,
+		CastShadow = false, Parent = parent })
+	local e = Instance.new("ParticleEmitter")
+	e.Name = "Ambient"
+	e.Texture = cfg.tex
+	e.Color = ColorSequence.new(cfg.color)
+	e.LightEmission = cfg.emission
+	e.LightInfluence = cfg.emission > 0.5 and 0 or 1
+	e.Rate = cfg.rate
+	e.Lifetime = NumberRange.new(cfg.life * 0.7, cfg.life)
+	e.Speed = NumberRange.new(cfg.speed * 0.5, cfg.speed)
+	e.SpreadAngle = Vector2.new(180, 180)
+	e.Acceleration = V(0, cfg.speed * 0.15, 0)
+	e.Drag = 0.4
+	e.RotSpeed = NumberRange.new(-20, 20)
+	e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.2, cfg.size), NumberSequenceKeypoint.new(0.8, cfg.size), NumberSequenceKeypoint.new(1, 0) })
+	local t0 = cfg.transparency or 0.15
+	e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.25, t0), NumberSequenceKeypoint.new(0.75, t0), NumberSequenceKeypoint.new(1, 1) })
+	e.Parent = anchor
+	if cfg.light then
+		Make("PointLight", { Color = cfg.color, Range = 14, Brightness = 0.7, Shadows = false, Parent = anchor })
+	end
+	return anchor
+end
+
+-- Moita: dois tufos baixos de folhas.
 local function bush(parent, pos: Vector3, s: number, rng: Random, leaf: Color3)
-	for k = 1, 4 do
-		local a = k * 1.7 + rng:NextNumber(0, 1)
-		local sz = rng:NextNumber(2.4, 3.6) * s
-		ellipsoid({ Name = "Bush", Size = V(sz * 1.2, sz * 0.8, sz), CFrame = CF(pos + V(math.cos(a) * 1.3 * s, sz * 0.3, math.sin(a) * 1.2 * s)),
-			Color = leaf:Lerp(rgb(20, 40, 20), rng:NextNumber(0, 0.25)), Material = Enum.Material.Grass, CanCollide = false, Parent = parent })
+	for k = 1, 2 do
+		local a = rng:NextNumber(0, 6.28)
+		local off = k == 1 and V(0, 0, 0) or V(math.cos(a), 0, math.sin(a)) * 1.6 * s
+		local r = rng:NextNumber(1.4, 1.9) * s * (k == 1 and 1 or 0.75)
+		foliage(parent, pos + off + V(0, r * 0.55, 0), V(r, r * 0.7, r), leaf, rng, k == 1 and 14 or 9, 1, 0.9)
 	end
 end
 
--- Samambaia: folhas longas arqueadas em roseta.
+-- Samambaia: frondes triangulares compridas em roseta, arqueadas para fora.
 local function fern(parent, pos: Vector3, s: number, rng: Random, leaf: Color3)
 	local spin = rng:NextNumber(0, 6.28)
-	for k = 1, 6 do
-		local a = spin + k / 6 * math.pi * 2
+	for k = 1, 7 do
+		local a = spin + k / 7 * math.pi * 2
 		local out = V(math.cos(a), 0, math.sin(a))
-		local cf = CF(pos + out * 1.3 * s + V(0, 0.55 * s, 0), pos + out * 4 * s + V(0, 1.6 * s, 0))
-		ellipsoid({ Name = "Frond", Size = V(0.75, 0.12, 3.0) * s, CFrame = cf * ANG(0, 0, rad(k % 2 == 0 and 8 or -8)), Color = leaf:Lerp(rgb(200, 230, 120), (k % 3) * 0.06),
-			Material = Enum.Material.Grass, CanCollide = false, CastShadow = false, Parent = parent })
+		local base = pos + V(0, 0.25 * s, 0) + out * 0.3 * s
+		local cf = CF(base, base + out + V(0, rng:NextNumber(0.35, 0.7), 0))
+		leafTri(parent, cf * ANG(rad(-12), 0, 0), 0.7 * s, rng:NextNumber(3.0, 3.8) * s, 0.12, leaf:Lerp(LEAF_LIGHT, (k % 3) * 0.07), Enum.Material.Grass)
 	end
 end
 
@@ -541,6 +664,15 @@ function WorldBuilder.decor(worldId: string, parent: Instance)
 			end
 		end
 	end
+	-- partículas ambientes espalhadas pela ilha
+	local ambientKind = ({ verdant = "pollen", crystal = "glints", sky = "mist", wilds = "spores", astral = "glints" })[worldId]
+	for i = 1, 10 do
+		local spot = freeSpot(c, w.radius, rng, worldId)
+		if spot and ambientKind then
+			local kind = (worldId == "verdant" or worldId == "wilds") and i % 3 == 0 and "fireflies" or ambientKind
+			WorldBuilder.ambient(folder, spot + V(0, kind == "mist" and 3 or 4, 0), kind, kind == "mist" and 30 or 18)
+		end
+	end
 end
 
 -------------------------------------------------------------------------------
@@ -567,31 +699,30 @@ function WorldBuilder.bonsai(parent, pos: Vector3, s: number, rng: Random, leaf:
 	cyl({ Name = "Trunk", Color = BARK, Material = Enum.Material.Wood, Parent = model }, p0 - V(0, 0.5, 0), p1, 0.85 * s)
 	part({ Name = "Knot", Shape = Enum.PartType.Ball, Size = Vector3.one * 1.6 * s, CFrame = CF(p1), Color = BARK, Material = Enum.Material.Wood, Parent = model })
 	cyl({ Name = "Trunk", Color = BARK, Material = Enum.Material.Wood, Parent = model }, p1, p2, 0.62 * s)
-	for k = 1, 3 do
-		local ang = yaw + k * 2.1
-		ellipsoid({ Name = "RootFlare", Size = V(0.9, 1.0, 2.8) * s, CFrame = CF(pos + V(math.cos(ang), 0.3, math.sin(ang)) * s) * ANG(0, -ang + math.pi / 2, 0) * ANG(rad(-14), 0, 0),
-			Color = BARK2, Material = Enum.Material.Wood, Parent = model })
-	end
+	rootFlares(model, pos, s * 0.8, rng, BARK2, 3)
 	-- copas achatadas em "pratos" (estilo acácia/bonsai): base escura, topo iluminado
 	for k, o in ipairs({ { 0, 0.6, 0, 11, 2.6 }, { 4.2, -0.6, 1.5, 7, 2 }, { -3.9, -0.1, -1.6, 7.5, 2.1 } }) do
 		local cpos = p2 + (a * CF(o[1] * s, o[2] * s, o[3] * s)).Position - pos
 		if k > 1 then
 			cyl({ Name = "Branch", Color = BARK, Material = Enum.Material.Wood, CanCollide = false, Parent = model }, p2 - V(0, 1.2 * s, 0), cpos - V(0, 0.4 * s, 0), 0.3 * s)
 		end
-		ellipsoid({ Name = "Canopy", Size = V(o[4], o[5], o[4] * 0.85) * s, CFrame = CF(cpos - V(0, 0.35 * s, 0)), Color = leaf:Lerp(rgb(20, 40, 20), 0.3), Material = Enum.Material.Grass, CanCollide = false, Parent = model })
-		ellipsoid({ Name = "Canopy", Size = V(o[4] * 0.92, o[5] * 0.9, o[4] * 0.8) * s, CFrame = CF(cpos + V(0, 0.25 * s, 0)), Color = leaf, Material = Enum.Material.Grass, CanCollide = false, Parent = model })
-		ellipsoid({ Name = "Canopy", Size = V(o[4] * 0.55, o[5] * 0.6, o[4] * 0.5) * s, CFrame = CF(cpos + V(0.6 * s, 0.85 * s, -0.4 * s)), Color = leaf:Lerp(rgb(240, 245, 170), 0.2), Material = Enum.Material.Grass,
-			CanCollide = false, CastShadow = false, Parent = model })
+		foliage(model, cpos + V(0, 0.2 * s, 0), V(o[4] * 0.5, o[5] * 0.55, o[4] * 0.43) * s, leaf, rng, k == 1 and 22 or 15, 0.45, 0.7)
 	end
 end
 
 function WorldBuilder.flowerBush(parent, pos: Vector3, s: number, rng: Random, color: Color3)
-	ellipsoid({ Name = "Bush", Size = V(5, 2.6, 4.6) * s, CFrame = CF(pos + V(0, 1 * s, 0)), Color = MOSS2, Material = Enum.Material.Grass, CanCollide = false, Parent = parent })
-	for k = 1, 7 do
-		local ang = k / 7 * math.pi * 2 + rng:NextNumber(0, 0.5)
-		part({ Name = "Flower", Shape = Enum.PartType.Ball, Size = Vector3.one * rng:NextNumber(0.7, 1.1) * s,
-			CFrame = CF(pos + V(math.cos(ang) * 1.8 * s, (2 + rng:NextNumber(0, 0.6)) * s, math.sin(ang) * 1.6 * s)),
-			Color = color:Lerp(rgb(255, 255, 255), rng:NextNumber(0, 0.25)), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = parent })
+	foliage(parent, pos + V(0, 1.1 * s, 0), V(2.3, 1.3, 2.1) * s, MOSS2, rng, 14, 1, 0.85)
+	for k = 1, 6 do
+		-- flor: duas pétalas cruzadas (estrela de 4 pontas) + miolo
+		local ang = k / 6 * math.pi * 2 + rng:NextNumber(0, 0.5)
+		local fp = pos + V(math.cos(ang) * 1.7 * s, (2.1 + rng:NextNumber(0, 0.6)) * s, math.sin(ang) * 1.5 * s)
+		local col = color:Lerp(rgb(255, 255, 255), rng:NextNumber(0, 0.25))
+		local tilt = CF(fp) * ANG(rng:NextNumber(-0.4, 0.4), rng:NextNumber(0, 6.28), rng:NextNumber(-0.4, 0.4))
+		for q = 0, 1 do
+			part({ Name = "Petals", Size = V(1.05, 0.08, 0.38) * s, CFrame = tilt * ANG(0, q * rad(90), 0), Color = col, Material = Enum.Material.SmoothPlastic, CanCollide = false,
+				CastShadow = false, Parent = parent })
+		end
+		part({ Name = "FlowerCore", Size = V(0.3, 0.14, 0.3) * s, CFrame = tilt * CF(0, 0.06 * s, 0) * ANG(0, rad(45), 0), Color = rgb(255, 222, 110), CanCollide = false, CastShadow = false, Parent = parent })
 	end
 end
 
@@ -613,6 +744,18 @@ local function waterfall(parent, top: Vector3, height: number, width: number, fa
 	mist.Speed = NumberRange.new(2, 4)
 	mist.SpreadAngle = Vector2.new(60, 60)
 	mist.Parent = foam
+	-- respingos: gotas que saltam da base da queda d'água
+	local splash = Instance.new("ParticleEmitter")
+	splash.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	splash.Color = ColorSequence.new(rgb(235, 250, 255))
+	splash.LightEmission = 0.3
+	splash.Size = NumberSequence.new(0.35, 0.05)
+	splash.Lifetime = NumberRange.new(0.5, 0.9)
+	splash.Rate = 18
+	splash.Speed = NumberRange.new(6, 12)
+	splash.SpreadAngle = Vector2.new(35, 35)
+	splash.Acceleration = V(0, -35, 0)
+	splash.Parent = foam
 end
 
 function WorldBuilder.verdantLandmark(parent: Instance, terrainOk: boolean)
@@ -681,7 +824,7 @@ function WorldBuilder.verdantLandmark(parent: Instance, terrainOk: boolean)
 		local piece = cfT * ANG(sgm[1], 0, sgm[3]) * CF(0, sgm[4] / 2, 0)
 		part({ Name = "AncientTrunk", Shape = Enum.PartType.Cylinder, Size = V(sgm[4] + 1, sgm[2] * 2, sgm[2] * 2), CFrame = piece * ANG(0, 0, rad(90)),
 			Color = BARK, Material = Enum.Material.Wood, Parent = folder })
-		ellipsoid({ Name = "TrunkMoss", Size = V(sgm[2] * 1.4, sgm[4] * 0.6, sgm[2] * 0.6), CFrame = piece * CF(sgm[2] * 0.75, 0, 0), Color = MOSS2, Material = Enum.Material.Grass,
+		part({ Name = "TrunkMoss", Size = V(0.8, sgm[4] * 0.55, sgm[2] * 1.1), CFrame = piece * CF(sgm[2] * 0.95, 0, 0) * ANG(rad(8), 0, rad(-4)), Color = MOSS2, Material = Enum.Material.LeafyGrass,
 			CanCollide = false, Parent = folder })
 		cfT = piece * CF(0, sgm[4] / 2, 0)
 	end
@@ -706,20 +849,14 @@ function WorldBuilder.verdantLandmark(parent: Instance, terrainOk: boolean)
 		local purple = i % 3 == 0
 		local col = purple and rgb(165, 115, 215) or (i % 2 == 0 and rgb(90, 175, 70) or rgb(110, 190, 80))
 		local big = i == #canopyCenters and 1.5 or 1
-		ellipsoid({ Name = "AncientCanopy", Size = V(24, 9, 22) * big, CFrame = CF(cpos), Color = col, Material = Enum.Material.Grass, CanCollide = false, Parent = folder })
-		ellipsoid({ Name = "AncientCanopy", Size = V(15, 6, 14) * big, CFrame = CF(cpos + V(3, 4, -2)), Color = col:Lerp(rgb(255, 255, 255), 0.1), Material = Enum.Material.Grass,
-			CanCollide = false, Parent = folder })
+		foliage(folder, cpos + V(0, 1.5, 0), V(12, 5.5, 11) * big, col, Random.new(500 + i), i == #canopyCenters and 34 or 24, 0.8, 0.6)
 		for k = 1, 3 do
 			local off = V(math.cos(k * 2.1) * 8, -4.5, math.sin(k * 2.1) * 7)
 			local len = 6 + (k % 3) * 3
 			part({ Name = "HangingMoss", Size = V(0.5, len, 0.5), CFrame = CF(cpos + off - V(0, len / 2, 0)), Color = rgb(70, 140, 90), Material = Enum.Material.Grass,
 				CanCollide = false, CastShadow = false, Parent = folder })
 		end
-		local glow = part({ Name = "Firefly", Shape = Enum.PartType.Ball, Size = Vector3.one * 0.9, CFrame = CF(cpos + V(0, -5.5, 0)), Color = rgb(220, 255, 170),
-			Material = Enum.Material.Neon, CanCollide = false, CastShadow = false, Parent = folder })
-		if i % 2 == 0 then
-			Make("PointLight", { Color = rgb(200, 255, 170), Range = 18, Brightness = 1, Shadows = false, Parent = glow })
-		end
+		WorldBuilder.ambient(folder, cpos + V(0, -6, 0), "fireflies", 10)
 	end
 	-- penhascos de musgo atrás do lago com cachoeiras altas
 	local side = V(-outward.Z, 0, outward.X)
@@ -878,9 +1015,12 @@ function WorldBuilder.arena(worldId: string, center: Vector3, radius: number, pa
 		local a = i / 10 * math.pi * 2
 		local pos = center + V(math.cos(a) * (radius + 4), 0, math.sin(a) * (radius + 4))
 		pillar(folder, pos, 16, theme.pillar, theme.pillar:Lerp(theme.trim, 0.3), theme.floorMat)
-		local flame = part({ Name = "Brazier", Shape = Enum.PartType.Ball, Size = Vector3.one * 1.8, CFrame = CF(pos + V(0, 18, 0)), Color = theme.trim,
-			Material = Enum.Material.Neon, CanCollide = false, Parent = folder })
-		Make("PointLight", { Color = theme.trim, Range = 26, Brightness = 1.4, Shadows = false, Parent = flame })
+		-- braseiro: bacia de metal com fogo de partículas (chama, brasas e fumaça) e luz
+		part({ Name = "BrazierBowl", Shape = Enum.PartType.Cylinder, Size = V(1.2, 3.2, 3.2), CFrame = CF(pos + V(0, 17.6, 0)) * ANG(0, 0, rad(90)), Color = rgb(60, 54, 50),
+			Material = Enum.Material.Metal, Parent = folder })
+		local flame = part({ Name = "Brazier", Size = V(2.2, 0.5, 2.2), CFrame = CF(pos + V(0, 18.3, 0)), Transparency = 1, CanCollide = false, CanQuery = false, Parent = folder })
+		WorldBuilder.fire(flame, theme.trim, 1.6)
+		Make("PointLight", { Color = theme.trim:Lerp(rgb(255, 190, 120), 0.4), Range = 26, Brightness = 1.6, Shadows = false, Parent = flame })
 		if theme.deco == "crystals" then
 			crystal(folder, pos + V(math.cos(a) * 6, 0, math.sin(a) * 6), 2.2, theme.trim)
 		elseif theme.deco == "roots" then
