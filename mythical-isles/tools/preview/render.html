@@ -109,7 +109,7 @@ function avatar(x, y, z) {
   mk(1, 2, 1, 0x2b2b44, -0.5, -2, 0); mk(1, 2, 1, 0x2b2b44, 0.5, -2, 0);
 }
 const ground = q.get('ground');
-if (ground === 'island') {
+if (ground === 'island_old') {
   const top = new THREE.Mesh(new THREE.CylinderGeometry(230, 225, 12, 96), new THREE.MeshStandardMaterial({ color: 0x60a84a, roughness: .95 }));
   top.position.y = -6; top.receiveShadow = true; sc.add(top);
   const cliff = new THREE.Mesh(new THREE.CylinderGeometry(214, 120, 60, 64), new THREE.MeshStandardMaterial({ color: 0x6e645a, roughness: .95 }));
@@ -118,9 +118,29 @@ if (ground === 'island') {
   root.position.y = -90; root.scale.y = .8; sc.add(root);
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), new THREE.MeshStandardMaterial({ color: 0xecf2ff, roughness: 1, transparent: true, opacity: .85 }));
   sea.rotation.x = -Math.PI / 2; sea.position.y = -150; sc.add(sea);
-} else {
+} else if (ground !== 'terrain') {
   const floor = new THREE.Mesh(new THREE.CircleGeometry(400, 64), new THREE.MeshStandardMaterial({ color: q.get('floor') || '#8fd16a', roughness: .95 }));
   floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
+}
+if (ground === 'terrain') {
+  // preenchimentos de Terrain registrados pelo simulador (água desenhada na superfície)
+  const TCOL = { Grass: '#60a84a', Rock: '#6e645a', Sand: '#d2c396', Water: '#28c8cd', Slate: '#5a5a64', LeafyGrass: '#3a6246' };
+  const fills = await (await fetch('data/terrain.json')).json();
+  for (const f of fills) {
+    if (f.m === 'Air') continue;
+    const col = f.c[0] >= 0 ? `rgb(${f.c[0]},${f.c[1]},${f.c[2]})` : (TCOL[f.m] || '#888');
+    const water = f.m === 'Water';
+    const mat = new THREE.MeshStandardMaterial({ color: col, roughness: water ? .08 : .95, metalness: water ? .1 : 0, transparent: water, opacity: water ? .82 : 1 });
+    let mesh;
+    if (f.k === 'cyl') {
+      if (water) { mesh = new THREE.Mesh(new THREE.CylinderGeometry(f.r, f.r, .3, 64), mat); mesh.position.set(f.p[0], 0.12, f.p[2]); }
+      else { mesh = new THREE.Mesh(new THREE.CylinderGeometry(f.r, f.r * (f.p[1] < -15 ? .9 : 1), f.h, 72), mat); mesh.position.set(...f.p); }
+    } else if (f.k === 'ball') { mesh = new THREE.Mesh(new THREE.SphereGeometry(f.r, 40, 24), mat); mesh.position.set(...f.p); }
+    else continue;
+    mesh.receiveShadow = true; sc.add(mesh);
+  }
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), new THREE.MeshStandardMaterial({ color: 0xecf2ff, roughness: 1 }));
+  sea.rotation.x = -Math.PI / 2; sea.position.y = -150; sc.add(sea);
 }
 const parts = await (await fetch(`data/${scene}.json`)).json();
 addParts(parts);

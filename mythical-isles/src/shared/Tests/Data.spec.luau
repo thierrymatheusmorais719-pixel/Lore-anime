@@ -166,6 +166,22 @@ return function(t)
 		t.ok(d.claimedEncounters.b ~= nil, "recente fica")
 	end)
 
+	t.test("mundos 1 e 2 têm 80 pets cada, com exatamente 1 SECRET", function()
+		for _, w in ipairs({ "verdant", "crystal" }) do
+			local n, secret = 0, 0
+			for _, sp in pairs(Pets.Species) do
+				if sp.world == w and sp.rarity ~= "Celestial" then
+					n += 1
+					if sp.rarity == "Secret" then
+						secret += 1
+					end
+				end
+			end
+			t.eq(n, 80, w)
+			t.eq(secret, 1, w .. " secret")
+		end
+	end)
+
 	t.test("pets por mundo cobrem todas as raridades base", function()
 		local byWorld = {}
 		for _, sp in pairs(Pets.Species) do

@@ -78,6 +78,20 @@ end
 dump("island", { workspace:FindFirstChild("World"):FindFirstChild("verdant"), workspace:FindFirstChild("Enemies"), workspace:FindFirstChild("Bosses"),
 	workspace:FindFirstChild("Resources"), workspace:FindFirstChild("Pets") }, inVerdant)
 
+-- terreno (preenchimentos registrados pelo simulador) da ilha 1
+do
+	local out = {}
+	for _, f in ipairs(SIM.terrainFills) do
+		local pp = f.cf.p
+		if ((pp - verdant.center) * Vector3.new(1, 0, 1)).Magnitude < verdant.radius + 40 and math.abs(pp.Y) < 150 then
+			local col = SIM.terrainColors[f.m]
+			table.insert(out, string.format('{"k":"%s","p":[%s,%s,%s],"h":%s,"r":%s,"m":"%s","c":[%d,%d,%d]}', f.kind, num(pp.X), num(pp.Y), num(pp.Z),
+				num(f.h or (f.size and f.size.Y) or 0), num(f.r or 0), f.m, col and math.floor(col.R * 255) or -1, col and math.floor(col.G * 255) or -1, col and math.floor(col.B * 255) or -1))
+		end
+	end
+	print("SCENE terrain [" .. table.concat(out, ",") .. "]")
+end
+
 -- vitrines
 local Pets = require(__proxy("Shared/Config/Pets"))
 local CreatureBuilder = require(__proxy("Shared/Builders/CreatureBuilder"))
@@ -115,6 +129,30 @@ for i, id in ipairs(ids) do
 	table.insert(pets, m)
 end
 lineup("pets", pets)
+for _, wid in ipairs({ "verdant", "crystal" }) do
+	local list = {}
+	for id, sp in pairs(Pets.Species) do
+		if sp.world == wid and sp.rarity ~= "Celestial" then
+			table.insert(list, id)
+		end
+	end
+	table.sort(list, function(a, b)
+		local ra, rb = Rarities.rank(Pets.Species[a].rarity), Rarities.rank(Pets.Species[b].rarity)
+		if ra ~= rb then
+			return ra > rb
+		end
+		return a < b
+	end)
+	local models = {}
+	for i, id in ipairs(list) do
+		local m, hover = CreatureBuilder.build(id, Pets.Species[id], 1)
+		local col, row = (i - 1) % 10, math.floor((i - 1) / 10)
+		local spacing = i == 1 and 0 or 0
+		m:PivotTo(CFrame.new(col * 7.5 + spacing, hover, row * 8.5) * CFrame.Angles(0, math.rad(200), 0))
+		table.insert(models, m)
+	end
+	lineup("pets_" .. wid, models)
+end
 local muts = {}
 for i, mid in ipairs({ "none", "Golden", "Radiant", "Prismatic", "Ancient", "Phantom", "Astral" }) do
 	local m, hover = CreatureBuilder.build("astral_lion", Pets.Species.astral_lion, 1)

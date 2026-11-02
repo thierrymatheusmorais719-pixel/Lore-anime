@@ -8,7 +8,7 @@ vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
 > Luau, contra o dump público da API do Roblox, com 57 testes de lógica, 633 verificações dos modelos 3D e
-> **96 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> **97 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -71,6 +71,12 @@ portal para o próximo mundo (Crystal Hollow → Skybound Kingdom → Whispering
 | 11 | **Progressão** | `PetStats`, `PetService` | XP de combate, níveis, 3 estágios de evolução (o pet antigo evoluído continua competitivo; há teste para isso), ranks de habilidade, 5 sinergias, conjunto de mundo (+12% de dano contra inimigos daquele mundo) |
 | 12 | **Interface de combate** | `CombatHUD.luau`, `WorldClient.luau`, `Fx.luau` | barras de vida de inimigos e boss, nome e nível, estados (marcado, defesa reduzida, preso, voltando), aviso "⚠ ataque em Xs", equipe com recarga e energia, feed e histórico de drops, anúncios, escala responsiva e botões grandes no celular |
 | 13 | **Integração** | todos | uma única conta de perfil (`DataSchema`) para inventário, equipe, bestiário, missões, sorte, histórico e encontros já recompensados |
+
+**Mundos 1 e 2 com 80 pets cada** (a partir da arte do autor em `docs/concept/`): famílias como nas fileiras da
+arte (cervos, coelhos, raposas, cogumelos, slimes, golens, dragõezinhos, tartarugas-bosque, ents... / gatinhos,
+ratinhos, slimes, raposas de cauda de cristal, lobos, cervos de ametista, dragão, golens, grifo), com os SECRET
+**Sylvanox** e **Lumivex**. O Mundo 1 ganhou a Árvore Ancestral num platô no meio de um lago turquesa, penhascos
+de musgo com cachoeiras, cachoeiras caindo da borda da ilha, bonsais, flores roxas e raios de sol.
 
 **Base do simulador**: 5 ilhas (terreno + decoração), 10 ovos com moedas/essência, 5 ovos especiais,
 34 espécies, recursos quebráveis, tesouros, portais, 16 missões de história, 3 diárias por dia (iguais em
@@ -135,7 +141,7 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **57 testes passando** |
 | Modelos 3D (34 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses) | `python3 tools/run_tests.py luau --smoke` | **633 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **96 cenários passando** |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **97 cenários passando** |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -188,6 +194,9 @@ travamento) foi exercitada.
   `WorldService.init` escrevendo `Workspace.FallenPartsDestroyHeight`, que só plugins podem alterar.
   A propriedade foi para o `default.project.json`, e o `tools/api_check.py` agora acusa escrita em
   propriedades protegidas.
+- **Domo de rocha sobre a ilha** (achado pela prévia renderizada): a "raiz" da ilha flutuante era uma esfera
+  de raio 165 centrada 52 studs abaixo do chão, cujo topo saía 113 studs ACIMA da grama, enterrando a praça.
+  Trocada por camadas de cilindros sempre abaixo do chão; o simulador agora reprova qualquer terreno acima da superfície.
 - Jogador novo começava com 0 moedas e não conseguia chocar o primeiro ovo — começa com 150.
 - (Infraestrutura de teste: a matriz de rotação do mock acumulava erro no `PivotTo`; agora é re-ortonormalizada como no motor.)
 

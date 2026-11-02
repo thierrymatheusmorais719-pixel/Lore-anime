@@ -104,13 +104,17 @@ function MutationVisuals.apply(model: Model, mutation: string?)
 			emitter(torso, { color = ColorSequence.new(Color3.fromRGB(255, 250, 210)), rate = 5, acceleration = Vector3.new(0, 2.5, 0), size = NumberSequence.new(0.2 * u, 0) })
 		end
 	elseif mutation == "Prismatic" then
-		for _, p in ipairs(roles.Body) do
+		-- tom iridescente fixo (o cliente ainda gira a matiz) — muda até pets que já são de vidro
+		local iris = { Color3.fromRGB(255, 150, 230), Color3.fromRGB(150, 220, 255), Color3.fromRGB(190, 255, 170), Color3.fromRGB(255, 235, 140) }
+		for i, p in ipairs(roles.Body) do
 			p.Material = Enum.Material.Glass
 			p.Reflectance = 0.1
 			p.Transparency = math.max(p.Transparency, 0.08)
+			p.Color = p.Color:Lerp(iris[(i - 1) % #iris + 1], 0.35)
 		end
-		for _, p in ipairs(roles.Accent) do
+		for i, p in ipairs(roles.Accent) do
 			p.Material = Enum.Material.Neon
+			p.Color = p.Color:Lerp(iris[(i + 1) % #iris + 1], 0.5)
 		end
 		model:SetAttribute("PrismaticCycle", true) -- o cliente gira a matiz das peças Body/Accent
 		if torso then

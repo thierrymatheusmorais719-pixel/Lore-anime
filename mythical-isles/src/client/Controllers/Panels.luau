@@ -664,6 +664,14 @@ local function eggPanel(eggId: string)
 	local list = UIKit.scroll({ Position = UDim2.fromOffset(0, 32), Size = UDim2.new(0.6, -6, 1, -90), Parent = content })
 	new("UIGridLayout", { CellSize = UDim2.fromOffset(118, 156), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
 	local _ = info
+	-- mais raros primeiro (ovos com 70+ pets): miniaturas 3D só para os primeiros
+	table.sort(r.entries, function(a, b)
+		local ra, rb = Rarities.rank(Pets.Species[a.key].rarity), Rarities.rank(Pets.Species[b.key].rarity)
+		if ra ~= rb then
+			return ra > rb
+		end
+		return a.key < b.key
+	end)
 	for i, o in ipairs(r.entries) do
 		local sp = Pets.Species[o.key]
 		local rar = Rarities.Info[sp.rarity]
@@ -673,7 +681,9 @@ local function eggPanel(eggId: string)
 			BorderSizePixel = 0, ZIndex = 2, Parent = card })
 		UIKit.corner(view, 10)
 		local known = State.profile.bestiary.pets[o.key] ~= nil
-		thumb(view, o.key, nil, nil)
+		if i <= MAX_THUMBS then
+			thumb(view, o.key, nil, nil)
+		end
 		if not known then
 			-- ainda não descoberto: silhueta
 			for _, d in ipairs(view:GetDescendants()) do

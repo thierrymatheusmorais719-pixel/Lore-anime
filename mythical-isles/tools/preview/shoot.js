@@ -3,10 +3,13 @@ const { chromium } = require('playwright');
 const out = process.argv[2];
 const base = process.argv[3] || 'http://localhost:8765/mythical-isles/tools/preview/render.html';
 const shots = [
-  ['ilha', 'scene=island&ground=island&pos=-60,70,150&look=10,0,0&fov=55&fog=420&player=6,3,30&hud=1&shadow=200'],
-  ['ilha_alto', 'scene=island&ground=island&pos=-330,260,330&look=0,-10,20&fov=45&shadow=280&title=Verdant%20Haven'],
-  ['arena_boss', 'scene=island&ground=island&pos=-40,45,30&look=0,10,140&fov=55&shadow=200&title=Arena%20do%20Elderroot'],
-  ['pets', 'scene=pets&pos=21,24,62&look=21,1,14&fov=50&title=Os%2034%20pets&floor=%2398d878'],
+  ['ilha', 'scene=island&ground=terrain&pos=-60,70,150&look=10,0,0&fov=55&fog=420&player=6,3,30&hud=1&shadow=200'],
+  ['ilha_alto', 'scene=island&ground=terrain&pos=-330,260,330&look=0,-10,20&fov=45&shadow=280&title=Verdant%20Haven'],
+  ['arena_boss', 'scene=island&ground=terrain&pos=-40,45,30&look=0,10,140&fov=55&shadow=200&title=Arena%20do%20Elderroot'],
+  ['lago_arvore', 'scene=island&ground=terrain&pos=-55,32,30&look=-130,22,108&fov=58&fog=500&shadow=180&title=Mundo%201%20-%20%C3%81rvore%20Ancestral'],
+  ['lago_alto', 'scene=island&ground=terrain&pos=-30,95,-10&look=-125,8,105&fov=55&shadow=200&title=Lago%20e%20cachoeiras'],
+  ['pets_mundo1', 'scene=pets_verdant&pos=34,40,98&look=34,1,32&fov=55&title=Mundo%201%20-%20Verdant%20Haven%3A%2080%20pets&floor=%2398d878'],
+  ['pets_mundo2', 'scene=pets_crystal&pos=34,40,98&look=34,1,32&fov=55&title=Mundo%202%20-%20Crystal%20Hollow%3A%2080%20pets&skytop=%230a0618&skybot=%23281c4a&floor=%23202040'],
   ['mutacoes', 'scene=mutations&pos=24,11,44&look=24,2,0&fov=50&title=Astral%20Lion:%20normal%20e%206%20muta%C3%A7%C3%B5es&floor=%23b0a0e0'],
   ['inimigos', 'scene=enemies&pos=32,22,62&look=32,3,14&fov=52&title=Inimigos&floor=%23a8c890'],
   ['boss_elderroot', 'scene=bosses&pos=0,18,46&look=0,14,0&fov=50&title=Elderroot&skytop=%230a0618&skybot=%23281c4a&floor=%23181428'],

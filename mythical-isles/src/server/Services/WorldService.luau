@@ -57,7 +57,10 @@ function WorldService.build()
 	local function buildWorld(id: string)
 		local w = Worlds.Info[id]
 		local folder = Make("Folder", { Name = id, Parent = root })
-		WorldBuilder.terrain(id, folder)
+		local terrainOk = WorldBuilder.terrain(id, folder)
+		if id == "verdant" then
+			WorldBuilder.verdantLandmark(folder, terrainOk)
+		end
 		WorldBuilder.boundary(id, folder)
 		local spawnCF = WorldBuilder.plaza(id, folder)
 		WorldBuilder.decor(id, folder)

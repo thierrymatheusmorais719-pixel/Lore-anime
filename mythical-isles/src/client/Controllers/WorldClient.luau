@@ -12,7 +12,7 @@ local UIKit = require(script.Parent.UIKit)
 
 local WorldClient = {}
 local player = Players.LocalPlayer
-local atmosphere, cc, bloom
+local atmosphere, cc, bloom, sunrays
 local currentWorld = nil
 local bars: { [Instance]: any } = {}
 
@@ -27,6 +27,10 @@ local function setupLighting()
 	bloom.Size = 22
 	bloom.Threshold = 1.6 -- só o que é bem brilhante (Neon) floresce: evita excesso de brilho
 	bloom.Parent = Lighting
+	sunrays = Lighting:FindFirstChildOfClass("SunRaysEffect") or Instance.new("SunRaysEffect")
+	sunrays.Intensity = 0.06
+	sunrays.Spread = 0.6
+	sunrays.Parent = Lighting
 	if not Lighting:FindFirstChildOfClass("Sky") then
 		local sky = Instance.new("Sky")
 		sky.StarCount = 3000
@@ -47,7 +51,12 @@ local function applyWorld(id: string)
 		Density = (id == "wilds" and 0.42) or (id == "crystal" and 0.38) or (id == "astral" and 0.3) or 0.25,
 		Haze = (id == "wilds" and 2.2) or (id == "sky" and 0.6) or 1.2, Glare = id == "sky" and 0.6 or 0.1,
 	}):Play()
-	TweenService:Create(cc, info, { TintColor = Color3.new(1, 1, 1), Saturation = id == "wilds" and -0.05 or 0.08, Contrast = 0.05 }):Play()
+	TweenService:Create(cc, info, { TintColor = Color3.new(1, 1, 1), Saturation = id == "wilds" and -0.05 or (id == "verdant" and 0.18 or 0.08), Contrast = 0.05 }):Play()
+	-- Verdant Haven: raios de sol fortes e névoa azul-esverdeada (referências do autor)
+	TweenService:Create(sunrays, info, { Intensity = id == "verdant" and 0.16 or 0.05 }):Play()
+	if id == "verdant" then
+		TweenService:Create(atmosphere, info, { Color = Color3.fromRGB(190, 235, 230), Decay = Color3.fromRGB(110, 170, 190), Density = 0.3, Haze = 1.6 }):Play()
+	end
 end
 
 -- Durante um boss: leve tom da cor do boss, mais forte nas fases finais.

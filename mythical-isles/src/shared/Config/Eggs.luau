@@ -8,52 +8,50 @@
 --   { bossDefeated = "id" }       -> precisa ter derrotado o boss
 -- Entradas cuja condição não foi cumprida saem do sorteio (chance 0, mostrada com o motivo).
 
+local Pets = require(script.Parent.Pets)
+
 local Eggs = {}
+
+-- Monta as entradas de um ovo a partir de pesos POR RARIDADE: o peso da raridade é dividido
+-- igualmente entre todas as espécies daquele mundo com aquela raridade (mundos com 80 pets).
+local function tiers(world: string, weights, extra)
+	local entries = {}
+	for _, rarity in ipairs({ "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Secret" }) do
+		local w = weights[rarity]
+		if w and w > 0 then
+			local list = Pets.byWorldRarity(world, rarity)
+			for _, id in ipairs(list) do
+				table.insert(entries, { species = id, weight = w / #list })
+			end
+		end
+	end
+	for _, e in ipairs(extra or {}) do
+		table.insert(entries, e)
+	end
+	return entries
+end
+Eggs.tiers = tiers
 
 Eggs.Info = {
 	verdant_egg = {
 		name = "Ovo do Bosque", world = "verdant", currency = "coins", cost = 100,
 		color = Color3.fromRGB(150, 210, 110), spot = Color3.fromRGB(240, 230, 150),
-		entries = {
-			{ species = "mossling", weight = 60 },
-			{ species = "leafwing", weight = 27 },
-			{ species = "thornpup", weight = 9.5 },
-			{ species = "bloomfox", weight = 3 },
-			{ species = "grovekin", weight = 0.48 },
-			{ species = "verdigris_wisp", weight = 0.02 },
-		},
+		entries = tiers("verdant", { Common = 58, Uncommon = 28, Rare = 10, Epic = 3.4, Legendary = 0.55, Secret = 0.05 }),
 	},
 	grove_egg = {
 		name = "Ovo de Raiz Antiga", world = "verdant", currency = "essence", cost = 60,
 		color = Color3.fromRGB(110, 80, 50), spot = Color3.fromRGB(160, 240, 120),
-		entries = {
-			{ species = "thornpup", weight = 62 },
-			{ species = "bloomfox", weight = 30 },
-			{ species = "grovekin", weight = 7.9 },
-			{ species = "verdigris_wisp", weight = 0.1 },
-		},
+		entries = tiers("verdant", { Rare = 52, Epic = 34, Legendary = 11, Mythic = 2.8, Secret = 0.2 }),
 	},
 	crystal_egg = {
 		name = "Ovo de Quartzo", world = "crystal", currency = "coins", cost = 900,
 		color = Color3.fromRGB(150, 210, 255), spot = Color3.fromRGB(200, 150, 255),
-		entries = {
-			{ species = "shardmite", weight = 60 },
-			{ species = "glimmerbat", weight = 27 },
-			{ species = "geodeling", weight = 9.5 },
-			{ species = "prismcat", weight = 3 },
-			{ species = "quartz_drake", weight = 0.48 },
-			{ species = "echo_geode", weight = 0.02 },
-		},
+		entries = tiers("crystal", { Common = 58, Uncommon = 28, Rare = 10, Epic = 3.4, Legendary = 0.55, Secret = 0.05 }),
 	},
 	geode_egg = {
 		name = "Ovo Geodo", world = "crystal", currency = "essence", cost = 180,
 		color = Color3.fromRGB(90, 70, 120), spot = Color3.fromRGB(190, 120, 255),
-		entries = {
-			{ species = "geodeling", weight = 62 },
-			{ species = "prismcat", weight = 30 },
-			{ species = "quartz_drake", weight = 7.9 },
-			{ species = "echo_geode", weight = 0.1 },
-		},
+		entries = tiers("crystal", { Rare = 52, Epic = 34, Legendary = 11, Mythic = 2.8, Secret = 0.2 }),
 	},
 	sky_egg = {
 		name = "Ovo de Nuvem", world = "sky", currency = "coins", cost = 6000,
@@ -132,20 +130,12 @@ Eggs.Info = {
 	bloom_relic_egg = {
 		name = "Ovo Relíquia Florida", world = "verdant", currency = "item", cost = 0, special = true,
 		color = Color3.fromRGB(255, 190, 220), spot = Color3.fromRGB(140, 230, 110),
-		entries = {
-			{ species = "bloomfox", weight = 70 },
-			{ species = "grovekin", weight = 28.5 },
-			{ species = "verdigris_wisp", weight = 1.5 },
-		},
+		entries = tiers("verdant", { Epic = 60, Legendary = 32, Mythic = 7, Secret = 1 }),
 	},
 	prism_core_egg = {
 		name = "Ovo Núcleo Prismático", world = "crystal", currency = "item", cost = 0, special = true,
 		color = Color3.fromRGB(255, 255, 255), spot = Color3.fromRGB(120, 220, 255),
-		entries = {
-			{ species = "prismcat", weight = 70 },
-			{ species = "quartz_drake", weight = 28.5 },
-			{ species = "echo_geode", weight = 1.5 },
-		},
+		entries = tiers("crystal", { Epic = 60, Legendary = 32, Mythic = 7, Secret = 1 }),
 	},
 	tempest_egg = {
 		name = "Ovo do Olho da Tempestade", world = "sky", currency = "item", cost = 0, special = true,

@@ -58,6 +58,27 @@ local function count(folderName)
 	return #workspace:FindFirstChild(folderName):GetChildren()
 end
 
+do
+	-- nenhum preenchimento de Terrain pode cobrir a superfície da ilha (só colinas pequenas na borda)
+	local bad
+	for _, f in ipairs(SIM.terrainFills) do
+		if f.m ~= "Air" and f.m ~= "Water" then
+			local top = f.cf.p.Y + (f.kind == "ball" and f.r or (f.h or 0) / 2)
+			local wy
+			for _, id in ipairs(Worlds.Order) do
+				local w = Worlds.Info[id]
+				if ((f.cf.p - w.center) * Vector3.new(1, 0, 1)).Magnitude < w.radius + 30 then
+					wy = w.center.Y
+				end
+			end
+			local smallHill = f.kind == "ball" and f.r <= 18
+			if wy and top > wy + 0.5 and not smallHill then
+				bad = string.format("%s %s raio %.0f topo %.0f (chão %.0f)", f.kind, f.m, f.r or 0, top, wy)
+			end
+		end
+	end
+	check("terreno das ilhas não cobre a superfície (sem domo)", bad == nil, bad)
+end
 check("mundos, inimigos, bosses e recursos criados", count("Enemies") > 50 and count("Bosses") == 5 and count("Resources") > 100,
 	string.format("inimigos=%d bosses=%d recursos=%d", count("Enemies"), count("Bosses"), count("Resources")))
 
@@ -591,7 +612,7 @@ end
 SIM.clearMessages(p2)
 local pub0 = SIM.published or 0
 local Reward = require(__proxy("Server/Services/RewardService"))
-Reward.givePet(pX, "echo_geode", nil, "teste")
+Reward.givePet(pX, "lumivex", nil, "teste")
 SIM.run(0.5)
 local ann = SIM.messages(p2, "Announce")
 check("descoberta SECRET é anunciada a outros jogadores", #ann == 1 and ann[1].rarity == "Secret", #ann)

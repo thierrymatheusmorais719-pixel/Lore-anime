@@ -195,8 +195,22 @@ CLASS_METHODS.Camera = {
 		return { Origin = self.CFrame.p, Direction = Vector3.new(0, -1, 0) }
 	end,
 }
+SIM.terrainFills = {}
+SIM.terrainColors = {}
 CLASS_METHODS.Terrain = {
-	FillCylinder = function() end, FillBall = function() end, FillBlock = function() end, SetMaterialColor = function() end, Clear = function() end,
+	FillCylinder = function(_, cf, height, radius, mat)
+		table.insert(SIM.terrainFills, { kind = "cyl", cf = cf, h = height, r = radius, m = mat.Name })
+	end,
+	FillBall = function(_, center, radius, mat)
+		table.insert(SIM.terrainFills, { kind = "ball", cf = CFrame.new(center), r = radius, m = mat.Name })
+	end,
+	FillBlock = function(_, cf, size, mat)
+		table.insert(SIM.terrainFills, { kind = "block", cf = cf, size = size, m = mat.Name })
+	end,
+	SetMaterialColor = function(_, mat, color)
+		SIM.terrainColors[mat.Name] = color
+	end,
+	Clear = function() end,
 }
 local function makeCharacter(p)
 	local char = Instance.new("Model")
