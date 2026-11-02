@@ -635,7 +635,13 @@ do
 	local errs0 = #SIM.errors
 	__modules["Client/Main"](__proxy("Client/Main"))
 	frames(5)
-	check("cliente inicia todos os controladores sem erro", #SIM.errors == errs0, SIM.errors[errs0 + 1])
+	local initFail
+	for _, w in ipairs(SIM.warnings) do
+		if w:find("falha ao iniciar") then
+			initFail = w
+		end
+	end
+	check("cliente inicia todos os controladores sem erro", #SIM.errors == errs0 and initFail == nil, SIM.errors[errs0 + 1] or initFail)
 	local DS = S.DataService
 	DS.pushState(lp)
 	S.LuckService.push(lp, true)
@@ -757,6 +763,7 @@ end
 -- telemetria geral ---------------------------------------------------------------
 SIM.run(3)
 check("nenhum erro de execução no servidor durante os cenários", #SIM.errors == 0, SIM.errors[1])
+check("nenhum aviso de falha (servidor ou cliente)", #SIM.warnings == 0, SIM.warnings[1])
 check("todas as mensagens enviadas ao cliente são serializáveis", true)
 local enemiesNow = count("Enemies")
 SIM.run(60)

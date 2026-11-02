@@ -68,7 +68,7 @@ local function costText(cost)
 end
 
 local function preview(parent: Instance, pet)
-	local vp = new("ViewportFrame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = T.panel2, BackgroundTransparency = 0.2, LightColor = Color3.new(1, 1, 1),
+	local vp = new("ViewportFrame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = T.bg2, BackgroundTransparency = 0.2, LightColor = Color3.new(1, 1, 1),
 		Ambient = Color3.fromRGB(160, 160, 180), Parent = parent })
 	UIKit.corner(vp, 10)
 	local cam = Instance.new("Camera")
@@ -97,6 +97,32 @@ local function preview(parent: Instance, pet)
 		cam.CFrame = CFrame.lookAt(Vector3.new(math.sin(a) * size * 1.25, size * 0.3, math.cos(a) * size * 1.25), Vector3.zero)
 	end)
 end
+
+-- Miniatura 3D estática (sem girar) do modelo REAL do pet, com mutação e acessório.
+local function thumb(parent: Instance, species: string, mutation: string?, accessory: string?)
+	local vp = new("ViewportFrame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, LightColor = Color3.new(1, 1, 1),
+		Ambient = Color3.fromRGB(170, 170, 190), LightDirection = Vector3.new(-1, -1.5, -1), ZIndex = 3, Parent = parent })
+	local cam = Instance.new("Camera")
+	cam.FieldOfView = 34
+	cam.Parent = vp
+	vp.CurrentCamera = cam
+	local model = CreatureBuilder.build(species, Pets.Species[species], 1)
+	MutationVisuals.apply(model, mutation)
+	Accessories.apply(model, accessory)
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("BasePart") then
+			d.Anchored = true
+		elseif d:IsA("ParticleEmitter") or d:IsA("PointLight") then
+			d:Destroy()
+		end
+	end
+	model:PivotTo(CFrame.Angles(0, math.rad(200), 0))
+	model.Parent = vp
+	local size = model:GetExtentsSize().Magnitude
+	cam.CFrame = CFrame.lookAt(Vector3.new(size * 0.55, size * 0.35, -size * 1.25), Vector3.new(0, 0, 0))
+	return vp
+end
+local MAX_THUMBS = 48
 
 -------------------------------------------------------------------------------
 -- PETS
@@ -134,7 +160,7 @@ local function petDetail(parent, uid)
 	local actions = new("Frame", { Position = UDim2.fromOffset(0, 270), Size = UDim2.new(1, 0, 1, -270), BackgroundTransparency = 1, Parent = box })
 	local grid = new("UIGridLayout", { CellSize = UDim2.new(0.5, -4, 0, 30), CellPadding = UDim2.fromOffset(6, 6), Parent = actions })
 	local inTeam = table.find(p.team, uid) ~= nil
-	UIKit.button({ Text = inTeam and "Remover da equipe" or "Colocar na equipe", TextSize = 13, BackgroundColor3 = inTeam and Color3.fromRGB(120, 70, 70) or Color3.fromRGB(60, 120, 80), Parent = actions }, function()
+	UIKit.button({ Text = inTeam and "Remover da equipe" or "Colocar na equipe", TextSize = 13, BackgroundColor3 = inTeam and T.red or T.green, Parent = actions }, function()
 		local team = table.clone(p.team)
 		if inTeam then
 			table.remove(team, table.find(team, uid))
@@ -147,7 +173,7 @@ local function petDetail(parent, uid)
 		toastResult(State.request("SetTeam", { uids = team }))
 	end)
 	local evoText = (d and d.evolution) and ("Evoluir: " .. costText(d.evolution)) or "Estágio máximo"
-	UIKit.button({ Text = evoText, TextSize = 11, TextWrapped = true, BackgroundColor3 = (d and d.canEvolve) and Color3.fromRGB(150, 110, 40) or T.panel2, Parent = actions }, function()
+	UIKit.button({ Text = evoText, TextSize = 11, TextWrapped = true, BackgroundColor3 = (d and d.canEvolve) and T.yellow or T.gray, Parent = actions }, function()
 		toastResult(State.request("Evolve", { uid = uid }))
 	end)
 	UIKit.button({ Text = d and d.abilityCost and ("Melhorar habilidade: " .. costText(d.abilityCost)) or "Habilidade no máximo", TextSize = 11, TextWrapped = true, Parent = actions }, function()
@@ -173,13 +199,13 @@ local function petDetail(parent, uid)
 		for id, n in pairs(p.items) do
 			local info = Items.Info[id]
 			if info and info.kind == "catalyst" and n > 0 then
-				UIKit.button({ Text = string.format("Aplicar %s (%d)", info.label, n), TextSize = 11, BackgroundColor3 = Color3.fromRGB(110, 60, 140), Parent = actions }, function()
+				UIKit.button({ Text = string.format("Aplicar %s (%d)", info.label, n), TextSize = 11, BackgroundColor3 = T.purple, Parent = actions }, function()
 					toastResult(State.request("Catalyst", { uid = uid, item = id }))
 				end)
 			end
 		end
 	end
-	UIKit.button({ Text = pet.locked and "Trancado" or "Liberar (+essência)", TextSize = 12, BackgroundColor3 = Color3.fromRGB(90, 50, 50), Parent = actions }, function()
+	UIKit.button({ Text = pet.locked and "Trancado" or "Liberar (+essência)", TextSize = 12, BackgroundColor3 = T.red, Parent = actions }, function()
 		if not pet.locked then
 			selectedPet = nil
 			toastResult(State.request("Release", { uids = { uid } }))
@@ -190,7 +216,7 @@ end
 
 local function petsPanel()
 	local p = State.profile
-	local header = UIKit.frame({ Size = UDim2.new(1, 0, 0, 44), BackgroundColor3 = T.panel2, Parent = content })
+	local header = UIKit.frame({ Size = UDim2.new(1, 0, 0, 44), BackgroundColor3 = T.bg2, Parent = content })
 	UIKit.pad(header, 6)
 	local syn = {}
 	for _, id in ipairs(State.derived and State.derived.synergies or {}) do
@@ -208,7 +234,7 @@ local function petsPanel()
 		toastResult(State.request("AutoTeam"))
 	end)
 	local list = UIKit.scroll({ Position = UDim2.fromOffset(0, 50), Size = UDim2.new(0.55, -6, 1, -50), Parent = content })
-	new("UIGridLayout", { CellSize = UDim2.fromOffset(122, 64), CellPadding = UDim2.fromOffset(6, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+	new("UIGridLayout", { CellSize = UDim2.fromOffset(112, 134), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
 	local detail = new("Frame", { Position = UDim2.new(0.55, 6, 0, 50), Size = UDim2.new(0.45, -6, 1, -50), BackgroundTransparency = 1, Parent = content })
 	local entries = {}
 	for uid, pet in pairs(p.pets) do
@@ -224,19 +250,42 @@ local function petsPanel()
 	end)
 	for i, e in ipairs(entries) do
 		local sp = Pets.Species[e.pet.species]
-		local card = UIKit.button({ LayoutOrder = i, Text = "", BackgroundColor3 = T.panel2, Parent = list }, function()
+		local rar = Rarities.Info[sp.rarity]
+		local card = UIKit.button({ LayoutOrder = i, Text = "", BackgroundColor3 = UIKit.darken(rar.color, 0.15), Parent = list }, function()
 			selectedPet = e.uid
 			for _, c in ipairs(detail:GetChildren()) do
 				c:Destroy()
 			end
 			petDetail(detail, e.uid)
 		end)
-		UIKit.stroke(card, rarityColor(sp.rarity), 2, 0.1)
+		if e.uid == selectedPet then
+			local st = card:FindFirstChildOfClass("UIStroke")
+			if st then
+				st.Color = Color3.new(1, 1, 1)
+				st.Thickness = 4
+			end
+		end
+		local view = new("Frame", { Position = UDim2.fromOffset(4, 4), Size = UDim2.new(1, -8, 0, 84), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.82,
+			BorderSizePixel = 0, ZIndex = 2, Parent = card })
+		UIKit.corner(view, 10)
+		if i <= MAX_THUMBS then
+			thumb(view, e.pet.species, e.pet.mutation, e.pet.accessory)
+		end
 		local mut = e.pet.mutation and Mutations.Info[e.pet.mutation]
-		UIKit.label({ Position = UDim2.fromOffset(6, 2), Size = UDim2.new(1, -12, 0, 32), TextSize = 12, Font = T.bold,
-			Text = (mut and string.format('<font color="#%s">%s</font>\n', mut.color:ToHex(), e.pet.mutation) or "") .. sp.name, Parent = card })
-		UIKit.label({ Position = UDim2.fromOffset(6, 40), Size = UDim2.new(1, -12, 0, 18), TextSize = 11, TextColor3 = T.muted,
-			Text = string.format("Nv %d %s%s%s", e.pet.level, string.rep("★", e.pet.tier), table.find(p.team, e.uid) and "  ⚔" or "", e.pet.locked and " 🔒" or ""), Parent = card })
+		if mut then
+			local tag = UIKit.frame({ Position = UDim2.fromOffset(4, 4), Size = UDim2.fromOffset(70, 18), BackgroundColor3 = mut.color, radius = 9, ZIndex = 5, Parent = card })
+			UIKit.stroke(tag, UIKit.darken(mut.color, 0.6), 2, 0)
+			UIKit.label({ Size = UDim2.fromScale(1, 1), Text = e.pet.mutation, Font = T.title, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Center,
+				TextStrokeColor3 = UIKit.darken(mut.color, 0.7), TextStrokeTransparency = 0, ZIndex = 6, Parent = tag })
+		end
+		if table.find(p.team, e.uid) then
+			UIKit.icon(card, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -2, 0, 2), Size = UDim2.fromOffset(24, 24), color = T.green, Text = "⚔", ZIndex = 6 })
+		end
+		UIKit.label({ Position = UDim2.fromOffset(4, 88), Size = UDim2.new(1, -8, 0, 20), TextSize = 14, Font = T.title, TextXAlignment = Enum.TextXAlignment.Center,
+			TextWrapped = false, TextTruncate = Enum.TextTruncate.AtEnd, Text = sp.name, ZIndex = 3, TextStrokeTransparency = 0.1, Parent = card })
+		UIKit.label({ Position = UDim2.fromOffset(4, 108), Size = UDim2.new(1, -8, 0, 20), TextSize = 13, Font = T.title, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 3,
+			TextColor3 = Color3.fromRGB(255, 235, 140), TextStrokeTransparency = 0.1,
+			Text = string.format("Nv %d %s%s", e.pet.level, string.rep("★", e.pet.tier), e.pet.locked and " 🔒" or ""), Parent = card })
 	end
 	if #entries == 0 then
 		UIKit.label({ Size = UDim2.new(1, 0, 0, 40), Text = "Você ainda não tem pets. Vá até uma estação de ovos (E) para chocar o primeiro!", TextSize = 14, Parent = list })
@@ -275,7 +324,7 @@ local function itemsPanel()
 			UIKit.label({ LayoutOrder = order, Size = UDim2.new(1, 0, 0, 24), Text = KIND_LABEL[kind], Font = T.title, TextSize = 18, TextColor3 = T.gold, Parent = list })
 			for _, r in ipairs(rows) do
 				order += 1
-				local row = UIKit.frame({ LayoutOrder = order, Size = UDim2.new(1, -8, 0, 40), BackgroundColor3 = T.panel2, Parent = list })
+				local row = UIKit.frame({ LayoutOrder = order, Size = UDim2.new(1, -8, 0, 40), BackgroundColor3 = T.bg2, Parent = list })
 				UIKit.frame({ Position = UDim2.fromOffset(8, 10), Size = UDim2.fromOffset(20, 20), BackgroundColor3 = r.info.color, radius = 10, Parent = row })
 				local desc = ""
 				if kind == "potion" then
@@ -289,7 +338,7 @@ local function itemsPanel()
 				UIKit.label({ Position = UDim2.fromOffset(36, 0), Size = UDim2.new(1, -180, 1, 0), TextSize = 13, Text = string.format("<b>%s</b> x%d%s", r.info.label, r.n, desc), Parent = row })
 				if kind == "potion" then
 					UIKit.button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -6, 0.5, 0), Size = UDim2.fromOffset(120, 30), Text = "Beber", TextSize = 13,
-						BackgroundColor3 = Color3.fromRGB(60, 130, 80), Parent = row }, function()
+						BackgroundColor3 = T.green, Parent = row }, function()
 						toastResult(State.request("UsePotion", { item = r.id }))
 					end)
 				elseif kind == "egg" then
@@ -319,7 +368,7 @@ local function luckPanel()
 	if l then
 		for i, cat in ipairs(LuckConfig.Categories) do
 			local c = l.categories[cat]
-			local row = UIKit.frame({ LayoutOrder = i, Size = UDim2.new(1, -8, 0, 44), BackgroundColor3 = T.panel2, Parent = left })
+			local row = UIKit.frame({ LayoutOrder = i, Size = UDim2.new(1, -8, 0, 44), BackgroundColor3 = T.bg2, Parent = left })
 			UIKit.label({ Position = UDim2.fromOffset(8, 2), Size = UDim2.new(1, -16, 0, 20), TextSize = 13, Font = T.bold,
 				Text = string.format("%s: <font color=\"#78FF96\">x%.2f</font> <font size=\"11\" color=\"#AAB0CD\">(máx. x%.1f)</font>", LuckConfig.CategoryLabels[cat], c.mult, c.max), Parent = row })
 			local _, fill = UIKit.bar(row, { Position = UDim2.fromOffset(8, 25), Size = UDim2.new(1, -16, 0, 12), color = T.luck })
@@ -393,7 +442,7 @@ local function bestiaryPanel()
 	local tabs = new("Frame", { Size = UDim2.new(1, 0, 0, 32), BackgroundTransparency = 1, Parent = content })
 	UIKit.list(tabs, Enum.FillDirection.Horizontal, 6)
 	for _, t in ipairs({ { "pets", "Pets" }, { "foes", "Inimigos e bosses" }, { "collection", "Coleção" } }) do
-		UIKit.button({ Size = UDim2.fromOffset(170, 30), Text = t[2], TextSize = 13, BackgroundColor3 = bestiaryTab == t[1] and Color3.fromRGB(80, 90, 150) or T.panel2, Parent = tabs }, function()
+		UIKit.button({ Size = UDim2.fromOffset(170, 30), Text = t[2], TextSize = 13, BackgroundColor3 = bestiaryTab == t[1] and T.purple or T.gray, Parent = tabs }, function()
 			bestiaryTab = t[1]
 			Panels.open("Bestiary")
 		end)
@@ -416,7 +465,7 @@ local function bestiaryPanel()
 		for i, id in ipairs(ids) do
 			local sp = Pets.Species[id]
 			local e = p.bestiary.pets[id]
-			local card = UIKit.frame({ LayoutOrder = i, BackgroundColor3 = T.panel2, Parent = list })
+			local card = UIKit.frame({ LayoutOrder = i, BackgroundColor3 = T.bg2, Parent = list })
 			UIKit.stroke(card, rarityColor(sp.rarity), 1.5, e and 0.1 or 0.6)
 			local muts = {}
 			if e then
@@ -450,7 +499,7 @@ local function bestiaryPanel()
 			for _, f in ipairs(foes) do
 				order += 1
 				local rec = f.kind == "boss" and p.bestiary.bosses[f.id] or p.bestiary.enemies[f.id]
-				local row = UIKit.frame({ LayoutOrder = order, Size = UDim2.new(1, -8, 0, 34), BackgroundColor3 = T.panel2, Parent = list })
+				local row = UIKit.frame({ LayoutOrder = order, Size = UDim2.new(1, -8, 0, 34), BackgroundColor3 = T.bg2, Parent = list })
 				UIKit.label({ Position = UDim2.fromOffset(8, 0), Size = UDim2.new(1, -160, 1, 0), TextSize = 13,
 					Text = rec and string.format("<b>%s</b> Nv %d — derrotado %dx", f.name, f.level, rec.n) or string.format("<b>???</b> Nv %d — ainda não registrado", f.level), Parent = row })
 				UIKit.button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -4, 0.5, 0), Size = UDim2.fromOffset(140, 26), Text = "Ver drops", TextSize = 12, Parent = row }, function()
@@ -465,14 +514,14 @@ local function bestiaryPanel()
 		for i, m in ipairs(Exploration.CollectionMilestones) do
 			local done = CollectionLogic.isComplete(m, counts)
 			local claimed = p.collectionClaimed[m.id]
-			local row = UIKit.frame({ LayoutOrder = i, Size = UDim2.new(1, -8, 0, 40), BackgroundColor3 = T.panel2, Parent = list })
+			local row = UIKit.frame({ LayoutOrder = i, Size = UDim2.new(1, -8, 0, 40), BackgroundColor3 = T.bg2, Parent = list })
 			local need = {}
 			for k, n in pairs(m.need) do
 				table.insert(need, string.format("%s %d/%d", k == "species" and "espécies" or k == "mutations" and "mutações" or "inimigos", math.min(counts[k] or 0, n), n))
 			end
 			UIKit.label({ Position = UDim2.fromOffset(8, 0), Size = UDim2.new(1, -170, 1, 0), TextSize = 12, Text = string.format("<b>%s</b> — %s — %s", m.label, table.concat(need, ", "), costText(m.reward)), Parent = row })
 			UIKit.button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -4, 0.5, 0), Size = UDim2.fromOffset(150, 28), TextSize = 12,
-				Text = claimed and "Resgatado" or done and "Resgatar" or "Em andamento", BackgroundColor3 = (done and not claimed) and Color3.fromRGB(70, 150, 90) or T.panel, Parent = row }, function()
+				Text = claimed and "Resgatado" or done and "Resgatar" or "Em andamento", BackgroundColor3 = (done and not claimed) and T.green or T.gray, Parent = row }, function()
 				if done and not claimed then
 					toastResult(State.request("ClaimCollection", { id = m.id }))
 				end
@@ -502,11 +551,11 @@ local function questsPanel()
 		local idx = p.quests.storyIndex
 		local status = i < idx and "✔" or i == idx and string.format("%d/%d", p.quests.storyProgress, q.goal.count) or "🔒"
 		if i <= idx + 1 then
-			local row = UIKit.frame({ LayoutOrder = i, Size = UDim2.new(1, -8, 0, 42), BackgroundColor3 = i == idx and Color3.fromRGB(50, 56, 90) or T.panel2, Parent = list })
+			local row = UIKit.frame({ LayoutOrder = i, Size = UDim2.new(1, -8, 0, 42), BackgroundColor3 = i == idx and T.purple or T.bg2, Parent = list })
 			UIKit.label({ Position = UDim2.fromOffset(8, 0), Size = UDim2.new(1, -150, 1, 0), TextSize = 12, Text = string.format("<b>%s</b> — %s\n<font color=\"#AAB0CD\">%s</font>", q.label, q.desc, rewardText(q.reward)), Parent = row })
 			local canClaim = i == idx and p.quests.storyProgress >= q.goal.count
 			UIKit.button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -4, 0.5, 0), Size = UDim2.fromOffset(130, 28), Text = canClaim and "Resgatar" or status, TextSize = 12,
-				BackgroundColor3 = canClaim and Color3.fromRGB(70, 150, 90) or T.panel, Parent = row }, function()
+				BackgroundColor3 = canClaim and T.green or T.gray, Parent = row }, function()
 				if canClaim then
 					toastResult(State.request("ClaimStory"))
 				end
@@ -521,10 +570,10 @@ local function questsPanel()
 			local prog = d.progress[id] or 0
 			local claimed = d.claimed[id]
 			local done = prog >= q.goal.count
-			local row = UIKit.frame({ LayoutOrder = 100 + i, Size = UDim2.new(1, -8, 0, 42), BackgroundColor3 = T.panel2, Parent = list })
+			local row = UIKit.frame({ LayoutOrder = 100 + i, Size = UDim2.new(1, -8, 0, 42), BackgroundColor3 = T.bg2, Parent = list })
 			UIKit.label({ Position = UDim2.fromOffset(8, 0), Size = UDim2.new(1, -150, 1, 0), TextSize = 12, Text = string.format("<b>%s</b> — %s (%d/%d)\n<font color=\"#AAB0CD\">%s</font>", q.label, q.desc, prog, q.goal.count, rewardText(q.reward)), Parent = row })
 			UIKit.button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -4, 0.5, 0), Size = UDim2.fromOffset(130, 28), TextSize = 12,
-				Text = claimed and "Resgatada" or done and "Resgatar" or "Em andamento", BackgroundColor3 = (done and not claimed) and Color3.fromRGB(70, 150, 90) or T.panel, Parent = row }, function()
+				Text = claimed and "Resgatada" or done and "Resgatar" or "Em andamento", BackgroundColor3 = (done and not claimed) and T.green or T.gray, Parent = row }, function()
 				if done and not claimed then
 					toastResult(State.request("ClaimDaily", { id = id }))
 				end
@@ -545,14 +594,14 @@ local function mapPanel()
 		local w = Worlds.Info[id]
 		local unlocked = p.worlds[id]
 		local prevOk = i == 1 or p.worlds[Worlds.Order[i - 1]]
-		local row = UIKit.frame({ LayoutOrder = i, Size = UDim2.new(1, -8, 0, 62), BackgroundColor3 = T.panel2, Parent = list })
+		local row = UIKit.frame({ LayoutOrder = i, Size = UDim2.new(1, -8, 0, 62), BackgroundColor3 = T.bg2, Parent = list })
 		UIKit.stroke(row, w.palette.accent, 2, unlocked and 0.1 or 0.6)
 		local boss = Bosses.Info[w.bossId]
 		UIKit.label({ Position = UDim2.fromOffset(10, 0), Size = UDim2.new(1, -190, 1, 0), TextSize = 13,
 			Text = string.format("<b>%d. %s</b>\nBoss: %s · Atributos de pets x%.2f", i, w.name, boss.name, w.statMult), Parent = row })
 		local text = unlocked and "Viajar" or prevOk and string.format("Abrir (%s moedas)", UIKit.fmt(w.unlockCost)) or "Bloqueado"
 		UIKit.button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.fromOffset(170, 36), Text = text, TextSize = 13,
-			BackgroundColor3 = unlocked and Color3.fromRGB(60, 110, 160) or prevOk and Color3.fromRGB(150, 110, 40) or T.panel, Parent = row }, function()
+			BackgroundColor3 = unlocked and T.blue or prevOk and T.yellow or T.gray, Parent = row }, function()
 			if unlocked then
 				local r = State.request("Teleport", { world = id })
 				toastResult(r)
@@ -592,7 +641,7 @@ local function settingsPanel()
 		for i, c in ipairs({ { "currency", "+1M moedas, +50K essência" }, { "items", "Todos os itens" }, { "unlock", "Desbloquear mundos" }, { "levels", "Equipe no nível máximo" },
 			{ "luck_event", "Evento de sorte +100% (10 min)" }, { "boss_phase", "Boss atual: -35% vida (testar fases)" }, { "treasure", "Gerar tesouro" }, { "star", "Gerar Estrela Errante" },
 			{ "luck_report", "Mostrar multiplicadores (servidor)" } }) do
-			UIKit.button({ LayoutOrder = 10 + i, Size = UDim2.new(1, -8, 0, 32), Text = c[2], TextSize = 13, BackgroundColor3 = Color3.fromRGB(90, 50, 60), Parent = list }, function()
+			UIKit.button({ LayoutOrder = 10 + i, Size = UDim2.new(1, -8, 0, 32), Text = c[2], TextSize = 13, BackgroundColor3 = T.red, Parent = list }, function()
 				toastResult(State.request("Dev", { cmd = c[1] }))
 			end)
 		end
@@ -610,20 +659,54 @@ local function eggPanel(eggId: string)
 	end
 	local egg = Eggs.Info[eggId]
 	titleLabel.Text = r.name
-	local list = UIKit.scroll({ Size = UDim2.new(0.6, -6, 1, -52), Parent = content })
-	UIKit.list(list, Enum.FillDirection.Vertical, 4)
-	UIKit.label({ LayoutOrder = 0, Size = UDim2.new(1, 0, 0, 30), TextSize = 12, TextColor3 = T.muted,
-		Text = string.format("Chances reais com a sua sorte atual (Pets raros x%.2f). Valores calculados pelo servidor.", r.mult), Parent = list })
+	local info = UIKit.label({ Size = UDim2.new(0.6, -6, 0, 30), TextSize = 13, TextColor3 = T.muted,
+		Text = string.format("Chances REAIS com a sua sorte atual (pets raros x%.2f), calculadas pelo servidor.", r.mult), Parent = content })
+	local list = UIKit.scroll({ Position = UDim2.fromOffset(0, 32), Size = UDim2.new(0.6, -6, 1, -90), Parent = content })
+	new("UIGridLayout", { CellSize = UDim2.fromOffset(118, 156), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+	local _ = info
 	for i, o in ipairs(r.entries) do
 		local sp = Pets.Species[o.key]
 		local rar = Rarities.Info[sp.rarity]
-		local row = UIKit.frame({ LayoutOrder = i, Size = UDim2.new(1, -8, 0, o.reason and 40 or 28), BackgroundColor3 = T.panel2, Parent = list })
-		UIKit.stroke(row, rar.color, 1.5, 0.3)
+		local card = UIKit.frame({ LayoutOrder = i, BackgroundColor3 = UIKit.darken(rar.color, 0.2), Parent = list })
+		UIKit.stroke(card, UIKit.darken(rar.color, 0.65), 3, 0)
+		local view = new("Frame", { Position = UDim2.fromOffset(4, 4), Size = UDim2.new(1, -8, 0, 76), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.82,
+			BorderSizePixel = 0, ZIndex = 2, Parent = card })
+		UIKit.corner(view, 10)
+		local known = State.profile.bestiary.pets[o.key] ~= nil
+		thumb(view, o.key, nil, nil)
+		if not known then
+			-- ainda não descoberto: silhueta
+			for _, d in ipairs(view:GetDescendants()) do
+				if d:IsA("BasePart") then
+					d.Color = Color3.fromRGB(20, 16, 40)
+					d.Material = Enum.Material.SmoothPlastic
+				end
+			end
+		end
+		local tag = UIKit.frame({ Position = UDim2.fromOffset(6, 82), Size = UDim2.new(1, -12, 0, 18), BackgroundColor3 = rar.color, radius = 9, Parent = card })
+		UIKit.stroke(tag, UIKit.darken(rar.color, 0.6), 2, 0)
+		UIKit.label({ Size = UDim2.fromScale(1, 1), Text = rar.label, Font = T.title, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Center,
+			TextStrokeColor3 = UIKit.darken(rar.color, 0.7), TextStrokeTransparency = 0, Parent = tag })
+		UIKit.label({ Position = UDim2.fromOffset(4, 101), Size = UDim2.new(1, -8, 0, 18), Text = known and sp.name or "???", Font = T.title, TextSize = 13,
+			TextXAlignment = Enum.TextXAlignment.Center, TextWrapped = false, TextTruncate = Enum.TextTruncate.AtEnd, Parent = card })
 		local changed = math.abs(o.p - o.base) > 1e-9
-		UIKit.label({ Position = UDim2.fromOffset(8, 0), Size = UDim2.new(1, -16, 1, 0), TextSize = 13,
-			Text = string.format('<font color="#%s"><b>%s</b></font> %s — <b>%s</b>%s%s', (rar.accent or rar.color):ToHex(), rar.label, sp.name, UIKit.pct(o.p),
-				changed and string.format(' <font color="#AAB0CD">(base %s)</font>', UIKit.pct(o.base)) or "",
-				o.reason and ('\n<font color="#FF8C78">' .. o.reason .. "</font>") or ""), Parent = row })
+		UIKit.label({ Position = UDim2.fromOffset(4, 119), Size = UDim2.new(1, -8, 0, 22), Text = UIKit.pct(o.p), Font = T.title, TextSize = 20,
+			TextColor3 = o.reason and T.bad or (changed and T.luck or Color3.new(1, 1, 1)), TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0, Parent = card })
+		UIKit.label({ Position = UDim2.fromOffset(4, 139), Size = UDim2.new(1, -8, 0, 14), TextSize = 10, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = T.muted,
+			Text = o.reason and "🔒 bloqueado" or (changed and ("base " .. UIKit.pct(o.base)) or ""), Parent = card })
+		if o.reason then
+			card:SetAttribute("Reason", o.reason)
+		end
+	end
+	local reasons = {}
+	for _, o in ipairs(r.entries) do
+		if o.reason then
+			table.insert(reasons, "🔒 " .. Pets.Species[o.key].name .. ": " .. o.reason)
+		end
+	end
+	if #reasons > 0 then
+		UIKit.label({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, -54), Size = UDim2.new(0.6, -6, 0, 30), TextSize = 12, TextColor3 = Color3.fromRGB(255, 160, 140),
+			Text = table.concat(reasons, "\n"), Parent = content })
 	end
 	local side = UIKit.scroll({ Position = UDim2.new(0.6, 6, 0, 0), Size = UDim2.new(0.4, -6, 1, -52), Parent = content })
 	UIKit.list(side, Enum.FillDirection.Vertical, 4)
@@ -652,18 +735,18 @@ local function eggPanel(eggId: string)
 		end
 	end
 	if r.special then
-		UIKit.button({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.fromOffset(260, 44), Text = string.format("Chocar (você tem %d)", r.owned or 0),
-			BackgroundColor3 = Color3.fromRGB(150, 90, 200), Parent = content }, function()
+		UIKit.button({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.fromOffset(280, 50), TextSize = 20, Text = string.format("🥚 Chocar (você tem %d)", r.owned or 0),
+			BackgroundColor3 = T.pink, Parent = content }, function()
 			hatchRes(State.request("HatchItem", { egg = eggId }))
 		end)
 	else
 		local cur = Items.label(r.currency)
-		UIKit.button({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.fromOffset(230, 44), Text = string.format("Chocar 1 (%s %s)", UIKit.fmt(r.cost), cur),
-			BackgroundColor3 = Color3.fromRGB(60, 130, 80), Parent = content }, function()
+		UIKit.button({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.fromOffset(240, 50), TextSize = 20, Text = string.format("🥚 Chocar 1 (%s %s)", UIKit.fmt(r.cost), cur),
+			BackgroundColor3 = T.green, Parent = content }, function()
 			hatchRes(State.request("Hatch", { egg = eggId, count = 1 }))
 		end)
-		UIKit.button({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 240, 1, 0), Size = UDim2.fromOffset(230, 44), Text = string.format("Chocar 3 (%s %s)", UIKit.fmt(r.cost * 3), cur),
-			BackgroundColor3 = Color3.fromRGB(50, 110, 140), Parent = content }, function()
+		UIKit.button({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 250, 1, 0), Size = UDim2.fromOffset(240, 50), TextSize = 20, Text = string.format("🥚🥚🥚 Chocar 3 (%s %s)", UIKit.fmt(r.cost * 3), cur),
+			BackgroundColor3 = T.blue, Parent = content }, function()
 			hatchRes(State.request("Hatch", { egg = eggId, count = 3 }))
 		end)
 	end
@@ -674,12 +757,32 @@ end
 local BUILDERS = { Pets = petsPanel, Items = itemsPanel, Luck = luckPanel, Bestiary = bestiaryPanel, Quests = questsPanel, Map = mapPanel, Settings = settingsPanel }
 local TITLES = { Pets = "Pets e Equipe", Items = "Itens", Luck = "Sorte", Bestiary = "Bestiário", Quests = "Missões", Map = "Mapa das Ilhas", Settings = "Opções" }
 
+local PANEL_COLORS = {
+	Pets = T.orange, Items = T.blue, Luck = T.green, Bestiary = T.purple, Quests = T.yellow, Map = T.teal, Settings = T.gray, Egg = T.pink,
+}
+
 function Panels.open(name: string, arg)
 	if not State.profile then
 		return
 	end
 	current = { name = name, arg = arg }
+	if not modal.Visible then
+		UIKit.pop(modal, 0.08)
+	end
 	modal.Visible = true
+	local ribbon = modal:FindFirstChild("Ribbon")
+	local color = PANEL_COLORS[name] or T.orange
+	if ribbon then
+		local g = ribbon:FindFirstChildOfClass("UIGradient")
+		if g then
+			g.Color = ColorSequence.new(UIKit.lighten(color, 0.12), UIKit.darken(color, 0.12))
+		end
+		local st = ribbon:FindFirstChildOfClass("UIStroke")
+		if st then
+			st.Color = UIKit.darken(color, 0.6)
+		end
+		titleLabel.TextStrokeColor3 = UIKit.darken(color, 0.7)
+	end
 	clear()
 	titleLabel.Text = TITLES[name] or name
 	if name == "Egg" then
@@ -696,13 +799,21 @@ end
 
 function Panels.init()
 	gui = UIKit.screen("Panels", 10)
-	modal = UIKit.frame({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(820, 520), BackgroundColor3 = T.bg,
-		BackgroundTransparency = 0.04, Visible = false, Parent = gui })
-	UIKit.stroke(modal, T.stroke, 2, 0.1)
-	titleLabel = UIKit.label({ Position = UDim2.fromOffset(16, 8), Size = UDim2.new(1, -80, 0, 32), Text = "", Font = T.title, TextSize = 24, Parent = modal })
-	UIKit.button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 8), Size = UDim2.fromOffset(40, 32), Text = "✕", TextSize = 18,
-		BackgroundColor3 = Color3.fromRGB(120, 50, 60), Parent = modal }, Panels.close)
-	content = new("Frame", { Position = UDim2.fromOffset(14, 48), Size = UDim2.new(1, -28, 1, -60), BackgroundTransparency = 1, Parent = modal })
+	modal = UIKit.frame({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.52), Size = UDim2.fromOffset(880, 540), BackgroundColor3 = T.bg2,
+		Visible = false, radius = 18, Parent = gui })
+	UIKit.stroke(modal, T.stroke, 5, 0)
+	-- borda interna clara
+	local inner = new("Frame", { Position = UDim2.fromOffset(4, 4), Size = UDim2.new(1, -8, 1, -8), BackgroundTransparency = 1, Parent = modal })
+	UIKit.corner(inner, 15)
+	UIKit.stroke(inner, Color3.fromRGB(150, 130, 255), 2, 0.4)
+	local ribbon = UIKit.frame({ Name = "Ribbon", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0, 2), Size = UDim2.fromOffset(340, 50), BackgroundColor3 = T.orange, radius = 25, Parent = modal })
+	UIKit.stroke(ribbon, UIKit.darken(T.orange, 0.6), 4, 0)
+	titleLabel = UIKit.label({ Size = UDim2.fromScale(1, 1), Text = "", Font = T.title, TextSize = 28, TextXAlignment = Enum.TextXAlignment.Center,
+		TextStrokeColor3 = UIKit.darken(T.orange, 0.7), TextStrokeTransparency = 0, Parent = ribbon })
+	local close = UIKit.button({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -6, 0, 6), Size = UDim2.fromOffset(48, 48), Text = "✕", TextSize = 26,
+		BackgroundColor3 = T.red, ZIndex = 5, Parent = modal }, Panels.close)
+	UIKit.corner(close, 24)
+	content = new("Frame", { Position = UDim2.fromOffset(18, 40), Size = UDim2.new(1, -36, 1, -54), BackgroundTransparency = 1, Parent = modal })
 	HUD.openPanel = Panels.open
 	State.on("OpenEgg", function(p)
 		Panels.open("Egg", p.egg)

@@ -36,11 +36,20 @@ end
 function Status.init()
 	local gui = UIKit.screen("Status", 100)
 	-- carregamento
-	local loading = UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(14, 18, 34), BorderSizePixel = 0, Parent = gui })
-	local title = UIKit.label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.42), Size = UDim2.fromOffset(700, 70),
-		Text = "Mythical Isles", Font = UIKit.Theme.title, TextSize = 56, TextColor3 = UIKit.Theme.gold, TextXAlignment = Enum.TextXAlignment.Center, Parent = loading })
-	local sub = UIKit.label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.52), Size = UDim2.fromOffset(700, 60),
-		Text = "Construindo as ilhas...", TextSize = 20, TextXAlignment = Enum.TextXAlignment.Center, Parent = loading })
+	local loading = UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, Parent = gui })
+	UIKit.gradient(loading, Color3.fromRGB(110, 190, 255), Color3.fromRGB(70, 40, 160))
+	local title = UIKit.label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.42), Size = UDim2.fromOffset(800, 100),
+		Text = "🐾 Mythical Isles", Font = UIKit.Theme.title, TextSize = 76, TextColor3 = UIKit.Theme.gold, TextXAlignment = Enum.TextXAlignment.Center,
+		TextStrokeTransparency = 0, TextStrokeColor3 = Color3.fromRGB(60, 30, 10), Parent = loading })
+	UIKit.gradient(title, Color3.fromRGB(255, 240, 150), Color3.fromRGB(255, 160, 40))
+	local sub = UIKit.label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.55), Size = UDim2.fromOffset(700, 60),
+		Text = "Construindo as ilhas...", Font = UIKit.Theme.title, TextSize = 26, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.2, Parent = loading })
+	task.spawn(function()
+		while loading.Parent and loading.Visible do
+			UIKit.pop(title, 0.06)
+			task.wait(1)
+		end
+	end)
 	-- caixa de erro (por cima de tudo)
 	errorBox = UIKit.frame({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 60), Size = UDim2.fromOffset(820, 300),
 		BackgroundColor3 = Color3.fromRGB(60, 14, 20), Visible = false, ZIndex = 50, Parent = gui })

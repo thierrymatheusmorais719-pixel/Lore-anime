@@ -91,7 +91,7 @@ SIM.Signal = Signal
 local SIGNALS = {
 	ChildAdded = true, ChildRemoved = true, DescendantAdded = true, AncestryChanged = true, Triggered = true, OnServerEvent = true,
 	CharacterAdded = true, HealthChanged = true, Changed = true, Touched = true, Died = true,
-	OnClientEvent = true, TouchTapInWorld = true, Activated = true, MouseButton1Click = true, InputBegan = true, InputEnded = true, MouseEnter = true, MouseLeave = true,
+	OnClientEvent = true, TouchTapInWorld = true, Activated = true, MouseButton1Click = true, InputBegan = true, InputEnded = true, MouseEnter = true, MouseLeave = true, MouseButton1Down = true, MouseButton1Up = true,
 }
 local CLASS_METHODS = {}
 __MOCK_INDEX_HOOK = function(t, k)
