@@ -22,7 +22,7 @@
       "$properties": { "RespawnTime": 4, "CharacterAutoLoads": false }
     },
     "Workspace": {
-      "$properties": { "StreamingEnabled": false },
+      "$properties": { "StreamingEnabled": false, "FallenPartsDestroyHeight": -300 },
       "Terrain": { "$className": "Terrain" }
     },
     "Lighting": {

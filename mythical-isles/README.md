@@ -184,6 +184,10 @@ travamento) foi exercitada.
   inclui o Terrain, a ilha é feita com peças se o Terrain faltar, cada etapa do servidor roda
   protegida e qualquer erro aparece escrito na tela do jogo (além do Output), junto com uma tela
   de carregamento.
+- **Primeiro teste no Studio (foto do usuário):** o jogo carregou, com ilha, HUD e personagem. O único erro foi
+  `WorldService.init` escrevendo `Workspace.FallenPartsDestroyHeight`, que só plugins podem alterar.
+  A propriedade foi para o `default.project.json`, e o `tools/api_check.py` agora acusa escrita em
+  propriedades protegidas.
 - Jogador novo começava com 0 moedas e não conseguia chocar o primeiro ovo — começa com 150.
 - (Infraestrutura de teste: a matriz de rotação do mock acumulava erro no `PivotTo`; agora é re-ortonormalizada como no motor.)
 

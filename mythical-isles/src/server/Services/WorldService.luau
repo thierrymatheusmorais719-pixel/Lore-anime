@@ -24,7 +24,8 @@ function WorldService.init(registry)
 			Make("Folder", { Name = name, Parent = workspace })
 		end
 	end
-	workspace.FallenPartsDestroyHeight = -300
+	-- FallenPartsDestroyHeight só pode ser alterado no arquivo do lugar (default.project.json),
+	-- não por script de jogo. A proteção contra queda é feita em WorldService.start.
 end
 
 local function nextWorld(id: string): string?

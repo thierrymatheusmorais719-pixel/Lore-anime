@@ -285,7 +285,7 @@ function WorldBuilder.plaza(worldId: string, parent: Instance)
 	part({ Name = "PlazaFloor", Shape = Enum.PartType.Cylinder, Size = V(1, 52, 52), CFrame = CF(c + V(0, 0.4, 0)) * ANG(0, 0, rad(90)),
 		Color = rgb(214, 206, 190), Material = Enum.Material.Cobblestone, Parent = folder })
 	part({ Name = "PlazaRing", Shape = Enum.PartType.Cylinder, Size = V(1.1, 30, 30), CFrame = CF(c + V(0, 0.45, 0)) * ANG(0, 0, rad(90)),
-		Color = w.palette.accent, Material = Enum.Material.Marble, Parent = folder })
+		Color = rgb(214, 206, 190):Lerp(w.palette.accent, 0.25), Material = Enum.Material.Marble, Parent = folder })
 	-- Monumento central: cristal-farol do mundo
 	part({ Name = "Monument", Size = V(3, 10, 3), CFrame = CF(c + V(0, 5.9, 0)) * ANG(0, rad(45), 0), Color = rgb(235, 232, 220), Material = Enum.Material.Marble, Parent = folder })
 	local beacon = part({ Name = "Beacon", Size = V(2.4, 4, 2.4), CFrame = CF(c + V(0, 13, 0)) * ANG(rad(45), rad(45), 0), Color = w.palette.accent, Material = Enum.Material.Neon, CanCollide = false, Parent = folder })

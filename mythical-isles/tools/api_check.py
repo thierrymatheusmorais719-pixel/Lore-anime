@@ -7,6 +7,8 @@ Checa:
      e helpers com classe conhecida (UIKit.frame/label/button/scroll, part/ellipsoid/p do mundo)
   3. local v = Instance.new("Class") ... v.Prop = valor
   4. Nomes de métodos chamados com ':' existem em alguma classe/datatype conhecido
+  5. Escrita em propriedades que scripts de jogo NÃO podem alterar (segurança de plugin/Roblox ou
+     capacidade PluginOrOpenCloud), ex.: Workspace.FallenPartsDestroyHeight
 
 Uso: python3 tools/api_check.py caminho/API-Dump.json
 Dump: https://github.com/MaximumADHD/Roblox-Client-Tracker (API-Dump.json)
@@ -27,6 +29,23 @@ def load(path):
                     out.add(m["Name"])
             name = classes[name].get("Superclass")
         return out
+    RESTRICTED_CAPS = {"PluginOrOpenCloud", "InternalTest", "CapabilityControl"}
+    def restricted(m):
+        sec = m.get("Security")
+        if isinstance(sec, dict) and sec.get("Write") not in (None, "None"):
+            return True
+        caps = m.get("Capabilities")
+        if isinstance(caps, dict) and RESTRICTED_CAPS & set(caps.get("Write", [])):
+            return True
+        return False
+    # nome de propriedade -> (todas as classes restringem?)
+    propState = {}
+    for c in classes.values():
+        for m in c["Members"]:
+            if m["MemberType"] == "Property":
+                r = restricted(m)
+                propState[m["Name"]] = propState.get(m["Name"], True) and r
+    load.propState = propState
     allfuncs = set()
     for c in classes.values():
         for m in c["Members"]:
@@ -141,6 +160,17 @@ def main():
             for a in re.finditer(r"(?<![\w.])" + re.escape(var) + r"\.(\w+)\s*=(?!=)", scope):
                 if a.group(1) not in props:
                     report(f, lineof(m.end() + a.start()), f"{cls} não tem a propriedade '{a.group(1)}'")
+        # 5. propriedades protegidas
+        for m in re.finditer(r"(?<![\w.])(\w+)\.(\w+)\s*=(?!=)", src):
+            if m.group(1)[0].isupper() and m.group(1) not in ("Lighting", "Players", "Workspace"):
+                continue  # tabelas de módulos do projeto (UIKit.Theme, Worlds.Info...)
+            name = m.group(2)
+            if load.propState.get(name) is True:
+                report(f, lineof(m.start()), f"propriedade protegida (scripts de jogo não podem escrever): {name}")
+        for mm in re.finditer(r'(?:Make|UIKit\.new|(?<![\w.])new)\("(\w+)",\s*\{', src):
+            for k in table_keys(src, mm.end() - 1):
+                if load.propState.get(k) is True:
+                    report(f, lineof(mm.start()), f"propriedade protegida em construtor: {k}")
         # 4. métodos
         for m in re.finditer(r":(\w+)\(", src):
             name = m.group(1)
