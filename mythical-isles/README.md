@@ -7,7 +7,7 @@ salvamento. Tudo em **Luau**, organizado para **Rojo**. Mapa, criaturas, bosses,
 vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_main.dds` e `smoke_main.dds`).
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
-> Luau, contra o dump público da API do Roblox, com 57 testes de lógica, 633 verificações dos modelos 3D e
+> Luau, contra o dump público da API do Roblox, com 58 testes de lógica, 3297 verificações dos modelos 3D e
 > **97 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
@@ -31,7 +31,7 @@ rojo serve               # e no Studio: plugin Rojo → Connect
 Access to API Services*. Sem isso o jogo roda em **modo memória** e avisa na tela e no Output que nada será
 salvo.
 
-Ao dar Play no Studio, o servidor imprime `[Testes] Testes: 57 passaram…` (os testes de lógica rodam
+Ao dar Play no Studio, o servidor imprime `[Testes] Testes: 58 passaram…` (os testes de lógica rodam
 automaticamente no Studio) e o menu **Opções** ganha a seção **Testes (somente no Studio)**, com comandos
 para moedas, itens, mundos, nível máximo, evento de sorte, avançar fase do boss, tesouro e Estrela Errante.
 Esses comandos são recusados em servidores publicados (`RunService:IsStudio()`).
@@ -77,6 +77,36 @@ arte (cervos, coelhos, raposas, cogumelos, slimes, golens, dragõezinhos, tartar
 ratinhos, slimes, raposas de cauda de cristal, lobos, cervos de ametista, dragão, golens, grifo), com os SECRET
 **Sylvanox** e **Lumivex**. O Mundo 1 ganhou a Árvore Ancestral num platô no meio de um lago turquesa, penhascos
 de musgo com cachoeiras, cachoeiras caindo da borda da ilha, bonsais, flores roxas e raios de sol.
+
+**Visual mais realista (pets e cenário):**
+- **Pets** (`Builders/CreatureBuilder.luau`, `ModelKit.detailedEye`):
+  - **Olhos:** contorno, íris com profundidade, pupila (em fenda nos répteis e olhos brilhantes) e dois brilhos.
+  - **Piscar:** a pálpebra fica escondida dentro da cabeça e o cliente a desliza sobre o olho a cada 3–5 s.
+  - **Rosto:**
+    - focinho com ponte, almofadas claras, queixo e nariz úmido (com reflexo);
+    - bochechas com tufos de pelo;
+    - orelhas em camadas (externa, interna rosada e ponta escura).
+  - **Corpo:** barriga e peito mais claros (contra-sombreamento), pescoço e ancas, pernas lisas com pata e três dedos.
+  - **Caudas articuladas:** uma onda percorre os segmentos (juntas `TailSeg*`).
+  - **Asas:** penas em leque com pose de planeio.
+  - **Cogumelos:** lamelas e pintas em relevo. **Slimes:** translúcidos com bolhas.
+  - Média de 70 peças por pet (antes eram 31).
+- **Luz** (`default.project.json` + `WorldClient`):
+  - Iluminação Future com reflexos do céu (`EnvironmentDiffuse/SpecularScale` = 1) e sombras suaves.
+  - Atmosphere com névoa e brilho do sol, nuvens dinâmicas (`Clouds`) e grama animada do Terrain (`Decoration`).
+  - Bloom contido, raios de sol, correção de cor e uma leve profundidade de campo ao fundo.
+  - Cada ilha tem seu próprio perfil de clima.
+- **Terreno e vegetação** (`WorldBuilder`):
+  - **Terreno:**
+    - caminhos de terra sinuosos da praça até cada área;
+    - manchas de solo, gelo ou lava conforme a ilha;
+    - montinhos suaves e pedras semienterradas;
+    - rochas irregulares sob a borda da ilha, que quebram o formato de "bolo de andares".
+  - **Vegetação:**
+    - árvores com raízes, tronco afunilado, galhos e copas em camadas (base escura, topo iluminado);
+    - pinheiros, moitas, samambaias e grupos de rochas com musgo;
+    - penhascos naturais atrás do lago.
+  - Tudo é colocado sobre o chão real, encontrado por raycast.
 
 **Base do simulador**: 5 ilhas (terreno + decoração), 10 ovos com moedas/essência, 5 ovos especiais,
 34 espécies, recursos quebráveis, tesouros, portais, 16 missões de história, 3 diárias por dia (iguais em
@@ -139,8 +169,8 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Sintaxe de todos os arquivos | `luau-compile --null` em cada `.luau` | ok |
 | Variáveis indefinidas / código suspeito | `python3 tools/lint.py luau-analyze` | 0 avisos |
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
-| Lógica pura | `python3 tools/run_tests.py luau` | **57 testes passando** |
-| Modelos 3D (34 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses) | `python3 tools/run_tests.py luau --smoke` | **633 verificações, 0 falhas** |
+| Lógica pura | `python3 tools/run_tests.py luau` | **58 testes passando** |
+| Modelos 3D (182 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses) | `python3 tools/run_tests.py luau --smoke` | **3297 verificações, 0 falhas** |
 | Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **97 cenários passando** |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
@@ -202,7 +232,7 @@ travamento) foi exercitada.
 
 ## 7. Roteiro para conferir no Studio
 
-1. **Play**: o Output deve mostrar `mundos construídos`, `servidor pronto` e `[Testes] Testes: 57 passaram`.
+1. **Play**: o Output deve mostrar `mundos construídos`, `servidor pronto` e `[Testes] Testes: 58 passaram`.
 2. Ande até o **Ovo do Bosque** (E) → painel com as chances → *Chocar 1* → animação → o pet segue você.
 3. Clique num **arbusto** → os pets mineram (moedas sobem e o número dourado aparece).
 4. Vá até os **Thornlings** (lado −Z da ilha) → eles devem perseguir, atacar com aviso, voltar se você fugir.
@@ -219,7 +249,14 @@ travamento) foi exercitada.
 - Nunca executado no Roblox Studio (ver seção 6). Física, colisão, aparência, sons e desempenho reais estão
   pendentes de verificação.
 - Sem meshes ou animações publicadas: tudo é procedural (peças primitivas, SpecialMesh de esfera e
-  `Motor6D.Transform`). Não há som.
+  `Motor6D.Transform`). Não há som. O visual "realista" daqui é o teto do que dá para fazer só com peças:
+  qualidade de jogo profissional de verdade (pelo com textura, formas orgânicas contínuas) exige meshes
+  esculpidas no Blender com texturas/SurfaceAppearance, importadas pelo 3D Importer do Studio. A estrutura
+  de juntas (`Body`, `Neck`, `Leg*`, `Tail*`...) foi pensada para aceitar essas meshes depois.
+- Pets agora têm ~70 peças cada: com muitos jogadores e 4 pets por jogador, confira o desempenho no
+  MicroProfiler (dá para baixar detalhes, como dedos e bolhas, se precisar).
+- As prévias em `docs/preview/` são renderizadas fora do Roblox: não mostram a grama animada, as texturas
+  dos materiais, as nuvens nem a Atmosphere reais.
 - O PathfindingService real não foi exercitado (no simulador sempre cai na rota alternativa).
 - Anúncios globais dependem do MessagingService (limites do Roblox). O código limita a publicação a 10 por
   minuto por servidor.

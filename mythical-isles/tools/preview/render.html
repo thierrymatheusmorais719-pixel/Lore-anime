@@ -59,6 +59,8 @@ Object.assign(sun.shadow.camera, { left: -sz, right: sz, top: sz, bottom: -sz, n
 sun.target.position.set(...v3(q.get('look') || '0,0,0')); sun.position.add(sun.target.position);
 sc.add(sun, sun.target);
 if (q.get('fog')) sc.fog = new THREE.Fog(0xcfeaff, Number(q.get('fog')), Number(q.get('fog')) * 3.2);
+// aproximação da Atmosphere do Roblox (névoa exponencial azul-esverdeada do Mundo 1)
+if (q.get('atmo')) { sc.fog = new THREE.FogExp2(0xc4e2e8, Number(q.get('atmo'))); sky.material.fog = false; }
 
 function wedgeGeo() {
   // WedgePart do Roblox: seção triangular no plano YZ, alta atrás (+Z), rampa voltada para a frente (-Z)
@@ -124,7 +126,7 @@ if (ground === 'island_old') {
 }
 if (ground === 'terrain') {
   // preenchimentos de Terrain registrados pelo simulador (água desenhada na superfície)
-  const TCOL = { Grass: '#60a84a', Rock: '#6e645a', Sand: '#d2c396', Water: '#28c8cd', Slate: '#5a5a64', LeafyGrass: '#3a6246' };
+  const TCOL = { Grass: '#60a84a', Rock: '#6e645a', Sand: '#d2c396', Water: '#28c8cd', Slate: '#5a5a64', LeafyGrass: '#3a6246', Ground: '#7a6246' };
   const fills = await (await fetch('data/terrain.json')).json();
   for (const f of fills) {
     if (f.m === 'Air') continue;
@@ -136,7 +138,13 @@ if (ground === 'terrain') {
       if (water) { mesh = new THREE.Mesh(new THREE.CylinderGeometry(f.r, f.r, .3, 64), mat); mesh.position.set(f.p[0], 0.12, f.p[2]); }
       else { mesh = new THREE.Mesh(new THREE.CylinderGeometry(f.r, f.r * (f.p[1] < -15 ? .9 : 1), f.h, 72), mat); mesh.position.set(...f.p); }
     } else if (f.k === 'ball') { mesh = new THREE.Mesh(new THREE.SphereGeometry(f.r, 40, 24), mat); mesh.position.set(...f.p); }
-    else continue;
+    else if (f.k === 'block') {
+      mesh = new THREE.Mesh(new THREE.BoxGeometry(...f.z), mat);
+      const r = f.rot; const m4 = new THREE.Matrix4().set(r[0], r[1], r[2], f.p[0], r[3], r[4], r[5], f.p[1], r[6], r[7], r[8], f.p[2], 0, 0, 0, 1);
+      mesh.applyMatrix4(m4);
+    } else continue;
+    // caminhos/manchas rentes ao chão: levanta um pouco para não "brigar" com a superfície
+    if (!water && f.k !== 'ball' && Math.abs(f.p[1] + f.h / 2) < 0.3) mesh.position.y += 0.08;
     mesh.receiveShadow = true; sc.add(mesh);
   }
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), new THREE.MeshStandardMaterial({ color: 0xecf2ff, roughness: 1 }));

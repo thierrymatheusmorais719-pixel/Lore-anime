@@ -120,6 +120,63 @@ function ModelKit.eyes(rig: Rig, parent: string, x: number, y: number, z: number
 	end
 end
 
+-- Referencial na superfície FRONTAL (-Z) de um elipsoide de tamanho `size`, no ponto de frações (fx, fy)
+-- dos semi-eixos. O -Z local aponta para fora da superfície (normal); `out` desloca ao longo da normal.
+function ModelKit.surface(size: Vector3, fx: number, fy: number, out: number?): CFrame
+	local a, b, c = size.X / 2, size.Y / 2, size.Z / 2
+	local zz = math.max(1 - fx * fx - fy * fy, 0.04)
+	local pos = Vector3.new(fx * a, fy * b, -math.sqrt(zz) * c)
+	local n = Vector3.new(pos.X / (a * a), pos.Y / (b * b), pos.Z / (c * c)).Unit
+	local at = pos + n * (out or 0)
+	return CFrame.lookAt(at, at + n)
+end
+
+-- Triângulo isósceles virado para a frente (-Z): base centrada na origem de `at`, ápice em +Y.
+-- Feito com duas WedgePart espelhadas. Retorna o nome da primeira metade.
+function ModelKit.tri(rig: Rig, spec): string
+	local w, h, t = spec.width, spec.height, spec.thickness
+	local first
+	for _, side in ipairs({ -1, 1 }) do
+		local p = ModelKit.add(rig, {
+			name = spec.name or "Tri", parent = spec.parent, at = spec.at * CFrame.new(side * w / 4, h / 2, 0) * CFrame.Angles(0, side * math.rad(-90), 0),
+			shape = "wedge", size = Vector3.new(t, h, w / 2), color = spec.color, material = spec.material, transparency = spec.transparency,
+			role = spec.role, shadow = spec.shadow,
+		})
+		first = first or p.Name
+	end
+	return first
+end
+
+-- Olho detalhado (contorno, íris com profundidade, pupila, dois brilhos e pálpebra animável).
+-- `at` = referencial na superfície da cabeça (-Z para fora). d = diâmetro.
+-- A pálpebra superior usa a junta "LidL"/"LidR" (o Animator a desce para piscar; ver atributo BlinkDrop).
+function ModelKit.detailedEye(rig: Rig, parent: string, at: CFrame, d: number, side: number, o)
+	local glow = o.glow == true
+	local iris = o.iris
+	ModelKit.add(rig, { name = "EyeRim", parent = parent, at = at * CFrame.new(0, 0, 0.03 * d), shape = "ellipsoid", size = Vector3.new(d * 1.16, d * 1.04, d * 0.36),
+		color = o.rim, role = "Detail", shadow = false })
+	ModelKit.add(rig, { name = "Eye", parent = parent, at = at * CFrame.new(0, 0, -0.02 * d), shape = "ellipsoid", size = Vector3.new(d, d * 0.92, d * 0.36),
+		color = iris, material = glow and "Neon" or "SmoothPlastic", role = "Eye", shadow = false })
+	ModelKit.add(rig, { name = "EyeIris", parent = parent, at = at * CFrame.new(0, -0.1 * d, -0.06 * d), shape = "ellipsoid", size = Vector3.new(d * 0.7, d * 0.62, d * 0.3),
+		color = iris:Lerp(Color3.new(1, 1, 1), glow and 0.45 or 0.28), material = glow and "Neon" or "SmoothPlastic", role = "Eye", shadow = false })
+	ModelKit.add(rig, { name = "Pupil", parent = parent, at = at * CFrame.new(0, 0.01 * d, -0.1 * d), shape = "ellipsoid",
+		size = o.slit and Vector3.new(d * 0.17, d * 0.66, d * 0.28) or Vector3.new(d * 0.5, d * 0.54, d * 0.28),
+		color = glow and iris:Lerp(Color3.new(0, 0, 0), 0.7) or Color3.fromRGB(14, 11, 16), role = "Eye", shadow = false })
+	ModelKit.add(rig, { name = "EyeShine", parent = parent, at = at * CFrame.new(-side * 0.17 * d, 0.14 * d, -0.17 * d), shape = "ball", size = Vector3.one * 0.28 * d,
+		color = Color3.new(1, 1, 1), material = "Neon", role = "Detail", shadow = false })
+	ModelKit.add(rig, { name = "EyeShine", parent = parent, at = at * CFrame.new(side * 0.16 * d, -0.19 * d, -0.15 * d), shape = "ball", size = Vector3.one * 0.12 * d,
+		color = Color3.new(1, 1, 1), material = "Neon", transparency = 0.15, role = "Detail", shadow = false })
+	if o.lid then
+		-- em repouso a pálpebra fica recolhida DENTRO da cabeça, acima do olho (invisível);
+		-- ao piscar o Animator a desliza para baixo e para fora (BlinkDrop/BlinkPush, no referencial do olho)
+		local drop, push = 0.82 * d, 0.62 * d
+		local lid = ModelKit.add(rig, { name = "Lid", parent = parent, joint = side < 0 and "LidL" or "LidR", at = at * CFrame.new(0, drop, push - 0.12 * d),
+			shape = "ellipsoid", size = Vector3.new(d * 1.24, d * 1.02, d * 0.36), color = o.lid, role = "Body", shadow = false })
+		lid:SetAttribute("BlinkDrop", drop)
+		lid:SetAttribute("BlinkPush", push)
+	end
+end
+
 -- Anel de pequenas peças (auréolas, órbitas, coroas).
 function ModelKit.ring(rig: Rig, parent: string, joint: string?, at: CFrame, radius: number, count: number, pieceSize: Vector3, color: Color3, material: string?, role: string?, shape: string?)
 	local hub = ModelKit.add(rig, {

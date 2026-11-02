@@ -100,6 +100,10 @@ CFm.__index = function(t, k)
 		return cf(0, 0, 0, t.r)
 	elseif k == "LookVector" then
 		return v3(-t.r[3], -t.r[6], -t.r[9])
+	elseif k == "UpVector" then
+		return v3(t.r[2], t.r[5], t.r[8])
+	elseif k == "RightVector" then
+		return v3(t.r[1], t.r[4], t.r[7])
 	elseif k == "X" then
 		return t.p.X
 	elseif k == "Y" then
@@ -206,7 +210,11 @@ Color3 = {
 		return c3(r / 255, g / 255, b / 255)
 	end,
 	fromHSV = function(h, s, v)
-		return c3(v, v * (1 - s), v * (1 - s * h))
+		local i = math.floor(h * 6) % 6
+		local f = h * 6 - math.floor(h * 6)
+		local p, q, t = v * (1 - s), v * (1 - f * s), v * (1 - (1 - f) * s)
+		local rgb = ({ { v, t, p }, { q, v, p }, { p, v, t }, { p, q, v }, { t, p, v }, { v, p, q } })[i + 1]
+		return c3(rgb[1], rgb[2], rgb[3])
 	end,
 }
 

@@ -16,27 +16,57 @@ local atmosphere, cc, bloom, sunrays
 local currentWorld = nil
 local bars: { [Instance]: any } = {}
 
+local clouds, depth
+
 local function setupLighting()
+	-- os efeitos já vêm no place (default.project.json); aqui só garantimos que existam
 	atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
 	atmosphere.Parent = Lighting
 	cc = Lighting:FindFirstChild("WorldTint") or Instance.new("ColorCorrectionEffect")
 	cc.Name = "WorldTint"
 	cc.Parent = Lighting
 	bloom = Lighting:FindFirstChildOfClass("BloomEffect") or Instance.new("BloomEffect")
-	bloom.Intensity = 0.6
-	bloom.Size = 22
-	bloom.Threshold = 1.6 -- só o que é bem brilhante (Neon) floresce: evita excesso de brilho
+	bloom.Intensity = 0.45
+	bloom.Size = 28
+	bloom.Threshold = 1.8 -- só o que é bem brilhante (Neon) floresce
 	bloom.Parent = Lighting
 	sunrays = Lighting:FindFirstChildOfClass("SunRaysEffect") or Instance.new("SunRaysEffect")
-	sunrays.Intensity = 0.06
-	sunrays.Spread = 0.6
+	sunrays.Spread = 0.7
 	sunrays.Parent = Lighting
+	depth = Lighting:FindFirstChildOfClass("DepthOfFieldEffect") or Instance.new("DepthOfFieldEffect")
+	depth.NearIntensity = 0
+	depth.Parent = Lighting
 	if not Lighting:FindFirstChildOfClass("Sky") then
 		local sky = Instance.new("Sky")
 		sky.StarCount = 3000
+		sky.SunAngularSize = 14
 		sky.Parent = Lighting
 	end
+	local terrain = workspace:FindFirstChildOfClass("Terrain")
+	if terrain then
+		clouds = terrain:FindFirstChildOfClass("Clouds") or Instance.new("Clouds")
+		clouds.Parent = terrain
+	end
+	-- iluminação física: reflexos do céu nos materiais, sombras suaves
+	Lighting.EnvironmentDiffuseScale = 1
+	Lighting.EnvironmentSpecularScale = 1
+	Lighting.ShadowSoftness = 0.22
+	Lighting.GeographicLatitude = 35
 end
+
+-- Perfil de "clima" de cada ilha: névoa (Atmosphere), nuvens, cor, raios de sol e profundidade de campo.
+local PROFILES = {
+	verdant = { fog = Color3.fromRGB(196, 226, 232), decay = Color3.fromRGB(104, 150, 176), density = 0.3, offset = 0.2, haze = 1.6, glare = 0.3,
+		sat = 0.1, contrast = 0.08, tint = Color3.fromRGB(255, 252, 244), rays = 0.12, cover = 0.55, cloudDensity = 0.4, exposure = 0.15, bright = 3 },
+	crystal = { density = 0.38, offset = 0.1, haze = 1.2, glare = 0.1, sat = 0.06, contrast = 0.1, tint = Color3.fromRGB(240, 238, 255), rays = 0.04,
+		cover = 0.7, cloudDensity = 0.55, exposure = 0, bright = 2.2 },
+	sky = { density = 0.24, offset = 0.3, haze = 0.6, glare = 0.6, sat = 0.04, contrast = 0.05, tint = Color3.fromRGB(255, 252, 248), rays = 0.1,
+		cover = 0.42, cloudDensity = 0.35, exposure = 0.2, bright = 3.2 },
+	wilds = { density = 0.42, offset = 0.05, haze = 2.2, glare = 0.05, sat = -0.05, contrast = 0.12, tint = Color3.fromRGB(236, 248, 240), rays = 0.03,
+		cover = 0.8, cloudDensity = 0.6, exposure = -0.1, bright = 1.8 },
+	astral = { density = 0.3, offset = 0.15, haze = 1.0, glare = 0.2, sat = 0.08, contrast = 0.1, tint = Color3.fromRGB(246, 240, 255), rays = 0.05,
+		cover = 0.3, cloudDensity = 0.3, exposure = 0, bright = 2 },
+}
 
 local function applyWorld(id: string)
 	local w = Worlds.Info[id]
@@ -44,18 +74,19 @@ local function applyWorld(id: string)
 		return
 	end
 	currentWorld = id
+	local pr = PROFILES[id] or PROFILES.verdant
 	local info = TweenInfo.new(2.5)
-	TweenService:Create(Lighting, info, { ClockTime = w.clockTime, Ambient = w.palette.ambient, OutdoorAmbient = w.palette.ambient:Lerp(Color3.new(1, 1, 1), 0.25) }):Play()
+	TweenService:Create(Lighting, info, { ClockTime = w.clockTime, Ambient = w.palette.ambient:Lerp(Color3.new(0, 0, 0), 0.45),
+		OutdoorAmbient = w.palette.ambient:Lerp(Color3.new(1, 1, 1), 0.15), Brightness = pr.bright, ExposureCompensation = pr.exposure }):Play()
+	local fog = pr.fog or w.palette.fog
 	TweenService:Create(atmosphere, info, {
-		Color = w.palette.fog, Decay = w.palette.fog:Lerp(Color3.new(0, 0, 0), 0.4),
-		Density = (id == "wilds" and 0.42) or (id == "crystal" and 0.38) or (id == "astral" and 0.3) or 0.25,
-		Haze = (id == "wilds" and 2.2) or (id == "sky" and 0.6) or 1.2, Glare = id == "sky" and 0.6 or 0.1,
+		Color = fog, Decay = pr.decay or fog:Lerp(Color3.new(0, 0, 0), 0.45), Density = pr.density, Offset = pr.offset, Haze = pr.haze, Glare = pr.glare,
 	}):Play()
-	TweenService:Create(cc, info, { TintColor = Color3.new(1, 1, 1), Saturation = id == "wilds" and -0.05 or (id == "verdant" and 0.18 or 0.08), Contrast = 0.05 }):Play()
-	-- Verdant Haven: raios de sol fortes e névoa azul-esverdeada (referências do autor)
-	TweenService:Create(sunrays, info, { Intensity = id == "verdant" and 0.16 or 0.05 }):Play()
-	if id == "verdant" then
-		TweenService:Create(atmosphere, info, { Color = Color3.fromRGB(190, 235, 230), Decay = Color3.fromRGB(110, 170, 190), Density = 0.3, Haze = 1.6 }):Play()
+	TweenService:Create(cc, info, { TintColor = pr.tint, Saturation = pr.sat, Contrast = pr.contrast }):Play()
+	TweenService:Create(sunrays, info, { Intensity = pr.rays }):Play()
+	TweenService:Create(depth, info, { FarIntensity = 0.16, FocusDistance = 55, InFocusRadius = 80 }):Play()
+	if clouds then
+		TweenService:Create(clouds, info, { Cover = pr.cover, Density = pr.cloudDensity }):Play()
 	end
 end
 
@@ -73,14 +104,16 @@ local function bossMood()
 			if state == "Fight" or state == "Transition" or state == "Intro" then
 				local phase = b:GetAttribute("Phase") or 1
 				local k = math.clamp(0.05 + 0.05 * phase, 0, 0.3)
-				cc.TintColor = Color3.new(1, 1, 1):Lerp(Color3.fromRGB(255, 200, 230), k)
-				cc.Contrast = 0.05 + 0.04 * phase
+				local base = (PROFILES[currentWorld or "verdant"] or PROFILES.verdant)
+				cc.TintColor = base.tint:Lerp(Color3.fromRGB(255, 200, 230), k)
+				cc.Contrast = base.contrast + 0.04 * phase
 				return
 			end
 		end
 	end
-	cc.TintColor = Color3.new(1, 1, 1)
-	cc.Contrast = 0.05
+	local base = (PROFILES[currentWorld or "verdant"] or PROFILES.verdant)
+	cc.TintColor = base.tint
+	cc.Contrast = base.contrast
 end
 
 local function makeBar(model: Model, isResource: boolean)

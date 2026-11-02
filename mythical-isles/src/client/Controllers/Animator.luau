@@ -37,6 +37,8 @@ local function classify(name: string)
 		return "arm"
 	elseif name:sub(1, 4) == "Wing" then
 		return "wing"
+	elseif name:sub(1, 7) == "TailSeg" then
+		return "tailseg"
 	elseif name:sub(1, 4) == "Tail" then
 		return "tail"
 	elseif name:match("^Seg%d") then
@@ -51,6 +53,8 @@ local function classify(name: string)
 		return "jaw"
 	elseif name:match("^Root%d") then
 		return "root"
+	elseif name:sub(1, 3) == "Lid" then
+		return "lid"
 	end
 	return nil
 end
@@ -76,6 +80,8 @@ local function track(model: Model)
 			if kind then
 				local idx = tonumber(d.Name:match("(%d+)$")) or 0
 				table.insert(joints, { motor = d, kind = kind, rest = restRotation(model, d), name = d.Name, idx = idx,
+					drop = kind == "lid" and d.Part1 and (d.Part1:GetAttribute("BlinkDrop") or d.Part1.Size.Y * 0.8) or 0,
+					push = kind == "lid" and d.Part1 and (d.Part1:GetAttribute("BlinkPush") or 0) or 0,
 					side = (d.Name:sub(-1) == "L") and 1 or (d.Name:sub(-1) == "R" and -1 or 0), phase = legPhase(d.Name) })
 			end
 		end
@@ -224,6 +230,15 @@ local function animate(entry, t: number, dt: number, now: number)
 			cf = CFrame.Angles(0, 0, j.side * flap)
 		elseif k == "tail" then
 			cf = CFrame.Angles(math.sin(tt * 2) * 0.08, math.sin(tt * 3.2 + j.idx) * 0.35, 0)
+		elseif k == "tailseg" then
+			-- onda que percorre a cauda articulada (atrasada e mais suave a cada segmento)
+			cf = CFrame.Angles(math.sin(tt * 2 - j.idx * 0.6) * 0.05, math.sin(tt * 3.2 - j.idx * 0.9) * (0.16 + moving * 0.06), 0)
+		elseif k == "lid" then
+			-- piscar: a cada ~3-5 s a pálpebra desce sobre o olho por ~0,15 s (fechada ao ser derrotado)
+			local cyc = (tt * 0.27 + entry.seed) % 1
+			local blink = dead and 1 or (cyc < 0.04 and math.sin(cyc / 0.04 * math.pi) or 0)
+			j.motor.Transform = CFrame.new(0, -j.drop * blink, -j.push * blink) -- já no referencial do olho
+			continue
 		elseif k == "seg" then
 			cf = CFrame.Angles(math.sin(tt * 2.5 - j.idx * 0.7) * 0.05, math.sin(tt * 3 - j.idx * 0.8) * (0.22 + moving * 0.15), 0)
 		elseif k == "ear" then

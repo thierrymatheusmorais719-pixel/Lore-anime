@@ -85,8 +85,11 @@ do
 		local pp = f.cf.p
 		if ((pp - verdant.center) * Vector3.new(1, 0, 1)).Magnitude < verdant.radius + 40 and math.abs(pp.Y) < 150 then
 			local col = SIM.terrainColors[f.m]
-			table.insert(out, string.format('{"k":"%s","p":[%s,%s,%s],"h":%s,"r":%s,"m":"%s","c":[%d,%d,%d]}', f.kind, num(pp.X), num(pp.Y), num(pp.Z),
-				num(f.h or (f.size and f.size.Y) or 0), num(f.r or 0), f.m, col and math.floor(col.R * 255) or -1, col and math.floor(col.G * 255) or -1, col and math.floor(col.B * 255) or -1))
+			local sz = f.size or Vector3.new(0, 0, 0)
+			local r = f.cf.r
+			table.insert(out, string.format('{"k":"%s","p":[%s,%s,%s],"h":%s,"r":%s,"m":"%s","c":[%d,%d,%d],"z":[%s,%s,%s],"rot":[%s]}', f.kind, num(pp.X), num(pp.Y), num(pp.Z),
+				num(f.h or sz.Y), num(f.r or 0), f.m, col and math.floor(col.R * 255) or -1, col and math.floor(col.G * 255) or -1, col and math.floor(col.B * 255) or -1,
+				num(sz.X), num(sz.Y), num(sz.Z), table.concat({ num(r[1]), num(r[2]), num(r[3]), num(r[4]), num(r[5]), num(r[6]), num(r[7]), num(r[8]), num(r[9]) }, ",")))
 		end
 	end
 	print("SCENE terrain [" .. table.concat(out, ",") .. "]")
@@ -191,3 +194,17 @@ for i, id in ipairs({ "elderroot", "prism_titan", "tempest_wyrm", "wilderbloom",
 	table.insert(bosses, m)
 end
 lineup("bosses", bosses)
+
+-- vitrine de perto: um pet de cada tipo de corpo
+local show = {}
+for i, id in ipairs({ "kit_1", "hop_1", "fawn_1", "leafcat_1", "owlet_1", "verdantwolf_1", "petalfox_1", "sproutslime_1", "cap_1", "ent_1", "drakeling_1", "grovetortoise_1" }) do
+	if Pets.Species[id] then
+		local m, hover = CreatureBuilder.build(id, Pets.Species[id], 1)
+		local col, row = (i - 1) % 6, math.floor((i - 1) / 6)
+		m:PivotTo(CFrame.new(col * 6, hover, row * 7) * CFrame.Angles(0, math.rad(205), 0))
+		table.insert(show, m)
+	else
+		print("WARN showcase sem espécie " .. id)
+	end
+end
+lineup("showcase", show)

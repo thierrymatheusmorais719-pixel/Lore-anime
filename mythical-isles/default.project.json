@@ -3,10 +3,14 @@
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {
-      "Shared": { "$path": "src/shared" }
+      "Shared": {
+        "$path": "src/shared"
+      }
     },
     "ServerScriptService": {
-      "Server": { "$path": "src/server" }
+      "Server": {
+        "$path": "src/server"
+      }
     },
     "StarterPlayer": {
       "$properties": {
@@ -15,28 +19,137 @@
         "CharacterJumpHeight": 8
       },
       "StarterPlayerScripts": {
-        "Client": { "$path": "src/client" }
+        "Client": {
+          "$path": "src/client"
+        }
       }
     },
     "Players": {
-      "$properties": { "RespawnTime": 4, "CharacterAutoLoads": false }
+      "$properties": {
+        "RespawnTime": 4,
+        "CharacterAutoLoads": false
+      }
     },
     "Workspace": {
-      "$properties": { "StreamingEnabled": false, "FallenPartsDestroyHeight": -300 },
-      "Terrain": { "$className": "Terrain" }
+      "$properties": {
+        "StreamingEnabled": false,
+        "FallenPartsDestroyHeight": -300
+      },
+      "Terrain": {
+        "$className": "Terrain",
+        "$properties": {
+          "Decoration": true,
+          "GrassLength": 0.85,
+          "WaterColor": [
+            0.05,
+            0.42,
+            0.45
+          ],
+          "WaterReflectance": 0.6,
+          "WaterTransparency": 0.55,
+          "WaterWaveSize": 0.12,
+          "WaterWaveSpeed": 8
+        },
+        "Clouds": {
+          "$className": "Clouds",
+          "$properties": {
+            "Cover": 0.52,
+            "Density": 0.42,
+            "Color": [
+              1,
+              1,
+              1
+            ]
+          }
+        }
+      }
     },
     "Lighting": {
       "$properties": {
         "Technology": "Future",
-        "ClockTime": 14.5,
-        "Brightness": 2.2,
+        "ClockTime": 14.2,
+        "GeographicLatitude": 35,
+        "Brightness": 3,
+        "ExposureCompensation": 0.15,
         "GlobalShadows": true,
-        "EnvironmentDiffuseScale": 0.7,
-        "EnvironmentSpecularScale": 0.6
+        "ShadowSoftness": 0.22,
+        "EnvironmentDiffuseScale": 1,
+        "EnvironmentSpecularScale": 1,
+        "Ambient": [
+          0.27,
+          0.28,
+          0.31
+        ],
+        "OutdoorAmbient": [
+          0.5,
+          0.52,
+          0.56
+        ]
+      },
+      "Atmosphere": {
+        "$className": "Atmosphere",
+        "$properties": {
+          "Density": 0.3,
+          "Offset": 0.22,
+          "Color": [
+            0.78,
+            0.86,
+            0.9
+          ],
+          "Decay": [
+            0.42,
+            0.56,
+            0.67
+          ],
+          "Glare": 0.25,
+          "Haze": 1.4
+        }
+      },
+      "Sky": {
+        "$className": "Sky",
+        "$properties": {
+          "SunAngularSize": 14,
+          "MoonAngularSize": 9,
+          "StarCount": 3000
+        }
+      },
+      "Bloom": {
+        "$className": "BloomEffect",
+        "$properties": {
+          "Intensity": 0.45,
+          "Size": 28,
+          "Threshold": 1.8
+        }
+      },
+      "SunRays": {
+        "$className": "SunRaysEffect",
+        "$properties": {
+          "Intensity": 0.08,
+          "Spread": 0.7
+        }
+      },
+      "WorldTint": {
+        "$className": "ColorCorrectionEffect",
+        "$properties": {
+          "Saturation": 0.08,
+          "Contrast": 0.07,
+          "Brightness": 0.01
+        }
+      },
+      "Depth": {
+        "$className": "DepthOfFieldEffect",
+        "$properties": {
+          "FarIntensity": 0.16,
+          "FocusDistance": 55,
+          "InFocusRadius": 80,
+          "NearIntensity": 0
+        }
       }
     },
     "SoundService": {
-      "$properties": { "RespectFilteringEnabled": true }
+      "$properties": {
+        "RespectFilteringEnabled": true
+      }
     }
   }
 }
