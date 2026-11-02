@@ -63,6 +63,8 @@ def main():
     sim = "--sim" in sys.argv
     if sim:
         return run_sim(args[0] if args else "luau")
+    if "--export" in sys.argv:
+        return run_sim(args[0] if args else "luau", os.path.join("preview", "export_scene.luau"))
     luau = args[0] if args else "luau"
     here = os.path.dirname(os.path.abspath(__file__))
     parts = []
@@ -98,7 +100,7 @@ def main():
     proc = subprocess.run([luau, bundle])
     sys.exit(proc.returncode)
 
-def run_sim(luau):
+def run_sim(luau, script="sim_scenarios.luau"):
     here = os.path.dirname(os.path.abspath(__file__))
     src = os.path.join(here, "..", "src")
     parts = [open(os.path.join(here, "roblox_mock.luau"), encoding="utf-8").read(),
@@ -124,7 +126,7 @@ def run_sim(luau):
         if f.endswith(".luau"):
             add("Client/Controllers/" + f[:-5], os.path.join(src, "client", "Controllers", f))
     parts.append("local task, os, typeof, warn = SIM.task, SIM.os, SIM.typeof, SIM.warn\n")
-    parts.append(open(os.path.join(here, "sim_scenarios.luau"), encoding="utf-8").read())
+    parts.append(open(os.path.join(here, script), encoding="utf-8").read())
     with tempfile.NamedTemporaryFile("w", suffix=".luau", delete=False, encoding="utf-8") as f:
         f.write("\n".join(parts))
     sys.exit(subprocess.run([luau, f.name]).returncode)

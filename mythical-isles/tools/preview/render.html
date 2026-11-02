@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<title>Mythical Isles — prévia</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:"Fredoka One","Arial Black",sans-serif}
+  canvas{display:block}
+  #hud{position:absolute;inset:0;pointer-events:none;color:#fff;-webkit-text-stroke:0}
+  .stroke{text-shadow:-2px -2px 0 #1a1030,2px -2px 0 #1a1030,-2px 2px 0 #1a1030,2px 2px 0 #1a1030,0 3px 0 #1a1030}
+  .pill{position:absolute;height:36px;border-radius:18px;border:3px solid #1a1030;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .ico{position:absolute;width:44px;height:44px;border-radius:50%;border:3px solid #1a1030;display:flex;align-items:center;justify-content:center;font-size:24px}
+  .btn{position:absolute;border-radius:12px;border:3px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 10px 0 rgba(255,255,255,.18)}
+  .card{position:absolute;border-radius:12px;border:4px solid #1a1030;background:linear-gradient(#4a3aa0,#2e2470)}
+  .bar{position:absolute;height:14px;border-radius:8px;background:#141028;border:2px solid #1a1030;overflow:hidden}
+  .bar>div{height:100%;border-radius:8px}
+  #tag{position:absolute;right:10px;bottom:8px;font:12px Arial;color:#fff;opacity:.85;background:rgba(0,0,0,.45);padding:4px 8px;border-radius:6px}
+  #title{position:absolute;left:0;right:0;top:14px;text-align:center;font-size:34px;color:#ffd84a}
+</style>
+</head>
+<body>
+<div id="hud"></div>
+<div id="title" class="stroke"></div>
+<div id="tag">Prévia aproximada — geometria real do jogo, renderizada fora do Roblox</div>
+<script type="importmap">{"imports":{"three":"/vendor/three/build/three.module.js","three/addons/":"/vendor/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const q = new URLSearchParams(location.search);
+const scene = q.get('scene') || 'island';
+const v3 = s => s.split(',').map(Number);
+const W = innerWidth, H = innerHeight;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H); renderer.setPixelRatio(1);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+document.body.appendChild(renderer.domElement);
+const sc = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(Number(q.get('fov') || 55), W / H, 0.5, 5000);
+camera.position.set(...v3(q.get('pos') || '0,60,120'));
+camera.lookAt(new THREE.Vector3(...v3(q.get('look') || '0,0,0')));
+
+// céu em gradiente
+const sky = new THREE.Mesh(new THREE.SphereGeometry(3000, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false,
+  uniforms: { top: { value: new THREE.Color(q.get('skytop') || '#3d8bff') }, bot: { value: new THREE.Color(q.get('skybot') || '#cfeaff') } },
+  vertexShader: 'varying vec3 p; void main(){ p = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }',
+  fragmentShader: 'uniform vec3 top; uniform vec3 bot; varying vec3 p; void main(){ gl_FragColor = vec4(mix(bot, top, clamp(p.y*1.6+0.15,0.,1.)),1.); }' }));
+sc.add(sky);
+sc.add(new THREE.HemisphereLight(0xdfefff, 0x6a5a40, 1.15));
+const sun = new THREE.DirectionalLight(0xfff2dd, 2.4);
+sun.position.set(120, 220, 80); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+const sz = Number(q.get('shadow') || 260);
+Object.assign(sun.shadow.camera, { left: -sz, right: sz, top: sz, bottom: -sz, near: 1, far: 900 });
+sun.target.position.set(...v3(q.get('look') || '0,0,0')); sun.position.add(sun.target.position);
+sc.add(sun, sun.target);
+if (q.get('fog')) sc.fog = new THREE.Fog(0xcfeaff, Number(q.get('fog')), Number(q.get('fog')) * 3.2);
+
+function wedgeGeo() {
+  // WedgePart do Roblox: seção triangular no plano YZ, alta atrás (+Z), rampa voltada para a frente (-Z)
+  const g = new THREE.BufferGeometry();
+  const P = [[-.5,-.5,-.5],[-.5,-.5,.5],[-.5,.5,.5],[.5,-.5,-.5],[.5,-.5,.5],[.5,.5,.5]];
+  const F = [[0,2,1],[3,4,5],[0,1,4],[0,4,3],[1,2,5],[1,5,4],[0,3,5],[0,5,2]];
+  const pos = []; F.forEach(f => f.forEach(i => pos.push(...P[i])));
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); return g;
+}
+const GEO = {
+  Block: new THREE.BoxGeometry(1, 1, 1),
+  Ball: new THREE.SphereGeometry(0.5, 24, 16),
+  Ellipsoid: new THREE.SphereGeometry(0.5, 24, 16),
+  Cylinder: new THREE.CylinderGeometry(0.5, 0.5, 1, 28).rotateZ(Math.PI / 2),
+  Wedge: wedgeGeo(), CornerWedge: wedgeGeo(),
+};
+const ROUGH = { Grass: .95, LeafyGrass: .95, Wood: .8, Slate: .9, Basalt: .9, Rock: .9, Limestone: .85, Marble: .45, Cobblestone: .9, Fabric: .95, Sandstone: .9 };
+function material(p) {
+  const color = new THREE.Color(`rgb(${p.c[0]},${p.c[1]},${p.c[2]})`);
+  const opts = { color, roughness: ROUGH[p.m] ?? .55, metalness: 0 };
+  if (p.m === 'Neon') { opts.emissive = color; opts.emissiveIntensity = 1.6; opts.roughness = .4; }
+  if (p.m === 'Metal') { opts.metalness = .85; opts.roughness = .3; }
+  if (p.m === 'Glass') { opts.transparent = true; opts.opacity = .55; opts.roughness = .05; opts.metalness = .1; }
+  if (p.m === 'ForceField') { opts.transparent = true; opts.opacity = .35; opts.emissive = color; opts.emissiveIntensity = .6; }
+  if (p.t > 0) { opts.transparent = true; opts.opacity = Math.min(opts.opacity ?? 1, 1 - p.t); }
+  return new THREE.MeshStandardMaterial(opts);
+}
+function addParts(parts) {
+  for (const p of parts) {
+    let geo = GEO[p.s] || GEO.Block; let s = p.z;
+    if (p.s === 'Ball') { const m = Math.min(...s); s = [m, m, m]; }
+    const mesh = new THREE.Mesh(geo, material(p));
+    const r = p.r;
+    const m4 = new THREE.Matrix4().set(r[0], r[1], r[2], p.p[0], r[3], r[4], r[5], p.p[1], r[6], r[7], r[8], p.p[2], 0, 0, 0, 1);
+    m4.multiply(new THREE.Matrix4().makeScale(s[0], s[1], s[2]));
+    mesh.matrixAutoUpdate = false; mesh.matrix.copy(m4);
+    mesh.castShadow = p.t < 0.5; mesh.receiveShadow = true;
+    sc.add(mesh);
+    if (p.l > 0 && p.m === 'Neon' && Math.random() < 0.5) {
+      const L = new THREE.PointLight(`rgb(${p.c[0]},${p.c[1]},${p.c[2]})`, 2.5, p.l * 1.6); L.position.set(...p.p); sc.add(L);
+    }
+  }
+}
+function avatar(x, y, z) {
+  const mk = (w, h, d, c, px, py, pz) => { const m = new THREE.Mesh(GEO.Block, new THREE.MeshStandardMaterial({ color: c, roughness: .6 }));
+    m.scale.set(w, h, d); m.position.set(x + px, y + py, z + pz); m.castShadow = true; sc.add(m); };
+  mk(2, 2, 1, 0x3a7bd5, 0, 0, 0); mk(1.2, 1.2, 1.2, 0xffcc99, 0, 1.6, 0); mk(1, 2, 1, 0xffcc99, -1.5, 0, 0); mk(1, 2, 1, 0xffcc99, 1.5, 0, 0);
+  mk(1, 2, 1, 0x2b2b44, -0.5, -2, 0); mk(1, 2, 1, 0x2b2b44, 0.5, -2, 0);
+}
+const ground = q.get('ground');
+if (ground === 'island') {
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(230, 225, 12, 96), new THREE.MeshStandardMaterial({ color: 0x60a84a, roughness: .95 }));
+  top.position.y = -6; top.receiveShadow = true; sc.add(top);
+  const cliff = new THREE.Mesh(new THREE.CylinderGeometry(214, 120, 60, 64), new THREE.MeshStandardMaterial({ color: 0x6e645a, roughness: .95 }));
+  cliff.position.y = -42; sc.add(cliff);
+  const root = new THREE.Mesh(new THREE.SphereGeometry(110, 48, 24), new THREE.MeshStandardMaterial({ color: 0x5e5650, roughness: .95 }));
+  root.position.y = -90; root.scale.y = .8; sc.add(root);
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), new THREE.MeshStandardMaterial({ color: 0xecf2ff, roughness: 1, transparent: true, opacity: .85 }));
+  sea.rotation.x = -Math.PI / 2; sea.position.y = -150; sc.add(sea);
+} else {
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(400, 64), new THREE.MeshStandardMaterial({ color: q.get('floor') || '#8fd16a', roughness: .95 }));
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
+}
+const parts = await (await fetch(`data/${scene}.json`)).json();
+addParts(parts);
+if (q.get('player')) avatar(...v3(q.get('player')));
+document.getElementById('title').textContent = q.get('title') || '';
+
+if (q.get('hud')) {
+  const hud = document.getElementById('hud');
+  const add = (html) => hud.insertAdjacentHTML('beforeend', html);
+  const cur = [['🪙','#ffc428','#6e5410','1.250',14],['💎','#28d2b4','#0f5a4d','40',190],['✦','#a06eff','#43246e','0',366]];
+  for (const [ic, c, dk, v, x] of cur) {
+    add(`<div class="pill stroke" style="left:${x+16}px;top:16px;width:134px;background:linear-gradient(${dk},#1e1440)">${v}</div>`);
+    add(`<div class="ico" style="left:${x}px;top:12px;background:radial-gradient(circle at 35% 30%,#fff8,${c})">${ic}</div>`);
+  }
+  add(`<div class="btn stroke" style="left:${W/2-135}px;top:10px;width:270px;height:44px;border-color:#164a1c;background:linear-gradient(#8ef08a,#3aa846);font-size:22px;flex-direction:row">🍀&nbsp;Sorte x1.12</div>`);
+  const menu = [['🐾','Pets','#ff9628'],['🎒','Itens','#3c96ff'],['🍀','Sorte','#50d25a'],['📖','Bestiário','#aa5aff'],['📜','Missões','#ffc828'],['🗺','Mapa','#28c8c8'],['⚙','Opções','#787896']];
+  menu.forEach(([e, n, c], i) => { const x = 12 + (i % 2) * 82, y = H/2 - 150 + Math.floor(i / 2) * 82;
+    add(`<div class="btn stroke" style="left:${x}px;top:${y}px;width:74px;height:74px;border-color:#1a1030;background:linear-gradient(${c}dd,${c})"><div style="font-size:30px">${e}</div><div style="font-size:14px">${n}</div></div>`); });
+  add(`<div class="card" style="right:14px;top:70px;width:290px;height:132px"></div>`);
+  add(`<div class="btn stroke" style="right:164px;top:58px;width:130px;height:26px;border-color:#6e5410;background:linear-gradient(#ffe070,#f0b820);font-size:15px">📜 MISSÃO</div>`);
+  add(`<div class="stroke" style="position:absolute;right:30px;top:90px;width:260px;font-size:20px;color:#ffd84a">Colheita</div>`);
+  add(`<div style="position:absolute;right:30px;top:116px;width:260px;font:bold 13px Arial;color:#d0ccf0">Quebre 15 arbustos com seus pets.</div>`);
+  add(`<div class="bar" style="right:28px;top:152px;width:262px;height:18px"><div style="width:40%;background:linear-gradient(#ffe88a,#f0b820)"></div></div>`);
+  const team = [['Bloomfox','#b062ff','✚ Cura','#50d25a'],['Leafwing Finch','#6ed678','◈ Faro do Tesouro','#ffc828'],['Grovekin','#ffba30','✣ Laço de Raízes','#6ec846'],['Mossling','#bec4cc','⛨ Escudo','#3c96ff']];
+  team.forEach(([n, rc, ab, ac], i) => { const x = W/2 - 340 + i * 170, y = H - 120;
+    add(`<div class="card" style="left:${x}px;top:${y}px;width:160px;height:108px;border-color:${rc}"></div>`);
+    add(`<div class="stroke" style="position:absolute;left:${x+10}px;top:${y+6}px;font-size:15px">${n}</div>`);
+    add(`<div class="bar" style="left:${x+10}px;top:${y+29}px;width:140px"><div style="width:${[100,82,100,64][i]}%;background:linear-gradient(#a8f0a0,#4cc85a)"></div></div>`);
+    add(`<div class="bar" style="left:${x+10}px;top:${y+46}px;width:140px;height:7px"><div style="width:${[70,100,40,90][i]}%;background:#5aaaff"></div></div>`);
+    add(`<div class="btn stroke" style="left:${x+10}px;top:${y+57}px;width:136px;height:42px;border-color:#1a1030;background:linear-gradient(${ac}cc,${ac});font-size:14px">${ab}</div>`); });
+}
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(sc, camera));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.35, 0.5, 0.9));
+composer.addPass(new OutputPass());
+composer.render();
+window.READY = true;
+</script>
+</body>
+</html>

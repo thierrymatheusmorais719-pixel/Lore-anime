@@ -1,3 +1,4 @@
 *.rbxl.lock
 *.rbxlx.lock
 /build/*.rbxlx
+/tools/preview/data/
