@@ -8,7 +8,7 @@ vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
 > Luau, contra o dump público da API do Roblox, com 57 testes de lógica, 633 verificações dos modelos 3D e
-> **92 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> **95 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -135,7 +135,7 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **57 testes passando** |
 | Modelos 3D (34 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses) | `python3 tools/run_tests.py luau --smoke` | **633 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **92 cenários passando** |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **95 cenários passando** |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -176,6 +176,9 @@ travamento) foi exercitada.
 - Humanoid de rig próprio: definido `RigType = R15` para o `HipHeight` valer.
 - Função global vazando no CombatService — virou local.
 - `Marble` não é material de Terrain — cada ilha recebeu materiais de Terrain exclusivos.
+- Jogador podia nascer "no céu" (antes do mapa ficar pronto) — o servidor agora cria o personagem
+  só depois do mundo construído, coloca na praça, devolve à praça quem cai da ilha e faz o respawn.
+  As ilhas continuam flutuando (é o tema), agora com um mar de nuvens abaixo.
 - Jogador novo começava com 0 moedas e não conseguia chocar o primeiro ovo — começa com 150.
 - (Infraestrutura de teste: a matriz de rotação do mock acumulava erro no `PivotTo`; agora é re-ortonormalizada como no motor.)
 

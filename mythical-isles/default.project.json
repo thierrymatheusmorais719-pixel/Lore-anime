@@ -19,7 +19,7 @@
       }
     },
     "Players": {
-      "$properties": { "RespawnTime": 4 }
+      "$properties": { "RespawnTime": 4, "CharacterAutoLoads": false }
     },
     "Workspace": {
       "$properties": { "StreamingEnabled": false }

@@ -198,9 +198,34 @@ CLASS_METHODS.Camera = {
 CLASS_METHODS.Terrain = {
 	FillCylinder = function() end, FillBall = function() end, FillBlock = function() end, SetMaterialColor = function() end, Clear = function() end,
 }
+local function makeCharacter(p)
+	local char = Instance.new("Model")
+	char.Name = p.Name
+	local root = Instance.new("Part")
+	root.Name = "HumanoidRootPart"
+	root.Size = Vector3.new(2, 2, 1)
+	root.CFrame = CFrame.new(0, 3, 14)
+	root.Parent = char
+	char.PrimaryPart = root
+	local hum = Instance.new("Humanoid")
+	hum.Name = "Humanoid"
+	hum.Parent = char
+	char.Parent = workspace
+	return char
+end
+SIM.makeCharacter = makeCharacter
 CLASS_METHODS.Player = {
 	Kick = function(self, msg)
 		SIM.kicked[self] = msg
+	end,
+	LoadCharacter = function(self)
+		if self.Character then
+			self.Character:Destroy()
+		end
+		local char = makeCharacter(self)
+		self.Character = char
+		SIM.loads = (SIM.loads or 0) + 1
+		self.CharacterAdded:Fire(char)
 	end,
 }
 
@@ -579,22 +604,8 @@ function SIM.addPlayer(name, userId)
 	p.DisplayName = name
 	p.UserId = userId
 	p.Parent = Players
-	local char = Instance.new("Model")
-	char.Name = name
-	local root = Instance.new("Part")
-	root.Name = "HumanoidRootPart"
-	root.Size = Vector3.new(2, 2, 1)
-	root.CFrame = CFrame.new(0, 3, 14)
-	root.Parent = char
-	char.PrimaryPart = root
-	local hum = Instance.new("Humanoid")
-	hum.Name = "Humanoid"
-	hum.Parent = char
-	char.Parent = workspace
-	p.Character = char
 	table.insert(SIM.players, p)
-	Players.PlayerAdded:Fire(p)
-	p.CharacterAdded:Fire(char)
+	Players.PlayerAdded:Fire(p) -- o servidor chama LoadCharacter (CharacterAutoLoads = false)
 	return p
 end
 function SIM.removePlayer(p)

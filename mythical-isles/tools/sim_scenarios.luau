@@ -65,6 +65,8 @@ check("mundos, inimigos, bosses e recursos criados", count("Enemies") > 50 and c
 local p1 = SIM.addPlayer("Ana", 101)
 SIM.run(1)
 local d1 = S.DataService.get(p1)
+check("servidor cria o personagem e coloca na praça (não no ar)", p1.Character ~= nil and math.abs(p1.Character.PrimaryPart.Position.Y - 4) < 1
+	and ((p1.Character.PrimaryPart.Position - Vector3.new(0, 0, 0)) * Vector3.new(1, 0, 1)).Magnitude < 30, p1.Character and tostring(p1.Character.PrimaryPart.Position.Y))
 check("perfil carrega com moedas iniciais", d1 ~= nil and d1.coins == 150, d1 and d1.coins)
 
 -- 2. chocar ovo (servidor valida proximidade e custo) -----------------------------
@@ -734,6 +736,22 @@ do
 	frames(400)
 	check("cliente processa toasts, drops, anúncios, fases e vitórias", #SIM.errors == before, SIM.errors[before + 1])
 	SIM.localPlayer = nil
+end
+
+-- queda e respawn
+do
+	local pf = SIM.addPlayer("Davi", 404)
+	SIM.run(1)
+	pf.Character:PivotTo(CFrame.new(0, -120, 0))
+	SIM.run(1)
+	check("quem cai da ilha volta para a praça", pf.Character.PrimaryPart.Position.Y > -5, pf.Character.PrimaryPart.Position.Y)
+	local loads = SIM.loads
+	local hum = pf.Character:FindFirstChildOfClass("Humanoid")
+	hum.Health = 0
+	hum.Died:Fire()
+	SIM.run(5)
+	check("personagem renasce após morrer", SIM.loads == loads + 1 and pf.Character:FindFirstChildOfClass("Humanoid").Health > 0)
+	SIM.removePlayer(pf)
 end
 
 -- telemetria geral ---------------------------------------------------------------

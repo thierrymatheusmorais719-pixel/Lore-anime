@@ -37,8 +37,21 @@ local function prevWorld(id: string): string?
 	return Worlds.Order[i - 1]
 end
 
+-- Mar de nuvens abaixo das ilhas: as ilhas flutuam, mas há um "chão" visual no horizonte.
+local function cloudSea(parent: Instance)
+	local folder = Make("Folder", { Name = "CloudSea", Parent = parent })
+	for i = 0, 3 do
+		Make("Part", {
+			Name = "CloudSea", Anchored = true, CanCollide = false, CanQuery = false, CanTouch = false, CastShadow = false,
+			Size = Vector3.new(2048, 2, 2048), CFrame = CFrame.new(-700 + i * 2000, -150, 0),
+			Material = Enum.Material.SmoothPlastic, Color = Color3.fromRGB(236, 242, 255), Transparency = 0.15, Parent = folder,
+		})
+	end
+end
+
 function WorldService.build()
 	local root = workspace:FindFirstChild("World")
+	cloudSea(root)
 	local L = WorldBuilder.Layout
 	for _, id in ipairs(Worlds.Order) do
 		local w = Worlds.Info[id]
@@ -178,12 +191,42 @@ function WorldService.portal(player: Player, worldId: string)
 	WorldService.teleport(player, worldId)
 end
 
+-- Spawn controlado pelo servidor: o personagem só nasce DEPOIS do mapa pronto e sempre
+-- em cima da praça do Verdant Haven (evita nascer no ar/cair antes do terreno existir).
+local RESPAWN_TIME = 4
+
+function WorldService.spawnCharacter(player: Player)
+	if player.Parent then
+		player:LoadCharacter()
+	end
+end
+
+local function placeAtSpawn(player: Player, char: Model, worldId: string)
+	local hrp = char:WaitForChild("HumanoidRootPart", 10)
+	if not hrp then
+		return
+	end
+	local layout = WorldService.Layout[worldId] or WorldService.Layout[Worlds.Order[1]]
+	char:PivotTo(layout.spawnCF)
+	player:SetAttribute("World", layout.id)
+end
+
 function WorldService.start()
-	-- Cada personagem nasce no Verdant Haven (SpawnLocation); atualiza o atributo de mundo.
 	local function track(player: Player)
-		player.CharacterAdded:Connect(function()
-			player:SetAttribute("World", Worlds.Order[1])
+		player.CharacterAdded:Connect(function(char)
+			placeAtSpawn(player, char, Worlds.Order[1])
+			local hum = char:WaitForChild("Humanoid", 10)
+			if hum then
+				hum.Died:Connect(function()
+					task.delay(RESPAWN_TIME, function()
+						if player.Parent and player.Character == char then
+							WorldService.spawnCharacter(player)
+						end
+					end)
+				end)
+			end
 		end)
+		WorldService.spawnCharacter(player)
 	end
 	Players.PlayerAdded:Connect(track)
 	for _, p in ipairs(Players:GetPlayers()) do
@@ -191,11 +234,22 @@ function WorldService.start()
 	end
 	task.spawn(function()
 		while true do
-			task.wait(1)
+			task.wait(0.5)
 			for _, p in ipairs(Players:GetPlayers()) do
-				local w = WorldService.playerWorld(p)
-				if w and p:GetAttribute("World") ~= w then
-					p:SetAttribute("World", w)
+				local char = p.Character
+				local hrp = char and char:FindFirstChild("HumanoidRootPart") :: BasePart?
+				if hrp then
+					local w = WorldService.worldAt(hrp.Position)
+					if w and p:GetAttribute("World") ~= w then
+						p:SetAttribute("World", w)
+					end
+					-- proteção contra queda: abaixo da ilha atual, volta para a praça dela
+					local wid = p:GetAttribute("World") or Worlds.Order[1]
+					local cur = Worlds.Info[wid] or Worlds.Info[Worlds.Order[1]]
+					if hrp.Position.Y < cur.center.Y - 45 then
+						char:PivotTo((WorldService.Layout[wid] or WorldService.Layout[Worlds.Order[1]]).spawnCF)
+						hrp.AssemblyLinearVelocity = Vector3.zero
+					end
 				end
 			end
 		end
