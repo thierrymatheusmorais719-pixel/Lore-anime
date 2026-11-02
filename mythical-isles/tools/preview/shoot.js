@@ -9,7 +9,12 @@ const shots = [
   ['pets', 'scene=pets&pos=21,24,62&look=21,1,14&fov=50&title=Os%2034%20pets&floor=%2398d878'],
   ['mutacoes', 'scene=mutations&pos=24,11,44&look=24,2,0&fov=50&title=Astral%20Lion:%20normal%20e%206%20muta%C3%A7%C3%B5es&floor=%23b0a0e0'],
   ['inimigos', 'scene=enemies&pos=32,22,62&look=32,3,14&fov=52&title=Inimigos&floor=%23a8c890'],
-  ['bosses', 'scene=bosses&pos=100,30,125&look=100,12,0&fov=58&title=Os%205%20bosses&floor=%23a8b8d0'],
+  ['boss_elderroot', 'scene=bosses&pos=0,18,46&look=0,14,0&fov=50&title=Elderroot&skytop=%230a0618&skybot=%23281c4a&floor=%23181428'],
+  ['boss_prism_titan', 'scene=bosses&pos=50,18,46&look=50,14,0&fov=50&title=Prism%20Titan&skytop=%230a0618&skybot=%23281c4a&floor=%23181428'],
+  ['boss_tempest_wyrm', 'scene=bosses&pos=125,30,82&look=125,16,0&fov=50&title=Tempest%20Wyrm&skytop=%230a0618&skybot=%23281c4a&floor=%23181428'],
+  ['boss_wilderbloom', 'scene=bosses&pos=205,22,56&look=205,9,0&fov=50&title=The%20Wilderbloom&skytop=%230a0618&skybot=%23281c4a&floor=%23181428'],
+  ['boss_void_sovereign', 'scene=bosses&pos=265,18,48&look=265,14,0&fov=50&title=Void%20Sovereign&skytop=%230a0618&skybot=%23281c4a&floor=%23181428'],
+  ['bosses', 'scene=bosses&pos=132,40,175&look=132,14,0&fov=58&title=Os%205%20bosses&skytop=%230a0618&skybot=%23281c4a&floor=%23181428'],
 ];
 (async () => {
   const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });

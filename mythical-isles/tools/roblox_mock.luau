@@ -163,6 +163,10 @@ CFrame = {
 		return cf(a, b or 0, c or 0)
 	end,
 	Angles = angles,
+	fromMatrix = function(pos, rx, ry, rz)
+		rz = rz or rx:Cross(ry).Unit
+		return cf(pos.X, pos.Y, pos.Z, { rx.X, ry.X, rz.X, rx.Y, ry.Y, rz.Y, rx.Z, ry.Z, rz.Z })
+	end,
 	fromEulerAnglesXYZ = angles,
 	lookAt = lookAt,
 	identity = cf(0, 0, 0),

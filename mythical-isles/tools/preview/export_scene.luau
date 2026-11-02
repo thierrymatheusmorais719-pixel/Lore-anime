@@ -146,9 +146,10 @@ for i, id in ipairs(eids) do
 end
 lineup("enemies", foes)
 local bosses = {}
+local BOSS_X = { 0, 50, 125, 205, 265 }
 for i, id in ipairs({ "elderroot", "prism_titan", "tempest_wyrm", "wilderbloom", "void_sovereign" }) do
 	local m, h = BossModels.build(id)
-	m:PivotTo(CFrame.new((i - 1) * 50, h + (id == "tempest_wyrm" and 6 or 0), 0) * CFrame.Angles(0, math.rad(200), 0))
+	m:PivotTo(CFrame.new(BOSS_X[i], h + (id == "tempest_wyrm" and 6 or 0), 0) * CFrame.Angles(0, math.rad(200), 0))
 	table.insert(bosses, m)
 end
 lineup("bosses", bosses)
