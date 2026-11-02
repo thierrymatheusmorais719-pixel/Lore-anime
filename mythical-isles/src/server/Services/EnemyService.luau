@@ -631,10 +631,14 @@ end
 function EnemyService.start()
 	for _, worldId in ipairs(Worlds.Order) do
 		local layout = S.WorldService.Layout[worldId]
-		for enemyId, zone in pairs(layout.enemyZones) do
+		for enemyId, zone in pairs(layout and layout.enemyZones or {}) do
 			local cfg = Enemies.Info[enemyId]
 			for _ = 1, cfg.count do
-				EnemyService.spawn(enemyId, randomPointIn(zone.center, zone.radius), worldId, { zone = zone })
+				local ok, err = pcall(EnemyService.spawn, enemyId, randomPointIn(zone.center, zone.radius), worldId, { zone = zone })
+				if not ok then
+					warn("[EnemyService] falha ao criar " .. enemyId .. ": " .. tostring(err))
+					break
+				end
 			end
 		end
 	end

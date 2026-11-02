@@ -483,9 +483,15 @@ function BossService.start()
 	for _, worldId in ipairs(Worlds.Order) do
 		local w = Worlds.Info[worldId]
 		local layout = S.WorldService.Layout[worldId]
-		local b = { id = w.bossId, cfg = Bosses.Info[w.bossId], world = worldId, arena = layout.arena, spawnSerial = 1 }
-		table.insert(bosses, b)
-		spawnBoss(b)
+		if layout and layout.arena then
+			local b = { id = w.bossId, cfg = Bosses.Info[w.bossId], world = worldId, arena = layout.arena, spawnSerial = 1 }
+			local ok, err = pcall(spawnBoss, b)
+			if ok then
+				table.insert(bosses, b)
+			else
+				warn("[BossService] falha ao criar " .. w.bossId .. ": " .. tostring(err))
+			end
+		end
 	end
 	local acc = 0
 	RunService.Heartbeat:Connect(function(dt)

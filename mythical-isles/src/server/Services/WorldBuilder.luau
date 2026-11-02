@@ -13,7 +13,6 @@ local CF = CFrame.new
 local ANG = CFrame.Angles
 local rad = math.rad
 local rgb = Color3.fromRGB
-local Terrain = workspace.Terrain
 
 local CLIFF_COLORS = {
 	Rock = rgb(110, 100, 90),
@@ -58,8 +57,11 @@ WorldBuilder.Layout = {
 -- Terreno
 -------------------------------------------------------------------------------
 
-function WorldBuilder.terrain(worldId: string)
-	local w = Worlds.Info[worldId]
+local function terrainFill(w)
+	local Terrain = workspace:FindFirstChildOfClass("Terrain")
+	if not Terrain then
+		error("Workspace sem Terrain")
+	end
 	local c, r = w.center, w.radius
 	local ground = Enum.Material[w.ground]
 	local cliff = Enum.Material[w.cliff]
@@ -76,6 +78,42 @@ function WorldBuilder.terrain(worldId: string)
 		local pos = WorldBuilder.polar(c, theta, r - rng:NextNumber(10, 22), -8)
 		Terrain:FillBall(pos, rng:NextNumber(12, 18), i % 3 == 0 and cliff or ground)
 	end
+end
+
+-- Alternativa sem Terrain: a ilha é feita de peças (mesmo formato e cores).
+local function partIsland(w, parent: Instance)
+	local folder = Make("Folder", { Name = "IslandParts", Parent = parent })
+	local c, r = w.center, w.radius
+	local function mat(name, fallback)
+		local ok, m = pcall(function()
+			return Enum.Material[name]
+		end)
+		return ok and m or fallback
+	end
+	local top = part({ Name = "IslandTop", Shape = Enum.PartType.Cylinder, Size = V(12, r * 2, r * 2), CFrame = CF(c - V(0, 6, 0)) * ANG(0, 0, rad(90)),
+		Color = w.palette.ground, Parent = folder })
+	pcall(function()
+		top.Material = mat(w.ground, Enum.Material.Grass)
+	end)
+	local cliffColor = CLIFF_COLORS[w.cliff] or rgb(100, 100, 100)
+	local mid = part({ Name = "IslandCliff", Shape = Enum.PartType.Cylinder, Size = V(28, r * 1.86, r * 1.86), CFrame = CF(c - V(0, 26, 0)) * ANG(0, 0, rad(90)),
+		Color = cliffColor, Parent = folder })
+	local low = part({ Name = "IslandRoot", Shape = Enum.PartType.Ball, Size = Vector3.one * r * 1.3, CFrame = CF(c - V(0, 70, 0)), Color = cliffColor, Parent = folder })
+	for _, p in ipairs({ mid, low }) do
+		pcall(function()
+			p.Material = mat(w.cliff, Enum.Material.Rock)
+		end)
+	end
+end
+
+function WorldBuilder.terrain(worldId: string, parent: Instance)
+	local w = Worlds.Info[worldId]
+	local ok, err = pcall(terrainFill, w)
+	if not ok then
+		warn("[WorldBuilder] Terrain indisponível (" .. tostring(err) .. "): ilha " .. worldId .. " feita com peças")
+		partIsland(w, parent)
+	end
+	return ok
 end
 
 -- Muro invisível na borda para ninguém cair da ilha.

@@ -367,9 +367,9 @@ end
 function ExplorationService.start()
 	for _, worldId in ipairs(Worlds.Order) do
 		local w = Worlds.Info[worldId]
-		local layout = S.WorldService.Layout[worldId]
+		local layout = S.WorldService.Layout[worldId] or { resourceFields = {} }
 		local cfg = Exploration.Resources[w.resource]
-		local per = math.ceil(cfg.count / #layout.resourceFields)
+		local per = math.ceil(cfg.count / math.max(1, #layout.resourceFields))
 		for _, field in ipairs(layout.resourceFields) do
 			for _ = 1, per do
 				local a = rng:NextNumber(0, math.pi * 2)

@@ -179,6 +179,11 @@ travamento) foi exercitada.
 - Jogador podia nascer "no céu" (antes do mapa ficar pronto) — o servidor agora cria o personagem
   só depois do mundo construído, coloca na praça, devolve à praça quem cai da ilha e faz o respawn.
   As ilhas continuam flutuando (é o tema), agora com um mar de nuvens abaixo.
+- O arquivo gerado pelo Rojo não trazia o objeto **Terrain** no Workspace, e o construtor das ilhas
+  usava `workspace.Terrain` logo ao carregar. Provável causa de "só aparece o céu". Agora o projeto
+  inclui o Terrain, a ilha é feita com peças se o Terrain faltar, cada etapa do servidor roda
+  protegida e qualquer erro aparece escrito na tela do jogo (além do Output), junto com uma tela
+  de carregamento.
 - Jogador novo começava com 0 moedas e não conseguia chocar o primeiro ovo — começa com 150.
 - (Infraestrutura de teste: a matriz de rotação do mock acumulava erro no `PivotTo`; agora é re-ortonormalizada como no motor.)
 

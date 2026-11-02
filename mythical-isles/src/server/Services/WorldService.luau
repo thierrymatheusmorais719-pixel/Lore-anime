@@ -53,10 +53,10 @@ function WorldService.build()
 	local root = workspace:FindFirstChild("World")
 	cloudSea(root)
 	local L = WorldBuilder.Layout
-	for _, id in ipairs(Worlds.Order) do
+	local function buildWorld(id: string)
 		local w = Worlds.Info[id]
 		local folder = Make("Folder", { Name = id, Parent = root })
-		WorldBuilder.terrain(id)
+		WorldBuilder.terrain(id, folder)
 		WorldBuilder.boundary(id, folder)
 		local spawnCF = WorldBuilder.plaza(id, folder)
 		WorldBuilder.decor(id, folder)
@@ -103,6 +103,15 @@ function WorldService.build()
 		local _, banner = WorldBuilder.arena(id, arenaCenter, boss.arenaRadius, folder)
 		layout.arena = { center = arenaCenter, radius = boss.arenaRadius, banner = banner }
 		WorldService.Layout[id] = layout
+	end
+	for _, id in ipairs(Worlds.Order) do
+		-- cada ilha é construída separadamente: se uma falhar, as outras continuam
+		local ok, err = pcall(buildWorld, id)
+		if not ok then
+			warn("[WorldService] falha ao construir " .. id .. ": " .. tostring(err))
+			local rs = game:GetService("ReplicatedStorage")
+			rs:SetAttribute("ServerErrors", ((rs:GetAttribute("ServerErrors") or "") .. "\n\nconstrução de " .. id .. ": " .. tostring(err)))
+		end
 	end
 end
 
