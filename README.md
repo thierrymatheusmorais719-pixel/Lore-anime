@@ -1,5 +1,8 @@
 # LORE — O Rei Mago · Cutscene em WebGL
 
+> Este repositório também contém **[Mythical Isles — Pet Evolution Simulator](mythical-isles/README.md)**,
+> um jogo de Roblox (Luau/Rojo) com sorte, mutações, combate com pets, inimigos e bosses.
+
 Cutscene cinematográfica de anime (≈34 s, em loop) protagonizada por **Lore, o Rei Mago**,
 renderizada em tempo real no navegador com **Three.js (WebGL)**.
 
