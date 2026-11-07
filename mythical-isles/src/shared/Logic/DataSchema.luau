@@ -25,6 +25,7 @@ function DataSchema.default()
 		stats = { hatched = 0, kills = 0, bossKills = 0, coinsEarned = 0, resources = 0, treasures = 0, abilities = 0, evolutions = 0 },
 		history = {}, -- descobertas importantes recentes
 		claimedEncounters = {}, -- [encounterId] = os.time()  (anti-recompensa duplicada de boss)
+		shrines = {}, -- [baúId] = os.time() da última abertura (baús-santuário das regiões)
 		settings = { announcements = true, vfx = "High", damageNumbers = true },
 	}
 end

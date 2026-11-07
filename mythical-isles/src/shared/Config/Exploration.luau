@@ -18,6 +18,9 @@ Exploration.MineRange = 30 -- jogador precisa estar a esta distância do recurso
 -- Tesouros ocultos.
 Exploration.Treasure = { lifetime = 90, maxPerPlayer = 2, spawnMin = 18, spawnMax = 45, openRange = 12 }
 
+-- Baús-santuário fixos das regiões (Crystal Hollow): recarga por jogador, salva no perfil.
+Exploration.Shrine = { cooldown = 30 * 60, range = 14 }
+
 -- Marcos de coleção (bestiário). `species` conta espécies de PET descobertas;
 -- `mutations` conta tipos de mutação descobertos; `enemies` conta inimigos/bosses registrados.
 Exploration.CollectionMilestones = {

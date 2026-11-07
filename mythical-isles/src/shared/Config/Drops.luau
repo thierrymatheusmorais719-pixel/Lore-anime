@@ -193,6 +193,17 @@ Drops.Treasure = {
 	{ item = "skill_tome", chance = 0.06, min = 1, max = 1, luck = true, category = "Treasure", maxChance = 0.15 },
 }
 
+-- Baús-santuário das regiões (locais escondidos: fim da ponte suspensa, câmara secreta, ilha das ruínas...).
+-- Mais generoso que o tesouro comum, porque exige exploração e tem recarga de 30 min por baú.
+Drops.Shrine = {
+	{ item = "coins", chance = 1, min = 2, max = 3, scaleByWorld = 400 },
+	{ item = "essence", chance = 1, min = 8, max = 20, scaleByWorldEssence = true },
+	{ item = "luck_potion_1", chance = 0.35, min = 1, max = 1, luck = true, category = "Treasure", maxChance = 0.6 },
+	{ item = "evolution_dust", chance = 0.5, min = 1, max = 3, luck = true, category = "Treasure", maxChance = 0.8 },
+	{ item = "skill_tome", chance = 0.12, min = 1, max = 1, luck = true, category = "Treasure", maxChance = 0.25 },
+	{ item = "mutation_elixir", chance = 0.03, min = 1, max = 1, luck = true, category = "Treasure", maxChance = 0.08, notable = true },
+}
+
 -- Ovo especial de cada mundo achado ao quebrar recursos (chance por recurso quebrado).
 Drops.ResourceSpecialEgg = {
 	verdant = { item = "bloom_relic_egg", chance = 0.0015, maxChance = 0.005 },

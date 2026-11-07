@@ -151,48 +151,124 @@ function BossModels.elderroot()
 end
 
 -------------------------------------------------------------------------------
--- PRISM TITAN — colosso de pedra escura coberto de cristais azuis.
+-- PRISM TITAN — colosso de pedra escura com cristais azuis (ombros, costas, braços, coroa),
+-- rosto definido (testa, maçãs, olhos fundos e brilhantes, mandíbula com dentes de cristal),
+-- núcleo luminoso no peito com veios de energia. Peças com atributo EnergyFx recebem, no
+-- cliente, luz e partículas que carregam durante a preparação dos ataques (ver Fx.luau).
 -------------------------------------------------------------------------------
+
+-- Cristal facetado do titã: prisma octogonal (dois blocos girados) + pontas + núcleo luminoso.
+local function titanCrystal(rig, parent: string, at: CFrame, h: number, w: number, glass: Color3, glow: Color3)
+	local bodyH, tipH = h * 0.72, h * 0.28
+	-- cristais grandes: prisma octogonal; pequenos: prisma simples (menos peças)
+	for _, deg in ipairs(h >= 5 and { 0, 45 } or { 22 }) do
+		local r = at * ANG(0, rad(deg), 0)
+		add(rig, { name = "TitanCrystal", parent = parent, at = r * CF(0, bodyH / 2, 0), shape = "block", size = V(w, bodyH, w), color = glass, material = "Glass", transparency = 0.25, role = "Accent" })
+		add(rig, { name = "TitanCrystalTip", parent = parent, at = r * CF(0, bodyH + tipH / 2, -w / 4), shape = "wedge", size = V(w, tipH, w / 2), color = glass, material = "Glass", transparency = 0.25, role = "Accent" })
+		add(rig, { name = "TitanCrystalTip", parent = parent, at = r * CF(0, bodyH + tipH / 2, w / 4) * ANG(0, math.pi, 0), size = V(w, tipH, w / 2), shape = "wedge", color = glass,
+			material = "Glass", transparency = 0.25, role = "Accent" })
+	end
+	add(rig, { name = "TitanCrystalCore", parent = parent, at = at * CF(0, bodyH * 0.5, 0), shape = "block", size = V(w * 0.4, bodyH * 0.9, w * 0.4), color = glow, material = "Neon", role = "Glow", shadow = false })
+end
+
+local function titanCluster(rig, parent: string, at: CFrame, count: number, h: number, w: number, glass: Color3, glow: Color3, spread: number)
+	for i = 1, count do
+		local t = (count == 1) and 0 or ((i - 1) / (count - 1) - 0.5)
+		local k = 1 - math.abs(t) * 0.5
+		titanCrystal(rig, parent, at * CF(t * w * 2.4, 0, (i % 2) * w * 0.5 - w * 0.25) * ANG(rad((i % 2) * 12 - 6), 0, rad(-t * spread * 2)), h * k, w * k, glass, glow)
+	end
+end
+
 function BossModels.prism_titan()
 	local rig = newRig("PrismTitan", V(11, 4, 8))
-	local rock, dark, blue, pale = rgb(42, 42, 66), rgb(28, 28, 46), rgb(50, 140, 255), rgb(150, 210, 255)
-	local body = add(rig, { name = "Torso", joint = "Body", at = CF(0, 4.5, 0), shape = "block", size = V(11, 10, 7.5), color = rock, material = "Slate", role = "Body" })
-	add(rig, { name = "Pelvis", parent = body, at = CF(0, -6, 0.3), shape = "block", size = V(8.5, 3.5, 6), color = dark, material = "Slate", role = "Body" })
-	for i, x in ipairs({ -3.2, 0, 3.2 }) do
-		add(rig, { name = "RockPlate", parent = body, at = CF(x, 2.2 - (i % 2) * 0.8, -3.9) * ANG(rad(-6), 0, rad(x * 2)), shape = "block", size = V(3.4, 4, 0.9), color = dark, material = "Slate", role = "Detail" })
+	local rock, dark, plate = rgb(48, 48, 72), rgb(30, 30, 48), rgb(62, 62, 90)
+	local glass, glow, pale = rgb(110, 180, 255), rgb(60, 150, 255), rgb(170, 220, 255)
+	local function energy(name)
+		local p = rig.parts[name]
+		if p then
+			p:SetAttribute("EnergyFx", true)
+		end
 	end
-	add(rig, { name = "Core", parent = body, at = CF(0, -0.8, -4.0) * ANG(0, 0, rad(45)), shape = "block", size = V(2.8, 2.8, 1.2), color = blue, material = "Neon", role = "Glow" })
-	crack(rig, body, CF(-2.6, -2.5, -3.95) * ANG(0, 0, rad(30)), 4.5, blue)
-	crack(rig, body, CF(2.6, -2.2, -3.95) * ANG(0, 0, rad(-30)), 4.5, blue)
-	crack(rig, body, CF(0, 3.4, -3.95) * ANG(0, 0, rad(90)), 5, blue)
-	cluster(rig, body, CF(0, 4.5, 2.4) * ANG(rad(20), 0, 0), 5, 7, 1.6, blue, 26)
-	-- cabeça pequena com coroa de cristais
+	-- TRONCO: bloco central + peitorais inclinados + abdômen em placas + costelas laterais
+	local body = add(rig, { name = "Torso", joint = "Body", at = CF(0, 4.5, 0), shape = "block", size = V(10.5, 9.5, 7.4), color = rock, material = "Slate", role = "Body" })
+	add(rig, { name = "Pelvis", parent = body, at = CF(0, -6, 0.3), shape = "block", size = V(8.6, 3.4, 6), color = dark, material = "Slate", role = "Body" })
+	for _, side in ipairs({ -1, 1 }) do
+		add(rig, { name = "Pec", parent = body, at = CF(side * 2.9, 2.4, -3.7) * ANG(rad(-8), side * rad(-10), side * rad(4)), shape = "block", size = V(4.6, 3.6, 1.4), color = plate, material = "Slate", role = "Detail" })
+		add(rig, { name = "Rib", parent = body, at = CF(side * 5.3, -0.4, -1) * ANG(0, 0, side * rad(8)), shape = "block", size = V(1, 6.5, 5.6), color = dark, material = "Slate", role = "Detail" })
+		add(rig, { name = "Lat", parent = body, at = CF(side * 4.6, 2.6, 1.6) * ANG(0, side * rad(18), 0), shape = "wedge", size = V(2.2, 5, 3.4), color = rock, material = "Slate", role = "Body" })
+	end
+	for k = 0, 2 do
+		add(rig, { name = "AbPlate", parent = body, at = CF(0, -1.8 - k * 1.5, -3.75 + k * 0.1) * ANG(rad(-4), 0, 0), shape = "block", size = V(5.6 - k * 0.6, 1.25, 0.9), color = plate, material = "Slate", role = "Detail" })
+	end
+	-- NÚCLEO: moldura de pedra, casca de cristal, coração de energia e veios irradiando
+	for i = 0, 3 do
+		add(rig, { name = "CoreFrame", parent = body, at = CF(0, 0.6, -3.9) * ANG(0, 0, rad(45 + i * 90)) * CF(0, 1.9, 0), shape = "block", size = V(3.2, 0.8, 1.1), color = dark, material = "Slate", role = "Detail" })
+	end
+	add(rig, { name = "CoreShell", parent = body, at = CF(0, 0.6, -4.05) * ANG(0, 0, rad(45)), shape = "block", size = V(2.6, 2.6, 1.0), color = glass, material = "Glass", transparency = 0.3, role = "Accent" })
+	add(rig, { name = "Core", parent = body, at = CF(0, 0.6, -4.0) * ANG(0, 0, rad(45)), shape = "block", size = V(1.8, 1.8, 1.1), color = glow, material = "Neon", role = "Glow" })
+	energy("Core")
+	for i = 0, 5 do
+		local a = i / 6 * math.pi * 2 + 0.3
+		crack(rig, body, CF(math.cos(a) * 3.3, 0.6 + math.sin(a) * 3.0, -3.95) * ANG(0, 0, a + math.pi / 2), 2.6, glow)
+	end
+	-- COSTAS: grande aglomerado de cristais saindo de uma corcova de rocha
+	add(rig, { name = "BackHump", parent = body, at = CF(0, 2.8, 3.4) * ANG(rad(12), 0, 0), shape = "block", size = V(8, 5, 2.4), color = dark, material = "Slate", role = "Body" })
+	titanCluster(rig, body, CF(0, 4.6, 3.4) * ANG(rad(24), 0, 0), 5, 8.5, 1.7, glass, glow, 22)
+	titanCluster(rig, body, CF(0, 1.4, 4.2) * ANG(rad(55), 0, 0), 3, 5, 1.2, glass, glow, 30)
+	-- CABEÇA: crânio, testa saliente, maçãs, olhos fundos, nariz, mandíbula com dentes de cristal, coroa
 	local neck = helper(rig, "NeckBase", body, nil, CF(0, 5, -1))
-	local head = add(rig, { name = "Head", parent = neck, joint = "Neck", at = CF(0, 1.8, -0.4), shape = "block", size = V(4.4, 3.6, 4), color = rock, material = "Slate", role = "Body" })
-	add(rig, { name = "Brow", parent = head, at = CF(0, 0.9, -2.05) * ANG(rad(-20), 0, 0), shape = "wedge", size = V(4.6, 1, 1.2), color = dark, material = "Slate", role = "Detail" })
-	ModelKit.eyes(rig, head, 1.0, 0.1, -2.05, 0.8, blue, true)
-	add(rig, { name = "Jaw", parent = head, joint = "Jaw", at = CF(0, -1.9, -0.4), shape = "block", size = V(3.6, 1.1, 3.2), color = dark, material = "Slate", role = "Belly" })
-	cluster(rig, head, CF(0, 1.7, 0.2), 5, 4.2, 1.0, blue, 34)
-	-- ombros com cachos de cristal + braços
+	add(rig, { name = "NeckRock", parent = neck, at = CF(0, 0.4, 0.2), shape = "block", size = V(3.6, 1.6, 3.2), color = dark, material = "Slate", role = "Body" })
+	local head = add(rig, { name = "Head", parent = neck, joint = "Neck", at = CF(0, 2, -0.4), shape = "block", size = V(4.4, 3.6, 4), color = rock, material = "Slate", role = "Body" })
+	add(rig, { name = "Brow", parent = head, at = CF(0, 0.85, -2.05) * ANG(rad(-25), 0, 0), shape = "wedge", size = V(4.8, 1.1, 1.4), color = dark, material = "Slate", role = "Detail" })
+	for _, side in ipairs({ -1, 1 }) do
+		add(rig, { name = "EyeSocket", parent = head, at = CF(side * 1.05, 0.2, -2.02), shape = "block", size = V(1.4, 0.75, 0.2), color = rgb(12, 12, 22), material = "Slate", role = "Detail", shadow = false })
+		add(rig, { name = "TitanEye", parent = head, at = CF(side * 1.05, 0.18, -2.1) * ANG(0, 0, side * rad(-8)), shape = "block", size = V(1.0, 0.32, 0.12), color = pale, material = "Neon", role = "Eye", shadow = false })
+		add(rig, { name = "Cheek", parent = head, at = CF(side * 1.65, -0.6, -1.75) * ANG(0, side * rad(-20), 0), shape = "block", size = V(1.3, 1.2, 1), color = plate, material = "Slate", role = "Detail" })
+		titanCrystal(rig, head, CF(side * 1.9, 1.5, 0.4) * ANG(rad(-15), 0, side * rad(-38)), 3.4, 0.8, glass, glow) -- chifres
+	end
+	energy("TitanEye")
+	energy("TitanEye2")
+	add(rig, { name = "Nose", parent = head, at = CF(0, -0.2, -2.15) * ANG(rad(-10), 0, 0), shape = "wedge", size = V(0.8, 1.2, 0.6), color = plate, material = "Slate", role = "Detail" })
+	local jaw = add(rig, { name = "Jaw", parent = head, joint = "Jaw", at = CF(0, -2.0, -0.5), shape = "block", size = V(3.8, 1.2, 3.4), color = dark, material = "Slate", role = "Belly" })
+	for k = -1, 1 do
+		add(rig, { name = "Tooth", parent = jaw, at = CF(k * 0.9, 0.75, -1.6) * ANG(0, 0, 0), shape = "wedge", size = V(0.45, 0.6, 0.35), color = pale, material = "Glass", role = "Accent", shadow = false })
+	end
+	titanCluster(rig, head, CF(0, 1.7, 0.4), 3, 3.6, 0.9, glass, glow, 26)
+	-- BRAÇOS ENORMES: ombreira em camadas com cristais, braço, cotovelo, antebraço largo com espinhos,
+	-- punho com nós dos dedos (as peças "Fist" têm EnergyFx: brilham ao carregar o soco)
 	for _, side in ipairs({ -1, 1 }) do
 		local jn = side < 0 and "ArmL" or "ArmR"
-		local arm = helper(rig, jn, body, jn, CF(side * 7.2, 3, 0))
-		add(rig, { name = "Shoulder", parent = arm, at = CF(0, 0.5, 0), shape = "block", size = V(5, 4.4, 5), color = rock, material = "Slate", role = "Body" })
-		cluster(rig, arm, CF(side * 0.5, 2.6, 0) * ANG(0, 0, side * rad(-12)), 4, 6.5, 1.5, blue, 34)
-		add(rig, { name = "UpperArm", parent = arm, at = CF(side * 0.3, -4, 0), shape = "block", size = V(3.6, 6, 3.6), color = dark, material = "Slate", role = "Body" })
-		crystal(rig, arm, CF(side * 2, -3.5, 0) * ANG(0, 0, side * rad(-80)), 2.6, 1, blue)
-		add(rig, { name = "Forearm", parent = arm, at = CF(side * 0.4, -9, -0.4), shape = "block", size = V(4.4, 5, 4.4), color = rock, material = "Slate", role = "Body" })
-		crack(rig, arm, CF(side * 0.4, -9, -2.65), 3.6, blue)
-		add(rig, { name = "Fist", parent = arm, at = CF(side * 0.4, -12.8, -0.8), shape = "block", size = V(5.6, 4.6, 5.6), color = dark, material = "Slate", role = "Belly" })
-		for k = -1, 1 do
-			crystal(rig, arm, CF(side * 0.4 + k * 1.6, -11.5, -3.6) * ANG(rad(-90), 0, 0), 1.6, 0.8, pale)
+		local arm = helper(rig, jn, body, jn, CF(side * 7.4, 3, 0))
+		add(rig, { name = "Shoulder", parent = arm, at = CF(0, 0.6, 0), shape = "block", size = V(5.4, 4.6, 5.4), color = rock, material = "Slate", role = "Body" })
+		add(rig, { name = "Pauldron", parent = arm, at = CF(side * 0.6, 2.6, 0) * ANG(0, 0, side * rad(-14)), shape = "block", size = V(5.8, 1.2, 5.8), color = plate, material = "Slate", role = "Detail" })
+		titanCluster(rig, arm, CF(side * 0.8, 3.1, 0) * ANG(0, 0, side * rad(-16)), 4, 7, 1.5, glass, glow, 30)
+		add(rig, { name = "UpperArm", parent = arm, at = CF(side * 0.3, -3.8, 0), shape = "block", size = V(3.8, 5.6, 3.8), color = dark, material = "Slate", role = "Body" })
+		add(rig, { name = "Elbow", parent = arm, at = CF(side * 0.35, -6.6, 0.3) * ANG(rad(45), 0, 0), shape = "block", size = V(3.6, 2.4, 2.4), color = rock, material = "Slate", role = "Detail" })
+		add(rig, { name = "Forearm", parent = arm, at = CF(side * 0.4, -9.3, -0.4), shape = "block", size = V(4.8, 5.4, 4.8), color = rock, material = "Slate", role = "Body" })
+		add(rig, { name = "Bracer", parent = arm, at = CF(side * 0.4, -10.8, -0.4), shape = "block", size = V(5.2, 1.2, 5.2), color = plate, material = "Slate", role = "Detail" })
+		crack(rig, arm, CF(side * 0.4, -9.1, -2.85), 3.8, glow)
+		for k = 0, 2 do
+			titanCrystal(rig, arm, CF(side * 2.5, -8 - k * 1.6, -0.4 + (k - 1) * 1.3) * ANG(0, 0, side * rad(-75)), 2.6 - k * 0.4, 0.9, glass, glow)
 		end
+		local fistName = add(rig, { name = "Fist", parent = arm, at = CF(side * 0.4, -13.3, -0.8), shape = "block", size = V(6, 4.6, 6), color = dark, material = "Slate", role = "Belly" })
+		energy(fistName)
+		for k = -1, 2 do
+			add(rig, { name = "Knuckle", parent = arm, at = CF(side * 0.4 + (k - 0.5) * 1.45, -12.6, -3.95), shape = "block", size = V(1.25, 1.5, 1.2), color = rock, material = "Slate", role = "Detail" })
+		end
+		for k = -1, 1 do
+			crystal(rig, arm, CF(side * 0.4 + k * 1.7, -14.9, -3.2) * ANG(rad(-120), 0, 0), 1.7, 0.8, pale)
+		end
+		-- PERNAS
 		local ln = side < 0 and "LegL" or "LegR"
 		local leg = helper(rig, ln, body, ln, CF(side * 3, -8, 0))
-		add(rig, { name = "Thigh", parent = leg, at = CF(0, -1.8, 0), shape = "block", size = V(3.8, 4, 4), color = rock, material = "Slate", role = "Body" })
-		crystal(rig, leg, CF(0, -3.6, -2.2) * ANG(rad(-90), 0, 0), 1.8, 1.2, blue) -- joelho
-		add(rig, { name = "Shin", parent = leg, at = CF(0, -5.4, 0), shape = "block", size = V(4.2, 4, 4.4), color = dark, material = "Slate", role = "Body" })
-		add(rig, { name = "Foot", parent = leg, at = CF(0, -7.9, -0.6), shape = "block", size = V(4.8, 1.6, 5.8), color = rock, material = "Slate", role = "Belly" })
+		add(rig, { name = "Thigh", parent = leg, at = CF(0, -1.8, 0), shape = "block", size = V(4, 4, 4.2), color = rock, material = "Slate", role = "Body" })
+		titanCrystal(rig, leg, CF(0, -3.4, -2.2) * ANG(rad(-90), 0, 0), 2, 1.2, glass, glow) -- joelho
+		add(rig, { name = "Shin", parent = leg, at = CF(0, -5.4, 0), shape = "block", size = V(4.4, 4, 4.6), color = dark, material = "Slate", role = "Body" })
+		add(rig, { name = "ShinPlate", parent = leg, at = CF(0, -5.2, -2.4) * ANG(rad(-5), 0, 0), shape = "block", size = V(3, 3.4, 0.6), color = plate, material = "Slate", role = "Detail" })
+		add(rig, { name = "Foot", parent = leg, at = CF(0, -7.9, -0.7), shape = "block", size = V(5, 1.6, 6.2), color = rock, material = "Slate", role = "Belly" })
+		for k = -1, 1 do
+			add(rig, { name = "Toe", parent = leg, at = CF(k * 1.6, -8.2, -4.1), shape = "wedge", size = V(1.4, 1.1, 1.4), color = dark, material = "Slate", role = "Detail" })
+		end
 	end
 	ModelKit.hitbox(rig, V(16, 27, 10), CF(0, 2, 0))
 	return rig.model, 12.3, 9

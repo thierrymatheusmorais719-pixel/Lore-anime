@@ -8,7 +8,7 @@ vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
 > Luau, contra o dump público da API do Roblox, com 58 testes de lógica, 3297 verificações dos modelos 3D e
-> **98 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> **113 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -128,6 +128,60 @@ de musgo com cachoeiras, cachoeiras caindo da borda da ilha, bonsais, flores rox
   - pólen, esporos, cintilações ou névoa, conforme a ilha.
 - **Texturas:** só as embutidas no cliente Roblox (`sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`, em `rbxasset://textures/particles/`).
 
+### Mundo 2 — Crystal Hollow
+
+Construído a partir da arte de referência do autor (`docs/concept/world2_ref.png`). Prévias:
+`docs/preview/crystal_*.png`, com o terreno voxelizado como o Roblox faz.
+
+**Código:**
+- `server/Services/CrystalHollow.luau`: o mapa e as cinco regiões.
+- `server/Services/CrystalKit.luau`: cristais e arquitetura.
+- `server/Services/RegionService.luau`: portais de região, baús e NPCs.
+- `shared/Config/Regions.luau`: limites, luz e sons de cada região.
+- `client/Controllers/RegionClient.luau`: nome da região na tela, luz e som por região.
+
+| Região | Onde | O que tem |
+|---|---|---|
+| **Crystal Valley** | centro | Praça, ovos e portais de mundo. Grama animada, caminhos de pedra e uma lagoa com flores luminosas. Árvores de folhas azuis e violeta, aglomerados de cristal e lanternas com fogo. Arco em ruínas, NPC **Lyra**, portal de região e **Baú do Vale**. |
+| **Shattered Peaks** | θ 45° | Três montanhas de Terrain (74, 100 e 66 studs) com faces de penhasco, musgo e cristais gigantes nos cumes. **Grande cachoeira** de 76 studs caindo de um paredão numa bacia. Rio escavado até a lagoa do vale, com ponte de pedra. Rampa de pedra até uma plataforma e **ponte suspensa** na frente da cachoeira, levando ao **Baú do Pico**. |
+| **Azure Caverns** | θ 195° | Maciço rochoso com túnel de entrada, **salão escavado** e lago subterrâneo. Cristais nas paredes, estalactites, névoa e luz azul. **Passagem secreta** atrás de uma cortina de cristais leva à câmara com o **cristal raro** e o **Baú Secreto**. NPC **Orin**. |
+| **Prism Lake** | θ 140° | Lago de margens irregulares com ilhas e cristais saindo da água. **Ponte de pedra** até a ilha das ruínas (colunas, arco, cristal raro e **Baú das Ruínas**). Penhasco com **duas cachoeiras**. Riacho de saída que cai da borda da ilha. |
+| **Titan's Domain** | θ 90° | Arena do Prism Titan cercada por obeliscos com cristais e estandartes. Estátua colossal quebrada, **fachada de templo** em ruínas, dois espigões de cristal gigantes, **Relicário do Titã** e NPC **Vael**. |
+
+**Ligação entre as regiões:**
+- **Caminhos:** caminhos de pedra ligam o vale a cada região.
+- **Circuito de portais:** vale → picos → cavernas → lago → domínio → vale. Cada portal também tem "Voltar ao vale" (tecla R).
+- **Validação no servidor:** o portal exige o mundo desbloqueado e o jogador dentro dele, com intervalo anti-spam. Os pets vão junto.
+
+**Recompensas e NPCs:**
+- **Baús-santuário:** recompensa da tabela `Drops.Shrine`, com recarga de 30 min por jogador salva no perfil (`data.shrines`). Na primeira abertura aparece o aviso "Local secreto descoberto". Contam para a missão de tesouros.
+- **NPCs:** dão dicas da região, uma fala diferente a cada conversa.
+
+**Prism Titan, refeito:**
+- **Corpo:**
+  - pedra escura com peitorais, abdômen em placas e costelas;
+  - núcleo no peito com moldura, casca de cristal e veios de energia;
+  - rosto com testa, maçãs, olhos fundos e brilhantes, nariz e mandíbula com dentes de cristal;
+  - chifres e coroa de cristal;
+  - ombreiras com cristais, antebraços largos com espinhos e punhos com nós dos dedos;
+  - grande aglomerado de cristais nas costas.
+- **Energia:** o núcleo, os olhos e os punhos pulsam em repouso, carregam luz e partículas enquanto o ataque é preparado e soltam uma rajada no golpe.
+
+**Luz:**
+- O mundo virou uma tarde de céu azul, como na referência.
+- Cada região ajusta a névoa e a luz: a caverna é escura e enevoada, o lago mais claro, o domínio mais dramático.
+- O Bloom continua contido.
+
+**Sistemas que continuaram iguais e foram testados:**
+- ovos e estações, inimigos e zonas, campos de recurso e o boss;
+- portais de mundo, desbloqueio e salvamento.
+
+O terreno novo não pode soterrar nenhum ponto de gameplay. O simulador verifica 113 pontos no estado final do terreno, contando as escavações: túnel, salão, passagem secreta, plataformas, ilha, chegadas dos portais e baús.
+
+**Desempenho:**
+- O Mundo 2 tem cerca de 8.000 peças, 45 luzes e 104 emissores, com teto testado de 9.000, 60 e 120.
+- A decoração não colide nem dispara Touched, e peças pequenas não projetam sombra.
+
 **Base do simulador**: 5 ilhas (terreno + decoração), 10 ovos com moedas/essência, 5 ovos especiais,
 34 espécies, recursos quebráveis, tesouros, portais, 16 missões de história, 3 diárias por dia (iguais em
 todos os servidores), 9 marcos de coleção, login diário e DataStore com trava de sessão, autosave e
@@ -190,8 +244,8 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Variáveis indefinidas / código suspeito | `python3 tools/lint.py luau-analyze` | 0 avisos |
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **58 testes passando** |
-| Modelos 3D (182 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses) | `python3 tools/run_tests.py luau --smoke` | **3297 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **98 cenários passando** (inclui todos os efeitos visuais) |
+| Modelos 3D (182 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) | `python3 tools/run_tests.py luau --smoke` | **3297 verificações, 0 falhas** |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **113 cenários passando** (inclui efeitos visuais e as regiões do Mundo 2) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -264,8 +318,27 @@ travamento) foi exercitada.
 7. **Celular**: use o *Device Emulator* do Studio: barra da equipe, botão ⚔ e toque nos inimigos.
 8. Abra o *MicroProfiler* durante uma luta de boss com efeitos ligados (e com *Qualidade de efeitos: Baixa*).
 
+9. **Crystal Hollow**:
+   - Desbloqueie o mundo e entre pelo portal.
+   - Atravesse o circuito de portais de região e confira o nome de cada região na tela e a mudança de luz.
+   - Suba a rampa dos Shattered Peaks e atravesse a ponte suspensa.
+   - Entre nas Azure Caverns, ache a passagem atrás da cortina de cristais e abra o baú secreto.
+   - Siga a ponte do Prism Lake até a ilha das ruínas.
+   - Lute contra o Prism Titan e veja o núcleo e os punhos carregarem antes dos golpes.
+   - Pontos de atenção:
+     - se os túneis e plataformas de Terrain ficaram com o tamanho certo depois da voxelização (4 studs);
+     - se as cachoeiras encostam na água;
+     - o FPS no celular.
+
 ## 8. Limitações conhecidas
 
+- **Sons ambientes do Mundo 2:**
+  - O sistema está pronto (som por região com transição suave), mas `Regions.Sounds` está vazio.
+  - O projeto não inventa IDs de áudio: cole IDs do Creator Store (vento, cachoeira, gotejamento de caverna, água, zumbido de cristais) e eles passam a tocar.
+- **StreamingEnabled continua desligado:**
+  - O cliente lê modelos de todas as ilhas (estações, recursos, inimigos), e o teleporte entre ilhas a 1.400 studs pode deixar o personagem cair antes do terreno chegar.
+  - Ligar exige `RequestStreamAroundAsync` nos teleportes e testes no Studio.
+  - A otimização feita foi por orçamento de peças, luzes e emissores.
 - Nunca executado no Roblox Studio (ver seção 6). Física, colisão, aparência, sons e desempenho reais estão
   pendentes de verificação.
 - Sem meshes ou animações publicadas: tudo é procedural (peças primitivas, SpecialMesh de esfera e

@@ -424,7 +424,7 @@ end
 local services = {
 	Players = Players, RunService = RunService, DataStoreService = DataStoreService, MessagingService = MessagingService,
 	HttpService = HttpService, PathfindingService = PathfindingService, ReplicatedStorage = ReplicatedStorage, Workspace = workspace,
-	TweenService = service("TweenService"), Debris = service("Debris"), Lighting = service("Lighting"),
+	TweenService = service("TweenService"), Debris = service("Debris"), Lighting = service("Lighting"), SoundService = service("SoundService"),
 }
 function SIM.registerService(name, inst)
 	services[name] = inst

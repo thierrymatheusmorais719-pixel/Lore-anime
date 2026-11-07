@@ -9,12 +9,14 @@ local Make = require(Shared.Util.Make)
 local InventoryLogic = require(Shared.Logic.InventoryLogic)
 local Net = require(Shared.Net)
 local WorldBuilder = require(script.Parent.WorldBuilder)
+local CrystalHollow = require(script.Parent.CrystalHollow)
 
 local WorldService = {}
 
 local S
 local Push
 WorldService.Layout = {} -- [worldId] = { center, radius, spawnCF, arena, enemyZones, resourceFields, eggStations }
+WorldService.Regions = {} -- [worldId] = { gates, chests, npcs } (regiões construídas à mão; ver RegionService)
 
 function WorldService.init(registry)
 	S = registry
@@ -60,6 +62,13 @@ function WorldService.build()
 		local terrainOk = WorldBuilder.terrain(id, folder)
 		if id == "verdant" then
 			WorldBuilder.verdantLandmark(folder, terrainOk)
+		elseif id == "crystal" then
+			local reg = CrystalHollow.build(folder, terrainOk)
+			WorldService.Regions.crystal = reg
+			if reg.errors then
+				local rs = game:GetService("ReplicatedStorage")
+				rs:SetAttribute("ServerErrors", ((rs:GetAttribute("ServerErrors") or "") .. "\n\nCrystal Hollow: " .. reg.errors))
+			end
 		end
 		WorldBuilder.boundary(id, folder)
 		local spawnCF = WorldBuilder.plaza(id, folder)

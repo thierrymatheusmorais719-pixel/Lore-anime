@@ -5,6 +5,8 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Worlds = require(Shared.Config.Worlds)
 local Eggs = require(Shared.Config.Eggs)
 local Make = require(Shared.Util.Make)
+local Regions = require(Shared.Config.Regions)
+local CrystalKit = require(script.Parent.CrystalKit)
 
 local WorldBuilder = {}
 
@@ -16,7 +18,7 @@ local rgb = Color3.fromRGB
 
 local CLIFF_COLORS = {
 	Rock = rgb(110, 100, 90),
-	Basalt = rgb(46, 44, 60),
+	Basalt = rgb(84, 80, 104), -- cinza-violeta (rochas de Crystal Hollow, como na arte de referência)
 	Limestone = rgb(205, 205, 215),
 	Mud = rgb(70, 60, 56),
 	Concrete = rgb(52, 44, 82),
@@ -60,7 +62,7 @@ WorldBuilder.Layout = {
 -- Terreno
 -------------------------------------------------------------------------------
 
-local function terrainFill(w)
+local function terrainFill(w, worldId: string)
 	local Terrain = workspace:FindFirstChildOfClass("Terrain")
 	if not Terrain then
 		error("Workspace sem Terrain")
@@ -94,7 +96,11 @@ local function terrainFill(w)
 	for i = 1, 10 do
 		local theta = i * 36 + rng:NextNumber(-8, 8)
 		local pos = WorldBuilder.polar(c, theta, r - rng:NextNumber(10, 22), -8)
-		Terrain:FillBall(pos, rng:NextNumber(12, 18), i % 3 == 0 and cliff or ground)
+		local hr = rng:NextNumber(12, 18)
+		-- não sobe colina em cima de regiões construídas à mão (templo, baús, lago...)
+		if not Regions.isReserved(worldId, pos, hr) then
+			Terrain:FillBall(pos, hr, i % 3 == 0 and cliff or ground)
+		end
 	end
 end
 
@@ -127,7 +133,7 @@ end
 
 function WorldBuilder.terrain(worldId: string, parent: Instance)
 	local w = Worlds.Info[worldId]
-	local ok, err = pcall(terrainFill, w)
+	local ok, err = pcall(terrainFill, w, worldId)
 	if ok then
 		local okD, errD = pcall(WorldBuilder.terrainDetail, worldId)
 		if not okD then
@@ -228,12 +234,49 @@ local function freeSpot(center: Vector3, radius: number, rng: Random, worldId: s
 				ok = false
 			end
 		end
+		-- regiões construídas à mão (lago, montanhas, caverna, rio) ficam livres de decoração aleatória
+		if worldId and Regions.isReserved(worldId, pos, 4) then
+			ok = false
+		end
 		if ok then
 			return pos
 		end
 	end
 	return nil
 end
+
+-- Ponto livre de gameplay (praça, ovos, portais, arena, campos, zonas e áreas reservadas).
+function WorldBuilder.isFree(worldId: string, pos: Vector3, margin: number?, ignoreReserved: boolean?): boolean
+	local w = Worlds.Info[worldId]
+	local L = WorldBuilder.Layout
+	local m = margin or 0
+	local function near(theta, dist, r)
+		return ((pos - WorldBuilder.polar(w.center, theta, dist)) * V(1, 0, 1)).Magnitude < r + m
+	end
+	if ((pos - w.center) * V(1, 0, 1)).Magnitude < 30 + m then
+		return false
+	end
+	if near(L.arena.theta, L.arena.dist, 74) or near(L.portalNext.theta, L.portalNext.dist, 8) or near(L.portalPrev.theta, L.portalPrev.dist, 8) then
+		return false
+	end
+	for _, e in ipairs(L.eggs) do
+		if near(e.theta, e.dist, 9) then
+			return false
+		end
+	end
+	for _, f in ipairs(L.resources) do
+		if near(f.theta, f.dist, f.r + 2) then
+			return false
+		end
+	end
+	for _, z in ipairs(L.enemyZones) do
+		if near(z.theta, z.dist, z.r + 2) then
+			return false
+		end
+	end
+	return ignoreReserved == true or not Regions.isReserved(worldId, pos, m)
+end
+WorldBuilder.freeSpot = freeSpot
 
 -------------------------------------------------------------------------------
 -- Detalhes do terreno: caminhos de terra, manchas de solo, montinhos e pedras de Terrain
@@ -243,13 +286,13 @@ end
 -- é usado com UMA cor só em todas as ilhas).
 local TERRAIN_STYLE = {
 	verdant = { path = "Ground", patch = "Ground", boulder = "Rock" },
-	crystal = { path = "Cobblestone", patch = "Glacier", boulder = "Basalt" },
+	crystal = { path = "Cobblestone", patch = "Slate", boulder = "Basalt" },
 	sky = { path = "Sandstone", patch = "Ice", boulder = "Limestone" },
 	wilds = { path = "Ground", patch = "Mud", boulder = "Rock" },
 	astral = { path = "Salt", patch = "CrackedLava", boulder = "Concrete" },
 }
 local EXTRA_COLORS = {
-	Ground = rgb(122, 98, 70), Cobblestone = rgb(90, 88, 114), Glacier = rgb(176, 158, 236), Sandstone = rgb(226, 212, 184),
+	Ground = rgb(122, 98, 70), Cobblestone = rgb(128, 126, 146), Slate = rgb(86, 92, 116), Glacier = rgb(176, 158, 236), Sandstone = rgb(226, 212, 184),
 	Ice = rgb(212, 234, 250), Salt = rgb(122, 114, 170), CrackedLava = rgb(96, 70, 160),
 }
 
@@ -598,7 +641,8 @@ function WorldBuilder.decor(worldId: string, parent: Instance)
 	local c = w.center
 	local rng = Random.new(w.index * 1337)
 	local folder = Make("Folder", { Name = "Decor", Parent = parent })
-	local count = 64
+	-- Crystal Hollow já tem muito conteúdo feito à mão nas regiões: menos decoração aleatória
+	local count = worldId == "crystal" and 40 or 64
 	for i = 1, count do
 		local spot = freeSpot(c, w.radius, rng, worldId)
 		if spot then
@@ -622,12 +666,23 @@ function WorldBuilder.decor(worldId: string, parent: Instance)
 					WorldBuilder.flowerBush(folder, pos, s * 0.9, rng, rgb(255, 150, 200))
 				end
 			elseif worldId == "crystal" then
-				if k % 3 == 0 then
-					crystal(folder, pos, s, i % 4 == 0 and rgb(200, 140, 255) or rgb(120, 220, 255))
-				elseif k % 3 == 1 then
-					rockCluster(folder, pos, s * 1.3, rng, rgb(54, 52, 70), Enum.Material.Basalt)
+				-- Crystal Valley: árvores de folhas azuis/violeta, aglomerados de várias espécies,
+				-- cristais miúdos no chão, rochas com musgo e moitas com flores violeta
+				if k == 0 or k == 6 then
+					oakTree(folder, pos, s, rng, rgb(84, 66, 74), i % 4 == 0 and rgb(120, 90, 220) or rgb(60, 110, 210))
+				elseif k == 1 then
+					WorldBuilder.bonsai(folder, pos, s, rng, rgb(150, 100, 230))
+				elseif k == 2 or k == 7 then
+					CrystalKit.cluster(folder, CF(pos) * ANG(0, rng:NextNumber(0, 6.28), 0), rng, { count = rng:NextInteger(4, 6), h = rng:NextNumber(5, 9) * s, w = rng:NextNumber(1.1, 1.6) * s,
+						styles = ({ { "blue", "ice" }, { "violet", "amethyst" }, { "sapphire", "blue" } })[i % 3 + 1] })
+				elseif k == 3 or k == 8 then
+					CrystalKit.scatter(folder, pos, rng, i % 2 == 0 and { "blue", "ice" } or { "violet", "blue" })
+				elseif k == 4 then
+					rockCluster(folder, pos, s, rng, rgb(70, 72, 92), Enum.Material.Slate, rgb(70, 130, 92))
+				elseif k == 5 then
+					WorldBuilder.flowerBush(folder, pos, s, rng, rgb(170, 110, 255))
 				else
-					rockCluster(folder, pos, s * 0.8, rng, rgb(80, 76, 110), Enum.Material.Slate)
+					bush(folder, pos, s, rng, rgb(54, 110, 120))
 				end
 			elseif worldId == "sky" then
 				if k == 0 or k == 5 then
@@ -756,6 +811,10 @@ local function waterfall(parent, top: Vector3, height: number, width: number, fa
 	splash.SpreadAngle = Vector2.new(35, 35)
 	splash.Acceleration = V(0, -35, 0)
 	splash.Parent = foam
+end
+
+WorldBuilder.waterfall = function(...)
+	return waterfall(...)
 end
 
 function WorldBuilder.verdantLandmark(parent: Instance, terrainOk: boolean)

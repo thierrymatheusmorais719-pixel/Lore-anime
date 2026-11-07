@@ -35,7 +35,7 @@ registry.Push = Net.get("Push")
 local ORDER = {
 	"DataService", "LuckService", "AnnounceService", "RewardService", "QuestService", "WorldService",
 	"PetService", "CombatService", "EnemyService", "BossService", "ExplorationService", "EggService",
-	"DevService", "RequestRouter",
+	"RegionService", "DevService", "RequestRouter",
 }
 
 -- Rede de segurança: se por qualquer motivo o personagem não for criado, cria depois de alguns segundos.

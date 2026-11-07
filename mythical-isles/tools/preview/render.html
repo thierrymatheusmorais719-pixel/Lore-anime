@@ -124,12 +124,128 @@ if (ground === 'island_old') {
   const floor = new THREE.Mesh(new THREE.CircleGeometry(400, 64), new THREE.MeshStandardMaterial({ color: q.get('floor') || '#8fd16a', roughness: .95 }));
   floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
 }
+const TCOL = { Grass: '#60a84a', Rock: '#6e645a', Sand: '#d2c396', Water: '#28c8cd', Slate: '#5a5a64', LeafyGrass: '#3a6246', Ground: '#7a6246', Basalt: '#2e2c3c', Cobblestone: '#807e92' };
+// Terrain voxelizado (aproxima o Terrain suave do Roblox): grade de 4 studs, preenchimentos aplicados
+// EM ORDEM (escavações com Air contam), oclusão suavizada e superfície extraída por "surface nets".
+async function voxelTerrain(fills, cx, cz, half, y0, y1, cutSpec) {
+  const S = 4;
+  const nx = Math.ceil(2 * half / S) + 1, nz = nx, ny = Math.ceil((y1 - y0) / S) + 1;
+  const ox = cx - half, oz = cz - half, oy = y0;
+  const N = nx * ny * nz;
+  const mat = new Uint8Array(N);
+  const names = ['Air'], idx = { Air: 0 }, cols = [new THREE.Color(0, 0, 0)];
+  const id = (x, y, z) => x + nx * (y + ny * z);
+  for (const f of fills) {
+    let m = idx[f.m];
+    if (m === undefined) { m = names.length; idx[f.m] = m; names.push(f.m); cols.push(new THREE.Color(f.c[0] >= 0 ? `rgb(${f.c[0]},${f.c[1]},${f.c[2]})` : (TCOL[f.m] || '#888'))); }
+    const R = f.rot || [1,0,0,0,1,0,0,0,1];
+    let hx, hy, hz;
+    if (f.k === 'ball') { hx = hy = hz = f.r; }
+    else { const L = f.k === 'cyl' ? [f.r, f.h / 2, f.r] : [f.z[0] / 2, f.z[1] / 2, f.z[2] / 2];
+      hx = Math.abs(R[0]) * L[0] + Math.abs(R[1]) * L[1] + Math.abs(R[2]) * L[2];
+      hy = Math.abs(R[3]) * L[0] + Math.abs(R[4]) * L[1] + Math.abs(R[5]) * L[2];
+      hz = Math.abs(R[6]) * L[0] + Math.abs(R[7]) * L[1] + Math.abs(R[8]) * L[2]; }
+    const x0 = Math.max(0, Math.floor((f.p[0] - hx - ox) / S)), x1 = Math.min(nx - 1, Math.ceil((f.p[0] + hx - ox) / S));
+    const yA = Math.max(0, Math.floor((f.p[1] - hy - oy) / S)), yB = Math.min(ny - 1, Math.ceil((f.p[1] + hy - oy) / S));
+    const z0 = Math.max(0, Math.floor((f.p[2] - hz - oz) / S)), z1 = Math.min(nz - 1, Math.ceil((f.p[2] + hz - oz) / S));
+    for (let z = z0; z <= z1; z++) for (let y = yA; y <= yB; y++) for (let x = x0; x <= x1; x++) {
+      const dx = ox + x * S - f.p[0], dy = oy + y * S - f.p[1], dz = oz + z * S - f.p[2];
+      let inside;
+      if (f.k === 'ball') inside = dx * dx + dy * dy + dz * dz <= f.r * f.r;
+      else { const lx = R[0] * dx + R[3] * dy + R[6] * dz, ly = R[1] * dx + R[4] * dy + R[7] * dz, lz = R[2] * dx + R[5] * dy + R[8] * dz;
+        if (f.k === 'cyl') inside = Math.abs(ly) <= f.h / 2 && lx * lx + lz * lz <= f.r * f.r;
+        else inside = Math.abs(lx) <= f.z[0] / 2 && Math.abs(ly) <= f.z[1] / 2 && Math.abs(lz) <= f.z[2] / 2; }
+      if (inside) mat[id(x, y, z)] = m;
+    }
+  }
+  const water = idx.Water;
+  if (cutSpec) { // corte: remove a rocha acima do chão num raio (mostra o interior da caverna)
+    for (let z = 0; z < nz; z++) for (let y = 0; y < ny; y++) for (let x = 0; x < nx; x++) {
+      const wx = ox + x * S, wy = oy + y * S, wz = oz + z * S;
+      if (wy > cutSpec[3] && Math.hypot(wx - cutSpec[0], wz - cutSpec[1]) < cutSpec[2] && mat[id(x, y, z)] !== water) mat[id(x, y, z)] = 0;
+    }
+  }
+  function field(pred) {
+    let a = new Float32Array(N);
+    for (let i = 0; i < N; i++) a[i] = pred(mat[i]) ? 1 : 0;
+    // suaviza (caixa 3 em cada eixo)
+    for (const axis of [0, 1, 2]) {
+      const b = new Float32Array(N);
+      for (let z = 0; z < nz; z++) for (let y = 0; y < ny; y++) for (let x = 0; x < nx; x++) {
+        let sum = 0, n = 0;
+        for (let k = -1; k <= 1; k++) {
+          const X = x + (axis === 0 ? k : 0), Y = y + (axis === 1 ? k : 0), Z = z + (axis === 2 ? k : 0);
+          if (X < 0 || Y < 0 || Z < 0 || X >= nx || Y >= ny || Z >= nz) continue;
+          sum += a[id(X, Y, Z)]; n++;
+        }
+        b[id(x, y, z)] = sum / n;
+      }
+      a = b;
+    }
+    return a;
+  }
+  function nets(F, colorFor) {
+    const pos = [], col = [], ind = [];
+    const vid = new Int32Array(N).fill(-1);
+    const iso = 0.5;
+    const corners = [[0,0,0],[1,0,0],[0,1,0],[1,1,0],[0,0,1],[1,0,1],[0,1,1],[1,1,1]];
+    const edges = [[0,1],[2,3],[4,5],[6,7],[0,2],[1,3],[4,6],[5,7],[0,4],[1,5],[2,6],[3,7]];
+    for (let z = 0; z < nz - 1; z++) for (let y = 0; y < ny - 1; y++) for (let x = 0; x < nx - 1; x++) {
+      const v = corners.map(c => F[id(x + c[0], y + c[1], z + c[2])]);
+      let above = 0; for (const t of v) if (t > iso) above++;
+      if (above === 0 || above === 8) continue;
+      let px = 0, py = 0, pz = 0, n = 0;
+      for (const [a, b] of edges) {
+        if ((v[a] > iso) === (v[b] > iso)) continue;
+        const t = (iso - v[a]) / (v[b] - v[a]);
+        px += corners[a][0] + t * (corners[b][0] - corners[a][0]);
+        py += corners[a][1] + t * (corners[b][1] - corners[a][1]);
+        pz += corners[a][2] + t * (corners[b][2] - corners[a][2]); n++;
+      }
+      vid[id(x, y, z)] = pos.length / 3;
+      pos.push(ox + (x + px / n) * S, oy + (y + py / n) * S, oz + (z + pz / n) * S);
+      let best = -1, bm = 0;
+      for (let k = 0; k < 8; k++) { const m = mat[id(x + corners[k][0], y + corners[k][1], z + corners[k][2])]; if (colorFor(m) && v[k] > best) { best = v[k]; bm = m; } }
+      const c = cols[bm] || cols[0]; col.push(c.r, c.g, c.b);
+    }
+    const quad = (a, b, c, d, flip) => { if (a < 0 || b < 0 || c < 0 || d < 0) return; if (flip) ind.push(a, c, b, a, d, c); else ind.push(a, b, c, a, c, d); };
+    for (let z = 1; z < nz - 1; z++) for (let y = 1; y < ny - 1; y++) for (let x = 1; x < nx - 1; x++) {
+      const s0 = F[id(x, y, z)] > iso;
+      if (s0 !== (F[id(x + 1, y, z)] > iso)) quad(vid[id(x, y - 1, z - 1)], vid[id(x, y, z - 1)], vid[id(x, y, z)], vid[id(x, y - 1, z)], !s0);
+      if (s0 !== (F[id(x, y + 1, z)] > iso)) quad(vid[id(x - 1, y, z - 1)], vid[id(x - 1, y, z)], vid[id(x, y, z)], vid[id(x, y, z - 1)], !s0);
+      if (s0 !== (F[id(x, y, z + 1)] > iso)) quad(vid[id(x - 1, y - 1, z)], vid[id(x, y - 1, z)], vid[id(x, y, z)], vid[id(x - 1, y, z)], !s0);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    g.setIndex(ind); g.computeVertexNormals();
+    return g;
+  }
+  const solid = m => m !== 0 && m !== water;
+  const ground = new THREE.Mesh(nets(field(solid), solid), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .92, side: THREE.DoubleSide }));
+  ground.receiveShadow = true; ground.castShadow = true; sc.add(ground);
+  if (water !== undefined) {
+    const wg = nets(field(m => m === water), m => m === water);
+    const wm = new THREE.Mesh(wg, new THREE.MeshStandardMaterial({ color: 0x2ab8c8, roughness: .06, metalness: .15, transparent: true, opacity: .78 }));
+    wm.receiveShadow = true; sc.add(wm);
+  }
+}
+if (ground === 'voxel') {
+  const fills = await (await fetch(`data/${q.get('tfile') || 'terrain'}.json`)).json();
+  const vc = q.get('vcenter').split(',').map(Number);
+  const cutSpec = q.get('vcut') ? q.get('vcut').split(',').map(Number) : null;
+  await voxelTerrain(fills, vc[0], vc[1], vc[2], -110, 130, cutSpec);
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), new THREE.MeshStandardMaterial({ color: 0xecf2ff, roughness: 1 }));
+  sea.rotation.x = -Math.PI / 2; sea.position.y = -150; sc.add(sea);
+}
 if (ground === 'terrain') {
   // preenchimentos de Terrain registrados pelo simulador (água desenhada na superfície)
-  const TCOL = { Grass: '#60a84a', Rock: '#6e645a', Sand: '#d2c396', Water: '#28c8cd', Slate: '#5a5a64', LeafyGrass: '#3a6246', Ground: '#7a6246' };
-  const fills = await (await fetch('data/terrain.json')).json();
+  const fills = await (await fetch(`data/${q.get('tfile') || 'terrain'}.json`)).json();
+  // corte (cutaway): esconde a rocha num raio para mostrar o interior escavado de uma caverna
+  const cut = q.get('cut') ? q.get('cut').split(',').map(Number) : null;
   for (const f of fills) {
     if (f.m === 'Air') continue;
+    if (cut && f.m !== 'Water' && Math.hypot(f.p[0] - cut[0], f.p[2] - cut[1]) < cut[2] && f.p[1] + (f.r || f.h / 2 || 0) > 0.5) continue;
     const col = f.c[0] >= 0 ? `rgb(${f.c[0]},${f.c[1]},${f.c[2]})` : (TCOL[f.m] || '#888');
     const water = f.m === 'Water';
     const mat = new THREE.MeshStandardMaterial({ color: col, roughness: water ? .08 : .95, metalness: water ? .1 : 0, transparent: water, opacity: water ? .82 : 1 });

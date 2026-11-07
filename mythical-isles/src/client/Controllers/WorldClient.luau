@@ -58,8 +58,9 @@ end
 local PROFILES = {
 	verdant = { fog = Color3.fromRGB(196, 226, 232), decay = Color3.fromRGB(104, 150, 176), density = 0.3, offset = 0.2, haze = 1.6, glare = 0.3,
 		sat = 0.1, contrast = 0.08, tint = Color3.fromRGB(255, 252, 244), rays = 0.12, cover = 0.55, cloudDensity = 0.4, exposure = 0.15, bright = 3 },
-	crystal = { density = 0.38, offset = 0.1, haze = 1.2, glare = 0.1, sat = 0.06, contrast = 0.1, tint = Color3.fromRGB(240, 238, 255), rays = 0.04,
-		cover = 0.7, cloudDensity = 0.55, exposure = 0, bright = 2.2 },
+	-- Crystal Hollow: tarde clara de céu azul (como na arte de referência), névoa azul-violeta leve
+	crystal = { fog = Color3.fromRGB(176, 192, 238), decay = Color3.fromRGB(96, 104, 170), density = 0.3, offset = 0.18, haze = 1.5, glare = 0.25,
+		sat = 0.12, contrast = 0.08, tint = Color3.fromRGB(246, 244, 255), rays = 0.1, cover = 0.5, cloudDensity = 0.42, exposure = 0.1, bright = 2.8 },
 	sky = { density = 0.24, offset = 0.3, haze = 0.6, glare = 0.6, sat = 0.04, contrast = 0.05, tint = Color3.fromRGB(255, 252, 248), rays = 0.1,
 		cover = 0.42, cloudDensity = 0.35, exposure = 0.2, bright = 3.2 },
 	wilds = { density = 0.42, offset = 0.05, haze = 2.2, glare = 0.05, sat = -0.05, contrast = 0.12, tint = Color3.fromRGB(236, 248, 240), rays = 0.03,
@@ -68,13 +69,21 @@ local PROFILES = {
 		cover = 0.3, cloudDensity = 0.3, exposure = 0, bright = 2 },
 }
 
+local regionOverride = nil
+
 local function applyWorld(id: string)
 	local w = Worlds.Info[id]
 	if not w then
 		return
 	end
 	currentWorld = id
-	local pr = PROFILES[id] or PROFILES.verdant
+	local pr = table.clone(PROFILES[id] or PROFILES.verdant)
+	-- região atual (ex.: Azure Caverns) sobrepõe parte do perfil do mundo
+	if regionOverride then
+		for k, v in pairs(regionOverride) do
+			pr[k] = v
+		end
+	end
 	local info = TweenInfo.new(2.5)
 	TweenService:Create(Lighting, info, { ClockTime = w.clockTime, Ambient = w.palette.ambient:Lerp(Color3.new(0, 0, 0), 0.45),
 		OutdoorAmbient = w.palette.ambient:Lerp(Color3.new(1, 1, 1), 0.15), Brightness = pr.bright, ExposureCompensation = pr.exposure }):Play()
@@ -87,6 +96,14 @@ local function applyWorld(id: string)
 	TweenService:Create(depth, info, { FarIntensity = 0.16, FocusDistance = 55, InFocusRadius = 80 }):Play()
 	if clouds then
 		TweenService:Create(clouds, info, { Cover = pr.cover, Density = pr.cloudDensity }):Play()
+	end
+end
+
+-- Chamado pelo RegionClient ao entrar/sair de uma região (nil = só o perfil do mundo).
+function WorldClient.setRegionProfile(override)
+	regionOverride = override
+	if currentWorld then
+		applyWorld(currentWorld)
 	end
 end
 

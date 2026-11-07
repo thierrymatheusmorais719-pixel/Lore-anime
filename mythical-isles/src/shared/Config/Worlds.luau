@@ -36,15 +36,17 @@ Worlds.Info = {
 		radius = 230,
 		unlockCost = 2500,
 		statMult = 1.35,
-		ground = "Slate",
+		-- Grass: grama animada como na arte de referência. A cor do material Grass do Terrain é
+		-- global, então é a MESMA do Verdant Haven (ver WorldBuilder.terrainFill).
+		ground = "Grass",
 		cliff = "Basalt",
 		palette = {
-			ground = Color3.fromRGB(70, 78, 104),
+			ground = Color3.fromRGB(96, 168, 74),
 			accent = Color3.fromRGB(120, 220, 255),
-			fog = Color3.fromRGB(70, 60, 110),
-			ambient = Color3.fromRGB(90, 80, 140),
+			fog = Color3.fromRGB(150, 170, 230),
+			ambient = Color3.fromRGB(110, 100, 170),
 		},
-		clockTime = 0.5,
+		clockTime = 15.6,
 		bossId = "prism_titan",
 		enemies = { "shard_crawler", "prism_golem", "crystal_devourer" },
 		resource = "crystal_cluster",

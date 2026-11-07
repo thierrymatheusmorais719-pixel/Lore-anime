@@ -123,7 +123,7 @@ end
 for id in pairs(Bosses.Info) do
 	local ok, err = pcall(function()
 		local model, h, r = BossModels.build(id)
-		local n = verify("boss " .. id, model, 200)
+		local n = verify("boss " .. id, model, 280) -- um único boss por arena: mais detalhe permitido
 		local size = model:GetExtentsSize()
 		assert(math.max(size.X, size.Y, size.Z) >= 24 and size.Y >= 12, string.format("boss pequeno demais: %.0fx%.0fx%.0f", size.X, size.Y, size.Z))
 		print(string.format("  boss %-15s %3d peças, %.0fx%.0fx%.0f studs", id, n, size.X, size.Y, size.Z))

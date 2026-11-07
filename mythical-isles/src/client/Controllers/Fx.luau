@@ -549,6 +549,70 @@ local function onAbilityFx(p)
 end
 
 -------------------------------------------------------------------------------
+-- Energia dos bosses: peças marcadas com o atributo EnergyFx (núcleo, olhos, punhos do Prism
+-- Titan) pulsam em repouso, CARREGAM durante a preparação de um ataque (WindupEnd) e soltam uma
+-- rajada de faíscas e luz no golpe (ActionAt).
+-------------------------------------------------------------------------------
+
+local energy: { [Model]: any } = {}
+
+local function setupEnergy(model: Instance)
+	task.wait()
+	if not model:IsA("Model") then
+		return
+	end
+	local list = {}
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("BasePart") and d:GetAttribute("EnergyFx") then
+			local l = Instance.new("PointLight")
+			l.Color = d.Color
+			l.Range = 10
+			l.Brightness = 0.6
+			l.Shadows = false
+			l.Parent = d
+			local e = emit(d :: BasePart, { color = ColorSequence.new(WHITE, d.Color), emission = 1, size = seq(0, 0.7, 1, 0), speed = NumberRange.new(2, 6),
+				life = NumberRange.new(0.3, 0.6), drag = 3, z = 1 }, 0)
+			table.insert(list, { part = d, light = l, emit = e })
+		end
+	end
+	if #list > 0 then
+		energy[model :: Model] = { parts = list, lastAt = model:GetAttribute("ActionAt") or 0 }
+	end
+end
+
+local function updateEnergy()
+	local now = workspace:GetServerTimeNow()
+	local pulse = 0.5 + 0.5 * math.sin(os.clock() * 3)
+	for model, st in pairs(energy) do
+		if not model.Parent then
+			energy[model] = nil
+			continue
+		end
+		local wEnd = model:GetAttribute("WindupEnd") or 0
+		local left = wEnd - now
+		local charging = left > 0 and left < 3 and model:GetAttribute("Dead") ~= true
+		local k = charging and (1 - math.clamp(left / 1.6, 0, 1)) or 0
+		for _, p in ipairs(st.parts) do
+			p.light.Brightness = 0.5 + pulse * 0.4 + k * 4
+			p.light.Range = 10 + k * 14
+			p.emit.Rate = charging and (lowVfx() and 12 or 40) or 0
+		end
+		local at = model:GetAttribute("ActionAt") or 0
+		if at > st.lastAt then
+			st.lastAt = at
+			if now - at < 1 then
+				for _, p in ipairs(st.parts) do
+					p.emit:Emit(lowVfx() and 6 or 16)
+				end
+				local core = st.parts[1].part
+				flash(core.Position, core.Color, 30, 5, 0.4)
+			end
+		end
+	end
+end
+Fx.updateEnergy = updateEnergy
+
+-------------------------------------------------------------------------------
 -- Indicadores de ataque (geometria vem do servidor; aqui só a animação)
 -------------------------------------------------------------------------------
 
@@ -787,6 +851,25 @@ function Fx.init()
 		end
 	end)
 	State.on("AbilityFx", onAbilityFx)
+	task.spawn(function()
+		local bf = workspace:WaitForChild("Bosses", 30)
+		if bf then
+			for _, m in ipairs(bf:GetChildren()) do
+				task.spawn(setupEnergy, m)
+			end
+			bf.ChildAdded:Connect(function(m)
+				task.spawn(setupEnergy, m)
+			end)
+		end
+	end)
+	local energyAcc = 0
+	RunService.Heartbeat:Connect(function(dt)
+		energyAcc += dt
+		if energyAcc >= 1 / 30 then
+			energyAcc = 0
+			updateEnergy()
+		end
+	end)
 	-- tremor de câmera aplicado depois do script de câmera padrão (prioridade Camera + 1 = 201)
 	RunService:BindToRenderStep("FxShake", 201, function()
 		if shakeAmp <= 0 then

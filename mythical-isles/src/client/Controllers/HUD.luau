@@ -81,6 +81,7 @@ end
 local TOAST_STYLE = {
 	error = { T.red, "⚠" }, quest = { T.yellow, "📜" }, luck = { T.green, "🍀" }, level = { T.teal, "⬆" },
 	bestiary = { T.purple, "📖" }, secret = { Color3.fromRGB(255, 230, 120), "✦" },
+	region = { Color3.fromRGB(150, 200, 255), "🌀" }, npc = { Color3.fromRGB(200, 170, 255), "🗨" },
 }
 
 function HUD.toast(text: string, kind: string?)

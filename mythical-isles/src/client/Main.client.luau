@@ -6,7 +6,7 @@ State.init()
 local Status = require(Controllers.Status)
 Status.init()
 
-for _, name in ipairs({ "Animator", "Fx", "WorldClient", "HUD", "CombatHUD", "Panels", "Input" }) do
+for _, name in ipairs({ "Animator", "Fx", "WorldClient", "RegionClient", "HUD", "CombatHUD", "Panels", "Input" }) do
 	local ok, err = xpcall(function()
 		require(Controllers:WaitForChild(name)).init()
 	end, function(e)

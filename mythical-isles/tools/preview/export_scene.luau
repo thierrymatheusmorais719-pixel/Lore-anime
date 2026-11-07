@@ -95,6 +95,29 @@ do
 	print("SCENE terrain [" .. table.concat(out, ",") .. "]")
 end
 
+-- Mundo 2 (Crystal Hollow): peças e terreno
+do
+	local crystal = Worlds.Info.crystal
+	local function inCrystal(part)
+		return ((part.Position - crystal.center) * Vector3.new(1, 0, 1)).Magnitude < crystal.radius + 40 and math.abs(part.Position.Y) < 180
+	end
+	dump("crystal", { workspace:FindFirstChild("World"):FindFirstChild("crystal"), workspace:FindFirstChild("Enemies"), workspace:FindFirstChild("Bosses"),
+		workspace:FindFirstChild("Resources") }, inCrystal)
+	local out = {}
+	for _, f in ipairs(SIM.terrainFills) do
+		local pp = f.cf.p
+		if ((pp - crystal.center) * Vector3.new(1, 0, 1)).Magnitude < crystal.radius + 60 and math.abs(pp.Y) < 200 then
+			local col = SIM.terrainColors[f.m]
+			local sz = f.size or Vector3.new(0, 0, 0)
+			local r = f.cf.r
+			table.insert(out, string.format('{"k":"%s","p":[%s,%s,%s],"h":%s,"r":%s,"m":"%s","c":[%d,%d,%d],"z":[%s,%s,%s],"rot":[%s]}', f.kind, num(pp.X), num(pp.Y), num(pp.Z),
+				num(f.h or sz.Y), num(f.r or 0), f.m, col and math.floor(col.R * 255) or -1, col and math.floor(col.G * 255) or -1, col and math.floor(col.B * 255) or -1,
+				num(sz.X), num(sz.Y), num(sz.Z), table.concat({ num(r[1]), num(r[2]), num(r[3]), num(r[4]), num(r[5]), num(r[6]), num(r[7]), num(r[8]), num(r[9]) }, ",")))
+		end
+	end
+	print("SCENE terrain_crystal [" .. table.concat(out, ",") .. "]")
+end
+
 -- vitrines
 local Pets = require(__proxy("Shared/Config/Pets"))
 local CreatureBuilder = require(__proxy("Shared/Builders/CreatureBuilder"))

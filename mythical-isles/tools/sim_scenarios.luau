@@ -59,25 +59,82 @@ local function count(folderName)
 end
 
 do
-	-- nenhum preenchimento de Terrain pode cobrir a superfície da ilha (só colinas pequenas na borda)
-	local bad
-	for _, f in ipairs(SIM.terrainFills) do
-		if f.m ~= "Air" and f.m ~= "Water" then
-			local top = f.cf.p.Y + (f.kind == "ball" and f.r or (f.h or 0) / 2)
-			local wy
-			for _, id in ipairs(Worlds.Order) do
-				local w = Worlds.Info[id]
-				if ((f.cf.p - w.center) * Vector3.new(1, 0, 1)).Magnitude < w.radius + 30 then
-					wy = w.center.Y
-				end
+	-- Nenhum ponto de gameplay pode ficar soterrado no estado FINAL do Terrain (os preenchimentos são
+	-- aplicados em ordem, então escavações com Air depois de montanhas/maciços contam). Pontos:
+	-- praça, estações de ovo, portais de mundo, centro e borda da arena, zonas de inimigos, campos de
+	-- recurso e, nas regiões construídas, chegada de cada portal de região e cada baú-santuário.
+	local WB = require(__proxy("Server/Services/WorldBuilder"))
+	local WS = require(__proxy("Server/Services/WorldService"))
+	local function inside(f, p)
+		if f.kind == "ball" then
+			return (p - f.cf.p).Magnitude <= f.r
+		end
+		local l = f.cf:Inverse() * p
+		if f.kind == "cyl" then
+			return math.abs(l.Y) <= f.h / 2 and math.sqrt(l.X * l.X + l.Z * l.Z) <= f.r
+		end
+		return math.abs(l.X) <= f.size.X / 2 and math.abs(l.Y) <= f.size.Y / 2 and math.abs(l.Z) <= f.size.Z / 2
+	end
+	local function buried(p)
+		local mat = "Air"
+		for _, f in ipairs(SIM.terrainFills) do
+			if inside(f, p) then
+				mat = f.m
 			end
-			local smallHill = f.kind == "ball" and f.r <= 18
-			if wy and top > wy + 0.5 and not smallHill then
-				bad = string.format("%s %s raio %.0f topo %.0f (chão %.0f)", f.kind, f.m, f.r or 0, top, wy)
+		end
+		return mat ~= "Air" and mat ~= "Water", mat
+	end
+	local points = {}
+	local function add(label, p)
+		table.insert(points, { label = label, p = p })
+	end
+	local L = WB.Layout
+	for _, id in ipairs(Worlds.Order) do
+		local w = Worlds.Info[id]
+		local lay = WS.Layout[id]
+		local y = Vector3.new(0, w.center.Y + 2.5, 0)
+		local function flat(v)
+			return Vector3.new(v.X, 0, v.Z) + y
+		end
+		add(id .. " praça", flat(lay.spawnCF.Position))
+		for egg, m in pairs(lay.eggStations) do
+			add(id .. " ovo " .. egg, flat(m:GetPivot().Position))
+		end
+		add(id .. " portal", flat(WB.polar(w.center, L.portalNext.theta, L.portalNext.dist)))
+		add(id .. " portal anterior", flat(WB.polar(w.center, L.portalPrev.theta, L.portalPrev.dist)))
+		add(id .. " arena", flat(lay.arena.center))
+		for k = 0, 7 do
+			local a = k / 8 * math.pi * 2
+			add(id .. " borda da arena " .. k, flat(lay.arena.center + Vector3.new(math.cos(a), 0, math.sin(a)) * lay.arena.radius * 0.8))
+		end
+		for e, z in pairs(lay.enemyZones) do
+			add(id .. " zona " .. e, flat(z.center))
+		end
+		for i, rf in ipairs(lay.resourceFields) do
+			add(id .. " recursos " .. i, flat(rf.center))
+		end
+		local reg = WS.Regions[id]
+		if reg then
+			for rid, g in pairs(reg.gates) do
+				add(id .. " chegada do portal " .. rid, g.arrival.Position - Vector3.new(0, 1, 0))
+			end
+			for cid, c in pairs(reg.chests) do
+				add(id .. " baú " .. cid, c.pos + Vector3.new(0, 2.5, 0))
+			end
+			for label, q in pairs(reg.walkPoints or {}) do
+				add(id .. " " .. label, q)
 			end
 		end
 	end
-	check("terreno das ilhas não cobre a superfície (sem domo)", bad == nil, bad)
+	local bad
+	for _, pt in ipairs(points) do
+		local isBuried, mat = buried(pt.p)
+		if isBuried then
+			bad = string.format("%s soterrado por %s em (%.0f, %.0f, %.0f)", pt.label, mat, pt.p.X, pt.p.Y, pt.p.Z)
+			break
+		end
+	end
+	check(string.format("terreno não soterra nenhum ponto de gameplay (%d pontos, %d preenchimentos)", #points, #SIM.terrainFills), bad == nil, bad)
 end
 check("mundos, inimigos, bosses e recursos criados", count("Enemies") > 50 and count("Bosses") == 5 and count("Resources") > 100,
 	string.format("inimigos=%d bosses=%d recursos=%d", count("Enemies"), count("Bosses"), count("Resources")))
@@ -460,6 +517,145 @@ SIM.teleport(pX, chest:GetPivot().Position + Vector3.new(3, 3, 0))
 SIM.run(0.4)
 act(pX, "OpenTreasure", chest)
 check("dono abre o tesouro e recebe recompensa", dX.stats.treasures == tre0 + 1 and chest.Parent == nil)
+-- MUNDO 2 — Crystal Hollow: regiões, portais de região, baús-santuário, NPCs
+do
+	local WS = S.WorldService
+	local RS = require(__proxy("Server/Services/RegionService"))
+	local Regions = require(__proxy("Shared/Config/Regions"))
+	local reg = WS.Regions.crystal
+	local nGates, nChests = 0, 0
+	for _ in pairs(reg and reg.gates or {}) do
+		nGates += 1
+	end
+	for _ in pairs(reg and reg.chests or {}) do
+		nChests += 1
+	end
+	check("Crystal Hollow: 5 regiões construídas sem erro (5 portais, 5 baús, 3 NPCs)", reg ~= nil and reg.errors == nil and nGates == 5 and nChests == 5 and #reg.npcs == 3,
+		reg and (reg.errors or string.format("%d portais, %d baús, %d NPCs", nGates, nChests, #reg.npcs)))
+	local folder = workspace.World.crystal:FindFirstChild("CrystalHollow")
+	local names = {}
+	for _, ch in ipairs(folder and folder:GetChildren() or {}) do
+		names[ch.Name] = true
+	end
+	check("pastas das 5 regiões existem", names.CrystalValley and names.ShatteredPeaks and names.AzureCaverns and names.PrismLake and names.TitansDomain)
+	-- terreno: montanhas, lago, rio e caverna escavada foram realmente preenchidos
+	local c = Worlds.Info.crystal.center
+	local water, air, mountains = 0, 0, 0
+	for _, f in ipairs(SIM.terrainFills) do
+		if ((f.cf.p - c) * Vector3.new(1, 0, 1)).Magnitude < 260 then
+			if f.m == "Water" then
+				water += 1
+			elseif f.m == "Air" then
+				air += 1
+			elseif f.kind == "ball" and f.m == "Basalt" and f.cf.p.Y + f.r > 30 then
+				mountains += 1
+			end
+		end
+	end
+	check("terreno de Crystal Hollow tem montanhas altas, água (lago/rio/lagoas) e escavações (caverna/túneis)", mountains >= 10 and water >= 15 and air >= 15,
+		string.format("%d montanha, %d água, %d escavação", mountains, water, air))
+	-- cada chegada de portal fica dentro da sua região
+	local okReg = true
+	for rid, g in pairs(reg.gates) do
+		if Regions.at("crystal", g.arrival.Position) ~= rid then
+			okReg = false
+			print("  chegada fora da região: " .. rid .. " -> " .. tostring(Regions.at("crystal", g.arrival.Position)))
+		end
+	end
+	check("chegada de cada portal de região fica dentro da própria região", okReg)
+	-- desempenho: peças, luzes e emissores do mundo 2
+	local nParts, nLights, nEmit = 0, 0, 0
+	for _, d in ipairs(workspace.World.crystal:GetDescendants()) do
+		if d:IsA("BasePart") then
+			nParts += 1
+		elseif d.ClassName == "PointLight" then
+			nLights += 1
+		elseif d.ClassName == "ParticleEmitter" then
+			nEmit += 1
+		end
+	end
+	print(string.format("  Crystal Hollow: %d peças, %d luzes, %d emissores", nParts, nLights, nEmit))
+	check("Crystal Hollow dentro do orçamento (≤ 9000 peças, ≤ 60 luzes, ≤ 120 emissores)", nParts <= 9000 and nLights <= 60 and nEmit <= 120,
+		string.format("%d peças, %d luzes, %d emissores", nParts, nLights, nEmit))
+	-- portal de região: bloqueado se o mundo não foi desbloqueado / se o jogador não está nele
+	local d2 = S.DataService.get(p2)
+	d2.worlds.crystal = nil
+	SIM.teleport(p2, reg.gates.crystal_valley.arrival.Position)
+	SIM.run(1)
+	local denied = RS.travel(p2, "shattered_peaks")
+	check("portal de região recusa quem não desbloqueou o mundo", denied.ok == false)
+	local hadCrystal = dX.worlds.crystal
+	dX.worlds.crystal = true
+	SIM.teleport(pX, home + Vector3.new(0, 3, 30))
+	SIM.run(1)
+	local wrongWorld = RS.travel(pX, "shattered_peaks")
+	check("portal de região recusa quem está em outro mundo", wrongWorld.ok == false)
+	-- circuito completo pelos portais (prompt real do portal do vale + chamadas diretas)
+	SIM.teleport(pX, reg.gates.crystal_valley.arrival.Position)
+	SIM.run(2) -- respeita o intervalo anti-spam do portal (a tentativa recusada acima também conta)
+	reg.gates.crystal_valley.prompt.Triggered:Fire(pX)
+	SIM.run(1)
+	local pos = pX.Character.PrimaryPart.Position
+	local okCircuit = Regions.at("crystal", pos) == "shattered_peaks"
+	for _, dest in ipairs({ "azure_caverns", "prism_lake", "titans_domain", "crystal_valley" }) do
+		SIM.run(2)
+		local r = RS.travel(pX, dest)
+		SIM.run(0.5)
+		if not r.ok or Regions.at("crystal", pX.Character.PrimaryPart.Position) ~= dest then
+			okCircuit = false
+			print("  falhou viagem para " .. dest .. ": " .. tostring(r.msg))
+		end
+	end
+	check("circuito de portais: vale → picos → cavernas → lago → domínio → vale", okCircuit)
+	SIM.run(2)
+	RS.travel(pX, "prism_lake")
+	SIM.run(2)
+	check("pets acompanham a viagem entre regiões", (function()
+		local folderP = workspace.Pets:FindFirstChild(tostring(pX.UserId))
+		local m = folderP and folderP:GetChildren()[1]
+		return m ~= nil and (m:GetPivot().Position - pX.Character.PrimaryPart.Position).Magnitude < 40
+	end)())
+	-- baú-santuário: longe = recusa; perto = recompensa; de novo = recarga; salvo no perfil
+	local ch = reg.chests.lake_ruins
+	SIM.run(2)
+	local far = RS.claim(pX, "crystal", "lake_ruins")
+	SIM.teleport(pX, ch.pos + Vector3.new(3, 3, 0))
+	SIM.run(1)
+	local t0, c0 = dX.stats.treasures, dX.coins
+	local ok1 = RS.claim(pX, "crystal", "lake_ruins")
+	SIM.run(1.5)
+	local again = RS.claim(pX, "crystal", "lake_ruins")
+	check("baú-santuário: recusa de longe, dá recompensa de perto e respeita a recarga", far.ok == false and ok1.ok and ok1.first and dX.coins > c0 and dX.stats.treasures == t0 + 1
+		and again.ok == false and type(dX.shrines.lake_ruins) == "number",
+		string.format("far=%s ok=%s again=%s", tostring(far.ok), tostring(ok1.ok), tostring(again.ok)))
+	-- todos os baús e NPCs respondem
+	local allChests = true
+	for cid, chest in pairs(reg.chests) do
+		if cid ~= "lake_ruins" then
+			SIM.teleport(pX, chest.pos + Vector3.new(2, 3, 0))
+			SIM.run(1.5)
+			local r = RS.claim(pX, "crystal", cid)
+			if not r.ok then
+				allChests = false
+				print("  baú " .. cid .. ": " .. tostring(r.msg))
+			end
+		end
+	end
+	check("os 5 baús-santuário podem ser abertos (cada um no seu lugar)", allChests)
+	local talked = true
+	for _, npc in ipairs(reg.npcs) do
+		SIM.teleport(pX, npc.model.PrimaryPart.Position + Vector3.new(0, 1, -5))
+		SIM.run(1.5)
+		local line = RS.talk(pX, npc)
+		if type(line) ~= "string" then
+			talked = false
+		end
+	end
+	check("NPCs conversam (Lyra, Orin e Vael)", talked)
+	SIM.teleport(pX, home + Vector3.new(0, 3, 30))
+	SIM.run(1)
+	dX.worlds.crystal = hadCrystal
+end
 -- missões e coleção
 local storyBefore = dX.quests.storyIndex
 for _ = 1, 3 do
@@ -745,6 +941,50 @@ do
 		leftover += #workspace:FindFirstChild("LocalDebris"):GetChildren()
 		check("efeitos visuais: todos os tipos rodam e as peças temporárias somem", okFx and #SIM.errors == beforeFx and leftover == 0,
 			errFx or SIM.errors[beforeFx + 1] or ("sobraram " .. leftover .. " peças"))
+	end
+	-- regiões no cliente: nome da região na tela + luz/névoa da região (Azure Caverns)
+	do
+		local reg = S.WorldService.Regions.crystal
+		local beforeR = #SIM.errors
+		SIM.teleport(lp, reg.gates.azure_caverns.arrival.Position)
+		lp:SetAttribute("World", "crystal")
+		frames(90)
+		local shown = false
+		for _, d in ipairs(lp.PlayerGui:FindFirstChild("RegionBanner"):GetDescendants()) do
+			if d.ClassName == "TextLabel" and d.Text == "Azure Caverns" then
+				shown = true
+			end
+		end
+		local atm = game:GetService("Lighting"):FindFirstChildOfClass("Atmosphere")
+		check("cliente: entrar nas Azure Caverns mostra o nome e aplica a névoa/luz da caverna", shown and atm and math.abs(atm.Density - 0.5) < 0.01 and #SIM.errors == beforeR,
+			SIM.errors[beforeR + 1] or ("densidade " .. tostring(atm and atm.Density)))
+		SIM.teleport(lp, reg.gates.crystal_valley.arrival.Position)
+		frames(60)
+		check("cliente: voltar ao vale restaura a névoa do mundo", math.abs(atm.Density - 0.3) < 0.01, "densidade " .. tostring(atm.Density))
+	end
+	-- energia do Prism Titan: luzes nas peças EnergyFx, carga durante a preparação
+	do
+		local titan
+		for _, m in ipairs(workspace.Bosses:GetChildren()) do
+			if m:GetAttribute("BossId") == "prism_titan" then
+				titan = m
+			end
+		end
+		frames(5)
+		local lights = {}
+		for _, d in ipairs(titan and titan:GetDescendants() or {}) do
+			if d:IsA("BasePart") and d:GetAttribute("EnergyFx") and d:FindFirstChildOfClass("PointLight") then
+				table.insert(lights, d:FindFirstChildOfClass("PointLight"))
+			end
+		end
+		local idle = lights[1] and lights[1].Brightness or 0
+		titan:SetAttribute("WindupEnd", workspace:GetServerTimeNow() + 0.2)
+		Fx.updateEnergy()
+		local charged = lights[1] and lights[1].Brightness or 0
+		titan:SetAttribute("ActionAt", workspace:GetServerTimeNow())
+		Fx.updateEnergy()
+		check("Prism Titan: núcleo, olhos e punhos brilham e carregam durante a preparação", #lights >= 5 and charged > idle + 2,
+			string.format("%d luzes, repouso %.1f, carga %.1f", #lights, idle, charged))
 	end
 	before = #SIM.errors
 	ok, err = pcall(Fx.hatch, res.results or {}, Color3.new(1, 1, 1))
