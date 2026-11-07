@@ -392,6 +392,26 @@ family({ key = "ent", world = "verdant", rarity = "Mythic", role = "Tank", abili
 		{ "Bloom Ent", rgb(120, 90, 60), rgb(100, 75, 50), rgb(110, 180, 70), rgb(255, 200, 120), { blossoms = rgb(255, 150, 200) } },
 		{ "Azure Warden", rgb(80, 90, 110), rgb(60, 70, 90), rgb(90, 200, 255), rgb(150, 230, 255), { glowCanopy = true, glowCore = rgb(80, 180, 255) } } } })
 
+-- 2ª leva do autor (referências enviadas): modelos originais a partir das ideias — panda de manto de
+-- folhas, cabra com arbusto de frutinhas e mamute de pelagem de capim (Builders/CreatureBuilder).
+local PW = rgb(226, 226, 232) -- olhos claros (anel branco, pupila escura)
+family({ key = "leafpanda", world = "verdant", rarity = "Common", role = "Support", ability = "mend", desc = "Filhote de panda que se esconde num manto de folhas e acena para todo mundo.",
+	base = { rig = "leafpanda", size = 0.9 },
+	variants = { { "Sprout Panda", rgb(92, 170, 72), rgb(240, 238, 230), rgb(70, 150, 58), PW }, { "Maple Panda", rgb(214, 120, 58), rgb(246, 240, 230), rgb(176, 74, 40), PW },
+		{ "Blossom Panda", rgb(238, 158, 188), rgb(250, 244, 240), rgb(110, 180, 80), PW }, { "Mossy Panda", rgb(70, 130, 100), rgb(225, 230, 215), rgb(150, 210, 90), PW } } })
+family({ key = "berrygoat", world = "verdant", rarity = "Rare", role = "Support", ability = "mend", desc = "Cabra fofinha que carrega um arbusto de frutinhas nas costas e divide com o time.",
+	base = { rig = "bushgoat", size = 1.0 },
+	variants = { { "Berrytuft Goat", rgb(176, 214, 110), rgb(244, 240, 222), rgb(70, 150, 60), rgb(240, 170, 40), { berry = rgb(220, 50, 76) } },
+		{ "Bluebramble Goat", rgb(150, 200, 170), rgb(240, 244, 236), rgb(56, 130, 90), rgb(240, 170, 40), { berry = rgb(80, 110, 230) } },
+		{ "Sunberry Goat", rgb(214, 212, 120), rgb(248, 242, 222), rgb(110, 160, 60), rgb(240, 150, 40), { berry = rgb(255, 190, 40) } } } })
+family({ key = "turfmammoth", world = "verdant", rarity = "Epic", role = "Tank", ability = "shockwave", desc = "Mamute manso de pelagem de capim: quando pisa forte, o chão inteiro treme.",
+	base = { rig = "mammoth", size = 1.2 },
+	variants = { { "Meadow Mammoth", rgb(178, 112, 70), rgb(208, 152, 106), rgb(96, 170, 64), rgb(176, 60, 50) },
+		{ "Autumn Mammoth", rgb(150, 100, 70), rgb(196, 150, 110), rgb(206, 130, 50), rgb(120, 70, 40) } } })
+family({ key = "eldermammoth", world = "verdant", rarity = "Legendary", role = "Tank", ability = "guard_shield", desc = "O mamute mais velho do bosque: a pelagem virou um campo inteiro.",
+	base = { rig = "mammoth", size = 1.5, glowEyes = true },
+	variants = { { "Elder Grove Mammoth", rgb(122, 92, 72), rgb(170, 132, 100), rgb(70, 140, 56), rgb(150, 255, 130), { tusk = rgb(250, 240, 200), band = rgb(70, 120, 60) } } } })
+
 -- SECRET
 Pets.Species.sylvanox = {
 	name = "Sylvanox", world = "verdant", rarity = "Secret", role = "Support", ability = "starfall",

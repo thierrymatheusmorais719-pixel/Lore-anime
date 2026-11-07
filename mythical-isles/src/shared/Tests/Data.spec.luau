@@ -166,7 +166,8 @@ return function(t)
 		t.ok(d.claimedEncounters.b ~= nil, "recente fica")
 	end)
 
-	t.test("mundos 1 e 2 têm 80 pets cada, com exatamente 1 SECRET", function()
+	t.test("mundo 1 tem 90 pets (80 + 10 da 2ª leva) e o mundo 2 tem 80, com exatamente 1 SECRET", function()
+		local expected = { verdant = 90, crystal = 80 }
 		for _, w in ipairs({ "verdant", "crystal" }) do
 			local n, secret = 0, 0
 			for _, sp in pairs(Pets.Species) do
@@ -177,7 +178,7 @@ return function(t)
 					end
 				end
 			end
-			t.eq(n, 80, w)
+			t.eq(n, expected[w], w)
 			t.eq(secret, 1, w .. " secret")
 		end
 	end)

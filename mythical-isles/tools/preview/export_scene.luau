@@ -263,6 +263,16 @@ for i, id in ipairs({ "kit_1", "hop_1", "fawn_1", "leafcat_1", "owlet_1", "verda
 end
 lineup("showcase", show)
 
+-- 2ª leva do Mundo 1 (panda de folhas, cabra-arbusto, mamute de capim): frente e perfil
+local novos = {}
+local NX = { 0, 6, 12, 18, 25, 32, 39, 50, 62, 76 }
+for i, id in ipairs({ "leafpanda_1", "leafpanda_2", "leafpanda_3", "leafpanda_4", "berrygoat_1", "berrygoat_2", "berrygoat_3", "turfmammoth_1", "turfmammoth_2", "eldermammoth_1" }) do
+	local m, hover = CreatureBuilder.build(id, Pets.Species[id], 1)
+	m:PivotTo(CFrame.new(NX[i], hover, 0) * CFrame.Angles(0, math.rad(i % 2 == 0 and 230 or 200), 0))
+	table.insert(novos, m)
+end
+lineup("pets_novos", novos)
+
 -- céu anime de cada mundo (paleta + layout, para o renderizador desenhar igual ao jogo)
 do
 	local AnimeSky = require(__proxy("Shared/Builders/AnimeSky"))
@@ -304,5 +314,16 @@ do
 		table.insert(parts, '"stars":[' .. table.concat(stz, ",") .. "]")
 		table.insert(parts, string.format('"panel":[%s,%s,%s]', num(AnimeSky.PANEL_DIST), num(AnimeSky.PANEL_LOW), num(AnimeSky.PANEL_HIGH)))
 		print("SCENE sky_" .. wid .. " {" .. table.concat(parts, ",") .. "}")
+	end
+end
+
+-- posições dos lugares do anel de mata (para enquadrar as prévias)
+do
+	local WB = require(__proxy("Server/Services/WorldBuilder"))
+	for _, id in ipairs({ "verdant", "crystal", "wilds", "astral" }) do
+		local plan = WB.ringPlan(id)
+		for _, p in ipairs(plan and plan.pois or {}) do
+			print(string.format("POI %s %s %.0f %.0f %.0f entrada %.2f %.2f", id, p.kind, p.pos.X, p.pos.Y, p.pos.Z, p.inward.X, p.inward.Z))
+		end
 	end
 end

@@ -75,6 +75,20 @@ function WorldService.build()
 		WorldBuilder.boundary(id, folder)
 		local spawnCF = WorldBuilder.plaza(id, folder)
 		WorldBuilder.decor(id, folder)
+		-- anel de mata para exploração (ilhas ampliadas): floresta densa, trilha e baús-santuário
+		local ring = WorldBuilder.wildRing(id, folder, terrainOk)
+		if next(ring.chests) then
+			local reg = WorldService.Regions[id] or { gates = {}, chests = {}, npcs = {}, walkPoints = {} }
+			reg.walkPoints = reg.walkPoints or {}
+			for cid, ch in pairs(ring.chests) do
+				reg.chests[cid] = ch
+			end
+			for label, q in pairs(ring.walkPoints) do
+				reg.walkPoints[label] = q
+			end
+			reg.ring = ring
+			WorldService.Regions[id] = reg
+		end
 
 		local layout = { id = id, center = w.center, radius = w.radius, spawnCF = spawnCF, enemyZones = {}, resourceFields = {}, eggStations = {} }
 

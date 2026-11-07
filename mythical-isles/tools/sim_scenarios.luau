@@ -278,13 +278,29 @@ check("ataque do jogador fora de alcance é rejeitado", target.hp == hp0)
 SIM.teleport(p1, target.root.Position + Vector3.new(14, 3, 0))
 SIM.run(0.3)
 heal()
-hp0 = target.hp
-Action.OnServerEvent:Fire(p1, "Attack", target.model)
-Action.OnServerEvent:Fire(p1, "Attack", target.model)
-Action.OnServerEvent:Fire(p1, "Attack", target.model)
-SIM.run(1 / 30)
-local c = target.contrib[p1.UserId]
-check("ataque no alcance causa dano; repetição na recarga é ignorada", target.hp < hp0 and c and c.damage == hp0 - target.hp and (hp0 - target.hp) < 100, target.hp)
+-- os pets do jogador podem ter derrubado o alvo nesse meio-tempo: escolhe um vivo e enche a vida
+if not target.alive then
+	for _, e in ipairs(S.EnemyService.activeList()) do
+		if e.id == "thornling" and e.alive and e.state ~= "Return" and e ~= thorn then
+			target = e
+			break
+		end
+	end
+	SIM.teleport(p1, target.root.Position + Vector3.new(14, 3, 0))
+	SIM.run(0.1)
+end
+target.hp = target.maxHp
+do
+	local dmgBefore = target.contrib[p1.UserId] and target.contrib[p1.UserId].damage or 0
+	hp0 = target.hp
+	Action.OnServerEvent:Fire(p1, "Attack", target.model)
+	Action.OnServerEvent:Fire(p1, "Attack", target.model)
+	Action.OnServerEvent:Fire(p1, "Attack", target.model)
+	SIM.run(1 / 30)
+	local c = target.contrib[p1.UserId]
+	check("ataque no alcance causa dano; repetição na recarga é ignorada", target.hp < hp0 and c and c.damage - dmgBefore == hp0 - target.hp and (hp0 - target.hp) < 100,
+		string.format("hp0=%s hp=%s dano registrado=%s", tostring(hp0), tostring(target.hp), tostring(c and c.damage)))
+end
 act(p1, "Target", target.model)
 local team = S.PetService.team(p1)
 local st1 = team[1]
@@ -530,7 +546,10 @@ do
 	for _ in pairs(reg and reg.gates or {}) do
 		nGates += 1
 	end
-	for _ in pairs(reg and reg.chests or {}) do
+	for cid in pairs(reg and reg.chests or {}) do
+		if cid:find("_wild_", 1, true) then
+			continue
+		end
 		nChests += 1
 	end
 	check("Crystal Hollow: 5 regiões construídas sem erro (5 portais, 5 baús, 3 NPCs)", reg ~= nil and reg.errors == nil and nGates == 5 and nChests == 5 and #reg.npcs == 3,
@@ -748,6 +767,73 @@ local function treeStyleChecks()
 	check("árvores: o bosque de blocos do Verdant continua com o seu próprio modelo", grove ~= nil and #grove:GetChildren() == 7 and groveCubes == 0)
 end
 treeStyleChecks()
+-- Ilhas ampliadas: anel de mata (floresta densa, trilha, 6 lugares com baú) e orçamento por mundo
+local function ringChecks()
+	local WS = S.WorldService
+	local WB = require(__proxy("Server/Services/WorldBuilder"))
+	local MIN_TREES = { verdant = 150, crystal = 60, wilds = 150, astral = 70 }
+	local BUDGET = { verdant = 13000, crystal = 9000, wilds = 13000, astral = 12000 }
+	local okAll, detail = true, {}
+	for _, id in ipairs({ "verdant", "crystal", "wilds", "astral" }) do
+		local w = Worlds.Info[id]
+		local wf = workspace.World:FindFirstChild(id)
+		local ring = wf and wf:FindFirstChild("WildRing")
+		local trees, pois = 0, 0
+		for _, d in ipairs(ring and ring:GetDescendants() or {}) do
+			if d:IsA("Model") and d.Name == "ForestTree" then
+				trees += 1
+			elseif d:IsA("Folder") and d.Name:sub(1, 4) == "POI_" then
+				pois += 1
+			end
+		end
+		local chests = 0
+		local reg = WS.Regions[id]
+		for cid in pairs(reg and reg.chests or {}) do
+			if cid:find("_wild_", 1, true) then
+				chests += 1
+			end
+		end
+		local nParts, nLights, nEmit = 0, 0, 0
+		for _, d in ipairs(wf and wf:GetDescendants() or {}) do
+			if d:IsA("BasePart") then
+				nParts += 1
+			elseif d:IsA("PointLight") or d:IsA("SpotLight") then
+				nLights += 1
+			elseif d:IsA("ParticleEmitter") then
+				nEmit += 1
+			end
+		end
+		print(string.format("  %s: raio %d (centro %d), %d árvores na mata, %d lugares, %d baús, %d peças, %d luzes, %d emissores", id, w.radius, w.core, trees, pois, chests, nParts, nLights, nEmit))
+		local ok = w.radius >= w.core + 70 and trees >= MIN_TREES[id] and pois == 6 and chests == 6 and nParts <= BUDGET[id] and nLights <= 60 and nEmit <= 120
+		if not ok then
+			okAll = false
+			table.insert(detail, id)
+		end
+	end
+	check("ilhas ampliadas: anel de mata com floresta densa, 6 lugares e 6 baús em cada mundo, dentro do orçamento", okAll, table.concat(detail, ", "))
+	local badTree
+	for _, id in ipairs({ "verdant", "crystal", "wilds", "astral" }) do
+		local w = Worlds.Info[id]
+		local plan = WB.ringPlan(id)
+		for _, m in ipairs(workspace.World[id].WildRing.Forest:GetChildren()) do
+			if m:IsA("Model") and m.Name == "ForestTree" then
+				local tp = m:FindFirstChild("Trunk").Position
+				local flat = (tp - w.center) * Vector3.new(1, 0, 1)
+				local theta = math.deg(math.atan2(flat.Z, flat.X)) % 360
+				if flat.Magnitude > w.radius - 6 or plan.blocked(theta, 0) then
+					badTree = id .. " árvore fora do lugar em " .. tostring(tp)
+				end
+				for _, p in ipairs(plan.pois) do
+					if ((tp - p.pos) * Vector3.new(1, 0, 1)).Magnitude < p.r then
+						badTree = id .. " árvore dentro de " .. p.kind
+					end
+				end
+			end
+		end
+	end
+	check("mata: nenhuma árvore sobre os lugares, faixas de riacho ou fora da ilha", badTree == nil, badTree)
+end
+ringChecks()
 
 -- MUNDO 3 — Skybound Kingdom: ilhas flutuantes, pontes, regiões, portais, baús, NPCs
 local function skyboundChecks()

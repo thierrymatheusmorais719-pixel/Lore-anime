@@ -92,14 +92,23 @@ local function terrainFill(w, worldId: string)
 		local y = math.min(-depth, -3 - rad_)
 		Terrain:FillBall(WorldBuilder.polar(c, theta, r * shrink * lump:NextNumber(0.86, 0.97), y), rad_, cliff)
 	end
-	-- algumas colinas suaves na borda (sem bloquear caminhos)
+	-- algumas colinas suaves na borda (sem bloquear caminhos nem os lugares do anel de mata)
+	local plan = WorldBuilder.ringPlan and WorldBuilder.ringPlan(worldId)
+	local function onPoi(pos: Vector3, hr: number): boolean
+		for _, p in ipairs(plan and plan.pois or {}) do
+			if ((pos - p.pos) * V(1, 0, 1)).Magnitude < p.r + hr + 6 then
+				return true
+			end
+		end
+		return false
+	end
 	local rng = Random.new(w.index * 97)
 	for i = 1, 10 do
 		local theta = i * 36 + rng:NextNumber(-8, 8)
 		local pos = WorldBuilder.polar(c, theta, r - rng:NextNumber(10, 22), -8)
 		local hr = rng:NextNumber(12, 18)
 		-- não sobe colina em cima de regiões construídas à mão (templo, baús, lago...)
-		if not Regions.isReserved(worldId, pos, hr) then
+		if not Regions.isReserved(worldId, pos, hr) and not onPoi(pos, hr) then
 			Terrain:FillBall(pos, hr, i % 3 == 0 and cliff or ground)
 		end
 	end
@@ -361,14 +370,14 @@ function WorldBuilder.terrainDetail(worldId: string)
 	path(L.portalPrev.theta, 27, L.portalPrev.dist - 3)
 	-- manchas de solo exposto / gelo / lava rachada (rente ao chão)
 	for _ = 1, 12 do
-		local pos = freeSpot(c, w.radius, rng, worldId)
+		local pos = freeSpot(c, w.core or w.radius, rng, worldId)
 		if pos then
 			T:FillCylinder(CF(pos - V(0, 1, 0)), 2, rng:NextNumber(4, 9), Enum.Material[st.patch])
 		end
 	end
 	-- montinhos suaves (o topo sobe só 2-3,5 studs) longe da praça e das estações
 	for _ = 1, 7 do
-		local pos = freeSpot(c, w.radius, rng, worldId)
+		local pos = freeSpot(c, w.core or w.radius, rng, worldId)
 		if pos and (pos - c).Magnitude > 75 then
 			local rr = rng:NextNumber(12, 16)
 			T:FillBall(pos - V(0, rr - rng:NextNumber(2, 3.5), 0), rr, Enum.Material[w.ground])
@@ -376,7 +385,7 @@ function WorldBuilder.terrainDetail(worldId: string)
 	end
 	-- pedras naturais semienterradas
 	for _ = 1, 10 do
-		local pos = freeSpot(c, w.radius, rng, worldId)
+		local pos = freeSpot(c, w.core or w.radius, rng, worldId)
 		if pos then
 			local rr = rng:NextNumber(2.2, 4.2)
 			T:FillBall(pos + V(0, rr * 0.15, 0), rr, Enum.Material[st.boulder])
@@ -488,7 +497,8 @@ end
 WorldBuilder.cubeCluster = cubeCluster
 
 -- opts: name, trunk (altura até a forquilha, ×s), branches (nº de galhos), rise (quanto sobem),
--- spread (alcance), leader (galho central), cluster (tamanho dos cachos), hang (nº de cachos pendentes)
+-- spread (alcance), leader (galho central), cluster (tamanho dos cachos), hang (nº de cachos pendentes),
+-- lite (versão leve para florestas densas: um ramo por galho e cachos menores, ~20 peças)
 local function branchTree(parent, pos: Vector3, s: number, rng: Random, bark: Color3, leaf: Color3, glow: Color3?, opts)
 	opts = opts or {}
 	local model = Make("Model", { Name = opts.name or "Tree", Parent = parent })
@@ -497,10 +507,12 @@ local function branchTree(parent, pos: Vector3, s: number, rng: Random, bark: Co
 	local rise = opts.rise or 0.85
 	local fork = pos + V(rng:NextNumber(-0.5, 0.5) * s, (opts.trunk or 6.2) * s * rng:NextNumber(0.9, 1.12), rng:NextNumber(-0.5, 0.5) * s)
 	cyl({ Name = "Trunk", Color = barkCol, Material = Enum.Material.Wood, Parent = model }, pos - V(0, 0.8, 0), fork, 0.6 * s)
-	cyl({ Name = "TrunkBase", Color = barkCol:Lerp(rgb(0, 0, 0), 0.12), Material = Enum.Material.Wood, CanCollide = false, Parent = model },
-		pos - V(0, 0.8, 0), pos + V(0, 1.3 * s, 0), 0.8 * s)
-	part({ Name = "Knot", Shape = Enum.PartType.Ball, Size = Vector3.one * 1.3 * s, CFrame = CF(fork), Color = barkCol, Material = Enum.Material.Wood,
-		CanCollide = false, Parent = model })
+	if not opts.lite then
+		cyl({ Name = "TrunkBase", Color = barkCol:Lerp(rgb(0, 0, 0), 0.12), Material = Enum.Material.Wood, CanCollide = false, Parent = model },
+			pos - V(0, 0.8, 0), pos + V(0, 1.3 * s, 0), 0.8 * s)
+		part({ Name = "Knot", Shape = Enum.PartType.Ball, Size = Vector3.one * 1.3 * s, CFrame = CF(fork), Color = barkCol, Material = Enum.Material.Wood,
+			CanCollide = false, Parent = model })
+	end
 	local tips, mids = {}, {}
 	local nb = opts.branches or 4
 	local yaw0 = rng:NextNumber(0, math.pi * 2)
@@ -510,8 +522,8 @@ local function branchTree(parent, pos: Vector3, s: number, rng: Random, bark: Co
 		local mid = fork + dir * rng:NextNumber(4.2, 5.8) * s * spread
 		cyl({ Name = "Branch", Color = barkCol, Material = Enum.Material.Wood, CanCollide = false, Parent = model }, fork - V(0, 0.5 * s, 0), mid, 0.38 * s)
 		table.insert(mids, { at = mid, a = a })
-		for k = -1, 1, 2 do
-			local a2 = a + k * rng:NextNumber(0.4, 0.75)
+		for k = -1, 1, opts.lite and 3 or 2 do
+			local a2 = a + k * rng:NextNumber(0.4, 0.75) * (opts.lite and 0.5 or 1)
 			local d2 = V(math.cos(a2), rise * rng:NextNumber(0.5, 1.1) + 0.15, math.sin(a2)).Unit
 			local tip = mid + d2 * rng:NextNumber(3, 4.4) * s * spread
 			cyl({ Name = "Twig", Color = barkCol, Material = Enum.Material.Wood, CanCollide = false, Parent = model }, mid, tip, 0.22 * s)
@@ -524,15 +536,15 @@ local function branchTree(parent, pos: Vector3, s: number, rng: Random, bark: Co
 	local cs = (opts.cluster or 3.1) * s
 	for i, t in ipairs(tips) do
 		local main = i == #tips
-		cubeCluster(model, t + V(0, cs * 0.25, 0), cs * (main and 1.25 or rng:NextNumber(0.9, 1.1)), leaf, rng, main and 7 or 5)
+		cubeCluster(model, t + V(0, cs * 0.25, 0), cs * (main and 1.25 or rng:NextNumber(0.9, 1.1)), leaf, rng, opts.lite and (main and 5 or 4) or (main and 7 or 5))
 	end
 	-- miolo da copa: fecha o vão entre o galho central e os laterais
-	for k = 1, 2 do
+	for k = 1, opts.lite and 0 or 2 do
 		local a = yaw0 + k * math.pi + 0.8
 		cubeCluster(model, fork + V(math.cos(a) * 2 * s * spread, (opts.leader or 5.5) * 0.6 * s, math.sin(a) * 2 * s * spread), cs * 1.05, leaf, rng, 4)
 	end
 	-- cachos pendentes nas laterais
-	local hang = opts.hang or 2
+	local hang = opts.hang or (opts.lite and 0 or 2)
 	for i = 1, math.min(hang, #mids) do
 		local m = mids[(i - 1) * math.max(1, math.floor(#mids / hang)) % #mids + 1]
 		local out = V(math.cos(m.a), 0, math.sin(m.a))
@@ -675,7 +687,7 @@ function WorldBuilder.decor(worldId: string, parent: Instance)
 	-- Crystal Hollow já tem muito conteúdo feito à mão nas regiões: menos decoração aleatória
 	local count = (worldId == "crystal" or worldId == "sky") and 40 or 64
 	for i = 1, count do
-		local spot = freeSpot(c, w.radius, rng, worldId)
+		local spot = freeSpot(c, w.core or w.radius, rng, worldId)
 		if spot then
 			local pos = groundRay(spot) -- apoia no chão real (montinhos/pedras do Terrain)
 			local s = rng:NextNumber(0.8, 1.35)
@@ -991,6 +1003,391 @@ function WorldBuilder.verdantLandmark(parent: Instance, terrainOk: boolean)
 		end
 	end
 	return folder
+end
+
+-------------------------------------------------------------------------------
+-- ANEL DE MATA (exploração): entre o raio `core` (parte central original, com praça, ovos, arena,
+-- zonas e regiões feitas à mão) e o raio da ilha. Floresta densa em bosques e clareiras, uma trilha
+-- em volta da ilha com ligações ao centro e seis lugares para descobrir, cada um com um baú-santuário
+-- de verdade (RegionService.claim: recompensa da tabela Drops.Shrine e recarga por jogador).
+-------------------------------------------------------------------------------
+
+local RING = {
+	verdant = { name = "Mata Profunda", bark = rgb(96, 58, 50), leaves = { rgb(62, 118, 46), rgb(76, 136, 54), rgb(54, 104, 42), rgb(84, 140, 58) },
+		shrub = rgb(58, 112, 44), rock = rgb(112, 116, 108), rockMat = Enum.Material.Slate, moss = MOSS, stone = rgb(150, 146, 136), accent = rgb(150, 255, 140),
+		cell = 16.5, density = 0.68, cap = rgb(220, 70, 60) },
+	crystal = { name = "Bosque de Safira", bark = rgb(84, 66, 74), leaves = { rgb(70, 120, 214), rgb(110, 84, 210), rgb(58, 112, 214), rgb(124, 92, 226) },
+		shrub = rgb(54, 110, 120), rock = rgb(70, 72, 92), rockMat = Enum.Material.Slate, moss = rgb(70, 130, 92), stone = rgb(150, 148, 162), accent = rgb(140, 210, 255),
+		cell = 19.5, density = 0.55, crystals = true, cap = rgb(150, 110, 255) },
+	wilds = { name = "Mata Sussurrante", bark = rgb(60, 48, 44), leaves = { rgb(46, 84, 60), rgb(40, 74, 56), rgb(56, 96, 66) }, glow = rgb(190, 255, 220),
+		shrub = rgb(48, 92, 62), rock = rgb(84, 86, 80), rockMat = Enum.Material.Rock, moss = rgb(56, 96, 60), stone = rgb(110, 112, 104), accent = rgb(180, 140, 255),
+		cell = 16.5, density = 0.68, cap = rgb(170, 140, 255) },
+	astral = { name = "Bosque Estelar", bark = rgb(70, 60, 100), leaves = { rgb(150, 120, 230), rgb(120, 100, 210), rgb(176, 150, 250) }, glow = rgb(255, 220, 150),
+		shrub = rgb(104, 86, 170), rock = rgb(70, 62, 110), rockMat = Enum.Material.Basalt, stone = rgb(96, 88, 140), accent = rgb(255, 220, 150),
+		cell = 18, density = 0.55, shards = true, cap = rgb(255, 210, 140) },
+}
+WorldBuilder.Ring = RING
+
+-- Faixas (θ em graus) onde a mata não entra: riachos e cachoeiras que descem até a borda.
+local function ringKeepOut(worldId: string)
+	local out = {}
+	if worldId == "verdant" then
+		local t = WorldBuilder.Layout.verdantLake.theta
+		table.insert(out, { theta = t - 18, w = 6 })
+		table.insert(out, { theta = t + 20, w = 6 })
+	elseif worldId == "crystal" then
+		table.insert(out, { theta = Regions.Info.prism_lake.theta, w = 7 }) -- riacho de saída do lago até a borda
+	end
+	return out
+end
+
+local function angDiff(a: number, b: number): number
+	return math.abs((a - b + 180) % 360 - 180)
+end
+
+-- Baú-santuário da mata (mesmo funcionamento dos baús das regiões).
+local function ringChest(parent: Instance, at: CFrame, title: string, st)
+	local model = Make("Model", { Name = "ShrineChest", Parent = parent })
+	local box = part({ Name = "ChestBox", Size = V(4, 2.4, 2.8), CFrame = at * CF(0, 1.2, 0), Color = rgb(122, 82, 50), Material = Enum.Material.WoodPlanks, Parent = model })
+	part({ Name = "ChestLid", Size = V(4.1, 1, 2.9), CFrame = at * CF(0, 2.9, 0), Color = rgb(138, 94, 58), Material = Enum.Material.WoodPlanks, Parent = model })
+	for _, x in ipairs({ -1.5, 1.5 }) do
+		part({ Name = "ChestBand", Size = V(0.4, 3.5, 3), CFrame = at * CF(x, 1.75, 0), Color = rgb(226, 186, 90), Material = Enum.Material.Metal, Parent = model })
+	end
+	part({ Name = "ChestLock", Size = V(0.8, 0.9, 0.3), CFrame = at * CF(0, 2.3, -1.5), Color = rgb(226, 186, 90), Material = Enum.Material.Metal, Parent = model })
+	part({ Name = "ChestGem", Shape = Enum.PartType.Ball, Size = Vector3.one * 0.9, CFrame = at * CF(0, 3.9, 0), Color = st.accent, Material = Enum.Material.Neon, CanCollide = false,
+		CastShadow = false, Parent = model })
+	local prompt = Make("ProximityPrompt", { ActionText = "Abrir", ObjectText = title, HoldDuration = 0.6, MaxActivationDistance = 12, RequiresLineOfSight = false, Parent = box })
+	model.PrimaryPart = box
+	return model, prompt
+end
+
+-- Arbusto leve de cubos (sub-bosque): 3 peças.
+local function cubeShrub(parent, pos: Vector3, s: number, leaf: Color3, rng: Random)
+	cubeCluster(parent, pos + V(0, 1.1 * s, 0), 2.3 * s, leaf, rng, 3, 0.5)
+end
+
+-- Os seis lugares da mata. Cada um recebe o chão (pos), a direção para o centro (inward) e devolve
+-- o ponto do baú.
+local POI = {}
+
+POI.ruins = function(f, pos, inward, st, rng)
+	local side = V(-inward.Z, 0, inward.X)
+	for k = 1, 5 do
+		local o = (k - 3) * 4.2
+		part({ Name = "RuinSlab", Size = V(4, 0.6, rng:NextNumber(6, 9)), CFrame = CF(pos + side * o + inward * rng:NextNumber(-1.5, 1.5) + V(0, 0.05, 0)) * ANG(0, rng:NextNumber(-0.15, 0.15), 0),
+			Color = st.stone:Lerp(rgb(0, 0, 0), rng:NextNumber(0, 0.15)), Material = Enum.Material.Slate, Parent = f })
+	end
+	for k = 1, 7 do
+		local a = k / 7 * math.pi * 2
+		local q = pos + V(math.cos(a), 0, math.sin(a)) * 12
+		local h = k % 3 == 0 and rng:NextNumber(3, 5) or rng:NextNumber(8, 12)
+		part({ Name = "RuinColumn", Shape = Enum.PartType.Cylinder, Size = V(h, 2.4, 2.4), CFrame = CF(q + V(0, h / 2 - 0.3, 0)) * ANG(0, 0, rad(90)) * ANG(rng:NextNumber(-0.06, 0.06), 0, 0),
+			Color = st.stone, Material = Enum.Material.Slate, Parent = f })
+		if k % 3 ~= 0 then
+			part({ Name = "RuinCapital", Size = V(3.2, 0.9, 3.2), CFrame = CF(q + V(0, h + 0.15, 0)) * ANG(0, a, 0), Color = st.stone:Lerp(rgb(255, 255, 255), 0.12), Material = Enum.Material.Slate, Parent = f })
+		end
+	end
+	local a0 = rng:NextNumber(0, math.pi * 2)
+	local fallen = pos + V(math.cos(a0), 0, math.sin(a0)) * 6
+	part({ Name = "FallenColumn", Shape = Enum.PartType.Cylinder, Size = V(9, 2.4, 2.4), CFrame = CF(fallen + V(0, 1, 0)) * ANG(0, a0 + 1.2, 0), Color = st.stone, Material = Enum.Material.Slate, Parent = f })
+	if st.moss then
+		part({ Name = "RuinMoss", Size = V(6, 0.3, 3.5), CFrame = CF(fallen + V(0, 2.25, 0)) * ANG(0, a0 + 1.2, 0), Color = st.moss, Material = Enum.Material.LeafyGrass, CanCollide = false, Parent = f })
+	end
+	return pos + inward * 2, "Ruínas da " .. st.name
+end
+
+POI.pond = function(f, pos, inward, st, rng, terrainOk)
+	local R = 12
+	local ok = false
+	if terrainOk then
+		ok = pcall(function()
+			local T = workspace:FindFirstChildOfClass("Terrain") :: Terrain
+			T:FillCylinder(CF(pos - V(0, 2.5, 0)), 5, R, Enum.Material.Air)
+			T:FillCylinder(CF(pos - V(0, 4, 0)), 4, R - 1, Enum.Material.Water)
+		end)
+	end
+	if not ok then
+		part({ Name = "PondWater", Shape = Enum.PartType.Cylinder, Size = V(0.6, R * 2, R * 2), CFrame = CF(pos + V(0, 0.15, 0)) * ANG(0, 0, rad(90)),
+			Color = rgb(60, 180, 200), Material = Enum.Material.Glass, Transparency = 0.3, CanCollide = false, Parent = f })
+	end
+	for k = 1, 7 do
+		local a = k / 7 * math.pi * 2 + 0.4
+		rockCluster(f, pos + V(math.cos(a), 0, math.sin(a)) * (R + 2.5) - V(0, 0.6, 0), rng:NextNumber(0.6, 1), rng, st.rock, st.rockMat, st.moss)
+	end
+	for k = 1, 5 do
+		local a = k * 2.2
+		part({ Name = "LilyPad", Shape = Enum.PartType.Cylinder, Size = V(0.3, 2.8, 2.8), CFrame = CF(pos + V(math.cos(a) * (3 + k * 1.3), ok and -1.9 or 0.5, math.sin(a) * (3 + k * 1.3))) * ANG(0, 0, rad(90)),
+			Color = rgb(80, 170, 70), CanCollide = false, Parent = f })
+	end
+	return pos + inward * (R + 6), "Lago Escondido da " .. st.name
+end
+
+POI.lookout = function(f, pos, inward, st, rng, terrainOk)
+	local top = pos + V(0, 12, 0)
+	local ok = false
+	if terrainOk then
+		ok = pcall(function()
+			local T = workspace:FindFirstChildOfClass("Terrain") :: Terrain
+			local g = Enum.Material[st.ground]
+			T:FillBall(pos - V(0, 22, 0), 34, g)
+			T:FillBall(pos + inward * 22 - V(0, 14, 0), 18, g) -- rampa do lado da trilha
+		end)
+	end
+	if not ok then
+		top = pos + V(0, 1, 0)
+	end
+	-- mirante de madeira no alto do morro
+	local wood, roof = rgb(120, 84, 56), rgb(150, 70, 56)
+	part({ Name = "LookoutFloor", Size = V(13, 0.8, 13), CFrame = CF(top + V(0, 0.6, 0)), Color = wood, Material = Enum.Material.WoodPlanks, Parent = f })
+	for _, o in ipairs({ V(-5.6, 0, -5.6), V(5.6, 0, -5.6), V(-5.6, 0, 5.6), V(5.6, 0, 5.6) }) do
+		part({ Name = "LookoutPost", Size = V(1, 16, 1), CFrame = CF(top + o + V(0, 2, 0)), Color = wood:Lerp(rgb(0, 0, 0), 0.15), Material = Enum.Material.Wood, Parent = f })
+	end
+	local rcf = CF(top + V(0, 11.2, 0)) * ANG(0, math.atan2(inward.X, inward.Z), 0)
+	for _, side in ipairs({ -1, 1 }) do
+		Make("WedgePart", { Name = "LookoutRoof", Anchored = true, Size = V(15, 3.2, 7.5), CFrame = rcf * CF(0, 0, side * 3.75) * ANG(0, side > 0 and math.pi or 0, 0),
+			Color = roof, Material = Enum.Material.WoodPlanks, TopSurface = Enum.SurfaceType.Smooth, BottomSurface = Enum.SurfaceType.Smooth, Parent = f })
+	end
+	local sides = { V(0, 0, -6.2), V(0, 0, 6.2), V(-6.2, 0, 0), V(6.2, 0, 0) }
+	local openIdx, best = 1, -2
+	for i, o in ipairs(sides) do
+		if o.Unit:Dot(inward) > best then
+			openIdx, best = i, o.Unit:Dot(inward)
+		end
+	end
+	for i, o in ipairs(sides) do
+		local along = math.abs(o.X) > 0 and V(0.4, 1.2, 12) or V(12, 1.2, 0.4)
+		if i ~= openIdx then -- o lado da subida fica aberto
+			part({ Name = "LookoutRail", Size = along, CFrame = CF(top + o + V(0, 1.8, 0)), Color = wood, Material = Enum.Material.Wood, Parent = f })
+		end
+	end
+	return top + V(0, 1, 0) - inward * 2, "Mirante da " .. st.name
+end
+
+POI.camp = function(f, pos, inward, st, rng)
+	local side = V(-inward.Z, 0, inward.X)
+	local cloth = { rgb(196, 120, 70), rgb(110, 140, 170) }
+	for k, o in ipairs({ -7, 7 }) do
+		local tp = pos + side * o - inward * 6
+		local cf = CF(tp, tp + inward) * ANG(0, 0, 0)
+		for _, sgn in ipairs({ -1, 1 }) do
+			Make("WedgePart", { Name = "Tent", Anchored = true, Size = V(5, 4.6, 3), CFrame = cf * CF(sgn * 1.5, 2.3, 0) * ANG(0, -sgn * math.pi / 2, 0), Color = cloth[k],
+				Material = Enum.Material.Fabric, TopSurface = Enum.SurfaceType.Smooth, BottomSurface = Enum.SurfaceType.Smooth, Parent = f })
+		end
+	end
+	for k = 1, 6 do
+		local a = k / 6 * math.pi * 2
+		part({ Name = "FireStone", Size = V(1.2, 0.9, 1.2), CFrame = CF(pos + V(math.cos(a) * 1.9, 0.35, math.sin(a) * 1.9)) * ANG(0, a, 0), Color = st.rock, Material = st.rockMat, Parent = f })
+	end
+	local holder = part({ Name = "Campfire", Size = V(2, 0.6, 2), CFrame = CF(pos + V(0, 0.3, 0)), Color = rgb(70, 46, 30), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	WorldBuilder.fire(holder, rgb(255, 140, 50), 0.8)
+	Make("PointLight", { Color = rgb(255, 170, 90), Range = 16, Brightness = 1.4, Shadows = false, Parent = holder })
+	for _, sgn in ipairs({ -1, 1 }) do
+		cyl({ Name = "LogSeat", Color = rgb(110, 76, 50), Material = Enum.Material.Wood, Parent = f }, pos + side * sgn * 5 + inward * 2 + V(0, 0.8, 0), pos + side * sgn * 5 - inward * 3 + V(0, 0.8, 0), 0.8)
+	end
+	part({ Name = "Crate", Size = V(2.4, 2.4, 2.4), CFrame = CF(pos + side * 11 + V(0, 1.2, 0)) * ANG(0, 0.4, 0), Color = rgb(150, 110, 66), Material = Enum.Material.WoodPlanks, Parent = f })
+	part({ Name = "Crate", Size = V(1.8, 1.8, 1.8), CFrame = CF(pos + side * 11 + V(0, 3.3, 0)) * ANG(0, 1.1, 0), Color = rgb(150, 110, 66), Material = Enum.Material.WoodPlanks, Parent = f })
+	return pos - side * 10 - inward * 4, "Acampamento Abandonado"
+end
+
+POI.log = function(f, pos, inward, st, rng)
+	local side = V(-inward.Z, 0, inward.X)
+	local axis = side
+	local R, len = 5.6, 26
+	local bark = st.bark:Lerp(rgb(70, 50, 36), 0.4)
+	-- tronco oco caído: anel de tábuas grossas, dá para atravessar por dentro
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2
+		if k ~= 1 then -- uma fresta no alto deixa a luz entrar
+			local off = V(0, math.cos(a), 0) * R + inward * math.sin(a) * R
+			part({ Name = "LogShell", Size = V(3.7, 1.4, len), CFrame = CF(pos + off + V(0, R - 0.6, 0), pos + off + V(0, R - 0.6, 0) + axis) * ANG(0, 0, a), Color = bark,
+				Material = Enum.Material.Wood, Parent = f })
+		end
+	end
+	for _, sgn in ipairs({ -1, 1 }) do
+		part({ Name = "LogMoss", Size = V(4.5, 0.5, 8), CFrame = CF(pos + axis * sgn * 6 + V(0, 2 * R - 0.4, 0), pos + axis * sgn * 6 + V(0, 2 * R - 0.4, 0) + axis), Color = st.moss or st.shrub,
+			Material = Enum.Material.LeafyGrass, CanCollide = false, Parent = f })
+	end
+	for k = 1, 5 do
+		local q = pos + axis * rng:NextNumber(-len / 2, len / 2) + inward * (R + 0.6) * (k % 2 == 0 and 1 or -1)
+		ellipsoid({ Name = "LogShroom", Size = V(1.8, 0.7, 1.8), CFrame = CF(q + V(0, 1 + k % 3, 0)), Color = st.cap, CanCollide = false, Parent = f })
+	end
+	return pos + V(0, 0.2, 0), "Tronco Oco da " .. st.name
+end
+
+POI.stones = function(f, pos, inward, st, rng)
+	for k = 1, 8 do
+		local a = k / 8 * math.pi * 2
+		local q = pos + V(math.cos(a), 0, math.sin(a)) * 11
+		local h = rng:NextNumber(7, 11)
+		local stone = part({ Name = "StandingStone", Size = V(2.6, h, 1.6), CFrame = CF(q + V(0, h / 2 - 0.8, 0)) * ANG(0, -a + math.pi / 2, rng:NextNumber(-0.08, 0.08)),
+			Color = st.stone:Lerp(rgb(0, 0, 0), rng:NextNumber(0, 0.2)), Material = Enum.Material.Slate, Parent = f })
+		part({ Name = "StoneRune", Size = V(0.8, 1.6, 0.1), CFrame = stone.CFrame * CF(0, h * 0.15, -0.82), Color = st.accent, Material = Enum.Material.Neon, CanCollide = false, CastShadow = false, Parent = f })
+	end
+	part({ Name = "Altar", Size = V(5, 1.4, 3.4), CFrame = CF(pos + V(0, 0.7, 0)) * ANG(0, math.atan2(inward.X, inward.Z), 0), Color = st.stone, Material = Enum.Material.Slate, Parent = f })
+	return pos + inward * 4, "Círculo de Pedras da " .. st.name
+end
+
+local POI_ORDER = { "ruins", "pond", "lookout", "camp", "log", "stones" }
+
+-- Plano do anel (determinístico): trilha, faixas proibidas e os seis lugares. Usado também pelo
+-- terreno (as colinas da borda não sobem em cima dos lugares).
+function WorldBuilder.ringPlan(worldId: string)
+	local w = Worlds.Info[worldId]
+	if not RING[worldId] or not w.core or w.radius <= w.core + 30 then
+		return nil
+	end
+	local rng = Random.new(w.index * 4099)
+	local R0, R1 = w.core + 8, w.radius - 10
+	local Rm = (R0 + R1) / 2
+	local keep = ringKeepOut(worldId)
+	local function blocked(theta: number, margin: number)
+		for _, k in ipairs(keep) do
+			if angDiff(theta, k.theta) < k.w + margin then
+				return true
+			end
+		end
+		return false
+	end
+	local function trailR(theta: number): number
+		return Rm + math.sin(rad(theta) * 5 + w.index) * 7
+	end
+	local pois = {}
+	for i, kind in ipairs(POI_ORDER) do
+		local theta = (i - 1) * 60 + 25 + rng:NextNumber(-8, 8)
+		while blocked(theta, 12) do
+			theta += 7
+		end
+		local outer = i % 2 == 0
+		local pos = WorldBuilder.polar(w.center, theta, trailR(theta) + (outer and 20 or -18))
+		local inwardC = ((w.center - pos) * V(1, 0, 1)).Unit
+		table.insert(pois, { kind = kind, pos = pos, theta = theta, r = kind == "lookout" and 30 or 20, inward = outer and inwardC or -inwardC, i = i })
+	end
+	return { R0 = R0, R1 = R1, Rm = Rm, keep = keep, blocked = blocked, trailR = trailR, pois = pois }
+end
+
+function WorldBuilder.wildRing(worldId: string, parent: Instance, terrainOk: boolean)
+	local w = Worlds.Info[worldId]
+	local out = { gates = {}, chests = {}, npcs = {}, pois = {}, walkPoints = {} }
+	local plan = WorldBuilder.ringPlan(worldId)
+	if not plan then
+		return out
+	end
+	local st = table.clone(RING[worldId])
+	st.ground = w.ground
+	local c = w.center
+	local f = Make("Folder", { Name = "WildRing", Parent = parent })
+	local rng = Random.new(w.index * 7919)
+	local R0, R1, blocked, trailR = plan.R0, plan.R1, plan.blocked, plan.trailR
+	local T = terrainOk and workspace:FindFirstChildOfClass("Terrain") :: Terrain
+	local pathMat = Enum.Material[(TERRAIN_STYLE[worldId] or TERRAIN_STYLE.verdant).path]
+	-- trilha em volta da ilha (sinuosa) e quatro ligações com a parte central
+	local trail = {}
+	local function paveSegment(a: Vector3, b: Vector3)
+		if T then
+			T:FillBlock(CF((a + b) / 2 - V(0, 1, 0), (a + b) / 2 - V(0, 1, 0) + (b - a)), V(7, 2, (b - a).Magnitude + 3), pathMat)
+		end
+		table.insert(trail, { a = a, b = b })
+	end
+	local prev = WorldBuilder.polar(c, 0, trailR(0))
+	for deg = 6, 360, 6 do
+		local cur = WorldBuilder.polar(c, deg, trailR(deg))
+		paveSegment(prev, cur)
+		prev = cur
+	end
+	for _, th in ipairs({ 30, 150, 210, 330 }) do
+		local t2 = th
+		for _ = 1, 20 do
+			if not blocked(t2, 4) and not Regions.isReserved(worldId, WorldBuilder.polar(c, t2, w.core - 6), 4) then
+				break
+			end
+			t2 += 6
+		end
+		paveSegment(WorldBuilder.polar(c, t2, w.core - 6), WorldBuilder.polar(c, t2, trailR(t2)))
+	end
+	local function nearTrail(p: Vector3, d: number): boolean
+		for _, sg in ipairs(trail) do
+			local ab = (sg.b - sg.a) * V(1, 0, 1)
+			local t = math.clamp(((p - sg.a) * V(1, 0, 1)):Dot(ab) / math.max(ab:Dot(ab), 1e-3), 0, 1)
+			if (((sg.a + ab * t) - p) * V(1, 0, 1)).Magnitude < d then
+				return true
+			end
+		end
+		return false
+	end
+	-- seis lugares para descobrir (alternando por dentro e por fora da trilha), cada um com baú
+	local pois = plan.pois
+	for _, p in ipairs(pois) do
+		local reach = p.kind == "pond" and 13 or (p.kind == "lookout" and 26 or 4)
+		paveSegment(WorldBuilder.polar(c, p.theta, trailR(p.theta)), p.pos + p.inward * reach)
+	end
+	for i, p in ipairs(pois) do
+		local pf = Make("Folder", { Name = "POI_" .. p.kind, Parent = f })
+		local base = p.kind == "lookout" and p.pos or groundRay(p.pos)
+		local chestPos, title = POI[p.kind](pf, base, p.inward, st, rng, terrainOk)
+		local id = worldId .. "_wild_" .. p.kind
+		local model, prompt = ringChest(pf, CF(chestPos, chestPos + p.inward), title, st)
+		out.chests[id] = { model = model, prompt = prompt, pos = chestPos, title = title, region = nil }
+		out.walkPoints[title] = chestPos + p.inward * 4 + V(0, 2.5, 0)
+		table.insert(out.pois, { kind = p.kind, pos = base, title = title, chest = id, index = i })
+	end
+	local function nearPoi(q: Vector3, m: number): boolean
+		for _, p in ipairs(pois) do
+			if ((q - p.pos) * V(1, 0, 1)).Magnitude < p.r + m then
+				return true
+			end
+		end
+		return false
+	end
+	-- FLORESTA: grade com sorteio modulado por um "ruído" de senos (bosques fechados e clareiras)
+	local trees = Make("Folder", { Name = "Forest", Parent = f })
+	local cell = st.cell
+	local phase = rng:NextNumber(0, 6.28)
+	local count = 0
+	for gx = -R1, R1, cell do
+		for gz = -R1, R1, cell do
+			local q = c + V(gx + rng:NextNumber(-cell * 0.4, cell * 0.4), 0, gz + rng:NextNumber(-cell * 0.4, cell * 0.4))
+			local flat = (q - c) * V(1, 0, 1)
+			local d = flat.Magnitude
+			if d > R0 and d < R1 then
+				local theta = math.deg(math.atan2(flat.Z, flat.X)) % 360
+				local dens = 0.55 + 0.28 * math.sin(rad(theta) * 3 + phase) * math.cos(d / 23) + 0.17 * math.sin(rad(theta) * 7 + d / 17)
+				if not blocked(theta, 2) and not nearTrail(q, 6) and not nearPoi(q, 6) and not Regions.isReserved(worldId, q, 6) then
+					local roll = rng:NextNumber()
+					local g = groundRay(q)
+					if roll < dens * st.density * 1.45 then
+						local s = rng:NextNumber(1.15, 1.85)
+						local m = branchTree(trees, g, s, rng, st.bark, st.leaves[rng:NextInteger(1, #st.leaves)], (st.glow and rng:NextNumber() < 0.25) and st.glow or nil,
+							{ name = "ForestTree", lite = true, branches = 3, trunk = rng:NextNumber(4.2, 5.8), rise = 0.7, spread = rng:NextNumber(1.0, 1.2), cluster = 4.1, leader = 4.5 })
+						m:SetAttribute("Ring", true)
+						count += 1
+						if rng:NextNumber() < 0.6 then
+							local a = rng:NextNumber(0, 6.28)
+							cubeShrub(trees, groundRay(q + V(math.cos(a), 0, math.sin(a)) * rng:NextNumber(4, 7)), rng:NextNumber(0.8, 1.2), st.shrub, rng)
+						end
+					elseif roll < 0.9 then
+						-- clareira: arbustos, pedras e (por mundo) cristais ou estilhaços flutuantes
+						local k = rng:NextInteger(1, 4)
+						if k == 1 and st.crystals then
+							CrystalKit.cluster(trees, CF(g) * ANG(0, rng:NextNumber(0, 6.28), 0), rng, { count = 3, h = rng:NextNumber(4, 7), w = 1.1, styles = { "blue", "violet" }, rock = false })
+						elseif k == 1 and st.shards then
+							floatingShard(trees, g + V(0, rng:NextNumber(7, 13), 0), rng:NextNumber(0.8, 1.2), st.accent)
+						elseif k == 2 then
+							rockCluster(trees, g, rng:NextNumber(0.6, 1.1), rng, st.rock, st.rockMat, st.moss)
+						else
+							cubeShrub(trees, g, rng:NextNumber(0.8, 1.3), st.shrub, rng)
+						end
+					end
+				end
+			end
+		end
+	end
+	out.treeCount = count
+	-- partículas ambientes na mata (vaga-lumes/pólen/cintilação)
+	local amb = ({ verdant = "fireflies", crystal = "glints", wilds = "spores", astral = "glints" })[worldId]
+	for i = 1, 6 do
+		WorldBuilder.ambient(f, WorldBuilder.polar(c, i * 60 + 55, plan.Rm) + V(0, 5, 0), amb, 30)
+	end
+	return out
 end
 
 -------------------------------------------------------------------------------

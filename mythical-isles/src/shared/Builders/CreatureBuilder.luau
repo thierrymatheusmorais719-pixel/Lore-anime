@@ -1,6 +1,7 @@
 -- Construtor procedural dos PETS a partir de Config/Pets.model.
 -- Arquétipos: quad (quadrúpede), biped, flyer (ave/dragãozinho), serpent, floater (espírito), golem,
--- slime, shroom (cogumelo) e treant (árvore viva).
+-- slime, shroom (cogumelo), treant (árvore viva), leafpanda (panda de manto de folhas), mammoth (mamute de
+-- pelagem de capim) e bushgoat (cabra com arbusto de frutinhas nas costas).
 --
 -- Anatomia "estilizada realista": volumes sobrepostos (peito, ombros, ancas, pescoço), contra-sombreamento
 -- do pelo (dorso mais escuro, barriga clara), focinho com almofadas e nariz úmido, olhos com íris,
@@ -820,8 +821,246 @@ local function buildTreant(rig, m, P, u)
 	return 1.25 * u + 0.85 * u
 end
 
+-------------------------------------------------------------------------------
+-- 2ª leva de pets do autor para o Mundo 1 (referências enviadas): modelos ORIGINAIS a partir das
+-- ideias — panda com manto de folhas, mamute de pelagem de capim e cabra com arbusto de frutinhas.
+-------------------------------------------------------------------------------
+
+-- Ponta de folha (triângulo) com a ponta para BAIXO, virada para fora na posição `p` do pai,
+-- abrindo um pouco para fora (`flare` graus). `out` = direção horizontal para fora.
+local function hemLeaf(rig, parent, p: Vector3, out: Vector3, w: number, h: number, t: number, color: Color3, flare: number, name: string?)
+	local at = CFrame.lookAt(p, p + out) * ANG(rad(flare), 0, 0) * ANG(0, 0, math.pi)
+	ModelKit.tri(rig, { name = name or "HemLeaf", parent = parent, at = at, width = w, height = h, thickness = t, color = color, role = "Body" })
+end
+
+-- Lâmina comprida e achatada (fio de capim / folha) de `a` até `b`, com a face larga virada para `face`.
+local function blade(rig, parent, a: Vector3, b: Vector3, width: number, thick: number, color: Color3, material: string?, name: string?, face: Vector3?)
+	local dir = b - a
+	local up = face or V(0, 0, -1)
+	if math.abs(dir.Unit:Dot(up.Unit)) > 0.95 then
+		up = V(1, 0, 0)
+	end
+	-- elipsoide: X = largura, Y = comprimento (de a até b), Z = espessura (normal = `face`)
+	local yAxis = dir.Unit
+	local xAxis = yAxis:Cross(up).Unit
+	local zAxis = xAxis:Cross(yAxis).Unit
+	local cf = CFrame.fromMatrix((a + b) / 2, xAxis, yAxis, zAxis)
+	return add(rig, { name = name or "Blade", parent = parent, at = cf, shape = "ellipsoid", size = V(width, dir.Magnitude, thick), color = color, material = material, role = "Accent" })
+end
+
+-- PANDA DE MANTO DE FOLHAS: corpo de pera claro coberto por um manto (capuz) verde com barra em pontas
+-- de folha; rosto de panda no capuz; orelhas redondas escuras; broto alto no topo; bracinhos escuros
+-- levantados com garras claras; perninhas curtas.
+local function buildLeafPanda(rig, m, P, u)
+	local dark = m.patch or Color3.fromRGB(26, 24, 28)
+	local cream = P.belly
+	local body = add(rig, { name = "Torso", joint = "Body", at = CF(), shape = "ellipsoid", size = V(1.8, 1.7, 1.6) * u, color = cream, role = "Belly" })
+	add(rig, { name = "BellyFur", parent = body, at = CF(0, -0.42 * u, -0.28 * u), shape = "ellipsoid", size = V(1.35, 0.95, 1.05) * u, color = cream:Lerp(WHITE, 0.2), role = "Belly" })
+	local cs = V(2.05, 2.25, 1.9) * u
+	-- o manto é também a cabeça (capuz): gira com a junta Neck
+	local cloak = add(rig, { name = "Cloak", parent = body, joint = "Neck", at = CF(0, 0.55 * u, 0.02 * u), shape = "ellipsoid", size = cs, color = P.body, role = "Body" })
+	add(rig, { name = "CloakBack", parent = cloak, at = CF(0, 0.06 * u, 0.16 * u), shape = "ellipsoid", size = cs * V(0.92, 0.94, 0.9), color = P.dorsal, role = "Body" })
+	-- barra do manto: pontas de folha em volta, abrindo para fora
+	local hy = -0.8 * u
+	local k = math.sqrt(1 - (hy / (cs.Y / 2)) ^ 2)
+	for i = 0, 8 do
+		local a = i / 9 * math.pi * 2
+		local out = V(math.sin(a), 0, -math.cos(a))
+		local p = V(out.X * cs.X / 2 * k, hy, out.Z * cs.Z / 2 * k) + out * 0.04 * u
+		hemLeaf(rig, cloak, p, out, 0.78 * u, 0.72 * u, 0.12 * u, i % 2 == 0 and P.body or P.dorsal, 18)
+	end
+	-- ponta do manto atrás (balança como cauda)
+	local tail = hub(rig, "Tail", body, "Tail", CF(0, -0.15 * u, 0.82 * u))
+	hemLeaf(rig, tail, V(0, 0.15 * u, 0.05 * u), V(0, 0, 1), 0.95 * u, 1.05 * u, 0.12 * u, P.dorsal, 30, "CloakTip")
+	-- rosto de panda
+	for _, side in ipairs({ -1, 1 }) do
+		add(rig, { name = "EyePatch", parent = cloak, at = ModelKit.surface(cs, side * 0.3, 0.12, -0.075 * u) * ANG(0, 0, side * rad(-22)), shape = "ellipsoid",
+			size = V(0.72, 0.6, 0.16) * u, color = dark, role = "Detail" })
+	end
+	eyes(rig, m, P, cloak, cs, 0.3, 0.12, 0.4 * u, { lidColor = dark, tilt = 0 })
+	add(rig, { name = "Muzzle", parent = cloak, at = ModelKit.surface(cs, 0, -0.14, -0.08 * u), shape = "ellipsoid", size = V(0.66, 0.44, 0.36) * u, color = cream:Lerp(WHITE, 0.3), role = "Belly" })
+	add(rig, { name = "Nose", parent = cloak, at = ModelKit.surface(cs, 0, -0.07, 0.07 * u), shape = "ellipsoid", size = V(0.26, 0.16, 0.14) * u, color = dark, role = "Detail", reflectance = 0.15 })
+	add(rig, { name = "Mouth", parent = cloak, at = ModelKit.surface(cs, 0, -0.24, 0.06 * u), shape = "ellipsoid", size = V(0.14, 0.05, 0.05) * u, color = dark, role = "Detail", shadow = false })
+	for _, side in ipairs({ -1, 1 }) do
+		local e = add(rig, { name = "Ear", parent = cloak, joint = side < 0 and "EarL" or "EarR", at = CF(side * 0.62 * u, 0.86 * u, 0.06 * u) * ANG(0, 0, side * rad(-28)),
+			shape = "ellipsoid", size = V(0.64, 0.6, 0.3) * u, color = dark, role = "Detail" })
+		add(rig, { name = "EarInner", parent = e, at = CF(0, -0.02 * u, -0.1 * u), shape = "ellipsoid", size = V(0.36, 0.32, 0.12) * u, color = dark:Lerp(cream, 0.25), role = "Detail", shadow = false })
+	end
+	-- broto alto no topo (junta de orelha: balança)
+	local sprout = hub(rig, "EarSprout", cloak, "EarSprout", CF(0, 1.05 * u, 0.05 * u))
+	add(rig, { name = "SproutStem", parent = sprout, at = CF(0, 0.2 * u, 0), shape = "ellipsoid", size = V(0.12, 0.55, 0.12) * u, color = darker(P.accent, 0.8), role = "Accent" })
+	add(rig, { name = "SproutLeaf", parent = sprout, at = CF(0, 1.25 * u, 0.04 * u) * ANG(rad(-6), 0, 0), shape = "ellipsoid", size = V(0.66, 1.95, 0.12) * u, color = P.accent, role = "Accent" })
+	add(rig, { name = "SproutVein", parent = sprout, at = CF(0, 1.2 * u, -0.03 * u) * ANG(rad(-6), 0, 0), shape = "block", size = V(0.04, 1.6, 0.03) * u, color = P.accent:Lerp(WHITE, 0.3), role = "Accent", shadow = false })
+	-- bracinhos escuros levantados com garras claras
+	local claw = m.claw or Color3.fromRGB(226, 226, 222)
+	for _, side in ipairs({ -1, 1 }) do
+		local a = hub(rig, side < 0 and "ArmL" or "ArmR", body, side < 0 and "ArmL" or "ArmR", CF(side * 0.9 * u, 0.45 * u, -0.1 * u))
+		local elbow, wrist = V(side * 0.72 * u, 0.22 * u, -0.12 * u), V(side * 1.02 * u, 0.86 * u, -0.22 * u)
+		blade(rig, a, V(0, 0, 0), elbow, 0.5 * u, 0.5 * u, dark, nil, "UpperArm")
+		blade(rig, a, elbow, wrist, 0.44 * u, 0.44 * u, dark, nil, "Forearm")
+		add(rig, { name = "Palm", parent = a, at = CF(wrist + V(0, 0.08 * u, 0)), shape = "ball", size = Vector3.one * 0.46 * u, color = dark, role = "Detail" })
+		for f = -1, 1 do
+			local base = wrist + V(f * 0.15 * u + side * 0.05 * u, 0.24 * u, -0.02 * u)
+			blade(rig, a, base, base + V(f * 0.1 * u + side * 0.08 * u, 0.42 * u, -0.04 * u), 0.16 * u, 0.16 * u, claw, nil, "Claw")
+		end
+		blade(rig, a, wrist + V(-side * 0.18 * u, 0.06 * u, -0.06 * u), wrist + V(-side * 0.42 * u, 0.2 * u, -0.1 * u), 0.15 * u, 0.15 * u, claw, nil, "Thumb")
+		local l = hub(rig, side < 0 and "LegL" or "LegR", body, side < 0 and "LegL" or "LegR", CF(side * 0.45 * u, -0.6 * u, 0))
+		add(rig, { name = "Leg", parent = l, at = CF(0, -0.25 * u, 0), shape = "ellipsoid", size = V(0.6, 0.62, 0.62) * u, color = dark, role = "Detail" })
+		add(rig, { name = "Foot", parent = l, at = CF(0, -0.5 * u, -0.12 * u), shape = "ellipsoid", size = V(0.62, 0.32, 0.82) * u, color = dark, role = "Detail" })
+		add(rig, { name = "FootPad", parent = l, at = CF(0, -0.56 * u, 0.12 * u) * ANG(rad(-70), 0, 0), shape = "ellipsoid", size = V(0.36, 0.3, 0.08) * u, color = cream, role = "Belly", shadow = false })
+	end
+	return 1.26 * u
+end
+
+-- MAMUTE DE PELAGEM DE CAPIM: corpo grande de pele castanha coberto por longos fios de capim que caem
+-- pelas laterais e pela testa (um olho meio escondido), orelhas de folha, tromba articulada, presas
+-- curvas, braceletes de cipó nas patas e unhas claras.
+local function buildMammoth(rig, m, P, u)
+	local coat = P.accent
+	local shades = { darker(coat, 0.7), darker(coat, 0.85), coat, coat:Lerp(Color3.fromRGB(230, 220, 120), 0.3) }
+	local bs = V(2.4, 2.1, 3.0) * u
+	local body = add(rig, { name = "Torso", joint = "Body", at = CF(), shape = "ellipsoid", size = bs, color = P.body, role = "Body" })
+	add(rig, { name = "Underside", parent = body, at = CF(0, -0.42 * u, -0.1 * u), shape = "ellipsoid", size = V(1.9, 1.3, 2.5) * u, color = P.belly, role = "Belly" })
+	-- manto de capim cobrindo o dorso (sem pele aparecendo em cima) e na cabeça
+	add(rig, { name = "CoatMantle", parent = body, at = CF(0, 0.42 * u, 0.05 * u), shape = "ellipsoid", size = V(2.6, 1.55, 3.12) * u, color = shades[2], material = "Grass", role = "Accent" })
+	-- pelagem: fileiras de fios presos no dorso caindo pelas laterais
+	-- pseudoaleatório determinístico (mesmo desenho em qualquer máquina, sem depender de Random)
+	local seed = math.floor(coat.R * 97 + coat.G * 389 + coat.B * 151)
+	local rng = {}
+	function rng:NextNumber(lo: number, hi: number): number
+		seed = (seed * 1103515245 + 12345) % 2147483648
+		return lo + (hi - lo) * (seed / 2147483648)
+	end
+	for row = 0, 4 do
+		local z = (row - 2) * 0.55 * u
+		for _, phi in ipairs({ -84, -62, -40, 40, 62, 84 }) do
+			local s = math.sin(rad(phi))
+			local anchor = V(s * 1.3 * u, math.cos(rad(phi)) * 0.78 * u + 0.42 * u, z + (phi % 2 == 0 and 0.12 or -0.12) * u)
+			local len = (1.25 + math.abs(s) * 0.85 + rng:NextNumber(-0.15, 0.2)) * u
+			local tip = anchor + V(s * 0.42 * u, -len, rng:NextNumber(-0.12, 0.12) * u)
+			blade(rig, body, anchor, tip, rng:NextNumber(0.68, 0.8) * u, 0.12 * u, shades[(row + math.floor(math.abs(phi) / 25)) % #shades + 1], "Grass", "CoatStrand", V(s, 0.3, 0))
+		end
+	end
+	-- crista de fios espetados no alto das costas
+	for i = -1, 2 do
+		local base = V(i * 0.12 * u, bs.Y * 0.5 - 0.05 * u, (i - 0.5) * 0.6 * u)
+		blade(rig, body, base, base + V(0, 0.75 * u, 0.35 * u), 0.42 * u, 0.12 * u, shades[(i + 2) % #shades + 1], "Grass", "CoatCrest", V(1, 0, 0))
+	end
+	-- cabeça baixa na frente
+	local hs = V(1.6, 1.5, 1.45) * u
+	local hd = add(rig, { name = "Head", parent = body, joint = "Neck", at = CF(0, 0.35 * u, -1.6 * u), shape = "ellipsoid", size = hs, color = P.body, role = "Body" })
+	eyes(rig, m, P, hd, hs, 0.42, 0.02, 0.3 * u, { lidColor = P.body, tilt = -8, slit = false })
+	add(rig, { name = "HeadCoat", parent = hd, at = CF(0, 0.38 * u, 0.12 * u), shape = "ellipsoid", size = V(1.7, 1.0, 1.4) * u, color = shades[3], material = "Grass", role = "Accent" })
+	-- franja de capim sobre a testa (deixa o olho direito à mostra)
+	for _, x in ipairs({ -0.6, -0.36, -0.1, 0.62 }) do
+		local a = V(x * u, 0.62 * u, -0.25 * u)
+		blade(rig, hd, a, a + V(x * 0.15 * u, -1.05 * u, -0.5 * u), 0.46 * u, 0.1 * u, shades[(math.floor(x * 10) % #shades) + 1], "Grass", "Fringe", V(0, 0.3, -1))
+	end
+	-- orelhas largas de folha
+	for _, side in ipairs({ -1, 1 }) do
+		add(rig, { name = "Ear", parent = hd, joint = side < 0 and "EarL" or "EarR", at = CF(side * 0.82 * u, 0.1 * u, 0.2 * u) * ANG(0, side * rad(-20), side * rad(18)),
+			shape = "ellipsoid", size = V(0.14, 1.15, 0.95) * u, color = shades[2], material = "Grass", role = "Accent" })
+	end
+	-- tromba articulada (cadeia: balança)
+	tailChain(rig, hd, CF(0, -0.42 * u, -0.6 * u) * ANG(rad(122), 0, 0), "TailTrunk", 0.42 * u, { 0.3 * u, 0.25 * u, 0.2 * u, 0.16 * u }, { P.body, P.body, P.dorsal, P.dorsal }, { curve = 12, chainJoints = false })
+	-- presas curvas
+	local ivory = m.tusk or Color3.fromRGB(242, 234, 214)
+	for _, side in ipairs({ -1, 1 }) do
+		local cf = CF(side * 0.4 * u, -0.5 * u, -0.48 * u) * ANG(0, side * rad(14), 0) * ANG(rad(140), 0, 0)
+		for i = 1, 3 do
+			local r = (0.15 - i * 0.025) * u
+			add(rig, { name = "Tusk", parent = hd, at = cf * CF(0, 0, 0.27 * u), shape = "ellipsoid", size = V(r * 2, r * 2, 0.6 * u), color = ivory:Lerp(WHITE, i * 0.05), role = "Detail" })
+			cf = cf * CF(0, 0, 0.48 * u) * ANG(rad(32), 0, 0)
+		end
+	end
+	-- pernas grossas com bracelete de cipó e unhas claras
+	local band = m.band or Color3.fromRGB(96, 70, 48)
+	for _, leg in ipairs({ { "LegFL", -1, -1 }, { "LegFR", 1, -1 }, { "LegBL", -1, 1 }, { "LegBR", 1, 1 } }) do
+		local l = hub(rig, leg[1], body, leg[1], CF(leg[2] * 0.72 * u, -0.75 * u, leg[3] * 0.98 * u))
+		add(rig, { name = "Leg", parent = l, at = CF(0, -0.55 * u, 0), shape = "ellipsoid", size = V(0.86, 1.3, 0.86) * u, color = P.body, role = "Body" })
+		add(rig, { name = "Foot", parent = l, at = CF(0, -1.2 * u, 0) * ANG(0, 0, rad(90)), shape = "cyl", size = V(0.36, 0.92, 0.92) * u, color = P.dorsal, role = "Body" })
+		add(rig, { name = "Band", parent = l, at = CF(0, -0.92 * u, 0) * ANG(0, 0, rad(90)), shape = "cyl", size = V(0.22, 0.98, 0.98) * u, color = band, material = "Wood", role = "Detail" })
+		add(rig, { name = "BandLeaf", parent = l, at = CF(leg[2] * 0.42 * u, -0.86 * u, -0.2 * u) * ANG(0, 0, leg[2] * rad(-30)), shape = "ellipsoid", size = V(0.1, 0.42, 0.26) * u,
+			color = shades[3], material = "Grass", role = "Accent", shadow = false })
+		for i = -1, 1 do
+			add(rig, { name = "Nail", parent = l, at = CF(i * 0.26 * u, -1.24 * u, -0.42 * u), shape = "ball", size = V(0.26, 0.26, 0.26) * u, color = ivory:Lerp(P.body, 0.2), role = "Detail", shadow = false })
+		end
+	end
+	add(rig, { name = "Tail", parent = body, joint = "Tail", at = CF(0, 0.2 * u, 1.5 * u) * ANG(rad(40), 0, 0), shape = "ellipsoid", size = V(0.3, 0.3, 0.8) * u, color = shades[1], material = "Grass", role = "Accent" })
+	return 2.13 * u
+end
+
+-- CABRA-ARBUSTO: corpo redondo e fofo (barriga creme, pelo verde-claro em cima), arbusto de folhas
+-- com frutinhas nas costas, orelhas caídas de folha, chifres compridos e anelados curvados para trás,
+-- barra de folhas no peito e cascos escuros.
+local function buildBushGoat(rig, m, P, u)
+	local body = add(rig, { name = "Torso", joint = "Body", at = CF(), shape = "ellipsoid", size = V(2.2, 2.0, 2.3) * u, color = P.belly, role = "Belly" })
+	add(rig, { name = "Fur", parent = body, at = CF(0, 0.4 * u, 0.12 * u), shape = "ellipsoid", size = V(2.24, 1.5, 2.3) * u, color = P.body, role = "Body" })
+	-- folhas subindo pela barriga (barra em zigue-zague)
+	for i = 0, 5 do
+		local a = (i / 5 - 0.5) * math.pi * 1.1
+		local out = V(math.sin(a), 0, -math.cos(a))
+		local p = V(out.X * 0.98 * u, -0.62 * u, out.Z * 1.02 * u)
+		local at = CFrame.lookAt(p, p + out) * ANG(rad(-14), 0, 0)
+		ModelKit.tri(rig, { name = "BellyLeaf", parent = body, at = at, width = 0.55 * u, height = 0.62 * u, thickness = 0.1 * u, color = i % 2 == 0 and P.body or darker(P.body, 0.85), role = "Body" })
+	end
+	-- arbusto nas costas com folhas e frutinhas
+	local bush = m.bush or P.accent
+	local bsz = V(2.3, 2.0, 2.2) * u
+	local core = add(rig, { name = "Bush", parent = body, at = CF(0, 1.15 * u, 0.45 * u), shape = "ellipsoid", size = bsz, color = darker(bush, 0.82), material = "Grass", role = "Accent" })
+	local golden = 2.39996
+	for i = 1, 16 do
+		local y = 1 - (i - 0.5) / 16 * 1.6
+		local r = math.sqrt(math.max(0, 1 - y * y))
+		local th = i * golden
+		local n = V(math.cos(th) * r, y, math.sin(th) * r)
+		local p = V(n.X * bsz.X * 0.46, n.Y * bsz.Y * 0.46, n.Z * bsz.Z * 0.46)
+		local p0 = p * 0.94
+		blade(rig, core, p0, p0 + (n * 0.45 + V(0, -1, 0) * 0.55 + V(0, 0, 0.2)).Unit * 0.62 * u, 0.62 * u, 0.08 * u, i % 3 == 0 and bush:Lerp(WHITE, 0.12) or bush, "Grass", "BushLeaf", n)
+	end
+	local berry = m.berry or Color3.fromRGB(220, 60, 80)
+	for i = 1, 8 do
+		local y = 0.85 - (i - 0.5) / 8 * 1.3
+		local r = math.sqrt(math.max(0, 1 - y * y))
+		local th = i * golden * 1.7 + 0.6
+		local p = V(math.cos(th) * r * bsz.X * 0.5, y * bsz.Y * 0.5, math.sin(th) * r * bsz.Z * 0.5)
+		add(rig, { name = "Berry", parent = core, at = CF(p), shape = "ball", size = Vector3.one * 0.26 * u, color = berry, reflectance = 0.12, role = "Accent", shadow = false })
+	end
+	-- cabeça
+	local hs = V(1.35, 1.25, 1.25) * u
+	local hd = add(rig, { name = "Head", parent = body, joint = "Neck", at = CF(0, 0.6 * u, -1.12 * u), shape = "ellipsoid", size = hs, color = P.body, role = "Body" })
+	add(rig, { name = "Face", parent = hd, at = CF(0, -0.18 * u, -0.22 * u), shape = "ellipsoid", size = V(1.05, 0.85, 0.95) * u, color = P.belly, role = "Belly" })
+	add(rig, { name = "Nose", parent = hd, at = ModelKit.surface(hs, 0, -0.3, 0.02 * u), shape = "ellipsoid", size = V(0.18, 0.12, 0.1) * u, color = Color3.fromRGB(226, 120, 140), role = "Detail", shadow = false })
+	add(rig, { name = "Mouth", parent = hd, at = ModelKit.surface(hs, 0, -0.46, 0.0), shape = "ellipsoid", size = V(0.16, 0.05, 0.05) * u, color = P.rim, role = "Detail", shadow = false })
+	eyes(rig, m, P, hd, hs, 0.42, 0.1, 0.36 * u, { lidColor = P.body, tilt = -6 })
+	for _, side in ipairs({ -1, 1 }) do
+		ModelKit.tri(rig, { name = "CheekTuft", parent = hd, at = CF(side * 0.6 * u, -0.3 * u, -0.1 * u) * ANG(0, side * rad(-70), side * rad(-100)), width = 0.45 * u, height = 0.5 * u,
+			thickness = 0.1 * u, color = P.belly, role = "Belly" })
+		-- orelha caída de folha
+		local e = add(rig, { name = "Ear", parent = hd, joint = side < 0 and "EarL" or "EarR", at = CF(side * 0.95 * u, 0.12 * u, 0.12 * u) * ANG(0, 0, side * rad(-28)),
+			shape = "ellipsoid", size = V(1.15, 0.13, 0.72) * u, color = P.body, role = "Body" })
+		add(rig, { name = "EarTip", parent = e, at = CF(side * 0.42 * u, -0.03 * u, 0.05 * u), shape = "ellipsoid", size = V(0.42, 0.12, 0.6) * u, color = P.accent, material = "Grass", role = "Accent" })
+		-- chifre anelado curvado para trás
+		local cf = CF(side * 0.28 * u, 0.52 * u, 0.05 * u) * ANG(0, side * rad(12), 0) * ANG(rad(-78), 0, 0)
+		local horn = m.horn or Color3.fromRGB(140, 96, 70)
+		for i = 1, 5 do
+			local r = (0.17 - i * 0.022) * u
+			add(rig, { name = "Horn", parent = hd, at = cf * CF(0, 0, 0.2 * u), shape = "ellipsoid", size = V(r * 2, r * 2, 0.46 * u), color = i % 2 == 0 and darker(horn, 0.72) or horn, role = "Accent" })
+			cf = cf * CF(0, 0, 0.38 * u) * ANG(rad(14), 0, 0)
+		end
+	end
+	-- patinhas curtas com cascos
+	for _, leg in ipairs({ { "LegFL", -1, -1 }, { "LegFR", 1, -1 }, { "LegBL", -1, 1 }, { "LegBR", 1, 1 } }) do
+		local l = hub(rig, leg[1], body, leg[1], CF(leg[2] * 0.6 * u, -0.8 * u, leg[3] * 0.62 * u))
+		add(rig, { name = "Leg", parent = l, at = CF(0, -0.3 * u, 0), shape = "ellipsoid", size = V(0.5, 0.7, 0.5) * u, color = leg[3] < 0 and P.belly or P.body, role = "Body" })
+		add(rig, { name = "Hoof", parent = l, at = CF(0, -0.7 * u, -0.03 * u) * ANG(0, 0, rad(90)), shape = "cyl", size = V(0.26, 0.5, 0.5) * u, color = m.hoof or Color3.fromRGB(96, 70, 56), role = "Detail" })
+	end
+	add(rig, { name = "Tail", parent = body, joint = "Tail", at = CF(0, 0.3 * u, 1.12 * u) * ANG(rad(50), 0, 0), shape = "ellipsoid", size = V(0.32, 0.12, 0.62) * u, color = P.accent, material = "Grass", role = "Accent" })
+	return 1.63 * u
+end
+
 local BUILDERS = { quad = buildQuad, biped = buildBiped, flyer = buildFlyer, serpent = buildSerpent, floater = buildFloater, golem = buildGolem,
-	slime = buildSlime, shroom = buildShroom, treant = buildTreant }
+	slime = buildSlime, shroom = buildShroom, treant = buildTreant, leafpanda = buildLeafPanda, mammoth = buildMammoth, bushgoat = buildBushGoat }
 
 -- Constrói um pet. Retorna (model, alturaDoRootAcimaDoChao, flutua?)
 function CreatureBuilder.build(speciesId: string, species, scaleMul: number?)

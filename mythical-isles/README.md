@@ -7,7 +7,7 @@ salvamento. Tudo em **Luau**, organizado para **Rojo**. Mapa, criaturas, bosses,
 vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`).
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
-> Luau, contra o dump público da API do Roblox, com 58 testes de lógica, 3297 verificações dos modelos 3D e
+> Luau, contra o dump público da API do Roblox, com 58 testes de lógica, 3477 verificações dos modelos 3D e
 > **132 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
@@ -78,6 +78,19 @@ ratinhos, slimes, raposas de cauda de cristal, lobos, cervos de ametista, dragã
 **Sylvanox** e **Lumivex**. O Mundo 1 ganhou a Árvore Ancestral num platô no meio de um lago turquesa, penhascos
 de musgo com cachoeiras, cachoeiras caindo da borda da ilha, bonsais, flores roxas e raios de sol.
 
+**2ª leva de pets do Mundo 1 (10 espécies, o mundo agora tem 90):** feitos a partir das três referências enviadas
+como **modelos originais** (nomes, proporções e detalhes próprios, sem copiar os personagens), com corpos novos no
+`Builders/CreatureBuilder.luau`. Prévias em `docs/preview/pets_novos*.png`.
+
+| Família | Raridade | Corpo (`rig`) | Como é |
+|---|---|---|---|
+| Sprout / Maple / Blossom / Mossy Panda | Comum | `leafpanda` | Panda de corpo de pera coberto por um manto-capuz de folhas com barra em pontas, rosto de panda (manchas escuras, focinho claro), orelhas redondas, broto alto que balança, bracinhos escuros levantados com garras claras |
+| Berrytuft / Bluebramble / Sunberry Goat | Raro | `bushgoat` | Cabra redonda e fofa (barriga creme, pelo verde-claro), arbusto de folhas com frutinhas nas costas, orelhas caídas de folha, chifres anelados curvados para trás, cascos escuros |
+| Meadow / Autumn Mammoth | Épico | `mammoth` | Mamute de pele castanha coberto por um manto de capim com fios compridos caindo pelas laterais e pela testa, orelhas de folha, tromba articulada, presas curvas, braceletes de cipó |
+| Elder Grove Mammoth | Lendário | `mammoth` | Versão maior, de olhos brilhantes e presas douradas |
+
+Entram sozinhos nos ovos do Mundo 1 (o peso de cada raridade é dividido entre as espécies dela).
+
 **Visual mais realista (pets e cenário):**
 - **Pets** (`Builders/CreatureBuilder.luau`, `ModelKit.detailedEye`):
   - **Olhos:** contorno, íris com profundidade, pupila (em fenda nos répteis e olhos brilhantes) e dois brilhos.
@@ -127,6 +140,35 @@ de musgo com cachoeiras, cachoeiras caindo da borda da ilha, bonsais, flores rox
   - vaga-lumes de partículas na Árvore Ancestral;
   - pólen, esporos, cintilações ou névoa, conforme a ilha.
 - **Texturas:** só as embutidas no cliente Roblox (`sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`, em `rbxasset://textures/particles/`).
+
+### Ilhas ampliadas: anel de mata para exploração
+
+`WorldBuilder.wildRing` e `WorldBuilder.ringPlan`. Prévias em `docs/preview/mata_*.png` e `crystal_mata_alto.png`.
+
+- **Tamanho:** a parte central de cada ilha (praça, ovos, portais, arena, zonas e as regiões feitas à mão) ficou
+  igual; em volta dela a ilha cresceu e ganhou um anel de mata.
+
+  | Mundo | Raio antes | Raio agora | Área | Árvores na mata | Peças no mundo |
+  |---|---|---|---|---|---|
+  | Verdant Haven | 230 | 345 | ×2,25 | 251 | ≈ 12.800 |
+  | Crystal Hollow | 230 | 315 | ×1,9 | 76 (+ cristais) | ≈ 8.400 |
+  | Whispering Wilds | 230 | 335 | ×2,1 | 246 | ≈ 9.500 |
+  | Astral Sanctuary | 220 | 315 | ×2,05 | 115 (+ estilhaços) | ≈ 4.000 |
+
+  O Skybound Kingdom não mudou: ele já é o maior (ilhas satélites até 390 studs) e as pontes entre as ilhas
+  dependem das distâncias atuais.
+- **Floresta densa:** árvores de galhos e cubos (versão leve, ~25 peças), com bosques fechados e clareiras
+  sorteados por um "ruído" de senos, arbustos de cubos, pedras com musgo e, por mundo, cristais (Mundo 2) ou
+  estilhaços flutuantes (Mundo 5). As faixas dos riachos que descem até a borda ficam livres.
+- **Trilha:** uma trilha de terra sinuosa dá a volta na ilha dentro da mata, com quatro ligações até a parte
+  central e um trecho até cada lugar.
+- **Seis lugares para descobrir em cada mundo**, cada um com um **baú-santuário de verdade** (mesmo sistema dos
+  baús das regiões: recompensa da tabela `Drops.Shrine`, recarga de 30 min por jogador, aviso de "local secreto
+  descoberto" na primeira vez):
+  ruínas com colunas quebradas, lago escondido (água de Terrain), mirante de madeira no alto de um morro,
+  acampamento abandonado (barracas, fogueira com fogo e luz), tronco oco gigante para atravessar por dentro e
+  círculo de pedras com runas.
+- Os baús de tesouro aleatórios da exploração passam a aparecer também na mata (eles usam o raio da ilha).
 
 ### Árvore de galhos e cubos (todos os mundos)
 
@@ -349,8 +391,8 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Variáveis indefinidas / código suspeito | `python3 tools/lint.py luau-analyze` | 0 avisos |
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **58 testes passando** |
-| Modelos 3D (182 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) | `python3 tools/run_tests.py luau --smoke` | **3297 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **135 cenários passando** (inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos e o bosque do Mundo 1) |
+| Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) | `python3 tools/run_tests.py luau --smoke` | **3477 verificações, 0 falhas** |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **137 cenários passando** (inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1 e o anel de mata das ilhas ampliadas com os baús abrindo) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -459,7 +501,9 @@ travamento) foi exercitada.
   de juntas (`Body`, `Neck`, `Leg*`, `Tail*`...) foi pensada para aceitar essas meshes depois.
 - Pets agora têm ~70 peças cada: com muitos jogadores e 4 pets por jogador, confira o desempenho no
   MicroProfiler (dá para baixar detalhes, como dedos e bolhas, se precisar).
-- A Verdant Haven tem ~7.100 peças (a folhagem é feita de folhas individuais); confira o FPS no celular.
+- Com a mata, a Verdant Haven tem ≈ 12.800 peças e o Whispering Wilds ≈ 9.500 (todas ancoradas, sem
+  colisão nas copas). Confira o FPS no celular; se pesar, aumente `cell` em `WorldBuilder.Ring` (menos árvores)
+  ou ligue o StreamingEnabled (ver acima).
   Os efeitos de partícula não aparecem nas prévias, só no jogo.
 - As prévias em `docs/preview/` são renderizadas fora do Roblox: não mostram a grama animada, as texturas
   dos materiais, as nuvens nem a Atmosphere reais.

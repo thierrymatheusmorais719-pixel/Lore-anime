@@ -2,6 +2,8 @@
 -- unlockCost: moedas para abrir o portal a partir do mundo anterior.
 -- ground/cliff: materiais de Terrain EXCLUSIVOS por ilha (a cor de material do Terrain é global)
 -- statMult: multiplicador de atributos dos pets nascidos neste mundo (progressão).
+-- radius: raio da ilha. core: raio da parte central (praça, ovos, arena, zonas e regiões feitas à mão);
+--   entre core e radius fica o anel de mata para exploração (WorldBuilder.wildRing).
 
 local Worlds = {}
 
@@ -12,7 +14,8 @@ Worlds.Info = {
 		name = "Verdant Haven",
 		index = 1,
 		center = Vector3.new(0, 0, 0),
-		radius = 230,
+		radius = 345,
+		core = 230,
 		unlockCost = 0,
 		statMult = 1.0,
 		ground = "Grass",
@@ -33,7 +36,8 @@ Worlds.Info = {
 		name = "Crystal Hollow",
 		index = 2,
 		center = Vector3.new(1400, 0, 0),
-		radius = 230,
+		radius = 315,
+		core = 230,
 		unlockCost = 2500,
 		statMult = 1.35,
 		-- Grass: grama animada como na arte de referência. A cor do material Grass do Terrain é
@@ -79,7 +83,8 @@ Worlds.Info = {
 		name = "Whispering Wilds",
 		index = 4,
 		center = Vector3.new(4200, 0, 0),
-		radius = 230,
+		radius = 335,
+		core = 230,
 		unlockCost = 60000,
 		statMult = 2.2,
 		ground = "LeafyGrass",
@@ -100,7 +105,8 @@ Worlds.Info = {
 		name = "Astral Sanctuary",
 		index = 5,
 		center = Vector3.new(5600, 60, 0),
-		radius = 220,
+		radius = 315,
+		core = 220,
 		unlockCost = 250000,
 		statMult = 2.7,
 		ground = "Pavement",
