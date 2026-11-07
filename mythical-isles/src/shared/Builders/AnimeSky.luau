@@ -27,10 +27,10 @@ AnimeSky.Themes = {
 		cloud = rgb(248, 244, 255), shade = rgb(176, 156, 240), hi = rgb(255, 255, 255), streak = rgb(232, 226, 255),
 		sun = rgb(255, 250, 236), glow = rgb(216, 196, 255), fog = rgb(192, 186, 250), decay = rgb(86, 90, 190), tint = rgb(242, 238, 255), ambient = rgb(114, 104, 178),
 	},
-	sky = { -- pôr do sol rosa-dourado
-		label = "Pôr do Sol Rosa-Dourado", top = rgb(72, 88, 200), mid = rgb(238, 138, 180), horizon = rgb(255, 212, 148), below = rgb(255, 226, 190),
-		cloud = rgb(255, 236, 226), shade = rgb(234, 136, 160), hi = rgb(255, 252, 232), streak = rgb(255, 214, 200),
-		sun = rgb(255, 226, 150), glow = rgb(255, 168, 120), fog = rgb(255, 206, 182), decay = rgb(170, 100, 160), tint = rgb(255, 238, 226), ambient = rgb(170, 130, 140),
+	sky = { -- tarde dourada celestial: azul profundo, horizonte creme-dourado, sombras lavanda (arte do Mundo 3)
+		label = "Tarde Dourada Celestial", top = rgb(34, 92, 222), mid = rgb(104, 170, 255), horizon = rgb(255, 234, 196), below = rgb(244, 246, 255),
+		cloud = rgb(255, 255, 255), shade = rgb(196, 198, 242), hi = rgb(255, 250, 228), streak = rgb(255, 242, 222),
+		sun = rgb(255, 244, 204), glow = rgb(255, 212, 136), fog = rgb(228, 232, 255), decay = rgb(116, 146, 220), tint = rgb(255, 248, 236), ambient = rgb(168, 166, 198),
 	},
 	wilds = { -- crepúsculo turquesa
 		label = "Crepúsculo Turquesa", top = rgb(16, 52, 80), mid = rgb(40, 128, 130), horizon = rgb(156, 226, 192), below = rgb(180, 232, 206),

@@ -151,8 +151,20 @@ end
 function WorldBuilder.boundary(worldId: string, parent: Instance)
 	local w = Worlds.Info[worldId]
 	local n = 40
+	local openings = Regions.Openings[worldId] or {}
 	for i = 1, n do
 		local a = (i - 0.5) / n * math.pi * 2
+		local deg = math.deg(a)
+		local open = false
+		for _, o in ipairs(openings) do
+			local diff = math.abs((deg - o.theta + 180) % 360 - 180)
+			if diff < o.w then
+				open = true -- abertura para ponte/cais
+			end
+		end
+		if open then
+			continue
+		end
 		local pos = w.center + V(math.cos(a) * (w.radius + 1), 15, math.sin(a) * (w.radius + 1))
 		part({
 			Name = "Boundary", Size = V(2, 40, 2 * math.pi * (w.radius + 1) / n + 1), CFrame = CF(pos) * ANG(0, -a, 0),
@@ -642,7 +654,7 @@ function WorldBuilder.decor(worldId: string, parent: Instance)
 	local rng = Random.new(w.index * 1337)
 	local folder = Make("Folder", { Name = "Decor", Parent = parent })
 	-- Crystal Hollow já tem muito conteúdo feito à mão nas regiões: menos decoração aleatória
-	local count = worldId == "crystal" and 40 or 64
+	local count = (worldId == "crystal" or worldId == "sky") and 40 or 64
 	for i = 1, count do
 		local spot = freeSpot(c, w.radius, rng, worldId)
 		if spot then
@@ -685,14 +697,22 @@ function WorldBuilder.decor(worldId: string, parent: Instance)
 					bush(folder, pos, s, rng, rgb(54, 110, 120))
 				end
 			elseif worldId == "sky" then
+				-- Skybound Kingdom: árvores verdes e douradas, bonsais floridos, cristais brancos/azuis,
+				-- canteiros de flores e pedras claras com musgo (como na arte de referência)
 				if k == 0 or k == 5 then
-					pillar(folder, pos, rng:NextNumber(10, 18), rgb(240, 240, 248), rgb(230, 200, 120))
-				elseif k == 1 or k == 6 then
-					pineTree(folder, pos, s, rng, rgb(110, 86, 70), rgb(70, 120, 96), true)
-				elseif k == 2 then
-					rockCluster(folder, pos, s, rng, rgb(214, 214, 222), Enum.Material.Limestone)
+					oakTree(folder, pos, s, rng, rgb(108, 80, 58), i % 4 == 0 and rgb(158, 180, 74) or rgb(84, 160, 70))
+				elseif k == 1 then
+					WorldBuilder.bonsai(folder, pos, s, rng, i % 3 == 0 and rgb(250, 190, 210) or rgb(110, 180, 80))
+				elseif k == 2 or k == 7 then
+					WorldBuilder.flowerBush(folder, pos, s, rng, ({ rgb(255, 170, 200), rgb(255, 220, 120), rgb(170, 150, 255) })[i % 3 + 1])
+				elseif k == 3 then
+					CrystalKit.cluster(folder, CF(pos) * ANG(0, rng:NextNumber(0, 6.28), 0), rng, { count = 4, h = rng:NextNumber(4, 7) * s, w = 1.2 * s, styles = { "pearl", "blue" } })
+				elseif k == 4 then
+					rockCluster(folder, pos, s, rng, rgb(214, 212, 206), Enum.Material.Limestone, rgb(96, 150, 70))
+				elseif k == 6 then
+					bush(folder, pos, s, rng, rgb(76, 146, 64))
 				else
-					cloud(folder, pos + V(0, rng:NextNumber(3, 10), 0), s)
+					fern(folder, pos, s, rng, rgb(96, 166, 70))
 				end
 			elseif worldId == "wilds" then
 				if k == 0 or k == 4 then

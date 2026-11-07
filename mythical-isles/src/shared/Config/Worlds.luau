@@ -57,17 +57,19 @@ Worlds.Info = {
 		index = 3,
 		center = Vector3.new(2800, 160, 0),
 		radius = 220,
+		extent = 390, -- ilhas satélites flutuam além da ilha principal (área de jogo do mundo)
 		unlockCost = 15000,
 		statMult = 1.75,
-		ground = "Snow",
+		-- Grass: a cor do material é global (a mesma do Verdant Haven); falésias de Limestone claro
+		ground = "Grass",
 		cliff = "Limestone",
 		palette = {
-			ground = Color3.fromRGB(232, 240, 255),
+			ground = Color3.fromRGB(96, 168, 74),
 			accent = Color3.fromRGB(255, 255, 255),
 			fog = Color3.fromRGB(205, 228, 255),
 			ambient = Color3.fromRGB(150, 170, 200),
 		},
-		clockTime = 17.3, -- pôr do sol rosa-dourado (céu anime)
+		clockTime = 15.8, -- tarde dourada de céu azul (arte de referência do Mundo 3)
 		bossId = "tempest_wyrm",
 		enemies = { "storm_sprite", "cloud_stalker", "tempest_guardian" },
 		resource = "cloud_puff",

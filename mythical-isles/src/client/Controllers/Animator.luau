@@ -37,6 +37,8 @@ local function classify(name: string)
 		return "arm"
 	elseif name:sub(1, 4) == "Wing" then
 		return "wing"
+	elseif name:match("^NeckSeg%d") then
+		return "neckseg"
 	elseif name:sub(1, 7) == "TailSeg" then
 		return "tailseg"
 	elseif name:sub(1, 4) == "Tail" then
@@ -230,6 +232,10 @@ local function animate(entry, t: number, dt: number, now: number)
 			cf = CFrame.Angles(0, 0, j.side * flap)
 		elseif k == "tail" then
 			cf = CFrame.Angles(math.sin(tt * 2) * 0.08, math.sin(tt * 3.2 + j.idx) * 0.35, 0)
+		elseif k == "neckseg" then
+			-- pescoço articulado: cada segmento acompanha parte do movimento da cabeça, com ondulação suave
+			local sway = math.sin(tt * 1.3 - j.idx * 0.6) * 0.05
+			cf = CFrame.Angles(-strike * 0.12 + wind * 0.1 - roar * 0.14 + sway, math.sin(tt * 0.7 - j.idx * 0.3) * 0.06 * (1 - moving), 0)
 		elseif k == "tailseg" then
 			-- onda que percorre a cauda articulada (atrasada e mais suave a cada segmento)
 			cf = CFrame.Angles(math.sin(tt * 2 - j.idx * 0.6) * 0.05, math.sin(tt * 3.2 - j.idx * 0.9) * (0.16 + moving * 0.06), 0)

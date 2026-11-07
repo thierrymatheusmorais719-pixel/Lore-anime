@@ -25,11 +25,40 @@ Regions.Sounds = {
 	lake = "", -- água corrente / ondas leves
 	titan = "", -- zumbido grave de cristais
 	crystalHum = "", -- cintilar de cristais (perto dos aglomerados gigantes)
+	harbor = "", -- vento suave, sinos, cordas do navio
+	heights = "", -- vento alto, coral distante
+	storm = "", -- trovões e vento forte
+	gardens = "", -- pássaros, água de fonte
+	arena = "", -- tempestade e zumbido elétrico
 }
 
 -- Perfis de luz por região (sobrepõem o perfil do mundo em WorldClient).
 -- Só chaves presentes mudam; valores moderados (sem exagero de Bloom).
 Regions.Info = {
+	-- MUNDO 3 — Skybound Kingdom (ilha principal + ilhas satélites flutuando em volta)
+	cloud_harbor = {
+		world = "sky", name = "Cloud Harbor", subtitle = "Porto das Nuvens", theta = 0, dist = 0, radius = 130, priority = 1,
+		sound = "harbor", profile = {},
+	},
+	golden_heights = {
+		world = "sky", name = "Golden Heights", subtitle = "Alturas Douradas", theta = 34, dist = 322, radius = 92, priority = 3,
+		sound = "heights", profile = { density = 0.2, haze = 1.0, glare = 0.5, rays = 0.14, exposure = 0.15, tint = Color3.fromRGB(255, 246, 228) },
+	},
+	storm_islands = {
+		world = "sky", name = "Storm Islands", subtitle = "Ilhas da Tempestade", theta = 268, dist = 315, radius = 100, priority = 3,
+		sound = "storm", profile = { density = 0.42, haze = 2.4, glare = 0.0, rays = 0.0, exposure = -0.25, bright = 1.8, contrast = 0.14, sat = -0.05,
+			tint = Color3.fromRGB(214, 226, 255), fog = Color3.fromRGB(120, 134, 170), decay = Color3.fromRGB(40, 50, 90) },
+	},
+	celestial_gardens = {
+		world = "sky", name = "Celestial Gardens", subtitle = "Jardins Celestes", theta = 160, dist = 312, radius = 92, priority = 3,
+		sound = "gardens", profile = { density = 0.22, haze = 1.2, rays = 0.12, sat = 0.16, tint = Color3.fromRGB(255, 250, 240) },
+	},
+	tempest_arena = {
+		world = "sky", name = "Tempest Arena", subtitle = "Arena da Tempestade", theta = 90, dist = 140, radius = 92, priority = 2,
+		sound = "arena", profile = { density = 0.32, haze = 1.6, contrast = 0.12, rays = 0.04, exposure = -0.1, tint = Color3.fromRGB(226, 234, 255),
+			fog = Color3.fromRGB(170, 186, 225) },
+	},
+
 	crystal_valley = {
 		world = "crystal", name = "Crystal Valley", subtitle = "Vale dos Cristais", theta = 0, dist = 0, radius = 92, priority = 1,
 		sound = "valley", profile = {},
@@ -55,11 +84,43 @@ Regions.Info = {
 }
 
 -- Ordem do circuito de portais entre regiões (cada portal leva à próxima; todos voltam ao vale).
-Regions.Circuit = { "crystal_valley", "shattered_peaks", "azure_caverns", "prism_lake", "titans_domain" }
+Regions.Circuits = {
+	crystal = { "crystal_valley", "shattered_peaks", "azure_caverns", "prism_lake", "titans_domain" },
+	sky = { "cloud_harbor", "golden_heights", "storm_islands", "celestial_gardens", "tempest_arena" },
+}
+Regions.Circuit = Regions.Circuits.crystal -- (compatibilidade)
+
+-- Aberturas no muro invisível da borda da ilha principal (onde saem pontes e o cais). { theta, w (graus) }
+Regions.Openings = {
+	sky = { { theta = 40, w = 9 }, { theta = 268, w = 9 }, { theta = 160, w = 9 }, { theta = 345, w = 9 } },
+}
+
+-- Região "central" de cada mundo (destino do "Voltar" nos portais).
+function Regions.hub(worldId: string): string?
+	local c = Regions.Circuits[worldId]
+	return c and c[1]
+end
+
+function Regions.circuitOf(regionId: string)
+	local info = Regions.Info[regionId]
+	return info and Regions.Circuits[info.world]
+end
 
 -- Áreas que a decoração aleatória e os detalhes do terreno não podem ocupar (lago, montanhas,
 -- caverna, rio, lagoas). { theta, dist, r }
 Regions.Reserved = {
+	sky = {
+		{ theta = 345, dist = 205, r = 24 }, -- cais do Cloud Harbor
+		{ theta = 40, dist = 205, r = 18 }, -- cabeceira da ponte para Golden Heights
+		{ theta = 268, dist = 205, r = 18 }, -- ponte para Storm Islands
+		{ theta = 160, dist = 205, r = 18 }, -- ponte para Celestial Gardens
+		{ theta = 25, dist = 200, r = 16 }, -- riacho e cachoeira da borda
+		{ theta = 200, dist = 200, r = 16 },
+		{ theta = 120, dist = 196, r = 16 },
+		{ theta = 60, dist = 72, r = 16 }, -- pavilhão
+		{ theta = 300, dist = 70, r = 14 }, -- templo pequeno
+		{ theta = 90, dist = 228, r = 30 }, -- torres e cristais da arena
+	},
 	crystal = {
 		{ theta = 45, dist = 190, r = 66 }, -- picos
 		{ theta = 195, dist = 192, r = 48 }, -- maciço das cavernas

@@ -57,7 +57,7 @@ Bosses.Info = {
 	},
 	tempest_wyrm = {
 		name = "Tempest Wyrm", title = "Serpe das Ilhas Celestes", world = "sky", level = 30,
-		hp = 36000, atk = 130, def = 70, scale = 1, respawn = 180, arenaRadius = 76, flying = true,
+		hp = 36000, atk = 130, def = 70, scale = 1, respawn = 180, arenaRadius = 76, flying = true, electric = true,
 		color = Color3.fromRGB(120, 170, 255),
 		phases = {
 			{ at = 1.0, label = "Céu Aberto", interval = 3.0, attacks = { "gale_breath", "tail_sweep", "lightning_marks" } },

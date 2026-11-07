@@ -234,7 +234,8 @@ if (ground === 'voxel') {
   const fills = await (await fetch(`data/${q.get('tfile') || 'terrain'}.json`)).json();
   const vc = q.get('vcenter').split(',').map(Number);
   const cutSpec = q.get('vcut') ? q.get('vcut').split(',').map(Number) : null;
-  await voxelTerrain(fills, vc[0], vc[1], vc[2], -110, 130, cutSpec);
+  const vy = q.get('vy') ? q.get('vy').split(',').map(Number) : [-110, 130];
+  await voxelTerrain(fills, vc[0], vc[1], vc[2], vy[0], vy[1], cutSpec);
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), new THREE.MeshStandardMaterial({ color: 0xecf2ff, roughness: 1 }));
   sea.rotation.x = -Math.PI / 2; sea.position.y = -150; sc.add(sea);
 }
@@ -310,6 +311,21 @@ if (q.get('sky')) {
     if (T.moon) circ(g, 146, 113, 44, [Math.round((T.top[0] * .7 + T.mid[0] * .3)), Math.round((T.top[1] * .7 + T.mid[1] * .3)), Math.round((T.top[2] * .7 + T.mid[2] * .3))]);
     const sd = q.get('sun') ? q.get('sun').split(',').map(Number) : [60, 30];
     sprite(cv, off(sd[0], sd[1], PD - 40), 150, 150); }
+}
+// nuvens de tempestade (BillboardGui escuras do jogo) — aproximadas como sprites
+if (q.get('storm')) {
+  const storms = await (await fetch('data/storm_sky.json')).json();
+  for (const [x, y, z, w, kind] of storms) {
+    const W = 512, H = 230; const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+    const c = (cx, cy, r, col) => { g.fillStyle = col; g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill(); };
+    const cols = kind === 'storm' ? ['rgb(62,66,96)', 'rgb(104,110,146)', 'rgb(150,158,196)'] : ['rgb(196,198,242)', 'rgb(255,255,255)', 'rgb(255,250,228)'];
+    for (let k = 0; k < 6; k++) { const cx = 70 + k * 74, r = 60 + (k % 3) * 18; c(cx, 150 - r * 0.5 + 18, r, cols[0]); }
+    for (let k = 0; k < 6; k++) { const cx = 70 + k * 74, r = 58 + (k % 3) * 18; c(cx, 150 - r * 0.5, r, cols[1]); }
+    for (let k = 1; k < 6; k += 2) { const cx = 66 + k * 74, r = 24; c(cx, 150 - 58 - 20, r, cols[2]); }
+    const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx, transparent: true, fog: false, depthWrite: false, toneMapped: false }));
+    sp.position.set(x, y, z); sp.scale.set(w, w * 0.45, 1); sc.add(sp);
+  }
 }
 const parts = await (await fetch(`data/${scene}.json`)).json();
 addParts(parts);

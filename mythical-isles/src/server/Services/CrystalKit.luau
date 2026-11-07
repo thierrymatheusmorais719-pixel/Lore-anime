@@ -51,6 +51,8 @@ CrystalKit.Styles = {
 	ice = { shell = rgb(210, 238, 255), shellT = 0.22, refl = 0.25 },
 	amethyst = { shell = rgb(120, 60, 190), shellT = 0.18, refl = 0.25, core = rgb(220, 140, 255), coreW = 0.3 },
 	rare = { shell = rgb(255, 226, 250), shellT = 0.25, refl = 0.3, core = rgb(255, 160, 230), coreW = 0.45, core2 = rgb(255, 230, 140) },
+	pearl = { shell = rgb(246, 250, 255), shellT = 0.2, refl = 0.3, core = rgb(255, 252, 236), coreW = 0.4 }, -- cristal branco luminoso
+	storm = { shell = rgb(176, 236, 255), shellT = 0.28, refl = 0.2, core = rgb(120, 230, 255), coreW = 0.5, core2 = rgb(255, 255, 255) }, -- cristal elétrico
 }
 
 -- Um cristal (prisma octogonal = dois blocos girados 45° + pontas em cumeeira).

@@ -8,7 +8,7 @@ vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
 > Luau, contra o dump público da API do Roblox, com 58 testes de lógica, 3297 verificações dos modelos 3D e
-> **116 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> **129 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -127,6 +127,53 @@ de musgo com cachoeiras, cachoeiras caindo da borda da ilha, bonsais, flores rox
   - vaga-lumes de partículas na Árvore Ancestral;
   - pólen, esporos, cintilações ou névoa, conforme a ilha.
 - **Texturas:** só as embutidas no cliente Roblox (`sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`, em `rbxasset://textures/particles/`).
+
+### Mundo 3 — Skybound Kingdom
+
+Construído a partir da arte de referência do autor (`docs/concept/world3_ref.png`). Prévias em `docs/preview/sky_*.png`.
+
+**Código:**
+- `server/Services/SkyKingdom.luau`: o mapa.
+- `server/Services/SkyKit.luau`: ilhas, pontes e arquitetura.
+- `shared/Config/Regions.luau`: as regiões.
+
+**Ilhas:**
+- **Ilha principal:** fica com o Cloud Harbor, a área de combate e a Tempest Arena.
+- **Satélites:** em volta flutuam **8 ilhas satélites de Terrain**, cada uma com silhueta própria: topo de grama com contorno lobado, camada de rocha clara, base que afina em degraus irregulares, saliências e "pingentes" de rocha. Têm também raízes e cipós pendurados e cristais nas laterais.
+- **Muro invisível:** cada ilha tem um, com aberturas nas pontes.
+- **Pontes celestes:** 8 pontes de mármore com balaústres, frisos dourados, arcos por baixo e lanternas douradas; uma delas é suspensa, de cordas.
+
+| Região | Onde | O que tem |
+|---|---|---|
+| **Cloud Harbor** | ilha principal | Praça, estações de ovo e portais. **Cais com navio voador** ancorado (casco, vela, balão). Pavilhão de cúpula dourada, estátua de guardião alado, três cachoeiras caindo da borda, lanternas e árvores. NPC **Capitã Aria**, portal e baú. |
+| **Golden Heights** | θ 34°, 26 studs acima | **Palácio Celestial**: terraços, escadarias, colunata com frontão, salão, 4 torreões e torre central com **anéis dourados e feixe de luz**. Torres, estátuas, jardins, cristal gigante e cachoeira de 200 studs. **Ponte de cordas** até a torre solitária com o baú. NPC **Seren**. |
+| **Storm Islands** | θ 266° (3 ilhas) | Nuvens de tempestade 2D com **raios** que caem periodicamente. **Cristais elétricos** com faíscas, torres destruídas e ruínas (arco e colunas). Cachoeira gigante de 220 studs e rajadas de vento. NPC **Thal** e baú. |
+| **Celestial Gardens** | θ 160° (3 ilhas) | **Árvore gigante**, lago cristalino, canteiros de flores coloridas, bonsais, cristais, fonte dourada, pavilhão com lago e cachoeira. NPC **Lumi** e baú sob a árvore. |
+| **Tempest Arena** | θ 90° | Arena do Wyrm cercada de **torres destruídas**, cristais elétricos, nuvens de tempestade com raios e vento. Tem relicário (baú). |
+
+**Abaixo e acima das ilhas:** nuvens 2D brancas no estilo do céu anime e a cor de céu própria do mundo (Tarde Dourada Celestial).
+
+**Ligação com o resto do jogo:**
+- **Circuito de portais:** porto → alturas → tempestade → jardins → arena → porto, com "Voltar ao início".
+- **Baús-santuário:** com recarga de 30 min.
+- **Inimigos:** as zonas existentes (θ 222°–318°, junto à ponte das Storm Islands).
+- **Boss e ovos:** o Tempest Wyrm e as estações de ovo existentes.
+- **Ilhas satélites:** contam como parte do mundo (`Worlds.sky.extent`), para tesouros, região e queda.
+
+**Tempest Wyrm, refeito** (184 peças, 81 studs de envergadura):
+- **Cabeça:** placas no focinho, narinas, sobrancelhas, chifres, crista e membranas.
+- **Pescoço e corpo:** pescoço articulado em 3 juntas, que o Animator ondula; corpo longo com placas de armadura e escamas ventrais.
+- **Espinhos, asas e cauda:** fileira dupla de espinhos, asas enormes com veios elétricos e cauda de 8 segmentos.
+- **Energia elétrica:** olhos, boca, peito, asas e cauda carregam energia azul com **arcos elétricos** antes dos ataques. Nos golpes de área, **raios caem do céu**.
+
+**Testes do Mundo 3:**
+- as 9 ilhas são alcançáveis pelas pontes a partir do porto;
+- cada ponta de ponte e o cais têm chão firme embaixo e espaço livre em cima;
+- inclinação máxima das pontes é 25°;
+- portais, baús e NPCs funcionam;
+- inimigos e boss estão presentes;
+- raios e arcos rodam sem erro e somem;
+- orçamento: cerca de 8.900 peças, 26 luzes e 74 emissores.
 
 ### Céu estilo anime 2D e cor de ambiente por mundo
 
@@ -268,7 +315,7 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **58 testes passando** |
 | Modelos 3D (182 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) | `python3 tools/run_tests.py luau --smoke` | **3297 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **116 cenários passando** (inclui efeitos visuais, regiões do Mundo 2 e o céu anime) |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **129 cenários passando** (inclui efeitos visuais, regiões dos Mundos 2 e 3 e o céu anime) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -341,6 +388,12 @@ travamento) foi exercitada.
 7. **Celular**: use o *Device Emulator* do Studio: barra da equipe, botão ⚔ e toque nos inimigos.
 8. Abra o *MicroProfiler* durante uma luta de boss com efeitos ligados (e com *Qualidade de efeitos: Baixa*).
 
+10. **Skybound Kingdom**:
+    - Atravesse as 8 pontes, incluindo a de cordas até a torre das Golden Heights.
+    - Confira se as cachoeiras caem até as nuvens.
+    - Veja os raios nas Storm Islands.
+    - Lute contra o Wyrm e confira os arcos elétricos antes dos golpes.
+    - Teste no celular.
 9. **Crystal Hollow**:
    - Desbloqueie o mundo e entre pelo portal.
    - Atravesse o circuito de portais de região e confira o nome de cada região na tela e a mudança de luz.

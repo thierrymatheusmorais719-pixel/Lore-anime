@@ -238,7 +238,7 @@ local function resolveAttack(b, atk, shapes)
 			end
 		end
 	end
-	S.CombatService.fx("bossImpact", { at = b.arena.center, shapes = shapes, color = b.cfg.color, y = b.arena.center.Y })
+	S.CombatService.fx("bossImpact", { at = b.arena.center, shapes = shapes, color = b.cfg.color, y = b.arena.center.Y, electric = b.cfg.electric == true })
 end
 
 local function startAttack(b, participants, now: number)

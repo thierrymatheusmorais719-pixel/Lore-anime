@@ -295,6 +295,35 @@ local function impact(at: Vector3, color: Color3, power: number)
 	end
 end
 
+-- Raio: zigue-zague de segmentos Neon com ramificações, clarão forte e brilho no ponto de impacto.
+local function lightning(from: Vector3, to: Vector3, color: Color3?, width: number?)
+	local col = color or Color3.fromRGB(170, 230, 255)
+	local w = width or 0.6
+	local function bolt(a: Vector3, b: Vector3, segs: number, jitter: number, wid: number, depth: number)
+		local prev = a
+		for i = 1, segs do
+			local t = i / segs
+			local p = a:Lerp(b, t)
+			if i < segs then
+				p += Vector3.new(math.random() - 0.5, (math.random() - 0.5) * 0.4, math.random() - 0.5) * jitter
+			end
+			local seg = part({ Size = Vector3.new(wid, wid, (p - prev).Magnitude + wid), CFrame = CFrame.lookAt((prev + p) / 2, p), Color = WHITE:Lerp(col, 0.35) }, 0.2)
+			if seg then
+				tween(seg, 0.18, { Transparency = 1 })
+			end
+			if depth < 1 and i < segs - 1 and math.random() < 0.35 then
+				bolt(p, p + (b - a).Unit * (b - a).Magnitude * 0.25 + Vector3.new(math.random() - 0.5, -0.3, math.random() - 0.5) * jitter * 2, 3, jitter * 0.6, wid * 0.55, depth + 1)
+			end
+			prev = p
+		end
+	end
+	local len = (to - from).Magnitude
+	bolt(from, to, math.clamp(math.floor(len / 6), 4, 12), math.clamp(len * 0.12, 1.5, 9), w, 0)
+	flash(to + Vector3.new(0, 2, 0), col, 40, 6, 0.3)
+	sparks(to, col, 10, 18)
+end
+Fx.lightning = lightning
+
 local function ring(at: Vector3, radius: number, color: Color3, time: number?)
 	shockRing(at, radius, color, time)
 end
@@ -502,6 +531,9 @@ local function onAbilityFx(p)
 			local y = p.y + 0.5
 			if sh.type == "circle" then
 				local at = Vector3.new(sh.x, y, sh.z)
+				if p.electric then
+					lightning(at + Vector3.new(math.random(-6, 6), 60, math.random(-6, 6)), at, c, 1)
+				end
 				shockRing(at, sh.r, c, 0.4)
 				fireball(at + Vector3.new(0, 1.5, 0), c, math.clamp(sh.r * 0.18, 1, 3))
 				dust(at, nil, 12, 2.5 + sh.r * 0.12, sh.r * 1.3)
@@ -597,6 +629,13 @@ local function updateEnergy()
 			p.light.Range = 10 + k * 14
 			p.emit.Rate = charging and (lowVfx() and 12 or 40) or 0
 		end
+		-- energia elétrica (Tempest Wyrm): arcos curtos saltando das peças carregadas
+		if charging and model:GetAttribute("EnergyKind") == "electric" and os.clock() - (st.lastArc or 0) > (lowVfx() and 0.35 or 0.12) then
+			st.lastArc = os.clock()
+			local src = st.parts[math.random(1, #st.parts)].part
+			local off = Vector3.new(math.random() - 0.5, math.random() - 0.3, math.random() - 0.5) * 12
+			lightning(src.Position, src.Position + off, src.Color, 0.25)
+		end
 		local at = model:GetAttribute("ActionAt") or 0
 		if at > st.lastAt then
 			st.lastAt = at
@@ -611,6 +650,7 @@ local function updateEnergy()
 	end
 end
 Fx.updateEnergy = updateEnergy
+Fx.trackEnergy = setupEnergy
 
 -------------------------------------------------------------------------------
 -- Indicadores de ataque (geometria vem do servidor; aqui só a animação)

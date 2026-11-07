@@ -124,6 +124,9 @@ do
 			for label, q in pairs(reg.walkPoints or {}) do
 				add(id .. " " .. label, q)
 			end
+			for label, q in pairs(reg.supportPoints or {}) do
+				add(id .. " apoio " .. label, q)
+			end
 		end
 	end
 	local bad
@@ -656,6 +659,163 @@ do
 	SIM.run(1)
 	dX.worlds.crystal = hadCrystal
 end
+-- MUNDO 3 — Skybound Kingdom: ilhas flutuantes, pontes, regiões, portais, baús, NPCs
+local function skyboundChecks()
+	local WS = S.WorldService
+	local RS = require(__proxy("Server/Services/RegionService"))
+	local Regions = require(__proxy("Shared/Config/Regions"))
+	local reg = WS.Regions.sky
+	local nG, nC = 0, 0
+	for _ in pairs(reg and reg.gates or {}) do
+		nG += 1
+	end
+	for _ in pairs(reg and reg.chests or {}) do
+		nC += 1
+	end
+	check("Skybound Kingdom: 5 regiões sem erro (5 portais, 5 baús, 4 NPCs, 8 pontes)", reg ~= nil and reg.errors == nil and nG == 5 and nC == 5 and #reg.npcs == 4 and #reg.links == 8,
+		reg and (reg.errors or string.format("%d portais, %d baús, %d NPCs, %d pontes", nG, nC, #reg.npcs, #reg.links)))
+	-- todas as ilhas são alcançáveis a pé a partir da ilha principal (grafo das pontes)
+	local adj = {}
+	for _, l in ipairs(reg.links) do
+		adj[l.a] = adj[l.a] or {}
+		adj[l.b] = adj[l.b] or {}
+		table.insert(adj[l.a], l.b)
+		table.insert(adj[l.b], l.a)
+	end
+	local seen, queue = { main = true }, { "main" }
+	while #queue > 0 do
+		local cur = table.remove(queue, 1)
+		for _, nx in ipairs(adj[cur] or {}) do
+			if not seen[nx] then
+				seen[nx] = true
+				table.insert(queue, nx)
+			end
+		end
+	end
+	local missing = {}
+	for name in pairs(reg.islands) do
+		if not seen[name] then
+			table.insert(missing, name)
+		end
+	end
+	check("as 9 ilhas flutuantes são alcançáveis pelas pontes a partir do Cloud Harbor", #missing == 0, table.concat(missing, ", "))
+	local steepest = 0
+	for _, l in ipairs(reg.links) do
+		local d = l.pb - l.pa
+		local horiz = (d * Vector3.new(1, 0, 1)).Magnitude
+		steepest = math.max(steepest, math.deg(math.atan2(math.abs(d.Y), horiz)))
+	end
+	check(string.format("pontes caminháveis (inclinação máxima %.0f° ≤ 30°)", steepest), steepest <= 30)
+	-- cada ponta de ponte (e o cais) tem chão firme de Terrain embaixo e espaço livre em cima
+	local function inside(f, p)
+		if f.kind == "ball" then
+			return (p - f.cf.p).Magnitude <= f.r
+		end
+		local l = f.cf:Inverse() * p
+		if f.kind == "cyl" then
+			return math.abs(l.Y) <= f.h / 2 and math.sqrt(l.X * l.X + l.Z * l.Z) <= f.r
+		end
+		return math.abs(l.X) <= f.size.X / 2 and math.abs(l.Y) <= f.size.Y / 2 and math.abs(l.Z) <= f.size.Z / 2
+	end
+	local function solidAt(p)
+		local mat = "Air"
+		for _, f in ipairs(SIM.terrainFills) do
+			if inside(f, p) then
+				mat = f.m
+			end
+		end
+		return mat ~= "Air" and mat ~= "Water"
+	end
+	local bad
+	for label, p in pairs(reg.supportPoints) do
+		if solidAt(p) or not solidAt(p - Vector3.new(0, 4.5, 0)) then
+			bad = label
+		end
+	end
+	check("pontas das pontes e do cais apoiadas em chão firme e livres em cima", bad == nil, bad)
+	-- ilhas satélites contam como parte do mundo (inimigos, tesouros, região) e não disparam o resgate de queda
+	local okWorld = true
+	for name, isl in pairs(reg.islands) do
+		if WS.worldAt(isl.top + Vector3.new(0, 3, 0)) ~= "sky" or isl.top.Y < Worlds.Info.sky.center.Y - 40 then
+			okWorld = false
+			print("  ilha fora do mundo: " .. name)
+		end
+	end
+	check("ilhas satélites fazem parte do Skybound Kingdom (sem resgate de queda)", okWorld)
+	local okReg = true
+	for rid, g in pairs(reg.gates) do
+		if Regions.at("sky", g.arrival.Position) ~= rid then
+			okReg = false
+			print("  chegada fora da região: " .. rid .. " -> " .. tostring(Regions.at("sky", g.arrival.Position)))
+		end
+	end
+	check("chegada de cada portal do Skybound fica dentro da própria região", okReg)
+	-- circuito de portais completo
+	local had = dX.worlds.sky
+	dX.worlds.sky = true
+	SIM.teleport(pX, reg.gates.cloud_harbor.arrival.Position)
+	SIM.run(2.5)
+	local okCircuit = true
+	for _, dest in ipairs({ "golden_heights", "storm_islands", "celestial_gardens", "tempest_arena", "cloud_harbor" }) do
+		local r = RS.travel(pX, dest)
+		SIM.run(2)
+		if not r.ok or Regions.at("sky", pX.Character.PrimaryPart.Position) ~= dest then
+			okCircuit = false
+			print("  falhou viagem para " .. dest .. ": " .. tostring(r.msg))
+		end
+	end
+	check("circuito de portais: porto → alturas → tempestade → jardins → arena → porto", okCircuit)
+	local allChests = true
+	for cid, chest in pairs(reg.chests) do
+		SIM.teleport(pX, chest.pos + Vector3.new(2, 3, 0))
+		SIM.run(1.5)
+		local r = RS.claim(pX, "sky", cid)
+		if not r.ok then
+			allChests = false
+			print("  baú " .. cid .. ": " .. tostring(r.msg))
+		end
+	end
+	check("os 5 baús do Skybound podem ser abertos", allChests)
+	local talked = true
+	for _, n in ipairs(reg.npcs) do
+		SIM.teleport(pX, n.model.PrimaryPart.Position + Vector3.new(0, 1, -5))
+		SIM.run(1.5)
+		if type(RS.talk(pX, n)) ~= "string" then
+			talked = false
+		end
+	end
+	check("NPCs do Skybound conversam (Aria, Seren, Thal, Lumi)", talked)
+	-- inimigos e boss do mundo 3 integrados
+	local foes, wyrm = 0, false
+	for _, e in ipairs(workspace.Enemies:GetChildren()) do
+		if WS.worldAt(e:GetPivot().Position) == "sky" then
+			foes += 1
+		end
+	end
+	for _, b in ipairs(workspace.Bosses:GetChildren()) do
+		if b:GetAttribute("BossId") == "tempest_wyrm" then
+			wyrm = true
+		end
+	end
+	check("inimigos e Tempest Wyrm presentes no Skybound Kingdom", foes >= 10 and wyrm, foes .. " inimigos")
+	local nParts, nLights, nEmit = 0, 0, 0
+	for _, d in ipairs(workspace.World.sky:GetDescendants()) do
+		if d:IsA("BasePart") then
+			nParts += 1
+		elseif d.ClassName == "PointLight" then
+			nLights += 1
+		elseif d.ClassName == "ParticleEmitter" then
+			nEmit += 1
+		end
+	end
+	print(string.format("  Skybound Kingdom: %d peças, %d luzes, %d emissores", nParts, nLights, nEmit))
+	check("Skybound Kingdom dentro do orçamento (≤ 9500 peças, ≤ 60 luzes, ≤ 120 emissores)", nParts <= 9500 and nLights <= 60 and nEmit <= 120,
+		string.format("%d peças, %d luzes, %d emissores", nParts, nLights, nEmit))
+	SIM.teleport(pX, home + Vector3.new(0, 3, 30))
+	SIM.run(1)
+	dX.worlds.sky = had
+end
+skyboundChecks()
 -- missões e coleção
 local storyBefore = dX.quests.storyIndex
 for _ = 1, 3 do
@@ -1012,6 +1172,46 @@ do
 		frames(10)
 	end
 	skyChecks()
+	-- Skybound: raios das nuvens de tempestade, impactos elétricos e energia do Tempest Wyrm
+	local function stormChecks()
+		local SkyClient = require(__proxy("Client/Controllers/SkyClient"))
+		local beforeS = #SIM.errors
+		SkyClient.rebuild("sky")
+		local sources = #SkyClient.stormSources()
+		local here = workspace.CurrentCamera.CFrame.Position
+		Fx.lightning(here + Vector3.new(0, 60, 0), here, Color3.fromRGB(170, 230, 255), 1)
+		Fx.play({ kind = "bossImpact", at = here, y = here.Y, color = Color3.fromRGB(120, 170, 255), electric = true, shapes = { { type = "circle", x = here.X, z = here.Z, r = 8 } } })
+		frames(200)
+		local leftover = 0
+		for _, d in ipairs(workspace.CurrentCamera:FindFirstChild("LocalFx"):GetChildren()) do
+			if d:IsA("BasePart") and d.Transparency < 1 then
+				leftover += 1
+			end
+		end
+		check("Skybound: nuvens de tempestade com raios; raios e impactos elétricos rodam e somem", sources >= 10 and #SIM.errors == beforeS and leftover == 0,
+			SIM.errors[beforeS + 1] or string.format("%d fontes de raio, %d peças sobrando", sources, leftover))
+		-- (o Wyrm real pode estar derrotado/renascendo após os cenários de boss: usa um modelo do construtor)
+		local wyrm = require(__proxy("Shared/Builders/BossModels")).build("tempest_wyrm")
+		wyrm:SetAttribute("BossId", "tempest_wyrm_test")
+		wyrm.Parent = workspace.Bosses
+		task.spawn(Fx.trackEnergy, wyrm)
+		frames(5)
+		local lights = 0
+		for _, d in ipairs(wyrm and wyrm:GetDescendants() or {}) do
+			if d:IsA("BasePart") and d:GetAttribute("EnergyFx") and d:FindFirstChildOfClass("PointLight") then
+				lights += 1
+			end
+		end
+		wyrm:SetAttribute("WindupEnd", workspace:GetServerTimeNow() + 0.3)
+		local b2 = #SIM.errors
+		Fx.updateEnergy()
+		frames(30)
+		check("Tempest Wyrm: energia elétrica azul (olhos, boca, peito, asas, cauda) carrega com arcos", wyrm:GetAttribute("EnergyKind") == "electric" and lights >= 7 and #SIM.errors == b2,
+			SIM.errors[b2 + 1] or (lights .. " luzes"))
+		wyrm:Destroy()
+		SkyClient.rebuild("verdant")
+	end
+	stormChecks()
 	-- energia do Prism Titan: luzes nas peças EnergyFx, carga durante a preparação
 	do
 		local titan

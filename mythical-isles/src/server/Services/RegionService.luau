@@ -33,7 +33,7 @@ end
 
 -- Próximo destino do circuito a partir de uma região.
 function RegionService.nextRegion(regionId: string): string
-	local c = Regions.Circuit
+	local c = Regions.circuitOf(regionId) or Regions.Circuit
 	local i = table.find(c, regionId) or 0
 	return c[i % #c + 1]
 end
@@ -137,10 +137,11 @@ function RegionService.start()
 				RegionService.travel(player, dest)
 			end)
 			gate.prompt = prompt
-			if dest ~= "crystal_valley" and regionId ~= "crystal_valley" then
+			local hub = Regions.hub(worldId)
+			if hub and dest ~= hub and regionId ~= hub then
 				local back = Instance.new("ProximityPrompt")
-				back.ActionText = "Voltar ao vale"
-				back.ObjectText = Regions.Info.crystal_valley.name
+				back.ActionText = "Voltar ao início"
+				back.ObjectText = Regions.Info[hub].name
 				back.KeyboardKeyCode = Enum.KeyCode.R
 				back.GamepadKeyCode = Enum.KeyCode.ButtonY
 				back.UIOffset = Vector2.new(0, 70)
@@ -148,7 +149,7 @@ function RegionService.start()
 				back.RequiresLineOfSight = false
 				back.Parent = gate.part
 				back.Triggered:Connect(function(player)
-					RegionService.travel(player, "crystal_valley")
+					RegionService.travel(player, hub)
 				end)
 				gate.backPrompt = back
 			end

@@ -118,6 +118,37 @@ do
 	print("SCENE terrain_crystal [" .. table.concat(out, ",") .. "]")
 end
 
+-- Mundo 3 (Skybound Kingdom): peças, terreno e nuvens de tempestade
+do
+	local sky = Worlds.Info.sky
+	local function inSky(part)
+		local d = ((part.Position - sky.center) * Vector3.new(1, 0, 1)).Magnitude
+		return d < (sky.extent or 400) + 30 and math.abs(part.Position.Y - sky.center.Y) < 260
+	end
+	dump("sky", { workspace:FindFirstChild("World"):FindFirstChild("sky"), workspace:FindFirstChild("Enemies"), workspace:FindFirstChild("Bosses"),
+		workspace:FindFirstChild("Resources") }, inSky)
+	local out = {}
+	for _, f in ipairs(SIM.terrainFills) do
+		local pp = f.cf.p
+		if ((pp - sky.center) * Vector3.new(1, 0, 1)).Magnitude < (sky.extent or 400) + 60 and math.abs(pp.Y - sky.center.Y) < 260 then
+			local col = SIM.terrainColors[f.m]
+			local sz = f.size or Vector3.new(0, 0, 0)
+			local r = f.cf.r
+			table.insert(out, string.format('{"k":"%s","p":[%s,%s,%s],"h":%s,"r":%s,"m":"%s","c":[%d,%d,%d],"z":[%s,%s,%s],"rot":[%s]}', f.kind, num(pp.X), num(pp.Y), num(pp.Z),
+				num(f.h or sz.Y), num(f.r or 0), f.m, col and math.floor(col.R * 255) or -1, col and math.floor(col.G * 255) or -1, col and math.floor(col.B * 255) or -1,
+				num(sz.X), num(sz.Y), num(sz.Z), table.concat({ num(r[1]), num(r[2]), num(r[3]), num(r[4]), num(r[5]), num(r[6]), num(r[7]), num(r[8]), num(r[9]) }, ",")))
+		end
+	end
+	print("SCENE terrain_sky [" .. table.concat(out, ",") .. "]")
+	local storms = {}
+	for _, d in ipairs(workspace:FindFirstChild("World"):FindFirstChild("sky"):GetDescendants()) do
+		if d:IsA("BasePart") and d:GetAttribute("CloudKind") then
+			table.insert(storms, string.format('[%s,%s,%s,%s,"%s"]', num(d.Position.X), num(d.Position.Y), num(d.Position.Z), num(d:GetAttribute("CloudWidth") or 100), d:GetAttribute("CloudKind")))
+		end
+	end
+	print("SCENE storm_sky [" .. table.concat(storms, ",") .. "]")
+end
+
 -- vitrines
 local Pets = require(__proxy("Shared/Config/Pets"))
 local CreatureBuilder = require(__proxy("Shared/Builders/CreatureBuilder"))

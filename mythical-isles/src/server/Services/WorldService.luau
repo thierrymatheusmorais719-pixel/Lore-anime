@@ -10,6 +10,7 @@ local InventoryLogic = require(Shared.Logic.InventoryLogic)
 local Net = require(Shared.Net)
 local WorldBuilder = require(script.Parent.WorldBuilder)
 local CrystalHollow = require(script.Parent.CrystalHollow)
+local SkyKingdom = require(script.Parent.SkyKingdom)
 
 local WorldService = {}
 
@@ -62,12 +63,12 @@ function WorldService.build()
 		local terrainOk = WorldBuilder.terrain(id, folder)
 		if id == "verdant" then
 			WorldBuilder.verdantLandmark(folder, terrainOk)
-		elseif id == "crystal" then
-			local reg = CrystalHollow.build(folder, terrainOk)
-			WorldService.Regions.crystal = reg
+		elseif id == "crystal" or id == "sky" then
+			local reg = (id == "crystal" and CrystalHollow or SkyKingdom).build(folder, terrainOk)
+			WorldService.Regions[id] = reg
 			if reg.errors then
 				local rs = game:GetService("ReplicatedStorage")
-				rs:SetAttribute("ServerErrors", ((rs:GetAttribute("ServerErrors") or "") .. "\n\nCrystal Hollow: " .. reg.errors))
+				rs:SetAttribute("ServerErrors", ((rs:GetAttribute("ServerErrors") or "") .. "\n\n" .. Worlds.Info[id].name .. ": " .. reg.errors))
 			end
 		end
 		WorldBuilder.boundary(id, folder)
@@ -133,7 +134,7 @@ function WorldService.worldAt(pos: Vector3): string?
 	for _, id in ipairs(Worlds.Order) do
 		local w = Worlds.Info[id]
 		local d = (pos - w.center) * Vector3.new(1, 0, 1)
-		if d.Magnitude <= w.radius + 40 and math.abs(pos.Y - w.center.Y) < 120 then
+		if d.Magnitude <= (w.extent or w.radius + 40) and math.abs(pos.Y - w.center.Y) < 120 then
 			return id
 		end
 	end

@@ -8,6 +8,7 @@ local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local AnimeSky = require(Shared.Builders.AnimeSky)
+local Fx = require(script.Parent.Fx)
 
 local SkyClient = {}
 
@@ -19,12 +20,59 @@ local drift = 0
 
 local DRIFT_DEG_PER_SEC = 0.12
 
+-- Raios das nuvens de tempestade (Storm Islands e Tempest Arena): de tempos em tempos um raio cai
+-- de uma nuvem perto da câmera até o chão (raycast) ou até 90 studs abaixo dela.
+local stormSources: { BasePart } = {}
+local nextStrike = 0
+
+local function scanStorm(worldId: string)
+	stormSources = {}
+	local wf = workspace:FindFirstChild("World")
+	local f = wf and wf:FindFirstChild(worldId)
+	if not f then
+		return
+	end
+	for _, d in ipairs(f:GetDescendants()) do
+		if d:IsA("BasePart") and d:GetAttribute("LightningSource") then
+			table.insert(stormSources, d)
+		end
+	end
+end
+
+local function stormTick()
+	if #stormSources == 0 or os.clock() < nextStrike then
+		return
+	end
+	nextStrike = os.clock() + 2.5 + math.random() * 4
+	local cam = workspace.CurrentCamera
+	if not cam then
+		return
+	end
+	local near = {}
+	for _, s in ipairs(stormSources) do
+		if (s.Position - cam.CFrame.Position).Magnitude < 650 then
+			table.insert(near, s)
+		end
+	end
+	if #near == 0 then
+		return
+	end
+	local src = near[math.random(1, #near)]
+	local from = src.Position + Vector3.new(math.random(-20, 20), -4, math.random(-20, 20))
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { workspace.CurrentCamera }
+	local hit = workspace:Raycast(from, Vector3.new(0, -140, 0), params)
+	Fx.lightning(from, hit and hit.Position or (from - Vector3.new(0, 90, 0)), Color3.fromRGB(170, 230, 255), 0.9)
+end
+
 local function rebuild(worldId: string)
 	for _, c in ipairs(folder:GetChildren()) do
 		c:Destroy()
 	end
 	handle = AnimeSky.build(folder, anchor, worldId)
 	SkyClient.current = worldId
+	scanStorm(worldId)
 end
 
 local function celestialDir(): Vector3?
@@ -92,10 +140,14 @@ function SkyClient.init()
 		acc += dt
 		if acc >= 0.1 then
 			updateOffsets(acc)
+			stormTick()
 			acc = 0
 		end
 	end)
 end
 
 SkyClient.rebuild = rebuild
+SkyClient.stormSources = function()
+	return stormSources
+end
 return SkyClient

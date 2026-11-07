@@ -275,7 +275,12 @@ function BossModels.prism_titan()
 end
 
 -------------------------------------------------------------------------------
--- TEMPEST WYRM — dragão de 4 patas, prateado e dourado, com asas douradas e olhos azuis.
+-- TEMPEST WYRM — dragão colossal de 4 patas (prata e dourado, olhos azuis — arte do autor):
+-- cabeça com placas, narinas, sobrancelhas, membranas e chifres; pescoço articulado (3 juntas
+-- NeckSeg); corpo longo com placas de armadura e escamas ventrais; fileira dupla de espinhos;
+-- asas enormes com veios elétricos; cauda de 8 segmentos. Peças EnergyFx (olhos, boca, gema do
+-- peito, veios das asas, ponta da cauda) carregam energia elétrica azul antes dos ataques
+-- (EnergyKind = "electric": o cliente solta arcos elétricos — ver Fx.luau).
 -------------------------------------------------------------------------------
 function BossModels.tempest_wyrm()
 	local K = 1.25
@@ -286,27 +291,65 @@ function BossModels.tempest_wyrm()
 		return CFrame.new(x * K, y * K, z * K)
 	end
 	local rig = newRig("TempestWyrm", S(8, 6, 10))
-	local silver, scale, gold, blue, mouth = rgb(228, 232, 245), rgb(190, 198, 222), rgb(232, 182, 60), rgb(80, 180, 255), rgb(230, 90, 130)
-	local body = add(rig, { name = "Torso", joint = "Body", at = P(0, 0, 0), shape = "ellipsoid", size = S(9, 8, 15), color = silver, material = "SmoothPlastic", role = "Body" })
-	add(rig, { name = "Chest", parent = body, at = P(0, 0.6, -5), shape = "ellipsoid", size = S(7.5, 7.5, 7), color = silver, role = "Body" })
-	add(rig, { name = "Belly", parent = body, at = P(0, -2, -0.5), shape = "ellipsoid", size = S(6.6, 4.4, 12), color = rgb(240, 214, 150), material = "SmoothPlastic", role = "Belly" })
-	add(rig, { name = "ChestGem", parent = body, at = P(0, 0.4, -8.4) * ANG(0, 0, rad(45)), shape = "block", size = S(1.8, 1.8, 0.6), color = blue, material = "Neon", role = "Glow" })
-	for i = 1, 6 do
-		add(rig, { name = "SpineSpike", parent = body, at = P(0, 4 - math.abs(i - 3) * 0.25, -6 + i * 2) * ANG(0, rad(90), 0), shape = "wedge", size = S(0.5, 2.2, 1.6),
-			color = gold, material = "Metal", role = "Accent" })
+	local silver, scale, gold, blue, mouth = rgb(228, 232, 245), rgb(186, 194, 220), rgb(232, 182, 60), rgb(90, 190, 255), rgb(130, 210, 255)
+	local belly = rgb(240, 214, 150)
+	local function energy(name)
+		if rig.parts[name] then
+			rig.parts[name]:SetAttribute("EnergyFx", true)
+		end
+	end
+	-- CORPO longo: tórax, quadris, ventre em escamas, placas de armadura e espinhos em fileira dupla
+	local body = add(rig, { name = "Torso", joint = "Body", at = P(0, 0, 0), shape = "ellipsoid", size = S(9, 8, 16), color = silver, role = "Body" })
+	add(rig, { name = "Chest", parent = body, at = P(0, 0.8, -5.4), shape = "ellipsoid", size = S(8, 7.8, 7.4), color = silver, role = "Body" })
+	add(rig, { name = "Hips", parent = body, at = P(0, 0.4, 5.2), shape = "ellipsoid", size = S(7.6, 7, 7), color = silver, role = "Body" })
+	for k = 0, 5 do
+		add(rig, { name = "BellyScute", parent = body, at = P(0, -3.2 + math.abs(k - 2.5) * 0.15, -6.5 + k * 2.6), shape = "ellipsoid", size = S(5.6 - math.abs(k - 2.5) * 0.4, 1.4, 2.8), color = belly, role = "Belly" })
+	end
+	add(rig, { name = "ChestGem", parent = body, at = P(0, 0.6, -9.0) * ANG(0, 0, rad(45)), shape = "block", size = S(1.9, 1.9, 0.7), color = blue, material = "Neon", role = "Glow" })
+	energy("ChestGem")
+	for k = 0, 4 do
+		for _, side in ipairs({ -1, 1 }) do
+			add(rig, { name = "ArmorPlate", parent = body, at = P(side * 2.3, 3.4 - math.abs(k - 2) * 0.2, -5 + k * 2.6) * ANG(rad(-12), 0, side * rad(-28)), shape = "block",
+				size = S(3, 0.5, 2.8), color = scale, role = "Detail" })
+		end
+		add(rig, { name = "SpineSpike", parent = body, at = P(-0.7, 4.1 - math.abs(k - 2) * 0.25, -5 + k * 2.6) * ANG(0, rad(90), rad(-8)), shape = "wedge", size = S(0.45, 2.6 - math.abs(k - 2) * 0.3, 1.8), color = gold, material = "Metal", role = "Accent" })
+		add(rig, { name = "SpineSpike", parent = body, at = P(0.7, 4.1 - math.abs(k - 2) * 0.25, -3.7 + k * 2.6) * ANG(0, rad(90), rad(8)), shape = "wedge", size = S(0.45, 2.2 - math.abs(k - 2) * 0.3, 1.6), color = gold, material = "Metal", role = "Accent" })
 	end
 	for _, side in ipairs({ -1, 1 }) do
-		add(rig, { name = "ScaleBand", parent = body, at = P(side * 4.1, 0.3, 0) * ANG(0, 0, side * rad(10)), shape = "ellipsoid", size = S(1.2, 5, 12), color = scale, role = "Detail" })
-		crack(rig, body, P(side * 4.45, 0.8, -1) * ANG(rad(90), 0, rad(25)), 5 * K, blue)
+		add(rig, { name = "ScaleBand", parent = body, at = P(side * 4.1, 0.3, 0) * ANG(0, 0, side * rad(10)), shape = "ellipsoid", size = S(1.2, 5, 13), color = scale, role = "Detail" })
+		crack(rig, body, P(side * 4.5, 0.8, -1) * ANG(rad(90), 0, rad(25)), 5 * K, blue)
 	end
-	-- pescoço curto e grosso + cabeça grande de dragão
-	local neck = helper(rig, "NeckBase", body, nil, P(0, 2.4, -7.5))
-	add(rig, { name = "NeckSeg", parent = neck, at = P(0, 1.6, -1.2) * ANG(rad(-40), 0, 0), shape = "ellipsoid", size = S(4.6, 4.6, 6), color = silver, role = "Body" })
-	add(rig, { name = "NeckPlate", parent = neck, at = P(0, 1.2, -2.6) * ANG(rad(-40), 0, 0), shape = "ellipsoid", size = S(3, 3.6, 4), color = rgb(240, 214, 150), role = "Belly" })
-	local head = add(rig, { name = "Head", parent = neck, joint = "Neck", at = P(0, 4.4, -3.6) * ANG(rad(-6), 0, 0), shape = "ellipsoid", size = S(4.6, 3.8, 6), color = silver, role = "Body" })
+	-- PESCOÇO articulado: três segmentos com juntas próprias (NeckSeg1..3), placas e espinhos;
+	-- cada segmento sobe 16° (pescoço erguido em curva) e a cabeça compensa para olhar à frente
+	local prev = helper(rig, "NeckBase", body, nil, P(0, 2.4, -8))
+	for i = 1, 3 do
+		local seg = add(rig, { name = "NeckSeg" .. i, parent = prev, joint = "NeckSeg" .. i, at = (i == 1 and P(0, 0.8, -0.8) or P(0, 1.2, -2.0)) * ANG(rad(16), 0, 0),
+			shape = "ellipsoid", size = S(4.6 - i * 0.4, 4.4 - i * 0.4, 4.2), color = silver, role = "Body" })
+		add(rig, { name = "NeckPlate", parent = seg, at = P(0, -1.2, -0.9), shape = "ellipsoid", size = S(2.8 - i * 0.3, 2.2, 3.2), color = belly, role = "Belly" })
+		add(rig, { name = "NeckSpike", parent = seg, at = P(0, 2.1 - i * 0.15, 0.4) * ANG(rad(25), rad(90), 0), shape = "wedge", size = S(0.4, 1.8, 1.4), color = gold, material = "Metal", role = "Accent" })
+		prev = seg
+	end
+	-- CABEÇA detalhada
+	local head = add(rig, { name = "Head", parent = prev, joint = "Neck", at = P(0, 0.9, -2.8) * ANG(rad(-54), 0, 0), shape = "ellipsoid", size = S(4.6, 3.8, 5.8), color = silver, role = "Body" })
 	add(rig, { name = "Snout", parent = head, at = P(0, -0.5, -3.6), shape = "ellipsoid", size = S(3, 2, 5), color = silver, role = "Body" })
-	add(rig, { name = "BrowRidge", parent = head, at = P(0, 1.3, -1.6) * ANG(rad(-15), 0, 0), shape = "ellipsoid", size = S(4.4, 1, 3), color = scale, role = "Detail" })
-	add(rig, { name = "Mouth", parent = head, at = P(0, -1.1, -3.4), shape = "ellipsoid", size = S(2.7, 0.7, 4.6), color = mouth, material = "Neon", role = "Detail" })
+	for k = 0, 2 do
+		add(rig, { name = "SnoutPlate", parent = head, at = P(0, 0.55 - k * 0.12, -2.4 - k * 1.3) * ANG(rad(-8), 0, 0), shape = "block", size = S(1.6 - k * 0.3, 0.35, 1.2), color = scale, role = "Detail" })
+	end
+	for _, side in ipairs({ -1, 1 }) do
+		add(rig, { name = "Nostril", parent = head, at = P(side * 0.6, 0.1, -5.9), shape = "ball", size = S(0.4, 0.4, 0.4), color = rgb(40, 50, 80), role = "Detail", shadow = false })
+		add(rig, { name = "Brow", parent = head, at = P(side * 1.2, 1.35, -1.8) * ANG(rad(-15), side * rad(-12), side * rad(-10)), shape = "wedge", size = S(1.4, 0.9, 2.4), color = scale, role = "Detail" })
+		add(rig, { name = "Horn", parent = head, at = P(side * 1.3, 1.5, 1.2) * ANG(rad(-62), 0, side * rad(-15)) * P(0, 2.4, 0), shape = "wedge", size = S(0.9, 5.2, 1.4), color = gold, material = "Metal", role = "Accent" })
+		add(rig, { name = "HornSmall", parent = head, at = P(side * 2, 0.6, 1.4) * ANG(rad(-75), 0, side * rad(-40)) * P(0, 1.2, 0), shape = "wedge", size = S(0.6, 2.6, 0.9), color = gold, material = "Metal", role = "Accent" })
+		for k = 0, 1 do
+			add(rig, { name = "Frill", parent = head, at = P(side * (2.1 + k * 0.4), -0.5 - k * 0.6, 1 + k * 0.7) * ANG(0, side * rad(30 + k * 15), side * rad(20)), shape = "wedge", size = S(0.3, 2.4 - k * 0.6, 2.6 - k * 0.5),
+				color = k == 0 and gold or rgb(110, 170, 240), material = k == 0 and "Metal" or "SmoothPlastic", role = "Accent" })
+		end
+	end
+	for k = 0, 2 do
+		add(rig, { name = "Crest", parent = head, at = P(0, 1.9 - k * 0.2, 0.2 + k * 1.1) * ANG(rad(-30), rad(90), 0), shape = "wedge", size = S(0.35, 1.6 - k * 0.3, 1.3), color = gold, material = "Metal", role = "Accent" })
+	end
+	add(rig, { name = "Mouth", parent = head, at = P(0, -1.1, -3.4), shape = "ellipsoid", size = S(2.7, 0.7, 4.6), color = mouth, material = "Neon", role = "Glow" })
+	energy("Mouth")
 	local jaw = add(rig, { name = "Jaw", parent = head, joint = "Jaw", at = P(0, -1.8, -2.6) * ANG(rad(16), 0, 0), shape = "ellipsoid", size = S(2.8, 1.1, 5), color = scale, role = "Belly" })
 	for i = -2, 2 do
 		if i ~= 0 then
@@ -314,42 +357,48 @@ function BossModels.tempest_wyrm()
 			add(rig, { name = "Tooth", parent = jaw, at = P(i * 0.5, 0.65, -2), shape = "wedge", size = S(0.3, 0.7, 0.3), color = rgb(255, 255, 255), role = "Detail" })
 		end
 	end
-	ModelKit.eyes(rig, head, 1.25 * K, 0.6 * K, -2.2 * K, 0.75 * K, blue, true)
 	for _, side in ipairs({ -1, 1 }) do
-		add(rig, { name = "Horn", parent = head, at = P(side * 1.3, 1.5, 1.2) * ANG(rad(-62), 0, side * rad(-15)) * P(0, 2, 0), shape = "wedge", size = S(0.8, 4.4, 1.3), color = gold, material = "Metal", role = "Accent" })
-		add(rig, { name = "HornSmall", parent = head, at = P(side * 2, 0.6, 1.4) * ANG(rad(-75), 0, side * rad(-40)) * P(0, 1.2, 0), shape = "wedge", size = S(0.6, 2.6, 0.9), color = gold, material = "Metal", role = "Accent" })
-		add(rig, { name = "Frill", parent = head, at = P(side * 2.2, -0.6, 1.2) * ANG(0, side * rad(30), side * rad(20)), shape = "wedge", size = S(0.3, 2.2, 2.4), color = gold, material = "Metal", role = "Accent" })
+		local eye = add(rig, { name = "WyrmEye", parent = head, at = P(side * 1.3, 0.6, -2.2) * ANG(0, side * rad(-20), side * rad(-10)), shape = "ellipsoid", size = S(0.9, 0.55, 0.5), color = blue, material = "Neon", role = "Eye", shadow = false })
+		energy(eye)
 	end
-	-- asas grandes e erguidas: ossos dourados + membrana (triângulos)
+	-- ASAS enormes: ossos dourados, membrana (triângulos) e veio elétrico
+	local WK = 1.22
 	for _, side in ipairs({ -1, 1 }) do
 		local jn = side < 0 and "WingL" or "WingR"
 		local wing = helper(rig, jn, body, jn, P(side * 3.4, 3.4, -3))
 		local function W(x, y, z)
-			return Vector3.new(side * x * K, y * K, z * K)
+			return Vector3.new(side * x * K * WK, y * K * WK, z * K)
 		end
 		local shoulder, elbow, wrist = W(0, 0, 0), W(6, 6.5, 1.5), W(13, 11, 3.5)
-		bone(rig, wing, shoulder, elbow, 1.1 * K, gold)
-		bone(rig, wing, elbow, wrist, 0.9 * K, gold)
+		bone(rig, wing, shoulder, elbow, 1.2 * K, gold)
+		bone(rig, wing, elbow, wrist, 1.0 * K, gold)
 		local tips = { W(21, 9.5, 4.5), W(20, 2.5, 6.5), W(16.5, -3.5, 8), W(10, -6.5, 9) }
 		for _, t in ipairs(tips) do
 			bone(rig, wing, wrist, t, 0.55 * K, gold)
 		end
 		local membrane = rgb(242, 196, 96)
-		local prevPt = W(23, 13, 4) -- ponta superior (garra)
+		local prevPt = W(23, 13, 4)
 		bone(rig, wing, wrist, prevPt, 0.7 * K, gold)
-		for _, t in ipairs(tips) do
-			triangle(rig, wing, wrist, prevPt, t, 0.25 * K, membrane, 0.1)
+		for i, t in ipairs(tips) do
+			triangle(rig, wing, wrist, prevPt, t, 0.25 * K, i % 2 == 0 and membrane or rgb(236, 186, 84), 0.1)
 			prevPt = t
 		end
-		triangle(rig, wing, wrist, prevPt, W(1, -2, 6), 0.25 * K, membrane, 0.1) -- até o corpo
+		triangle(rig, wing, wrist, prevPt, W(1, -2, 6), 0.25 * K, membrane, 0.1)
 		triangle(rig, wing, wrist, W(1, -2, 6), elbow, 0.25 * K, membrane, 0.1)
 		add(rig, { name = "WingClaw", parent = wing, at = CFrame.new(W(23.6, 13.8, 4)) * ANG(0, 0, side * rad(-30)), shape = "wedge", size = S(0.6, 1.8, 0.6), color = gold, material = "Metal", role = "Accent" })
-		crack(rig, wing, CFrame.lookAt((elbow + wrist) / 2, wrist) * ANG(rad(90), 0, 0), 7 * K, blue)
+		local vein = add(rig, { name = "WingVein", parent = wing, at = CFrame.lookAt((elbow + wrist) / 2, wrist) * ANG(rad(90), 0, 0), shape = "block", size = V(0.45, 7 * K * WK, 0.25), color = blue,
+			material = "Neon", role = "Glow", shadow = false })
+		energy(vein)
+		for _, t in ipairs({ tips[1], tips[3] }) do
+			add(rig, { name = "WingVein", parent = wing, at = CFrame.lookAt((wrist + t) / 2, t) * ANG(rad(90), 0, 0), shape = "block", size = V(0.3, (t - wrist).Magnitude * 0.9, 0.2), color = blue,
+				material = "Neon", role = "Glow", shadow = false })
+		end
 	end
-	-- pernas musculosas com garras douradas
+	-- PERNAS musculosas com placas e garras
 	for _, leg in ipairs({ { "LegFL", -1, -1 }, { "LegFR", 1, -1 }, { "LegBL", -1, 1 }, { "LegBR", 1, 1 } }) do
-		local l = helper(rig, leg[1], body, leg[1], P(leg[2] * 3.8, -2, leg[3] * 4.6))
-		add(rig, { name = "Thigh", parent = l, at = P(0, -2.2, leg[3] * 0.4), shape = "ellipsoid", size = S(3.4, 5.6, 4.2), color = silver, role = "Body" })
+		local l = helper(rig, leg[1], body, leg[1], P(leg[2] * 3.8, -2, leg[3] * 4.8))
+		add(rig, { name = "Thigh", parent = l, at = P(0, -2.2, leg[3] * 0.4), shape = "ellipsoid", size = S(3.6, 5.8, 4.4), color = silver, role = "Body" })
+		add(rig, { name = "ThighPlate", parent = l, at = P(leg[2] * 1.6, -1.6, leg[3] * 0.4) * ANG(0, 0, leg[2] * rad(-12)), shape = "block", size = S(0.4, 3.4, 3), color = scale, role = "Detail" })
 		add(rig, { name = "Shin", parent = l, at = P(0, -6.2, 0.2), shape = "block", size = S(2.2, 4.4, 2.4), color = scale, role = "Body" })
 		add(rig, { name = "ShinPlate", parent = l, at = P(0, -6, -1.25), shape = "block", size = S(1.6, 3.6, 0.3), color = gold, material = "Metal", role = "Accent" })
 		add(rig, { name = "Foot", parent = l, at = P(0, -8.7, -0.5), shape = "block", size = S(2.8, 1, 3.4), color = silver, role = "Belly" })
@@ -357,16 +406,22 @@ function BossModels.tempest_wyrm()
 			add(rig, { name = "Talon", parent = l, at = P(k * 0.85, -8.8, -2.5) * ANG(rad(-90), 0, 0), shape = "wedge", size = S(0.45, 1.3, 0.9), color = gold, material = "Metal", role = "Accent" })
 		end
 	end
-	-- cauda longa (segmentos animáveis) com lâmina dourada
-	local prev = body
-	for i = 1, 6 do
-		local s = 1 - i * 0.11
-		prev = add(rig, { name = "Seg" .. i, parent = prev, joint = "Seg" .. i, at = P(0, -0.2, 3.2 * s + (i == 1 and 6 or 1.4)), shape = "ellipsoid", size = S(4 * s, 3.6 * s, 4.4 * s), color = i % 2 == 0 and scale or silver, role = "Body" })
-		add(rig, { name = "TailSpike", parent = prev, at = P(0, 1.8 * s, 0) * ANG(0, rad(90), 0), shape = "wedge", size = S(0.3, 1.2 * s, 1.2 * s), color = gold, material = "Metal", role = "Accent" })
+	-- CAUDA segmentada (8 juntas Seg) com anéis de armadura, espinhos e lâmina
+	local tprev = body
+	for i = 1, 8 do
+		local s = 1 - i * 0.085
+		tprev = add(rig, { name = "Seg" .. i, parent = tprev, joint = "Seg" .. i, at = P(0, -0.2, 3 * s + (i == 1 and 6.6 or 1.2)), shape = "ellipsoid", size = S(4 * s, 3.6 * s, 4.2 * s),
+			color = i % 2 == 0 and scale or silver, role = "Body" })
+		add(rig, { name = "TailSpike", parent = tprev, at = P(0, 1.8 * s, 0) * ANG(0, rad(90), 0), shape = "wedge", size = S(0.3, 1.3 * s, 1.3 * s), color = gold, material = "Metal", role = "Accent" })
+		if i % 2 == 1 then
+			add(rig, { name = "TailBelly", parent = tprev, at = P(0, -1.3 * s, 0), shape = "ellipsoid", size = S(2.6 * s, 1.1, 3 * s), color = belly, role = "Belly" })
+		end
 	end
-	add(rig, { name = "TailBlade", parent = prev, at = P(0, 0, 2.6) * ANG(rad(-90), 0, 0), shape = "wedge", size = S(0.4, 3, 2.4), color = gold, material = "Metal", role = "Accent" })
-	add(rig, { name = "TailGlow", parent = prev, at = P(0, 0, 1.6), shape = "ball", size = S(0.9, 0.9, 0.9), color = blue, material = "Neon", role = "Glow" })
-	ModelKit.hitbox(rig, S(10, 12, 24), P(0, 2, 2))
+	add(rig, { name = "TailBlade", parent = tprev, at = P(0, 0, 2.4) * ANG(rad(-90), 0, 0), shape = "wedge", size = S(0.4, 3, 2.4), color = gold, material = "Metal", role = "Accent" })
+	add(rig, { name = "TailGlow", parent = tprev, at = P(0, 0, 1.4), shape = "ball", size = S(1, 1, 1), color = blue, material = "Neon", role = "Glow" })
+	energy("TailGlow")
+	rig.model:SetAttribute("EnergyKind", "electric")
+	ModelKit.hitbox(rig, S(10, 12, 26), P(0, 2, 2))
 	return rig.model, 9.6 * K, 9 * K
 end
 
