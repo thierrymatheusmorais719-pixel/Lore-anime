@@ -6,6 +6,8 @@
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+local CreatureMotion = require(script.Parent.CreatureMotion)
+
 local Animator = {}
 
 local tracked: { [Model]: any } = {}
@@ -89,6 +91,18 @@ local function track(model: Model)
 		end
 	end
 	local size = model:GetExtentsSize()
+	if model:GetAttribute("MeshPet") then
+		-- pet de malha (PetVisuals): animação própria da anatomia (CreatureMotion)
+		local entry = { model = model, root = root, joints = {}, lastPos = root.Position, speed = 0, seed = math.random() * 10, scale = math.max(size.Y, 1), faded = false }
+		CreatureMotion.prepare(entry)
+		tracked[model] = entry
+		model.AncestryChanged:Connect(function(_, parent)
+			if not parent then
+				tracked[model] = nil
+			end
+		end)
+		return
+	end
 	local entry = {
 		model = model, root = root, joints = joints, lastPos = root.Position, speed = 0, seed = math.random() * 10,
 		scale = math.max(size.Y, 2), isBoss = model:GetAttribute("BossId") ~= nil, prism = nil, faded = false,
@@ -152,6 +166,13 @@ local function fadeOut(entry)
 end
 
 local function animate(entry, t: number, dt: number, now: number)
+	if entry.meshPet then
+		CreatureMotion.animate(entry, t, dt, now, flash)
+		return
+	end
+	if entry.model:GetAttribute("MeshVisual") then
+		return -- modelo antigo do pet escondido: quem aparece é o de malha
+	end
 	local model = entry.model
 	local root = entry.root
 	local pos = root.Position

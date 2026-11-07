@@ -10,8 +10,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Pets = require(Shared.Config.Pets)
 local Rarities = require(Shared.Config.Rarities)
 local Mutations = require(Shared.Config.Mutations)
-local CreatureBuilder = require(Shared.Builders.CreatureBuilder)
-local MutationVisuals = require(Shared.Builders.MutationVisuals)
+local PetMesh = require(Shared.Builders.PetMesh)
 local UIKit = require(script.Parent.UIKit)
 local State = require(script.Parent.State)
 
@@ -744,8 +743,7 @@ local function viewport(parent: Instance, species: string, mutation: string?)
 	cam.FieldOfView = 40
 	cam.Parent = vp
 	vp.CurrentCamera = cam
-	local model = CreatureBuilder.build(species, Pets.Species[species], 1)
-	MutationVisuals.apply(model, mutation)
+	local model = PetMesh.display(species, mutation, nil)
 	for _, d in ipairs(model:GetDescendants()) do
 		if d:IsA("BasePart") then
 			d.Anchored = true

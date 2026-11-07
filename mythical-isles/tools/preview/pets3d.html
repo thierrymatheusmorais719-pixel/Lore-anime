@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<title>Mythical Isles — pets (malhas)</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:"Arial Black",sans-serif}
+  canvas{display:block}
+  #title{position:absolute;left:0;right:0;top:12px;text-align:center;font-size:30px;color:#ffd84a;text-shadow:-2px -2px 0 #1a1030,2px -2px 0 #1a1030,-2px 2px 0 #1a1030,2px 2px 0 #1a1030}
+  .lbl{position:absolute;transform:translate(-50%,0);font:bold 13px Arial;color:#fff;background:rgba(20,12,40,.72);padding:2px 7px;border-radius:6px;white-space:nowrap}
+  #tag{position:absolute;right:10px;bottom:8px;font:12px Arial;color:#fff;opacity:.85;background:rgba(0,0,0,.45);padding:4px 8px;border-radius:6px}
+</style>
+</head>
+<body>
+<div id="title"></div>
+<div id="tag">Prévia: malhas reais geradas pelo jogo (PetAnatomy/MeshKit), renderizadas fora do Roblox, sem as texturas de material do Roblox</div>
+<script type="importmap">{"imports":{"three":"/vendor/three/build/three.module.js","three/addons/":"/vendor/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+const q = new URLSearchParams(location.search);
+const ids = (q.get('ids') || '').split(',').filter(Boolean);
+const cols = Number(q.get('cols') || Math.min(ids.length, 5));
+const gap = Number(q.get('gap') || 7);
+const W = innerWidth, H = innerHeight;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H); renderer.setPixelRatio(1);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+document.body.appendChild(renderer.domElement);
+const sc = new THREE.Scene();
+sc.background = new THREE.Color(q.get('bg') || '#9fc7ef');
+sc.add(new THREE.HemisphereLight(0xe8f2ff, 0x5a6a48, 1.1));
+const sun = new THREE.DirectionalLight(0xfff2dc, 2.4);
+sun.position.set(-30, 60, 40); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, far: 200 });
+sc.add(sun);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ color: q.get('floor') || '#8cc46c', roughness: 1 }));
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
+const ROUGH = { Fabric: 0.92, SmoothPlastic: 0.45, Glass: 0.1, Neon: 1, Metal: 0.25, Grass: 0.9, Wood: 0.85, Slate: 0.9, ForceField: 1 };
+const lbls = [];
+let maxW = 0;
+const pets = [];
+for (const id of ids) {
+  const d = await (await fetch(`data/petmesh/${id}.json`)).json();
+  pets.push(d);
+}
+const rot = Number(q.get('rot') || 200) * Math.PI / 180;
+pets.forEach((d, i) => {
+  const g = new THREE.Group();
+  for (const p of d.parts) {
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(p.v), col = new Float32Array(p.c.length);
+    for (let k = 0; k < p.c.length; k++) col[k] = Math.pow(p.c[k] / 255, 2.2);
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    geo.setIndex(p.t);
+    let G = geo;
+    if (p.flat) { G = geo.toNonIndexed(); }
+    G.computeVertexNormals();
+    const neon = p.m === 'Neon';
+    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: ROUGH[p.m] ?? 0.7, metalness: p.m === 'Metal' ? 0.7 : 0,
+      transparent: p.tr > 0 || p.m === 'ForceField', opacity: p.m === 'ForceField' ? 0.55 : 1 - p.tr, flatShading: !!p.flat,
+      emissive: neon ? 0xffffff : 0x000000, emissiveIntensity: neon ? 0.55 : 0 });
+    if (neon) { mat.emissive = new THREE.Color(1, 1, 1); mat.emissiveMap = null; mat.onBeforeCompile = (s) => { s.fragmentShader = s.fragmentShader.replace('vec3 totalEmissiveRadiance = emissive;', 'vec3 totalEmissiveRadiance = vColor.rgb * 1.4;'); }; }
+    const mesh = new THREE.Mesh(G, mat);
+    mesh.castShadow = p.tr < 0.5; mesh.receiveShadow = true;
+    g.add(mesh);
+  }
+  const c = i % cols, r = Math.floor(i / cols);
+  g.position.set((c - (cols - 1) / 2) * gap, 0, r * gap * 1.1);
+  g.rotation.y = rot + Number(q.get('rotStep') || 0) * i * Math.PI / 180;
+  sc.add(g);
+  lbls.push({ id: d.id, rar: d.rarity, anat: d.anatomy, pos: new THREE.Vector3(g.position.x, -0.2, g.position.z + gap * 0.35) });
+});
+const camera = new THREE.PerspectiveCamera(Number(q.get('fov') || 40), W / H, 0.1, 1000);
+camera.position.set(...(q.get('pos') || '0,8,26').split(',').map(Number));
+camera.lookAt(new THREE.Vector3(...(q.get('look') || '0,2,0').split(',').map(Number)));
+document.getElementById('title').textContent = q.get('title') || '';
+if (q.get('labels') !== '0') for (const l of lbls) {
+  const v = l.pos.clone().project(camera);
+  const el = document.createElement('div'); el.className = 'lbl';
+  el.style.left = ((v.x + 1) / 2 * W) + 'px'; el.style.top = ((1 - v.y) / 2 * H) + 'px';
+  el.textContent = `${l.id} · ${l.rar}`; document.body.appendChild(el);
+}
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(sc, camera));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.25, 0.4, 0.9));
+composer.addPass(new OutputPass());
+composer.render();
+window.READY = true;
+</script>
+</body>
+</html>

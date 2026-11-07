@@ -312,6 +312,23 @@ Inst.__newindex = function(t, k, v)
 			if v._childByName[t._props.Name] == nil then
 				v._childByName[t._props.Name] = t
 			end
+			-- como no Roblox: ChildAdded no novo pai e DescendantAdded em todos os ancestrais
+			-- (para a instância e para cada descendente dela); só dispara sinais já usados
+			local ca = rawget(v._props, "ChildAdded")
+			if ca and ca.Fire then
+				ca:Fire(t)
+			end
+			local a = v
+			while a do
+				local da = rawget(a._props, "DescendantAdded")
+				if da and da.Fire then
+					da:Fire(t)
+					for _, d in ipairs(t:GetDescendants()) do
+						da:Fire(d)
+					end
+				end
+				a = a._props.Parent
+			end
 		end
 		return
 	end
@@ -414,6 +431,36 @@ function Inst.SetAttribute(self, k, v)
 end
 function Inst.GetAttribute(self, k)
 	return self._attrs[k]
+end
+-- Clone: copia a subárvore (propriedades, atributos e filhos) e remapeia referências internas
+-- (ex.: Part0/Part1 de Motor6D, PrimaryPart, Attachment0/1 de Trail) para as cópias, como o Roblox.
+function Inst.Clone(self)
+	local map = {}
+	local function copy(src)
+		local c = newInstance(src._props.ClassName)
+		map[src] = c
+		for k, v in pairs(src._props) do
+			if k ~= "Parent" and type(v) ~= "function" and not (type(v) == "table" and v.Connect ~= nil) then
+				c._props[k] = v
+			end
+		end
+		for k, v in pairs(src._attrs) do
+			c._attrs[k] = v
+		end
+		for _, ch in ipairs(src._children) do
+			copy(ch).Parent = c
+		end
+		return c
+	end
+	local root = copy(self)
+	for _, c in pairs(map) do
+		for k, v in pairs(c._props) do
+			if k ~= "Parent" and type(v) == "table" and map[v] then
+				c._props[k] = map[v]
+			end
+		end
+	end
+	return root
 end
 function Inst.Destroy(self)
 	self.Parent = nil

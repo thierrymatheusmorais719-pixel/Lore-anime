@@ -8,6 +8,7 @@ e roda com o CLI oficial do Luau (`luau`).
 Uso:  python3 tools/run_tests.py [caminho/para/luau] [--smoke | --sim]
   --smoke  também executa os construtores 3D (Builders) sobre um mock da API do Roblox
            (tools/roblox_mock.luau) e verifica juntas, peças e mutações (tools/smoke_builders.luau)
+  --petexport  exporta a geometria das malhas dos pets (PetAnatomy) para a prévia (tools/preview)
   --sim    executa o SERVIDOR REAL (src/server) num simulador com relógio virtual
            (tools/sim_runtime.luau) e roda os cenários de tools/sim_scenarios.luau
 """
@@ -67,6 +68,8 @@ def main():
         return run_sim(args[0] if args else "luau", os.path.join("preview", "export_scene.luau"))
     luau = args[0] if args else "luau"
     here = os.path.dirname(os.path.abspath(__file__))
+    petexport = "--petexport" in sys.argv
+    smoke = smoke or petexport
     parts = []
     if smoke:
         parts.append(open(os.path.join(here, "roblox_mock.luau"), encoding="utf-8").read())
@@ -87,7 +90,7 @@ def main():
             if folder == "Tests" and mod.endswith(".spec"):
                 specs.append(path)
     if smoke:
-        parts.append(open(os.path.join(here, "smoke_builders.luau"), encoding="utf-8").read())
+        parts.append(open(os.path.join(here, "preview", "export_pets.luau") if petexport else os.path.join(here, "smoke_builders.luau"), encoding="utf-8").read())
         with tempfile.NamedTemporaryFile("w", suffix=".luau", delete=False, encoding="utf-8") as f:
             f.write("\n".join(parts))
         sys.exit(subprocess.run([luau, f.name]).returncode)

@@ -7,8 +7,8 @@ salvamento. Tudo em **Luau**, organizado para **Rojo**. Mapa, criaturas, bosses,
 vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`).
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
-> Luau, contra o dump público da API do Roblox, com 58 testes de lógica, 3477 verificações dos modelos 3D e
-> **132 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> Luau, contra o dump público da API do Roblox, com 58 testes de lógica, 3669 verificações dos modelos 3D e
+> **143 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -140,6 +140,52 @@ Entram sozinhos nos ovos do Mundo 1 (o peso de cada raridade é dividido entre a
   - vaga-lumes de partículas na Árvore Ancestral;
   - pólen, esporos, cintilações ou névoa, conforme a ilha.
 - **Texturas:** só as embutidas no cliente Roblox (`sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`, em `rbxasset://textures/particles/`).
+
+### Pets refeitos: malhas anatômicas, esqueleto e animação por espécie
+
+Prévias em `docs/preview/malha_*.png` (geometria real gerada pelo jogo, renderizada fora do Roblox).
+
+**Como os modelos são feitos:**
+- **Malhas contínuas, não bolinhas:** cada parte do corpo é uma superfície orgânica fechada (`Builders/MeshKit.luau`)
+  que percorre uma curva com seções de largura/altura variáveis — tronco com peito profundo e cintura recolhida,
+  pescoço, crânio com focinho, mandíbula, orelhas, coxa, canela, pata, cauda — com normais suaves e **cor por
+  vértice** (dorso mais escuro, barriga clara, meias, máscara, listras, pintas, estrelas).
+- **MeshParts de verdade, criadas pelo próprio jogo:** `Builders/PetMesh.luau` grava a geometria num
+  `EditableMesh` e cria a `MeshPart` com `AssetService:CreateMeshPartAsync`. **Nenhuma malha foi enviada como
+  asset e nenhum ID foi inventado.** Um molde por espécie fica em cache no cliente e cada pet é um clone.
+- **Anatomia por tipo de animal** (`Builders/PetAnatomy.luau`, 32 tipos para as 192 espécies): canídeos (raposa,
+  lobo, filhote), felinos (gato, lince, leão com juba, pantera com pintas), grifo, cervídeos (galhada),
+  caprinos (chifre em espiral, barba), lebres, roedores, esquilos, mustelídeos, ursos, javalis e mamutes (tromba
+  articulada, presas), répteis e dragões (escamas, espinhos, asas de membrana), sapo (patas com membrana),
+  tartaruga (casco com placas), besouros (6 patas, élitros), aves (bico em gancho nos gaviões, disco facial nas
+  corujas, rêmiges uma a uma, leque da cauda, garras), morcego, mariposa, serpentes (corpo em 6 segmentos),
+  slime (gota com poça escorrendo), cogumelo (lamelas), golens facetados, gorila, ent, espíritos e o panda de folhas.
+- **Esqueleto completo:** pivôs nas articulações reais — ombro → cotovelo → pulso nas patas da frente, quadril →
+  joelho → jarrete nas de trás (digitígradas nos cães e gatos, plantígradas nos ursos, cascos nos cervídeos),
+  pescoço → cabeça → mandíbula, base das orelhas, pálpebras, cauda em cadeia, asas, segmentos da serpente.
+- **Rostos:** olhos com íris, pupila (redonda ou em fenda), contorno e brilho, encaixados na superfície real
+  do crânio (raio contra a malha), sobrancelhas, bochechas, focinho, nariz e boca.
+
+**Animação própria por anatomia** (`client/Controllers/CreatureMotion.luau`): respiração, piscar, orelhas e cauda
+abanando em todas; trote em diagonal ao andar e galope com a coluna flexionando ao correr nos quadrúpedes; saltos
+nas lebres, esquilos e sapos; marcha em tripé nos besouros; voo com batida de asas nas aves; onda pelo corpo nas
+serpentes; passada com braços opostos nos bípedes. **Ataque** diferente por tipo (bote e mordida nos canídeos,
+patada nos felinos, cabeçada/empinada nos cervídeos e pesados, bicada com mergulho nas aves, bote da serpente,
+golpe com os dois braços nos golens), **pulo** quando o dono pula, **comemoração** quando um boss é derrotado,
+**reação ao dono** (olha para ele, orelhas em pé e cauda abanando quando ele chega perto) e **desmaio** quando
+o pet é nocauteado.
+
+**Raridade muda o modelo** (`PetAnatomy.decorate`): Incomum ganha meias e máscara claras; Raro, peitoral de pelo
+e pontas escuras; Épico, marcas que brilham no dorso e gema na testa; Lendário, diadema e braceletes de ouro com
+brilho e luz; Mítico, fitas etéreas (ForceField), runas orbitando e rastro; Secret, pelagem estrelada, coroa de
+cristais e aura; Celestial, auréola de luz.
+
+**Como entra no jogo** (`client/Controllers/PetVisuals.luau`): o servidor continua com o pet de sempre (posição,
+seguir o dono, combate, inventário, equipar — nada disso mudou); o cliente põe o modelo de malhas por cima, preso à
+raiz do pet, e esconde o modelo antigo só na tela dele. Mutações e acessórios são aplicados no modelo novo. As
+miniaturas do inventário e a revelação do ovo usam a malha quando ela já está pronta.
+**Se a API de malhas não funcionar** (ex.: desligada nas configurações do jogo), o cliente mantém o modelo antigo,
+sem erro.
 
 ### Ilhas ampliadas: anel de mata para exploração
 
@@ -391,8 +437,8 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Variáveis indefinidas / código suspeito | `python3 tools/lint.py luau-analyze` | 0 avisos |
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **58 testes passando** |
-| Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) | `python3 tools/run_tests.py luau --smoke` | **3477 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **137 cenários passando** (inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1 e o anel de mata das ilhas ampliadas com os baús abrindo) |
+| Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", ≤ 18.000 triângulos) | `python3 tools/run_tests.py luau --smoke` | **3669 verificações, 0 falhas** |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **143 cenários passando** (inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -494,13 +540,25 @@ travamento) foi exercitada.
   - A otimização feita foi por orçamento de peças, luzes e emissores.
 - Nunca executado no Roblox Studio (ver seção 6). Física, colisão, aparência, sons e desempenho reais estão
   pendentes de verificação.
-- Sem meshes ou animações publicadas: tudo é procedural (peças primitivas, SpecialMesh de esfera e
-  `Motor6D.Transform`). Não há som. O visual "realista" daqui é o teto do que dá para fazer só com peças:
-  qualidade de jogo profissional de verdade (pelo com textura, formas orgânicas contínuas) exige meshes
-  esculpidas no Blender com texturas/SurfaceAppearance, importadas pelo 3D Importer do Studio. A estrutura
-  de juntas (`Body`, `Neck`, `Leg*`, `Tail*`...) foi pensada para aceitar essas meshes depois.
-- Pets agora têm ~70 peças cada: com muitos jogadores e 4 pets por jogador, confira o desempenho no
-  MicroProfiler (dá para baixar detalhes, como dedos e bolhas, se precisar).
+- **Pets de malha — o que ainda precisa do Studio:**
+  - As malhas são criadas em tempo de execução com `EditableMesh`. No Studio isso funciona direto; num jogo
+    publicado pode ser preciso ligar a opção de APIs de malha/imagem ("Allow Mesh / Image APIs") nas
+    configurações de segurança do jogo, conforme as regras atuais do Roblox para essa API. Sem ela, o jogo
+    continua com os pets antigos.
+  - Não foi possível ver as malhas dentro do Roblox. O simulador confere as chamadas da API, a montagem do
+    esqueleto e a animação das juntas, e as prévias mostram a geometria real. Mas a cor por vértice com os
+    materiais do Roblox (Fabric etc.), o sombreamento e o desempenho reais só se confirmam no Studio.
+  - Animações são procedurais (`Motor6D.Transform` a cada quadro), não `AnimationTrack`s publicadas: não há
+    animação enviada como asset. O esqueleto usa `Motor6D` com nomes fixos, então aceita animações publicadas
+    depois.
+  - As formas são geradas por código, não esculpidas à mão. É um salto grande em relação às peças primitivas,
+    mas qualidade de estúdio profissional (pelo com textura, retopologia, skinning) ainda pediria modelos
+    esculpidos e importados pelo 3D Importer, com texturas.
+  - Peso: em média 8.400 triângulos e 22 MeshParts por pet (máx. 14.800). As malhas são feitas uma vez por espécie
+    e clonadas. Confira no MicroProfiler com muitos jogadores.
+- Não há som.
+- O modelo de peças antigo (~70 peças por pet) continua sendo criado no servidor, porque é ele que segue o dono e
+  luta; no cliente ele fica invisível quando a malha está pronta.
 - Com a mata, a Verdant Haven tem ≈ 12.800 peças e o Whispering Wilds ≈ 9.500 (todas ancoradas, sem
   colisão nas copas). Confira o FPS no celular; se pesar, aumente `cell` em `WorldBuilder.Ring` (menos árvores)
   ou ligue o StreamingEnabled (ver acima).

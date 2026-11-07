@@ -1356,6 +1356,105 @@ do
 		frames(10)
 	end
 	skyChecks()
+	-- PETS DE MALHA: o cliente troca o modelo de peças pelo de malhas anatômicas e anima as juntas
+	local function meshPetChecks()
+		local PetVisuals = require(__proxy("Client/Controllers/PetVisuals"))
+		local PetMesh = require(__proxy("Shared/Builders/PetMesh"))
+		local before = #SIM.errors
+		local hero = lp.Character and lp.Character.PrimaryPart
+		if hero then
+			SIM.teleport(lp, hero.Position + Vector3.new(0, 0, 4)) -- garante que a equipe esteja perto
+		end
+		for _ = 1, 40 do
+			frames(5)
+			local n = 0
+			for _ in pairs(PetVisuals.active) do
+				n += 1
+			end
+			if n > 0 then
+				break
+			end
+		end
+		frames(30)
+		local mine, swapped, hidden, meshParts, motors = 0, 0, true, 0, {}
+		local sample
+		local folder = workspace.Pets:FindFirstChild(tostring(lp.UserId))
+		for _, m in ipairs(folder and folder:GetChildren() or {}) do
+			if m:IsA("Model") then
+				mine += 1
+				local a = PetVisuals.active[m]
+				if a then
+					swapped += 1
+					sample = sample or a.mesh
+					for _, d in ipairs(m:GetDescendants()) do
+						if d:IsA("BasePart") and not d:IsDescendantOf(a.mesh) and d.LocalTransparencyModifier ~= 1 then
+							hidden = false
+						end
+					end
+					for _, d in ipairs(a.mesh:GetDescendants()) do
+						if d:IsA("MeshPart") then
+							meshParts += 1
+						elseif d:IsA("Motor6D") then
+							motors[d.Name] = d
+						end
+					end
+				end
+			end
+		end
+		check("pets de malha: o cliente troca TODOS os pets da equipe pelo modelo anatômico de MeshParts (malhas criadas com EditableMesh)",
+			mine > 0 and swapped == mine and PetMesh.available == true and meshParts >= 6 * swapped and SIM.meshStats.badFaces == 0,
+			string.format("%d/%d pets, %d MeshParts, malhas %d (%d triângulos, faces ruins %d), disponível=%s %s", swapped, mine, meshParts, SIM.meshStats.meshes, SIM.meshStats.tris,
+				SIM.meshStats.badFaces, tostring(PetMesh.available), tostring(PetMesh.lastError)))
+		check("pets de malha: o modelo de peças antigo fica invisível neste cliente (sem pet duplicado)", hidden)
+		-- animação: as juntas mexem com o tempo (respiração/olhar/cauda) e o ataque muda a pose
+		-- (câmera perto do pet: o Animator só anima o que está perto da câmera)
+		if sample and sample.PrimaryPart then
+			workspace.CurrentCamera.CFrame = CFrame.new(sample.PrimaryPart.Position + Vector3.new(0, 6, 14), sample.PrimaryPart.Position)
+		end
+		local body = motors.Body
+		local probe = motors.Neck or motors.Head or motors.Tail or motors.Seg1
+		local t0 = body and body.Transform
+		local p0 = probe and probe.Transform
+		frames(20)
+		local moved = body ~= nil and probe ~= nil and (body.Transform ~= t0 or probe.Transform ~= p0)
+		check("pets de malha: as articulações são animadas (tronco, pescoço/cauda)", moved, sample and sample:GetAttribute("Anatomy"))
+		local server = sample and sample.Parent
+		local beforeAtk = probe and probe.Transform
+		if server then
+			server:SetAttribute("Action", "Attack")
+			server:SetAttribute("ActionAt", workspace:GetServerTimeNow())
+		end
+		frames(12)
+		local atkPose = probe and probe.Transform
+		check("pets de malha: ataque muda a pose (bote, mordida ou golpe da anatomia)", beforeAtk ~= nil and atkPose ~= beforeAtk)
+		if server then
+			-- derruba o pet pelo estado real do servidor (o servidor sincroniza o atributo a cada tick)
+			local st
+			for _, x in ipairs(S.PetService.team(lp)) do
+				if x.model == server then
+					st = x
+				end
+			end
+			local keepUntil = st and st.knockedUntil
+			if st then
+				st.knockedUntil = os.clock() + 3
+			end
+			frames(6)
+			local faded = false
+			for _, d in ipairs(sample:GetDescendants()) do
+				if d:IsA("MeshPart") and (d.LocalTransparencyModifier or 0) > 0.3 then
+					faded = true
+				end
+			end
+			if st then
+				st.knockedUntil = keepUntil or 0
+			end
+			frames(6)
+			check("pets de malha: pet nocauteado deita e fica translúcido; volta ao normal", faded)
+		end
+		check("pets de malha: nenhum erro no cliente", #SIM.errors == before, SIM.errors[before + 1])
+	end
+	meshPetChecks()
 	-- Skybound: raios das nuvens de tempestade, impactos elétricos e energia do Tempest Wyrm
 	local function stormChecks()
 		local SkyClient = require(__proxy("Client/Controllers/SkyClient"))

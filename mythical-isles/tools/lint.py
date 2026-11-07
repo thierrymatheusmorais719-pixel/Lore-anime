@@ -16,6 +16,7 @@ ROBLOX_GLOBALS = {
     "RaycastParams", "OverlapParams", "TweenInfo", "task", "typeof", "tick", "warn", "Rect", "BrickColor", "PhysicalProperties",
     "DateTime", "Font", "Ray", "Region3", "Faces", "Axes", "shared", "plugin", "settings", "utf8", "bit32", "buffer",
     "delay", "spawn", "wait", "elapsedTime", "time", "version", "printidentity", "gcinfo", "Path2DControlPoint",
+    "Content",  # Content.fromObject (malhas criadas em tempo de execução com EditableMesh)
 }
 def main():
     exe = sys.argv[1] if len(sys.argv) > 1 else "luau-analyze"

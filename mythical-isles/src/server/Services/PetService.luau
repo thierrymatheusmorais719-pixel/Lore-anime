@@ -139,6 +139,9 @@ function PetService.buildModel(pet)
 		end
 	end
 	model:SetAttribute("Tier", pet.tier or 1)
+	-- para o visual de malha do cliente (PetVisuals): altura do servidor e escala da evolução
+	model:SetAttribute("Hover", hover)
+	model:SetAttribute("Scale", scale)
 	return model, hover, flies
 end
 

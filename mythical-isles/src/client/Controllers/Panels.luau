@@ -19,9 +19,7 @@ local Bosses = require(Shared.Config.Bosses)
 local LuckConfig = require(Shared.Config.Luck)
 local Exploration = require(Shared.Config.Exploration)
 local CollectionLogic = require(Shared.Logic.CollectionLogic)
-local CreatureBuilder = require(Shared.Builders.CreatureBuilder)
-local MutationVisuals = require(Shared.Builders.MutationVisuals)
-local Accessories = require(Shared.Builders.Accessories)
+local PetMesh = require(Shared.Builders.PetMesh)
 local UIKit = require(script.Parent.UIKit)
 local State = require(script.Parent.State)
 local HUD = require(script.Parent.HUD)
@@ -75,9 +73,7 @@ local function preview(parent: Instance, pet)
 	cam.FieldOfView = 38
 	cam.Parent = vp
 	vp.CurrentCamera = cam
-	local model = CreatureBuilder.build(pet.species, Pets.Species[pet.species], 1)
-	MutationVisuals.apply(model, pet.mutation)
-	Accessories.apply(model, pet.accessory)
+	local model = PetMesh.display(pet.species, pet.mutation, pet.accessory)
 	for _, d in ipairs(model:GetDescendants()) do
 		if d:IsA("BasePart") then
 			d.Anchored = true
@@ -106,9 +102,7 @@ local function thumb(parent: Instance, species: string, mutation: string?, acces
 	cam.FieldOfView = 34
 	cam.Parent = vp
 	vp.CurrentCamera = cam
-	local model = CreatureBuilder.build(species, Pets.Species[species], 1)
-	MutationVisuals.apply(model, mutation)
-	Accessories.apply(model, accessory)
+	local model = PetMesh.display(species, mutation, accessory)
 	for _, d in ipairs(model:GetDescendants()) do
 		if d:IsA("BasePart") then
 			d.Anchored = true

@@ -311,6 +311,14 @@ SIM.players = {}
 function Players.GetPlayers()
 	return table.clone(SIM.players)
 end
+function Players.GetPlayerByUserId(_, userId)
+	for _, p in ipairs(SIM.players) do
+		if p.UserId == userId then
+			return p
+		end
+	end
+	return nil
+end
 
 local RunService = service("RunService")
 RunService.Heartbeat = { Connect = function(_, fn)
@@ -421,10 +429,62 @@ __MOCK_WAIT_HOOK = function(inst, name)
 	end
 	return nil
 end
+-- AssetService/EditableMesh (malhas dos pets): guarda a geometria e confere índices e faces
+local services_AssetService
+SIM.meshStats = { meshes = 0, tris = 0, verts = 0, badFaces = 0 }
+do
+	local asset = service("AssetService")
+	asset.CreateEditableMesh = function()
+		local em = { verts = 0, normals = 0, colors = 0, tris = 0 }
+		function em.AddVertex(self, p)
+			assert(typeof(p) == "Vector3" or (type(p) == "table" and p.X ~= nil), "AddVertex: posição inválida")
+			self.verts += 1
+			return self.verts
+		end
+		function em.AddNormal(self, n)
+			self.normals += 1
+			return self.normals
+		end
+		function em.AddColor(self, c, a)
+			assert(c ~= nil and a ~= nil, "AddColor: cor/alfa")
+			self.colors += 1
+			return self.colors
+		end
+		function em.AddTriangle(self, a, b, c)
+			if not (a and b and c) or a > self.verts or b > self.verts or c > self.verts or a == b or b == c or a == c then
+				SIM.meshStats.badFaces += 1
+			end
+			self.tris += 1
+			return self.tris
+		end
+		function em.SetFaceNormals(self, f, ids)
+			assert(#ids == 3, "SetFaceNormals: 3 normais")
+		end
+		function em.SetFaceColors(self, f, ids)
+			assert(#ids == 3, "SetFaceColors: 3 cores")
+		end
+		SIM.meshStats.meshes += 1
+		return em
+	end
+	asset.CreateMeshPartAsync = function(_, content, _opts)
+		local em = content and content.Object
+		assert(em and em.tris and em.tris > 0, "CreateMeshPartAsync: malha vazia")
+		SIM.meshStats.tris += em.tris
+		SIM.meshStats.verts += em.verts
+		local mp = Instance.new("MeshPart")
+		mp:SetAttribute("__tris", em.tris)
+		return mp
+	end
+	Content = { fromObject = function(o)
+		return { Object = o }
+	end }
+	services_AssetService = asset
+end
 local services = {
 	Players = Players, RunService = RunService, DataStoreService = DataStoreService, MessagingService = MessagingService,
 	HttpService = HttpService, PathfindingService = PathfindingService, ReplicatedStorage = ReplicatedStorage, Workspace = workspace,
 	TweenService = service("TweenService"), Debris = service("Debris"), Lighting = service("Lighting"), SoundService = service("SoundService"),
+	AssetService = services_AssetService,
 }
 function SIM.registerService(name, inst)
 	services[name] = inst
