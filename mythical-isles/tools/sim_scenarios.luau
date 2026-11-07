@@ -1453,6 +1453,18 @@ do
 			check("pets de malha: pet nocauteado deita e fica translúcido; volta ao normal", faded)
 		end
 		check("pets de malha: nenhum erro no cliente", #SIM.errors == before, SIM.errors[before + 1])
+		-- sem a API de malhas (opção desligada no jogo): aviso NA TELA com o passo a passo e o erro real
+		local avail, lastErr = PetMesh.available, PetMesh.lastError
+		PetMesh.available, PetMesh.lastError = false, "Mesh / Image APIs are disabled (simulado)"
+		PetVisuals.reportIfUnavailable()
+		local shown = false
+		for _, d in ipairs(lp.PlayerGui:GetDescendants()) do
+			if (d.ClassName == "TextBox" or d.ClassName == "TextLabel") and type(d.Text) == "string" and d.Text:find("Allow Mesh / Image APIs", 1, true) and d.Text:find("simulado", 1, true) then
+				shown = true
+			end
+		end
+		PetMesh.available, PetMesh.lastError = avail, lastErr
+		check("pets de malha: se a API estiver desligada, aparece na tela como ligar ('Allow Mesh / Image APIs') e o erro do Roblox", shown)
 	end
 	meshPetChecks()
 	-- Skybound: raios das nuvens de tempestade, impactos elétricos e energia do Tempest Wyrm

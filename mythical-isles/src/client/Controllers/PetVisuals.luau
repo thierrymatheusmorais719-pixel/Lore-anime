@@ -10,12 +10,23 @@ local PetMesh = require(Shared.Builders.PetMesh)
 local MutationVisuals = require(Shared.Builders.MutationVisuals)
 local Accessories = require(Shared.Builders.Accessories)
 local State = require(script.Parent.State)
+local Status = require(script.Parent.Status)
 local CreatureMotion = require(script.Parent.CreatureMotion)
 
 local PetVisuals = {}
 
 local active: { [Model]: { mesh: Model, root: BasePart, server: BasePart, offset: CFrame } } = {}
 local claimed: { [Model]: boolean } = {}
+
+-- Avisa NA TELA (uma vez) quando as malhas não puderem ser criadas, com o passo a passo para ligar.
+local warned = false
+local function reportIfUnavailable()
+	if PetMesh.available == false and not warned then
+		warned = true
+		Status.reportClientError(PetMesh.HELP .. tostring(PetMesh.lastError))
+	end
+end
+PetVisuals.reportIfUnavailable = reportIfUnavailable
 
 local function hideServerPart(d: Instance, mesh: Model)
 	if d:IsDescendantOf(mesh) then
@@ -39,6 +50,7 @@ local function attach(model: Model)
 		local t = PetMesh.await(species, scale, 40)
 		local server = model.PrimaryPart
 		if not t or not model.Parent or not server then
+			reportIfUnavailable()
 			claimed[model] = nil
 			return
 		end
@@ -81,6 +93,13 @@ local function attach(model: Model)
 end
 
 function PetVisuals.init()
+	-- teste logo ao entrar (não precisa ter pet equipado): monta uma espécie e avisa se falhar
+	task.spawn(function()
+		local t = PetMesh.await("kit_1", 1, 60)
+		if not t then
+			reportIfUnavailable()
+		end
+	end)
 	local folder = workspace:WaitForChild("Pets", 30)
 	if not folder then
 		return

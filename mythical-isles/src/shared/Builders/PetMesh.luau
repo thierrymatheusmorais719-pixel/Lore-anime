@@ -39,6 +39,9 @@ end
 local function meshPart(geom)
 	local g, center = MeshKit.centered(geom)
 	local em = AssetService:CreateEditableMesh()
+	if not em then
+		error("CreateEditableMesh devolveu nil (sem memória para malhas neste aparelho)")
+	end
 	MeshKit.toEditable(g, em)
 	local content = Content.fromObject(em)
 	local ok, mp = pcall(function()
@@ -46,6 +49,9 @@ local function meshPart(geom)
 	end)
 	if not ok or not mp then
 		mp = AssetService:CreateMeshPartAsync(content)
+	end
+	if not mp then
+		error("CreateMeshPartAsync devolveu nil")
 	end
 	table.insert(keep, em)
 	return mp, center
@@ -100,6 +106,15 @@ local function effects(model: Model, bp)
 		end
 	end
 end
+
+-- Texto para o jogador quando as malhas não puderem ser criadas (o motivo mais comum é a opção desligada).
+PetMesh.HELP = "Os pets 3D novos (malhas anatômicas) estão DESLIGADOS e os pets antigos continuam no lugar.\n"
+	.. "Para ligar no Roblox Studio:\n"
+	.. "  1) Arquivo → Publicar no Roblox (as Configurações do jogo só abrem num jogo publicado)\n"
+	.. "  2) Início → Configurações do jogo (Game Settings) → Segurança (Security)\n"
+	.. "  3) Ative 'Allow Mesh / Image APIs' e salve (o Roblox exige dono da experiência com 13+ e ID verificado)\n"
+	.. "  4) Pare e dê Play de novo.\n"
+	.. "Erro do Roblox: "
 
 -- Constrói o molde de uma espécie (pode demorar: cria as malhas). Devolve { model, bp } ou nil.
 function PetMesh.buildTemplate(speciesId: string, scale: number)

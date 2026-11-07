@@ -27,6 +27,16 @@ rojo build default.project.json -o build/MythicalIsles.rbxl
 rojo serve               # e no Studio: plugin Rojo → Connect
 ```
 
+**Para ver os pets 3D novos (malhas anatômicas) — obrigatório:** as malhas são criadas pelo jogo com a API
+`EditableMesh`, que o Roblox só libera com a opção ligada:
+1. *Arquivo → Publicar no Roblox* (as Configurações do jogo só abrem num jogo publicado);
+2. *Início → Configurações do jogo (Game Settings) → Segurança (Security)* → ative **Allow Mesh / Image APIs** e salve
+   (o Roblox exige que o dono da experiência tenha 13+ e ID verificado);
+3. pare e dê Play de novo.
+
+Sem isso o jogo continua com os pets antigos e mostra **na tela** uma caixa com esse passo a passo e o erro exato
+do Roblox (também no Output, com `[PetMesh]`).
+
 **Para testar o salvamento (DataStore):** publique o lugar e ative *Game Settings → Security → Enable Studio
 Access to API Services*. Sem isso o jogo roda em **modo memória** e avisa na tela e no Output que nada será
 salvo.
