@@ -28,6 +28,8 @@ const shots = [
   ['sky_tempestade', 'scene=sky&ground=voxel&tfile=terrain_sky&vcenter=2800,0,410&vy=20,250&sky=sky&storm=1&pos=2796,182,-196&look=2782,168,-320&fov=64&shadow=260&atmo=0.0012&sun=60,35&title=Storm%20Islands'],
   ['sky_jardins', 'scene=sky&ground=voxel&tfile=terrain_sky&vcenter=2800,0,410&vy=20,250&sky=sky&storm=1&pos=2614,180,64&look=2516,172,104&fov=64&shadow=240&atmo=0.001&sun=300,40&title=Celestial%20Gardens'],
   ['sky_arena', 'scene=sky&ground=voxel&tfile=terrain_sky&vcenter=2800,0,410&vy=20,250&sky=sky&storm=1&pos=2800,190,36&look=2800,176,200&fov=62&shadow=260&atmo=0.001&sun=270,35&title=Tempest%20Arena'],
+  ['arvore_destaque', 'scene=island&ground=terrain&sky=verdant&pos=124,12,106&look=94,16,73&fov=60&shadow=80&atmo=0.001&sun=200,40&title=Verdant%20Haven%20-%20%C3%81rvore%20de%20destaque'],
+  ['arvore_bosque', 'scene=island&ground=terrain&sky=verdant&pos=40,60,10&look=118,6,120&fov=60&shadow=200&atmo=0.0008&sun=200,40&title=Bosque%20da%20%C3%A1rvore%20de%20blocos%20(Mundo%201)'],
   ['pets_mundo1', 'scene=pets_verdant&pos=34,40,98&look=34,1,32&fov=55&title=Mundo%201%20-%20Verdant%20Haven%3A%2080%20pets&floor=%2398d878'],
   ['pets_mundo2', 'scene=pets_crystal&pos=34,40,98&look=34,1,32&fov=55&title=Mundo%202%20-%20Crystal%20Hollow%3A%2080%20pets&skytop=%230a0618&skybot=%23281c4a&floor=%23202040'],
   ['mutacoes', 'scene=mutations&pos=24,11,44&look=24,2,0&fov=50&title=Astral%20Lion:%20normal%20e%206%20muta%C3%A7%C3%B5es&floor=%23b0a0e0'],

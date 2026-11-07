@@ -8,7 +8,7 @@ vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
 > Luau, contra o dump público da API do Roblox, com 58 testes de lógica, 3297 verificações dos modelos 3D e
-> **129 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> **132 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -127,6 +127,25 @@ de musgo com cachoeiras, cachoeiras caindo da borda da ilha, bonsais, flores rox
   - vaga-lumes de partículas na Árvore Ancestral;
   - pólen, esporos, cintilações ou névoa, conforme a ilha.
 - **Texturas:** só as embutidas no cliente Roblox (`sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`, em `rbxasset://textures/particles/`).
+
+### Verdant Haven — árvore de blocos (referência do autor)
+
+`server/Services/BlockTree.luau`, posicionada por `WorldBuilder.blockGrove`. Referência em `docs/concept/world1_tree_ref.jpg`. Prévias em `docs/preview/arvore_*.png`.
+
+**A árvore:**
+- **Tronco:** grosso, marrom-escuro, com lascas de casca, raízes em cunha e galhos meio escondidos.
+- **Copa:** muito larga e irregular, de blocos em vários tons de verde e alturas diferentes. Tem placas com *studs* e rosetas de folhas arredondadas e brilhantes.
+- **Base:** placa verde baixa e pisável, com tufos de grama, plantas de folha larga, pedrinhas e folhas caídas.
+
+**O bosque:**
+- A **árvore de destaque** fica em θ 38°, a 120 studs do centro, entre a praça e a borda nordeste.
+- Em volta, **6 árvores da mesma família** (larga, alta, redonda e jovens). Cada uma tem escala, copa e quantidade de blocos e rosetas diferentes, sem cópias idênticas.
+- **Nada foi removido do mapa:** as áreas do bosque ficam reservadas para que a decoração aleatória não se sobreponha.
+
+**Colisão:**
+- Só o tronco, as raízes da árvore de destaque e a placa da base colidem.
+- A copa não colide, e dá para andar em volta e por baixo dela.
+- O bosque inteiro tem 535 peças.
 
 ### Mundo 3 — Skybound Kingdom
 
@@ -315,7 +334,7 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **58 testes passando** |
 | Modelos 3D (182 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) | `python3 tools/run_tests.py luau --smoke` | **3297 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **129 cenários passando** (inclui efeitos visuais, regiões dos Mundos 2 e 3 e o céu anime) |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **132 cenários passando** (inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime e o bosque do Mundo 1) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o

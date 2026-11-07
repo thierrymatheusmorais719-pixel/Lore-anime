@@ -659,6 +659,54 @@ do
 	SIM.run(1)
 	dX.worlds.crystal = hadCrystal
 end
+-- Verdant Haven: bosque da árvore de blocos (referência do autor)
+local function blockTreeChecks()
+	local WB = require(__proxy("Server/Services/WorldBuilder"))
+	local grove = workspace.World.verdant:FindFirstChild("BlockTreeGrove")
+	local trees = grove and grove:GetChildren() or {}
+	local heroes, total, shapes, distinct = 0, 0, {}, true
+	local walkOk, placeOk, trunkOk = true, true, true
+	local detail = ""
+	for _, t in ipairs(trees) do
+		if t.Name == "VerdantHeroTree" then
+			heroes += 1
+		end
+		local n, ground = 0, nil
+		local trunk = t:FindFirstChild("Trunk")
+		if not trunk or not trunk.CanCollide then
+			trunkOk = false
+		end
+		local plate = t:FindFirstChild("BasePlate")
+		ground = (plate and (plate.Position.Y + plate.Size.Y / 2)) or (trunk.Position.Y - trunk.Size.Y / 2)
+		local _, size = t:GetBoundingBox()
+		for _, d in ipairs(t:GetDescendants()) do
+			if d:IsA("BasePart") then
+				n += 1
+				-- além do tronco, nada que colida pode ficar mais alto que um degrau (dá para andar em volta)
+				if d.CanCollide and d.Name ~= "Trunk" and d.Position.Y + d.Size.Y / 2 > ground + 3.2 then
+					walkOk = false
+					detail = t.Name .. ": " .. d.Name .. " colide alto"
+				end
+			end
+		end
+		total += n
+		local key = string.format("%d:%.1f:%.1f:%.1f", n, size.X, size.Y, size.Z)
+		if shapes[key] then
+			distinct = false
+		end
+		shapes[key] = true
+		local r = t:GetAttribute("CrownRadius") or 10
+		if not WB.isFree("verdant", trunk.Position, r * 0.6, true) then
+			placeOk = false
+			detail = t.Name .. " (" .. tostring(t:GetAttribute("Variant")) .. ") invade área de gameplay"
+		end
+	end
+	check(string.format("Verdant Haven: árvore de destaque + %d árvores da mesma família (sem cópias idênticas)", #trees - 1), #trees == 7 and heroes == 1 and distinct)
+	check(string.format("árvores de blocos: %d peças no total (≤ 650), tronco com colisão, dá para andar em volta", total), total <= 650 and trunkOk and walkOk, detail)
+	check("árvores de blocos fora das áreas de gameplay (arena, campos, zonas, ovos, portais)", placeOk, detail)
+end
+blockTreeChecks()
+
 -- MUNDO 3 — Skybound Kingdom: ilhas flutuantes, pontes, regiões, portais, baús, NPCs
 local function skyboundChecks()
 	local WS = S.WorldService

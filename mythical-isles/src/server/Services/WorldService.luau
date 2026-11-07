@@ -63,6 +63,7 @@ function WorldService.build()
 		local terrainOk = WorldBuilder.terrain(id, folder)
 		if id == "verdant" then
 			WorldBuilder.verdantLandmark(folder, terrainOk)
+			WorldBuilder.blockGrove(folder)
 		elseif id == "crystal" or id == "sky" then
 			local reg = (id == "crystal" and CrystalHollow or SkyKingdom).build(folder, terrainOk)
 			WorldService.Regions[id] = reg

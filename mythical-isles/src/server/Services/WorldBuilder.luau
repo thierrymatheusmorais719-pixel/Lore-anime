@@ -7,6 +7,7 @@ local Eggs = require(Shared.Config.Eggs)
 local Make = require(Shared.Util.Make)
 local Regions = require(Shared.Config.Regions)
 local CrystalKit = require(script.Parent.CrystalKit)
+local BlockTree = require(script.Parent.BlockTree)
 
 local WorldBuilder = {}
 
@@ -983,6 +984,41 @@ function WorldBuilder.verdantLandmark(parent: Instance, terrainOk: boolean)
 		end
 	end
 	return folder
+end
+
+-------------------------------------------------------------------------------
+-- Bosque da árvore de blocos (Verdant Haven): a árvore de destaque da referência do autor e
+-- seis árvores menores da mesma família (formas diferentes), entre a praça e a borda nordeste.
+-------------------------------------------------------------------------------
+
+WorldBuilder.BlockGrove = {
+	{ theta = 38, dist = 120, variant = "hero" },
+	{ theta = 24, dist = 152, variant = "wide" }, { theta = 52, dist = 185, variant = "tall" }, { theta = 34, dist = 196, variant = "round" },
+	{ theta = 20, dist = 132, variant = "young" }, { theta = 40, dist = 80, variant = "young" }, { theta = 66, dist = 216, variant = "round" },
+}
+
+function WorldBuilder.blockGrove(parent: Instance)
+	local w = Worlds.Info.verdant
+	local folder = Make("Folder", { Name = "BlockTreeGrove", Parent = parent })
+	local trees = {}
+	for i, spot in ipairs(WorldBuilder.BlockGrove) do
+		local pos = groundRay(WorldBuilder.polar(w.center, spot.theta, spot.dist))
+		local rng = Random.new(7100 + i * 13)
+		-- cada árvore varia escala, copa e quantidade de blocos/rosetas (nenhuma cópia idêntica)
+		local opts = table.clone(BlockTree.Variants[spot.variant])
+		if not opts.hero then
+			opts.scale *= rng:NextNumber(0.88, 1.14)
+			opts.crownW *= rng:NextNumber(0.85, 1.15)
+			opts.crownD *= rng:NextNumber(0.85, 1.15)
+			opts.crownH *= rng:NextNumber(0.9, 1.15)
+			opts.blocks += rng:NextInteger(-2, 3)
+			opts.rosettes = math.max(1, opts.rosettes + rng:NextInteger(-1, 1))
+		end
+		local m = BlockTree.build(folder, pos, rng, opts)
+		m:SetAttribute("Variant", spot.variant)
+		table.insert(trees, m)
+	end
+	return trees
 end
 
 -------------------------------------------------------------------------------

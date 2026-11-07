@@ -109,6 +109,10 @@ end
 -- Áreas que a decoração aleatória e os detalhes do terreno não podem ocupar (lago, montanhas,
 -- caverna, rio, lagoas). { theta, dist, r }
 Regions.Reserved = {
+	verdant = { -- bosque da árvore de blocos (árvore de destaque + família)
+		{ theta = 38, dist = 120, r = 30 }, { theta = 24, dist = 152, r = 14 }, { theta = 52, dist = 185, r = 14 },
+		{ theta = 34, dist = 196, r = 14 }, { theta = 20, dist = 132, r = 12 }, { theta = 40, dist = 80, r = 12 }, { theta = 66, dist = 216, r = 12 },
+	},
 	sky = {
 		{ theta = 345, dist = 205, r = 24 }, -- cais do Cloud Harbor
 		{ theta = 40, dist = 205, r = 18 }, -- cabeceira da ponte para Golden Heights
