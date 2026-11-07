@@ -40,7 +40,7 @@ local function meshPart(geom)
 	local g, center = MeshKit.centered(geom)
 	local em = AssetService:CreateEditableMesh()
 	if not em then
-		error("CreateEditableMesh devolveu nil (sem memória para malhas neste aparelho)")
+		error("o Roblox recusou criar a malha (CreateEditableMesh devolveu nil). Quase sempre é a opção 'Allow Mesh / Image APIs' desligada ou o jogo ainda não publicado; mais raramente, falta de memória do aparelho")
 	end
 	MeshKit.toEditable(g, em)
 	local content = Content.fromObject(em)
