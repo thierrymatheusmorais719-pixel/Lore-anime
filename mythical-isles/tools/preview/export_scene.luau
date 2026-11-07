@@ -231,3 +231,47 @@ for i, id in ipairs({ "kit_1", "hop_1", "fawn_1", "leafcat_1", "owlet_1", "verda
 	end
 end
 lineup("showcase", show)
+
+-- céu anime de cada mundo (paleta + layout, para o renderizador desenhar igual ao jogo)
+do
+	local AnimeSky = require(__proxy("Shared/Builders/AnimeSky"))
+	local function col(c)
+		return string.format("[%d,%d,%d]", math.floor(c.R * 255 + 0.5), math.floor(c.G * 255 + 0.5), math.floor(c.B * 255 + 0.5))
+	end
+	for _, wid in ipairs(Worlds.Order) do
+		local t = AnimeSky.theme(wid)
+		local L = AnimeSky.layout(wid)
+		local parts = {}
+		local stops = {}
+		for _, st in ipairs(AnimeSky.gradient(wid)) do
+			table.insert(stops, string.format("[%s,%s]", num(st[1]), col(st[2])))
+		end
+		table.insert(parts, '"stops":[' .. table.concat(stops, ",") .. "]")
+		local tk = {}
+		for _, k in ipairs({ "top", "mid", "horizon", "below", "cloud", "shade", "hi", "streak", "sun", "glow", "fog", "decay", "tint", "ambient" }) do
+			table.insert(tk, string.format('"%s":%s', k, col(t[k])))
+		end
+		table.insert(parts, '"theme":{' .. table.concat(tk, ",") .. string.format(',"moon":%s,"stars":%s}', tostring(t.moon == true), tostring(t.stars == true)))
+		local cl = {}
+		for _, c in ipairs(L.clouds) do
+			local pf = {}
+			for _, p in ipairs(c.puffs) do
+				table.insert(pf, string.format('[%s,%s,%s,"%s"]', num(p.x), num(p.y), num(p.r), p.layer))
+			end
+			table.insert(cl, string.format('{"az":%s,"elev":%s,"dist":%s,"w":%s,"h":%s,"base":%s,"puffs":[%s]}', num(c.az), num(c.elev), num(c.dist), num(c.w), num(c.h), num(c.base), table.concat(pf, ",")))
+		end
+		table.insert(parts, '"clouds":[' .. table.concat(cl, ",") .. "]")
+		local sk = {}
+		for _, s in ipairs(L.streaks) do
+			table.insert(sk, string.format("[%s,%s,%s,%s,%s]", num(s.az), num(s.elev), num(s.dist), num(s.w), num(s.h)))
+		end
+		table.insert(parts, '"streaks":[' .. table.concat(sk, ",") .. "]")
+		local stz = {}
+		for _, s in ipairs(L.stars) do
+			table.insert(stz, string.format("[%s,%s,%s]", num(s.az), num(s.elev), num(s.size)))
+		end
+		table.insert(parts, '"stars":[' .. table.concat(stz, ",") .. "]")
+		table.insert(parts, string.format('"panel":[%s,%s,%s]', num(AnimeSky.PANEL_DIST), num(AnimeSky.PANEL_LOW), num(AnimeSky.PANEL_HIGH)))
+		print("SCENE sky_" .. wid .. " {" .. table.concat(parts, ",") .. "}")
+	end
+end

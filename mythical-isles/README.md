@@ -8,7 +8,7 @@ vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
 > Luau, contra o dump público da API do Roblox, com 58 testes de lógica, 3297 verificações dos modelos 3D e
-> **113 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> **116 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -128,6 +128,29 @@ de musgo com cachoeiras, cachoeiras caindo da borda da ilha, bonsais, flores rox
   - pólen, esporos, cintilações ou névoa, conforme a ilha.
 - **Texturas:** só as embutidas no cliente Roblox (`sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`, em `rbxasset://textures/particles/`).
 
+### Céu estilo anime 2D e cor de ambiente por mundo
+
+`shared/Builders/AnimeSky.luau` e `client/Controllers/SkyClient.luau`. Prévias em `docs/preview/ceu_*.png`.
+
+**Como é feito:**
+- **Sem imagens externas:** o céu é desenhado no próprio jogo, sem skybox e sem IDs de asset.
+- **Gradiente:** pintado em 8 painéis `BillboardGui` ao redor da câmera, com `UIGradient`.
+- **Nuvens:** 14 nuvens planas "cel-shaded" (sombra pastel embaixo, preenchimento e brilho em cima, base reta) e faixas finas no horizonte.
+- **Sol ou lua:** em 2D com halo, posicionado na direção real do sol (ou da lua) do Roblox.
+- **Estrelas:** cintilantes, nos mundos noturnos.
+- **Cor chapada:** tudo usa `LightInfluence = 0`, sem sombreamento 3D e sem acionar o Bloom.
+- **Movimento:** o céu fica centrado na câmera (parece infinitamente distante), e as nuvens derivam devagar com o vento.
+
+**Paletas:** cada mundo tem a sua, que também define a cor da névoa (Atmosphere), do decaimento, do tom (ColorCorrection) e da luz ambiente.
+
+| Mundo | Céu |
+|---|---|
+| Verdant Haven | Manhã Esmeralda: azul vivo, horizonte verde-menta, nuvens brancas |
+| Crystal Hollow | Tarde Safira: anil, horizonte lavanda, sombras violeta |
+| Skybound Kingdom | Pôr do Sol Rosa-Dourado (o horário passou para 17:18) |
+| Whispering Wilds | Crepúsculo Turquesa |
+| Astral Sanctuary | Noite Violeta, com estrelas e lua crescente |
+
 ### Mundo 2 — Crystal Hollow
 
 Construído a partir da arte de referência do autor (`docs/concept/world2_ref.png`). Prévias:
@@ -245,7 +268,7 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **58 testes passando** |
 | Modelos 3D (182 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) | `python3 tools/run_tests.py luau --smoke` | **3297 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **113 cenários passando** (inclui efeitos visuais e as regiões do Mundo 2) |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **116 cenários passando** (inclui efeitos visuais, regiões do Mundo 2 e o céu anime) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o

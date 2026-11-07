@@ -266,6 +266,51 @@ if (ground === 'terrain') {
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), new THREE.MeshStandardMaterial({ color: 0xecf2ff, roughness: 1 }));
   sea.rotation.x = -Math.PI / 2; sea.position.y = -150; sc.add(sea);
 }
+// Céu anime 2D: mesmo desenho do jogo (Shared/Builders/AnimeSky) — gradiente por elevação,
+// nuvens cel-shaded como sprites voltados para a câmera, faixas, sol/lua com halo e estrelas.
+if (q.get('sky')) {
+  const S = await (await fetch(`data/sky_${q.get('sky')}.json`)).json();
+  const rgbs = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+  const [PD, PLOW, PHIGH] = S.panel;
+  const yTop = PD * Math.tan(PHIGH * Math.PI / 180), yBot = PD * Math.tan(PLOW * Math.PI / 180);
+  // textura do gradiente (fração 0 = topo, 1 = base)
+  const gc = document.createElement('canvas'); gc.width = 4; gc.height = 512;
+  const gx = gc.getContext('2d'); const lg = gx.createLinearGradient(0, 0, 0, 512);
+  for (const [f, c] of S.stops) lg.addColorStop(Math.min(1, Math.max(0, f)), rgbs(c));
+  gx.fillStyle = lg; gx.fillRect(0, 0, 4, 512);
+  const gtex = new THREE.CanvasTexture(gc); gtex.colorSpace = THREE.SRGBColorSpace;
+  sky.material = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: { grad: { value: gtex }, D: { value: PD }, yTop: { value: yTop }, yBot: { value: yBot } },
+    vertexShader: 'varying vec3 p; void main(){ p = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }',
+    fragmentShader: `uniform sampler2D grad; uniform float D, yTop, yBot; varying vec3 p;
+      void main(){ float e = asin(clamp(p.y,-1.,1.)); float y = D*tan(clamp(e,-1.4,1.4)); float f = clamp((yTop - y)/(yTop - yBot), 0., 1.);
+      vec4 c = texture2D(grad, vec2(.5, 1.-f)); gl_FragColor = vec4(pow(c.rgb, vec3(2.2)), 1.); }` });
+  sky.position.copy(camera.position);
+  const T = S.theme;
+  if (sc.fog) sc.fog.color = new THREE.Color(rgbs(T.fog));
+  const camP = camera.position.clone();
+  const off = (az, el, d) => { const a = az * Math.PI / 180, e = el * Math.PI / 180; return new THREE.Vector3(Math.cos(a) * Math.cos(e) * d, Math.sin(e) * d, Math.sin(a) * Math.cos(e) * d).add(camP); };
+  const sprite = (cv, pos, w, h) => { const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx, transparent: true, fog: false, depthWrite: false, toneMapped: false }));
+    sp.position.copy(pos); sp.scale.set(w, h, 1); sc.add(sp); return sp; };
+  const circ = (g, x, y, r, c, a) => { g.globalAlpha = a ?? 1; g.fillStyle = rgbs(c); g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; };
+  const rrect = (g, x, y, w, h, c, a) => { g.globalAlpha = a ?? 1; g.fillStyle = rgbs(c); g.beginPath(); g.roundRect(x, y, w, h, h / 2); g.fill(); g.globalAlpha = 1; };
+  for (const s of S.stars) { const cv = document.createElement('canvas'); cv.width = cv.height = 16; circ(cv.getContext('2d'), 8, 8, 7, [255, 255, 255], .85); sprite(cv, off(s[0], s[1], PD - 30), s[2], s[2]); }
+  for (const s of S.streaks) { const cv = document.createElement('canvas'); cv.width = 512; cv.height = Math.max(8, Math.round(512 * s[4] / s[3]));
+    rrect(cv.getContext('2d'), 0, 0, cv.width, cv.height, T.streak, .85); sprite(cv, off(s[0], s[1], s[2]), s[3], s[4]); }
+  for (const c of S.clouds) {
+    const W = 512, H = Math.round(512 * c.h / c.w); const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+    rrect(g, W * 0.09, H * (c.base + 0.08) - H * 0.26, W * 0.82, H * 0.26, T.shade);
+    const col = { shade: T.shade, fill: T.cloud, hi: T.hi };
+    for (const layer of ['shade', 'fill', 'hi']) for (const p of c.puffs) if (p[3] === layer) circ(g, p[0] * W, p[1] * H, p[2] * H, col[layer]);
+    sprite(cv, off(c.az, c.elev, c.dist), c.w, c.h);
+  }
+  { const cv = document.createElement('canvas'); cv.width = cv.height = 256; const g = cv.getContext('2d');
+    circ(g, 128, 128, 128, T.glow, .28); circ(g, 128, 128, 87, T.glow, .55); circ(g, 128, 128, 56, T.sun);
+    if (T.moon) circ(g, 146, 113, 44, [Math.round((T.top[0] * .7 + T.mid[0] * .3)), Math.round((T.top[1] * .7 + T.mid[1] * .3)), Math.round((T.top[2] * .7 + T.mid[2] * .3))]);
+    const sd = q.get('sun') ? q.get('sun').split(',').map(Number) : [60, 30];
+    sprite(cv, off(sd[0], sd[1], PD - 40), 150, 150); }
+}
 const parts = await (await fetch(`data/${scene}.json`)).json();
 addParts(parts);
 if (q.get('player')) avatar(...v3(q.get('player')));
@@ -299,7 +344,7 @@ if (q.get('hud')) {
 
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(sc, camera));
-composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.35, 0.5, 0.9));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), q.get('sky') ? 0.12 : 0.35, 0.5, 0.95)); // o céu 2D do jogo não brilha (LightInfluence 0)
 composer.addPass(new OutputPass());
 composer.render();
 window.READY = true;

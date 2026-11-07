@@ -962,6 +962,56 @@ do
 		frames(60)
 		check("cliente: voltar ao vale restaura a névoa do mundo", math.abs(atm.Density - 0.3) < 0.01, "densidade " .. tostring(atm.Density))
 	end
+	-- céu anime 2D: painéis de gradiente, nuvens, sol/lua; segue a câmera; cada mundo com a sua paleta
+	local function skyChecks()
+		local AnimeSky = require(__proxy("Shared/Builders/AnimeSky"))
+		local SkyClient = require(__proxy("Client/Controllers/SkyClient"))
+		local beforeS = #SIM.errors
+		local skyFolder = lp.PlayerGui:FindFirstChild("AnimeSky")
+		local function counts()
+			local panels, clouds, stars, moon = 0, 0, 0, false
+			for _, g in ipairs(skyFolder:GetChildren()) do
+				if g.Name:sub(1, 8) == "SkyPanel" then
+					panels += 1
+				elseif g.Name:sub(1, 5) == "Cloud" then
+					clouds += 1
+				elseif g.Name:sub(1, 4) == "Star" then
+					stars += 1
+				elseif g.Name == "Moon" then
+					moon = true
+				end
+			end
+			return panels, clouds, stars, moon
+		end
+		lp:SetAttribute("World", "crystal")
+		frames(10)
+		local panels, clouds = counts()
+		local camPos = workspace.CurrentCamera.CFrame.Position
+		local anchorPart = workspace.CurrentCamera:FindFirstChild("AnimeSkyAnchor")
+		check("céu anime: 8 painéis de gradiente e 14 nuvens 2D, centrado na câmera", skyFolder and panels == 8 and clouds == 14 and anchorPart
+			and (anchorPart.Position - camPos).Magnitude < 0.01 and SkyClient.current == "crystal", string.format("%d painéis, %d nuvens", panels, clouds))
+		-- (o servidor reatribui o mundo pela posição a cada 0,5 s: checa logo após a troca)
+		lp:SetAttribute("World", "astral")
+		local _, _, stars, moon = counts()
+		local atmColor = game:GetService("Lighting"):FindFirstChildOfClass("Atmosphere").Color
+		check("céu anime: Astral Sanctuary vira noite com estrelas e lua", SkyClient.current == "astral" and stars > 50 and moon, stars .. " estrelas")
+		-- paletas distintas: nenhuma cor de céu/névoa repetida entre os 5 mundos
+		local seenTop, seenFog, distinct = {}, {}, true
+		for _, wid in ipairs(Worlds.Order) do
+			local t = AnimeSky.theme(wid)
+			local kt, kf = t.top:ToHex(), t.fog:ToHex()
+			if seenTop[kt] or seenFog[kf] then
+				distinct = false
+			end
+			seenTop[kt], seenFog[kf] = true, true
+		end
+		local atm = game:GetService("Lighting"):FindFirstChildOfClass("Atmosphere")
+		check("cada mundo tem céu e ambiente com cores próprias (e a névoa segue o mundo)", distinct and atm ~= nil and atmColor == AnimeSky.theme("astral").fog and #SIM.errors == beforeS,
+			SIM.errors[beforeS + 1])
+		lp:SetAttribute("World", "verdant")
+		frames(10)
+	end
+	skyChecks()
 	-- energia do Prism Titan: luzes nas peças EnergyFx, carga durante a preparação
 	do
 		local titan

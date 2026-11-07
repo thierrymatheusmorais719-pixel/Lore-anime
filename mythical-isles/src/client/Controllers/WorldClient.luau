@@ -8,6 +8,7 @@ local TweenService = game:GetService("TweenService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Worlds = require(Shared.Config.Worlds)
+local AnimeSky = require(Shared.Builders.AnimeSky)
 local UIKit = require(script.Parent.UIKit)
 
 local WorldClient = {}
@@ -78,6 +79,9 @@ local function applyWorld(id: string)
 	end
 	currentWorld = id
 	local pr = table.clone(PROFILES[id] or PROFILES.verdant)
+	-- cada mundo tem a sua cor de ambiente (mesma paleta do céu anime): névoa, decaimento, tom e ambiente
+	local th = AnimeSky.theme(id)
+	pr.fog, pr.decay, pr.tint, pr.ambient = th.fog, th.decay, th.tint, th.ambient
 	-- região atual (ex.: Azure Caverns) sobrepõe parte do perfil do mundo
 	if regionOverride then
 		for k, v in pairs(regionOverride) do
@@ -85,8 +89,8 @@ local function applyWorld(id: string)
 		end
 	end
 	local info = TweenInfo.new(2.5)
-	TweenService:Create(Lighting, info, { ClockTime = w.clockTime, Ambient = w.palette.ambient:Lerp(Color3.new(0, 0, 0), 0.45),
-		OutdoorAmbient = w.palette.ambient:Lerp(Color3.new(1, 1, 1), 0.15), Brightness = pr.bright, ExposureCompensation = pr.exposure }):Play()
+	TweenService:Create(Lighting, info, { ClockTime = w.clockTime, Ambient = (pr.ambient or w.palette.ambient):Lerp(Color3.new(0, 0, 0), 0.4),
+		OutdoorAmbient = (pr.ambient or w.palette.ambient):Lerp(Color3.new(1, 1, 1), 0.2), Brightness = pr.bright, ExposureCompensation = pr.exposure }):Play()
 	local fog = pr.fog or w.palette.fog
 	TweenService:Create(atmosphere, info, {
 		Color = fog, Decay = pr.decay or fog:Lerp(Color3.new(0, 0, 0), 0.45), Density = pr.density, Offset = pr.offset, Haze = pr.haze, Glare = pr.glare,

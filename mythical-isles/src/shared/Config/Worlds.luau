@@ -67,7 +67,7 @@ Worlds.Info = {
 			fog = Color3.fromRGB(205, 228, 255),
 			ambient = Color3.fromRGB(150, 170, 200),
 		},
-		clockTime = 11,
+		clockTime = 17.3, -- pôr do sol rosa-dourado (céu anime)
 		bossId = "tempest_wyrm",
 		enemies = { "storm_sprite", "cloud_stalker", "tempest_guardian" },
 		resource = "cloud_puff",
