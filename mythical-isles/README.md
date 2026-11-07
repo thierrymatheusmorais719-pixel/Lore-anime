@@ -27,15 +27,18 @@ rojo build default.project.json -o build/MythicalIsles.rbxl
 rojo serve               # e no Studio: plugin Rojo → Connect
 ```
 
-**Para ver os pets 3D novos (malhas anatômicas) — obrigatório:** as malhas são criadas pelo jogo com a API
-`EditableMesh`, que o Roblox só libera com a opção ligada:
+**Pets 3D novos:** funcionam de dois jeitos, escolhidos sozinhos pelo jogo:
+- **sem configurar nada:** modo **low-poly** — a mesma anatomia, esqueleto e animação, com a superfície feita de
+  triângulos de peças (cada triângulo = 2 WedgeParts), estilo facetado (prévias `docs/preview/malha_lowpoly_*.png`).
+  Por ser pesado (~1.500 peças por pet), só os pets do próprio jogador usam esse modo; os dos outros ficam no modelo antigo.
+- **com a opção ligada:** malhas **lisas** (`EditableMesh`). O Roblox só libera com:
 1. *Arquivo → Publicar no Roblox* (as Configurações do jogo só abrem num jogo publicado);
 2. *Início → Configurações do jogo (Game Settings) → Segurança (Security)* → ative **Allow Mesh / Image APIs** e salve
    (o Roblox exige que o dono da experiência tenha 13+ e ID verificado);
 3. pare e dê Play de novo.
 
-Sem isso o jogo continua com os pets antigos e mostra **na tela** uma caixa com esse passo a passo e o erro exato
-do Roblox (também no Output, com `[PetMesh]`).
+Sem a opção o jogo usa o modo low-poly e avisa com uma mensagem rápida. A caixa de erro na tela só aparece se
+nenhum dos dois modos funcionar.
 
 **Para testar o salvamento (DataStore):** publique o lugar e ative *Game Settings → Security → Enable Studio
 Access to API Services*. Sem isso o jogo roda em **modo memória** e avisa na tela e no Output que nada será

@@ -47,3 +47,39 @@ for _, id in ipairs(ids) do
 	end
 end
 print(string.format("RESUMO %d espécies, %d triângulos no total, máximo %d (%s)", #ids, total, maxTris, maxId))
+
+-- modo de peças (low-poly): uma cor por face, como no jogo (cada triângulo = 2 cunhas de uma cor)
+local MeshKit = require(__proxy("Builders/MeshKit"))
+for _, id in ipairs({ "kit_1", "leafcat_1", "verdantwolf_1", "astral_lion", "grovestag_1", "owlet_1", "zephyr_hawk", "turfmammoth_1", "leafpanda_1", "berrygoat_1",
+	"glassserpent_1", "drakeling_1", "sylvanox", "mossape_1", "cap_1", "beetle_1" }) do
+	local sp = Pets.Species[id]
+	if sp then
+		local bp = PetAnatomy.blueprint(id, sp, 1, { low = true })
+		local parts = {}
+		for _, p in ipairs(bp.parts) do
+			local v, c, t = {}, {}, {}
+			local g = p.geom
+			local k = 0
+			for i, tri in ipairs(g.tris) do
+				if not g.keep or g.keep[i] then
+					local ca, cb, cc = g.colors[tri[1]], g.colors[tri[2]], g.colors[tri[3]]
+					local col = string.format("%d,%d,%d", math.floor((ca.R + cb.R + cc.R) / 3 * 255 + 0.5), math.floor((ca.G + cb.G + cc.G) / 3 * 255 + 0.5),
+						math.floor((ca.B + cb.B + cc.B) / 3 * 255 + 0.5))
+					for q = 1, 3 do
+						local w = g.verts[tri[q]] + p.pivot
+						v[#v + 1] = num(w.X) .. "," .. num(w.Y + bp.hover) .. "," .. num(w.Z)
+						c[#c + 1] = col
+					end
+					t[#t + 1] = string.format("%d,%d,%d", k, k + 1, k + 2)
+					k += 3
+				end
+			end
+			if k > 0 then
+				parts[#parts + 1] = string.format('{"n":"%s","m":"%s","tr":%s,"flat":true,"twoSided":true,"v":[%s],"c":[%s],"t":[%s]}', p.name, p.material == "Fabric" and "SmoothPlastic" or p.material,
+					num(p.transparency), table.concat(v, ","), table.concat(c, ","), table.concat(t, ","))
+			end
+		end
+		print(string.format('PETMESH %s__low {"id":"%s","anatomy":"%s","gait":"%s","rarity":"%s","hover":%s,"tris":%d,"parts":[%s]}', id, id, bp.anatomy, bp.gait, sp.rarity, num(bp.hover),
+			PetAnatomy.triangles(bp, true), table.concat(parts, ",")))
+	end
+end

@@ -21,9 +21,17 @@ local claimed: { [Model]: boolean } = {}
 -- Avisa NA TELA (uma vez) quando as malhas não puderem ser criadas, com o passo a passo para ligar.
 local warned = false
 local function reportIfUnavailable()
-	if PetMesh.available == false and not warned then
+	-- só é erro se NENHUM dos dois modos funcionou (malhas e peças)
+	if PetMesh.available == false and PetMesh.polyError and not warned then
 		warned = true
-		Status.reportClientError(PetMesh.HELP .. tostring(PetMesh.lastError))
+		Status.reportClientError(PetMesh.HELP .. tostring(PetMesh.lastError) .. "\nModo de peças: " .. tostring(PetMesh.polyError))
+	end
+end
+local toldPoly = false
+local function tellPolyMode()
+	if PetMesh.mode == "poly" and not toldPoly then
+		toldPoly = true
+		State.emit("Toast", { text = "Pets em modo low-poly (para malhas lisas, ligue 'Allow Mesh / Image APIs' nas configurações do jogo)", kind = "info" })
 	end
 end
 PetVisuals.reportIfUnavailable = reportIfUnavailable
@@ -53,6 +61,13 @@ local function attach(model: Model)
 			reportIfUnavailable()
 			claimed[model] = nil
 			return
+		end
+		-- modo de peças é pesado (~1.500 peças por pet): só os pets do próprio jogador
+		if t.poly and model:GetAttribute("Owner") ~= game:GetService("Players").LocalPlayer.UserId then
+			return
+		end
+		if t.poly then
+			tellPolyMode()
 		end
 		local mesh = t.model:Clone()
 		MutationVisuals.apply(mesh, model:GetAttribute("Mutation"))

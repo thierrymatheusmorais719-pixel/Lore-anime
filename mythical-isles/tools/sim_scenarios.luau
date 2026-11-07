@@ -1454,8 +1454,17 @@ do
 		end
 		check("pets de malha: nenhum erro no cliente", #SIM.errors == before, SIM.errors[before + 1])
 		-- sem a API de malhas (opção desligada no jogo): aviso NA TELA com o passo a passo e o erro real
-		local avail, lastErr = PetMesh.available, PetMesh.lastError
+		local avail, lastErr, polyErr = PetMesh.available, PetMesh.lastError, PetMesh.polyError
 		PetMesh.available, PetMesh.lastError = false, "Mesh / Image APIs are disabled (simulado)"
+		PetVisuals.reportIfUnavailable()
+		local boxWhilePolyWorks = false
+		for _, d in ipairs(lp.PlayerGui:GetDescendants()) do
+			if (d.ClassName == "TextBox" or d.ClassName == "TextLabel") and type(d.Text) == "string" and d.Text:find("simulado", 1, true) then
+				boxWhilePolyWorks = true
+			end
+		end
+		check("pets de malha: sem EditableMesh mas com o modo de peças funcionando, NÃO aparece caixa de erro", not boxWhilePolyWorks)
+		PetMesh.polyError = "falha simulada do modo de peças"
 		PetVisuals.reportIfUnavailable()
 		local shown = false
 		for _, d in ipairs(lp.PlayerGui:GetDescendants()) do
@@ -1463,8 +1472,114 @@ do
 				shown = true
 			end
 		end
-		PetMesh.available, PetMesh.lastError = avail, lastErr
-		check("pets de malha: se a API estiver desligada, aparece na tela como ligar ('Allow Mesh / Image APIs') e o erro do Roblox", shown)
+		PetMesh.available, PetMesh.lastError, PetMesh.polyError = avail, lastErr, polyErr
+		check("pets de malha: se nem malhas nem peças funcionarem, aparece na tela como ligar ('Allow Mesh / Image APIs') e o erro do Roblox", shown)
+		-- MODO DE PEÇAS (sem EditableMesh): cada triângulo vira 2 cunhas que cobrem exatamente o triângulo
+		local function wedgeCorners(w)
+			local h, l = w.Size.Y / 2, w.Size.Z / 2
+			return { w.CFrame * Vector3.new(0, -h, -l), w.CFrame * Vector3.new(0, -h, l), w.CFrame * Vector3.new(0, h, l) }
+		end
+		local function area(a, b, c)
+			return (b - a):Cross(c - a).Magnitude / 2
+		end
+		local holder = Instance.new("Part")
+		local ta, tb, tc = Vector3.new(0, 0, 0), Vector3.new(3, 0.5, 1), Vector3.new(1, 2.5, -0.5)
+		local n = PetMesh._triangle(ta, tb, tc, 0.05, { color = Color3.new(1, 1, 1), material = Enum.Material.SmoothPlastic, transparency = 0, reflectance = 0, shadow = true, role = "Body" }, holder)
+		local sum, inside = 0, true
+		local nrm = (tb - ta):Cross(tc - ta)
+		local total = area(ta, tb, tc)
+		for _, w in ipairs(holder:GetChildren()) do
+			if w.ClassName == "WedgePart" then
+				local c3 = wedgeCorners(w)
+				sum += area(c3[1], c3[2], c3[3])
+				for _, q in ipairs(c3) do
+					-- dentro do triângulo (coordenadas baricêntricas >= 0)
+					local a1 = (tb - ta):Cross(q - ta):Dot(nrm)
+					local a2 = (tc - tb):Cross(q - tb):Dot(nrm)
+					local a3 = (ta - tc):Cross(q - tc):Dot(nrm)
+					if a1 < -1e-3 or a2 < -1e-3 or a3 < -1e-3 then
+						inside = false
+					end
+				end
+			end
+		end
+		check("modo de peças: 2 cunhas cobrem exatamente cada triângulo (mesma área, cantos dentro do triângulo)", n == 2 and math.abs(sum - total) < 1e-3 and inside,
+			string.format("cunhas=%d área %.4f/%.4f dentro=%s", n, sum, total, tostring(inside)))
+		local okPoly, maxFacets, broken = true, 0, ""
+		for _, sid in ipairs({ "kit_1", "verdantwolf_1", "owlet_1", "glassserpent_1", "ent_1", "sylvanox" }) do
+			local okB, res = pcall(PetMesh.buildTemplatePoly, sid, 1)
+			if not okB or not res then
+				okPoly, broken = false, sid .. ": " .. tostring(res)
+			else
+				maxFacets = math.max(maxFacets, res.facets)
+				local motors, bones = 0, 0
+				for _, d in ipairs(res.model:GetDescendants()) do
+					if d.ClassName == "Motor6D" and d.Name ~= "Fixed" then
+						motors += 1
+					end
+				end
+				for _, d in ipairs(res.model:GetChildren()) do
+					if d:IsA("BasePart") then
+						bones += 1
+					end
+				end
+				if res.facets < 150 or motors < 3 or bones < 6 or res.model:GetAttribute("PolyPet") ~= true then
+					okPoly, broken = false, string.format("%s: %d cunhas, %d juntas, %d ossos", sid, res.facets, motors, bones)
+				end
+			end
+		end
+		check("modo de peças: pets low-poly montados com esqueleto e juntas animáveis (sem precisar de EditableMesh)", okPoly and maxFacets <= 3200,
+			broken ~= "" and broken or ("máx. " .. maxFacets .. " cunhas"))
+		-- caminho real de quem não pode ligar a opção: o Roblox recusa o EditableMesh (como no Studio do autor)
+		-- e o jogo troca sozinho os pets pelos low-poly, sem caixa de erro
+		local asset = game:GetService("AssetService")
+		local origCreate = asset.CreateEditableMesh
+		asset.CreateEditableMesh = function()
+			error("EditableMesh is not accessible. Go to the Security Tab in Experience Settings to enable this API.")
+		end
+		PetMesh._reset()
+		local errsBefore = #SIM.errors
+		S.PetService.spawnTeam(lp)
+		local polySwapped, total = 0, 0
+		for _ = 1, 60 do
+			frames(5)
+			polySwapped, total = 0, 0
+			for m, a in pairs(PetVisuals.active) do
+				if m.Parent then
+					total += 1
+					if a.mesh:GetAttribute("PolyPet") then
+						polySwapped += 1
+					end
+				end
+			end
+			if polySwapped > 0 and polySwapped == total then
+				break
+			end
+		end
+		local polyMesh
+		for m, a in pairs(PetVisuals.active) do
+			if m.Parent and a.mesh:GetAttribute("PolyPet") then
+				polyMesh = a.mesh
+			end
+		end
+		local movedPoly = false
+		if polyMesh then
+			workspace.CurrentCamera.CFrame = CFrame.new(polyMesh.PrimaryPart.Position + Vector3.new(0, 6, 14), polyMesh.PrimaryPart.Position)
+			local probe
+			for _, d in ipairs(polyMesh:GetDescendants()) do
+				if d.ClassName == "Motor6D" and (d.Name == "Neck" or d.Name == "Body") then
+					probe = d
+				end
+			end
+			local t0 = probe and probe.Transform
+			frames(20)
+			movedPoly = probe ~= nil and probe.Transform ~= t0
+		end
+		check("sem 'Allow Mesh / Image APIs': os pets da equipe viram os low-poly de peças, animados e sem caixa de erro",
+			polySwapped > 0 and polySwapped == total and PetMesh.mode == "poly" and movedPoly and #SIM.errors == errsBefore,
+			string.format("%d/%d low-poly, modo=%s, animado=%s, erro=%s", polySwapped, total, tostring(PetMesh.mode), tostring(movedPoly), tostring(SIM.errors[errsBefore + 1])))
+		asset.CreateEditableMesh = origCreate
+		PetMesh._reset()
 	end
 	meshPetChecks()
 	-- Skybound: raios das nuvens de tempestade, impactos elétricos e energia do Tempest Wyrm

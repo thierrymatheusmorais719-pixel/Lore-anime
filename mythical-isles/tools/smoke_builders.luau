@@ -219,6 +219,25 @@ for id, sp in pairs(Pets.Species) do
 		end
 	end
 end
+-- modo de peças (sem EditableMesh): mesma anatomia em baixa resolução; cada triângulo vira 2 cunhas
+local lowStats = { total = 0, max = 0, maxId = "" }
+for id, sp in pairs(Pets.Species) do
+	checks += 1
+	local ok, bp = pcall(PetAnatomy.blueprint, id, sp, 1, { low = true })
+	if not ok then
+		fail("modo de peças " .. id .. ": " .. tostring(bp))
+	else
+		local n = PetAnatomy.triangles(bp, true)
+		if n > 1600 then
+			fail(string.format("modo de peças %s: %d triângulos (orçamento 1600 = ~3200 cunhas)", id, n))
+		end
+		lowStats.total += n
+		if n > lowStats.max then
+			lowStats.max, lowStats.maxId = n, id
+		end
+	end
+end
+print(string.format("Modo de peças: média %.0f triângulos por pet, máx. %d (%s)", lowStats.total / math.max(1, meshStats.species), lowStats.max, lowStats.maxId))
 local anatList = {}
 for k, n in pairs(meshStats.anat) do
 	table.insert(anatList, k .. "=" .. n)

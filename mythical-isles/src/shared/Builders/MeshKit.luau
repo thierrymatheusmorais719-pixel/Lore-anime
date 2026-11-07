@@ -89,10 +89,27 @@ end
 	opts: seg (lados da seção), steps (subdivisões por trecho), up (referência "para cima"),
 	      capStart/capEnd (comprimento da ponta arredondada; 0 = sem tampa), color(t, ex, ey, p) -> Color3
 ]]
+-- MeshKit.low = true: resolução baixa (estilo low-poly) para o modo sem EditableMesh, em que cada
+-- triângulo vira peças do Roblox. Olhos (opts.detail) perdem menos detalhe.
+MeshKit.low = false
+
 function MeshKit.loft(keys, opts): Geom
 	opts = opts or {}
 	local seg = opts.seg or 12
-	local rings = subdivide(keys, opts.steps or 4)
+	local steps = opts.steps or 4
+	if MeshKit.low then
+		if opts.detail then
+			seg = math.max(8, math.floor(seg * 0.7 + 0.5))
+			opts = table.clone(opts)
+			opts.capRings = math.min(opts.capRings or 2, 2)
+		else
+			seg = math.max(4, math.floor(seg * 0.42 + 0.5))
+			steps = 1
+			opts = table.clone(opts)
+			opts.capRings = 0
+		end
+	end
+	local rings = subdivide(keys, steps)
 	local up = opts.up or V(0, 1, 0)
 	local colorFn = opts.color
 	local baseColor = opts.base or Color3.new(1, 1, 1)
@@ -242,12 +259,18 @@ function MeshKit.sheet(points: { Vector3 }, thickness: number, color, normal: Ve
 		table.insert(verts, q - off)
 		table.insert(colors, col(q))
 	end
+	local keep = {}
 	for i = 1, n do
 		local a, b = 3 + (i - 1) * 2, 3 + (i % n) * 2
 		table.insert(tris, { 1, a, b }) -- frente
 		table.insert(tris, { 2, b + 1, a + 1 }) -- verso
 		table.insert(tris, { a, a + 1, b + 1 }) -- borda
 		table.insert(tris, { a, b + 1, b })
+		-- no modo de peças só a frente vira peça (a peça já tem espessura)
+		table.insert(keep, true)
+		table.insert(keep, false)
+		table.insert(keep, false)
+		table.insert(keep, false)
 	end
 	-- orientação: frente na direção de +nrm, verso em -nrm, bordas para fora
 	for _, t in ipairs(tris) do
@@ -259,7 +282,21 @@ function MeshKit.sheet(points: { Vector3 }, thickness: number, color, normal: Ve
 			t[2], t[3] = t[3], t[2]
 		end
 	end
-	return { verts = verts, colors = colors, tris = tris, flat = true }
+	return { verts = verts, colors = colors, tris = tris, flat = true, keep = keep }
+end
+
+-- Triângulos que viram peças no modo sem EditableMesh (todos, menos verso/bordas das lâminas).
+function MeshKit.keptCount(g): number
+	if not g.keep then
+		return #g.tris
+	end
+	local n = 0
+	for _, k in ipairs(g.keep) do
+		if k then
+			n += 1
+		end
+	end
+	return n
 end
 
 -- Junta várias geometrias numa só.
@@ -279,8 +316,22 @@ function MeshKit.merge(list): Geom
 				table.insert(out.verts, v)
 				table.insert(out.colors, g.colors[i])
 			end
-			for _, t in ipairs(g.tris) do
+			for i, t in ipairs(g.tris) do
 				table.insert(out.tris, { t[1] + base, t[2] + base, t[3] + base })
+				if g.keep then
+					out.keep = out.keep or {}
+				end
+			end
+			if g.keep or out.keep then
+				out.keep = out.keep or {}
+				local start = #out.tris - #g.tris
+				-- preenche as anteriores (sem máscara) como mantidas
+				for i = #out.keep + 1, start do
+					out.keep[i] = true
+				end
+				for i = 1, #g.tris do
+					out.keep[start + i] = (g.keep == nil) or g.keep[i] == true
+				end
 			end
 		end
 	end
@@ -289,7 +340,7 @@ end
 
 -- Aplica um CFrame (posição/rotação) a toda a geometria.
 function MeshKit.transform(g: Geom, cf: CFrame): Geom
-	local out = { verts = {}, colors = g.colors, tris = g.tris, flat = g.flat }
+	local out = { verts = {}, colors = g.colors, tris = g.tris, flat = g.flat, keep = g.keep }
 	for i, v in ipairs(g.verts) do
 		out.verts[i] = cf * v
 	end
@@ -298,7 +349,7 @@ end
 
 -- Espelha no eixo X (lado esquerdo ↔ direito), mantendo a frente das faces.
 function MeshKit.mirrorX(g: Geom): Geom
-	local out = { verts = {}, colors = g.colors, tris = {}, flat = g.flat }
+	local out = { verts = {}, colors = g.colors, tris = {}, flat = g.flat, keep = g.keep }
 	for i, v in ipairs(g.verts) do
 		out.verts[i] = V(-v.X, v.Y, v.Z)
 	end
@@ -310,7 +361,7 @@ end
 
 -- Pinta todos os vértices com uma cor (ou função da posição).
 function MeshKit.paint(g: Geom, color): Geom
-	local out = { verts = g.verts, colors = {}, tris = g.tris, flat = g.flat }
+	local out = { verts = g.verts, colors = {}, tris = g.tris, flat = g.flat, keep = g.keep }
 	for i, v in ipairs(g.verts) do
 		out.colors[i] = type(color) == "function" and color(v, g.colors[i]) or color
 	end
@@ -350,7 +401,7 @@ end
 function MeshKit.centered(g: Geom): (Geom, Vector3)
 	local mn, mx = MeshKit.bounds(g)
 	local c = (mn + mx) / 2
-	local out = { verts = {}, colors = g.colors, tris = g.tris, flat = g.flat }
+	local out = { verts = {}, colors = g.colors, tris = g.tris, flat = g.flat, keep = g.keep }
 	for i, v in ipairs(g.verts) do
 		out.verts[i] = v - c
 	end

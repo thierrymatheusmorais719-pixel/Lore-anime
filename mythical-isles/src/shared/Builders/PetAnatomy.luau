@@ -224,7 +224,7 @@ local function eyeGeom(P, c: Vector3, n: Vector3, r: number, o)
 	local iris = o.iris or P.iris
 	local glow = o.glow or P.glowEyes
 	local eye = loft({ { p = c - n * r * 0.5, w = r, h = r * (o.tall or 1) }, { p = c, w = r, h = r * (o.tall or 1) } }, {
-		seg = 14, steps = 1, up = upv, capStart = 0, capEnd = r * 0.34, capRings = 4,
+		seg = MeshKit.low and 8 or 14, steps = 1, up = upv, capStart = 0, capEnd = r * 0.34, capRings = MeshKit.low and 1 or 4, detail = not MeshKit.low,
 		color = function(_t, _ex, _ey, p)
 			local d = p - c
 			local along = d:Dot(n)
@@ -243,6 +243,9 @@ local function eyeGeom(P, c: Vector3, n: Vector3, r: number, o)
 			return o.sclera or iris:Lerp(BLACK, 0.72)
 		end,
 	})
+	if MeshKit.low then
+		return eye
+	end
 	local shineP = c + n * r * 0.3 + upv * r * 0.36 - right * r * 0.22
 	local shine = loft({ { p = shineP - n * r * 0.05, w = r * 0.16, h = r * 0.13 }, { p = shineP + n * r * 0.04, w = r * 0.16, h = r * 0.13 } },
 		{ seg = 8, steps = 1, up = upv, capStart = 0, capEnd = r * 0.05, color = solid(WHITE) })
@@ -269,6 +272,9 @@ local function earGeom(P, kind: string, size: number, side: number)
 			{ seg = 10, steps = 3, up = fwd, capStart = 0, capEnd = wBase * 0.15, pow = pow, color = furFn(P, { shade = false, tip = tipCol, tipFrom = 0.7, pattern = false }) })
 		local inner = loft({ { p = V(0, 0.02 * s, -thick * 0.55), w = wBase * 0.6, h = thick * 0.35 }, { p = tip * 0.5 + V(0, 0, -thick * 0.5), w = wBase * 0.5, h = thick * 0.3 },
 			{ p = tip * 0.85 + V(0, 0, -thick * 0.4), w = wBase * 0.1, h = thick * 0.2 } }, { seg = 8, steps = 3, up = fwd, capStart = 0, capEnd = 0.01, color = solid(P.inner) })
+		if MeshKit.low then
+			return outer
+		end
 		return merge({ outer, inner })
 	end
 	if kind == "round" or kind == "mouse" then
@@ -386,8 +392,8 @@ local function mammalHead(P, H)
 		return c
 	end })
 	local list = { head }
-	-- bochechas (volume nas laterais, tufos se `ruff`)
-	for _, side in ipairs({ -1, 1 }) do
+	-- bochechas (volume nas laterais, tufos se `ruff`); no modo de peças ficam de fora
+	for _, side in ipairs(MeshKit.low and {} or { -1, 1 }) do
 		local cz = -L * 0.12
 		table.insert(list, loft({ { p = V(side * w * 0.45, -h * 0.25, cz + L * 0.15), w = w * 0.38, h = h * 0.42, jag = H.ruff and 0.25 or 0 },
 			{ p = V(side * w * (H.ruff and 0.9 or 0.62), -h * 0.38, cz - L * 0.12), w = w * 0.3, h = h * 0.34, jag = H.ruff and 0.3 or 0 } },
@@ -422,7 +428,9 @@ local function mammalHead(P, H)
 		-- sobrancelha logo acima do olho (não cobre o olho)
 		local b0 = c + V(-side * r * 0.9, r * 1.55, r * 0.6)
 		local b1 = c + V(side * r * 0.75, r * 1.25, -r * 0.1)
-		table.insert(list, loft({ { p = b0, w = r * 0.62, h = r * 0.34 }, { p = b1, w = r * 0.45, h = r * 0.26 } }, { seg = 8, steps = 2, capStart = r * 0.3, capEnd = r * 0.25, color = browCol }))
+		if not MeshKit.low then
+			table.insert(list, loft({ { p = b0, w = r * 0.62, h = r * 0.34 }, { p = b1, w = r * 0.45, h = r * 0.26 } }, { seg = 8, steps = 2, capStart = r * 0.3, capEnd = r * 0.25, color = browCol }))
+		end
 		table.insert(face, eyeGeom(P, c, n, H.eyeR, { slit = H.slit, tall = H.eyeTall }))
 		table.insert(eyes, { c = c, n = n.Unit, r = H.eyeR })
 	end
@@ -481,14 +489,17 @@ local function legGeoms(P, o)
 		local ph = t * (kind == "pad" and 0.55 or 0.48)
 		local pl = (kind == "pad" and 1.7 or (kind == "web" and 2.2 or 1.25)) * t
 		local list = {
-			loft({ { p = V(0, t * 0.2, 0), w = t * 0.5, h = t * 0.55 }, { p = V(0, -footH + ph * 1.3, -t * 0.15), w = t * 0.5, h = t * 0.55 } }, { seg = 10, steps = 2, up = FWD, color = solid(sockCol) }),
 			loft({ { p = V(0, -footH + ph, t * 0.35), w = pw * 0.75, h = ph, hb = ph }, { p = V(0, -footH + ph, -pl * 0.4), w = pw, h = ph * 0.95, hb = ph },
 				{ p = V(0, -footH + ph * 0.85, -pl * 0.8), w = pw * 0.85, h = ph * 0.8, hb = ph * 0.85 } }, { seg = 12, steps = 2, color = function(tt, ex, ey)
 				return ey < -0.6 and darker(sockCol, 0.55) or sockCol
 			end }),
 		}
-		-- dedos e garras
-		local nToes = kind == "web" and 4 or 4
+		if not MeshKit.low then
+			table.insert(list, loft({ { p = V(0, t * 0.2, 0), w = t * 0.5, h = t * 0.55 }, { p = V(0, -footH + ph * 1.3, -t * 0.15), w = t * 0.5, h = t * 0.55 } },
+				{ seg = 10, steps = 2, up = FWD, color = solid(sockCol) }))
+		end
+		-- dedos e garras (no modo de peças fica só a pata)
+		local nToes = MeshKit.low and 0 or 4
 		for i = 1, nToes do
 			local fx = ((i - 0.5) / nToes - 0.5) * 2 * pw * 0.7
 			local spread = kind == "web" and 1.6 or 1
@@ -884,6 +895,9 @@ end
 PetAnatomy.avianHead = avianHead
 
 local function addLids(bp, P, hp: Vector3, eyes, color: Color3?, parent: string?)
+	if MeshKit.low then
+		return -- modo de peças: sem piscar
+	end
 	for i, e in ipairs(eyes) do
 		local g, blink = lidGeom(P, e.c, e.n, e.r, color)
 		local tag = i == 1 and "L" or "R"
@@ -915,13 +929,13 @@ local function quadruped(bp, P, Q, m)
 	local parts = { loft(torsoKeys, { seg = 18, steps = 4, pow = 2.15, capStart = cw * 0.45, capEnd = hw * 0.55, color = fur }) }
 	-- músculos do ombro e da coxa: volumes que se fundem ao tronco (cor do flanco, sem a barriga)
 	local flank = furFn(P, { shade = false })
-	for _, side in ipairs({ -1, 1 }) do
+	for _, side in ipairs(MeshKit.low and {} or { -1, 1 }) do
 		table.insert(parts, loft({ { p = V(side * cw * 0.5, ch * 0.4, -L * 0.27), w = cw * 0.3, h = cw * 0.24 }, { p = V(side * cw * 0.6, -ch * 0.3, -L * 0.31), w = cw * 0.32, h = cw * 0.28 } },
 			{ seg = 10, steps = 2, up = FWD, capEnd = cw * 0.1, color = flank }))
 		table.insert(parts, loft({ { p = V(side * hw * 0.45, hh * 0.5, L * 0.23), w = hw * 0.36, h = hw * 0.42 }, { p = V(side * hw * 0.6, -hh * 0.28, L * 0.29), w = hw * 0.38, h = hw * 0.44 } },
 			{ seg = 10, steps = 2, up = FWD, capEnd = hw * 0.1, color = flank }))
 	end
-	if Q.ruff or (P.tier >= 3 and Q.furry ~= false and mat == "Fabric") then
+	if not MeshKit.low and (Q.ruff or (P.tier >= 3 and Q.furry ~= false and mat == "Fabric")) then
 		-- peitoral de pelo (Raro+ e lobos): tufos na frente do peito
 		table.insert(parts, loft({ { p = V(0, ch * 0.1, -L * 0.42), w = cw * 0.7, h = ch * 0.55, jag = 0.22 }, { p = V(0, -ch * 0.35, -L * 0.5), w = cw * 0.55, h = ch * 0.4, jag = 0.28 } },
 			{ seg = 14, steps = 2, color = furFn(P, { base = P.belly:Lerp(P.body, 0.25), shade = false }) }))
@@ -1212,12 +1226,14 @@ local function birdLeg(P, side: number, len: number)
 		loft({ { p = V(0, 0.08, 0), w = 0.13, h = 0.15 }, { p = V(0, -len * 0.35, 0.03), w = 0.1, h = 0.11 } }, { seg = 10, steps = 2, up = FWD, color = solid(P.belly) }),
 		loft({ { p = V(0, -len * 0.3, 0.03), w = 0.035, h = 0.035 }, { p = V(0, -len + 0.03, -0.02), w = 0.03, h = 0.03 } }, { seg = 7, steps = 1, up = FWD, color = solid(legCol) }),
 	}
-	for k = -1, 2 do
+	for k = -1, MeshKit.low and 1 or 2 do
 		local dir = k == 2 and V(0, 0, 1) or V(k * 0.45, 0, -1).Unit
 		local a = V(0, -len + 0.03, -0.02)
 		local b = a + dir * 0.17 + V(0, -0.02, 0)
 		table.insert(list, loft({ { p = a, w = 0.022 }, { p = b, w = 0.018 } }, { seg = 6, steps = 1, color = solid(legCol) }))
-		table.insert(list, loft({ { p = b, w = 0.016 }, { p = b + dir * 0.06 + V(0, -0.03, 0), w = 0.003 } }, { seg = 5, steps = 1, color = solid(P.claw) }))
+		if not MeshKit.low then
+			table.insert(list, loft({ { p = b, w = 0.016 }, { p = b + dir * 0.06 + V(0, -0.03, 0), w = 0.003 } }, { seg = 5, steps = 1, color = solid(P.claw) }))
+		end
 	end
 	return merge(list)
 end
@@ -1881,13 +1897,16 @@ end
 -------------------------------------------------------------------------------
 
 local function ring(center: Vector3, radius: number, tube: number, n: number, color: Color3, tilt: number?)
+	if MeshKit.low then
+		n = math.max(6, math.floor(n / 2))
+	end
 	local keys = {}
 	local cf = CFrame.new(center) * CFrame.Angles(rad(tilt or 0), 0, 0)
 	for i = 0, n do
 		local a = i / n * math.pi * 2 * 1.04
 		table.insert(keys, { p = cf * V(math.cos(a) * radius, 0, math.sin(a) * radius), w = tube, h = tube })
 	end
-	return loft(keys, { seg = 8, steps = 2, capStart = 0, capEnd = 0, color = solid(color) })
+	return loft(keys, { seg = MeshKit.low and 4 or 8, steps = MeshKit.low and 1 or 2, capStart = 0, capEnd = 0, color = solid(color) })
 end
 
 local function topOf(part)
@@ -1913,11 +1932,11 @@ function PetAnatomy.decorate(bp, P, tier: number)
 	if tier >= 4 then
 		-- marcas brilhantes em "V" ao longo do dorso
 		local marks = {}
-		for i = -2, 2 do
+		for i = MeshKit.low and -1 or -2, MeshKit.low and 1 or 2 do
 			local z = tTop.Z + i * tD * 0.32
 			local y = tTop.Y - math.abs(i) * 0.04 - 0.01
 			marks[#marks + 1] = loft({ { p = V(-0.16, y - 0.05, z + 0.08), w = 0.025, h = 0.025 }, { p = V(0, y + 0.01, z - 0.05), w = 0.03, h = 0.03 }, { p = V(0.16, y - 0.05, z + 0.08), w = 0.025, h = 0.025 } },
-				{ seg = 6, steps = 2, color = solid(P.accent) })
+				{ seg = MeshKit.low and 4 or 6, steps = MeshKit.low and 1 or 2, capStart = MeshKit.low and 0 or nil, capEnd = MeshKit.low and 0 or nil, color = solid(P.accent) })
 		end
 		addPart(bp, "GlowMarks", "Torso", nil, torso.pivot, merge(marks), { material = "Neon", role = "Glow" })
 		if head then
@@ -1990,7 +2009,7 @@ local function scaleBP(bp, u: number)
 		for i, v in ipairs(g.verts) do
 			verts[i] = v * u
 		end
-		p.geom = { verts = verts, colors = g.colors, tris = g.tris, flat = g.flat }
+		p.geom = { verts = verts, colors = g.colors, tris = g.tris, flat = g.flat, keep = g.keep }
 		if p.attrs and p.attrs.BlinkVec then
 			p.attrs = { BlinkVec = p.attrs.BlinkVec * u }
 		end
@@ -1999,7 +2018,23 @@ local function scaleBP(bp, u: number)
 	bp.scale = u
 end
 
-function PetAnatomy.blueprint(speciesId: string, species, scaleMul: number?)
+local buildBlueprint
+
+-- opts.low = true: mesma anatomia em resolução baixa (modo de peças, sem EditableMesh)
+function PetAnatomy.blueprint(speciesId: string, species, scaleMul: number?, opts)
+	if opts and opts.low then
+		MeshKit.low = true
+		local ok, res = pcall(buildBlueprint, speciesId, species, scaleMul)
+		MeshKit.low = false
+		if not ok then
+			error(res, 0)
+		end
+		return res
+	end
+	return buildBlueprint(speciesId, species, scaleMul)
+end
+
+buildBlueprint = function(speciesId: string, species, scaleMul: number?)
 	local m = species.model or {}
 	local tier = PetAnatomy.RarityTier[species.rarity] or 1
 	local P = palette(m, tier)
@@ -2089,10 +2124,10 @@ function PetAnatomy.blueprint(speciesId: string, species, scaleMul: number?)
 end
 
 -- Contagem de triângulos (orçamento/testes).
-function PetAnatomy.triangles(bp): number
+function PetAnatomy.triangles(bp, kept: boolean?): number
 	local n = 0
 	for _, p in ipairs(bp.parts) do
-		n += #p.geom.tris
+		n += kept and MeshKit.keptCount(p.geom) or #p.geom.tris
 	end
 	return n
 end

@@ -19,8 +19,12 @@ local Pets = require(script.Parent.Parent.Config.Pets)
 
 local PetMesh = {}
 
-PetMesh.available = nil -- nil = ainda não testado
+PetMesh.available = nil -- EditableMesh funciona? nil = ainda não testado
 PetMesh.lastError = nil
+-- "mesh" = malhas lisas (EditableMesh); "poly" = mesma anatomia em baixa resolução feita de peças
+-- (cada triângulo = 2 WedgeParts), usada quando o Roblox não libera o EditableMesh
+PetMesh.mode = nil
+PetMesh.polyError = nil
 
 local templates = {} -- [chave] = { model = Model, bp = planta } | false (falhou)
 local pending = {} -- [chave] = true enquanto constrói
@@ -175,6 +179,137 @@ function PetMesh.buildTemplate(speciesId: string, scale: number)
 	return { model = model, bp = bp }
 end
 
+-------------------------------------------------------------------------------
+-- Modo de peças (sem EditableMesh): cada triângulo da malha low-poly vira 2 WedgeParts presas ao "osso"
+-- da parte do corpo; os ossos têm as mesmas juntas (Motor6D) e a mesma animação do modo de malhas.
+-------------------------------------------------------------------------------
+
+local POLY_MATERIAL = { Fabric = Enum.Material.SmoothPlastic } -- textura de tecido fica ruidosa em faces pequenas
+
+-- Triângulo com duas cunhas (técnica clássica do Roblox). Devolve quantas peças criou.
+local function triangle(a: Vector3, b: Vector3, c: Vector3, th: number, props, parent: BasePart): number
+	local ab, ac, bc = b - a, c - a, c - b
+	local abd, acd, bcd = ab:Dot(ab), ac:Dot(ac), bc:Dot(bc)
+	if abd > acd and abd > bcd then
+		c, a = a, c
+	elseif acd > bcd and acd > abd then
+		a, b = b, a
+	end
+	ab, ac, bc = b - a, c - a, c - b
+	local cr = ac:Cross(ab)
+	if cr.Magnitude < 1e-7 or bc.Magnitude < 1e-4 then
+		return 0
+	end
+	local right = cr.Unit
+	local up = bc:Cross(right).Unit
+	local back = bc.Unit
+	local height = math.abs(ab:Dot(up))
+	if height < 0.004 then
+		return 0
+	end
+	local made = 0
+	for k = 1, 2 do
+		local len = k == 1 and math.abs(ab:Dot(back)) or math.abs(ac:Dot(back))
+		if len > 0.004 then
+			local w = Instance.new("WedgePart")
+			w.Name = "Facet"
+			w.Size = Vector3.new(th, height, len)
+			w.CFrame = k == 1 and CFrame.fromMatrix((a + b) / 2, right, up, back) or CFrame.fromMatrix((a + c) / 2, -right, up, -back)
+			w.Color = props.color
+			w.Material = props.material
+			w.Transparency = props.transparency
+			w.Reflectance = props.reflectance
+			w.CanCollide, w.CanQuery, w.CanTouch, w.Massless, w.Anchored = false, false, false, true, false
+			w.CastShadow = props.shadow
+			w.TopSurface, w.BottomSurface = Enum.SurfaceType.Smooth, Enum.SurfaceType.Smooth
+			w:SetAttribute("Role", props.role)
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0 = parent
+			weld.Part1 = w
+			weld.Parent = w
+			w.Parent = parent
+			made += 1
+		end
+	end
+	return made
+end
+
+PetMesh._triangle = triangle -- (testes)
+
+function PetMesh.buildTemplatePoly(speciesId: string, scale: number)
+	local sp = Pets.Species[speciesId]
+	if not sp then
+		return nil
+	end
+	local bp = PetAnatomy.blueprint(speciesId, sp, scale, { low = true })
+	local model = Instance.new("Model")
+	model.Name = "PetMesh"
+	local root = Instance.new("Part")
+	root.Name = "Root"
+	root.Size = Vector3.one * 0.4
+	root.Transparency = 1
+	root.CanCollide, root.CanQuery, root.CanTouch, root.Massless, root.Anchored = false, false, false, true, false
+	root.CFrame = CFrame.new()
+	root.Parent = model
+	model.PrimaryPart = root
+	local th = 0.05 * bp.scale
+	local bones, facets = {}, 0
+	for _, p in ipairs(bp.parts) do
+		local mn, mx = MeshKit.bounds(p.geom)
+		local center = (mn + mx) / 2
+		local bone = Instance.new("Part")
+		bone.Name = p.name
+		local sz = mx - mn
+		bone.Size = Vector3.new(math.max(sz.X, 0.2), math.max(sz.Y, 0.2), math.max(sz.Z, 0.2))
+		bone.Transparency = 1
+		bone.CanCollide, bone.CanQuery, bone.CanTouch, bone.Massless, bone.Anchored = false, false, false, true, false
+		bone.CFrame = CFrame.new(p.pivot + center)
+		bone:SetAttribute("Role", p.role)
+		for k, v in pairs(p.attrs or {}) do
+			bone:SetAttribute(k, v)
+		end
+		bone.Parent = model
+		bones[p.name] = bone
+		local props = {
+			material = POLY_MATERIAL[p.material] or MATERIALS[p.material] or Enum.Material.SmoothPlastic, transparency = p.transparency, reflectance = p.reflectance,
+			shadow = p.transparency < 0.5 and p.material ~= "Neon" and p.material ~= "ForceField", role = p.role,
+		}
+		local g = p.geom
+		for i, t in ipairs(g.tris) do
+			if not g.keep or g.keep[i] then
+				local a, b, c = g.verts[t[1]], g.verts[t[2]], g.verts[t[3]]
+				local ca, cb, cc = g.colors[t[1]], g.colors[t[2]], g.colors[t[3]]
+				props.color = Color3.new((ca.R + cb.R + cc.R) / 3, (ca.G + cb.G + cc.G) / 3, (ca.B + cb.B + cc.B) / 3)
+				facets += triangle(a + p.pivot, b + p.pivot, c + p.pivot, th, props, bone)
+			end
+		end
+	end
+	for _, p in ipairs(bp.parts) do
+		local part = bones[p.name]
+		local parentPart = (p.parent and bones[p.parent]) or root
+		local m6 = Instance.new("Motor6D")
+		m6.Name = p.joint or "Fixed"
+		m6.Part0 = parentPart
+		m6.Part1 = part
+		m6.C0 = parentPart.CFrame:Inverse() * CFrame.new(p.pivot)
+		m6.C1 = part.CFrame:Inverse() * CFrame.new(p.pivot)
+		m6.Parent = part
+	end
+	effects(model, bp)
+	model:SetAttribute("Anatomy", bp.anatomy)
+	model:SetAttribute("Gait", bp.gait)
+	model:SetAttribute("Kind", bp.kind)
+	model:SetAttribute("Hover", bp.hover)
+	model:SetAttribute("Flies", bp.flies == true)
+	model:SetAttribute("Species", speciesId)
+	model:SetAttribute("Tier", bp.tier)
+	model:SetAttribute("Heavy", bp.heavy == true)
+	model:SetAttribute("MeshPet", true)
+	model:SetAttribute("PolyPet", true)
+	model:SetAttribute("Facets", facets)
+	return { model = model, bp = bp, poly = true, facets = facets }
+end
+
 -- Molde pronto (ou nil). Se ainda não existe, começa a construir em segundo plano.
 function PetMesh.request(speciesId: string, scale: number?)
 	local s = scale or 1
@@ -183,24 +318,40 @@ function PetMesh.request(speciesId: string, scale: number?)
 	if t ~= nil then
 		return t or nil
 	end
-	if PetMesh.available == false or pending[k] then
+	if pending[k] then
 		return nil
 	end
 	pending[k] = true
 	task.spawn(function()
-		local ok, res = pcall(PetMesh.buildTemplate, speciesId, s)
-		pending[k] = nil
-		if ok and res then
-			templates[k] = res
-			PetMesh.available = true
-		else
-			templates[k] = false
-			PetMesh.lastError = tostring(res)
-			if PetMesh.available == nil then
-				PetMesh.available = false -- a API não funciona aqui: fica o modelo antigo
-				warn("[PetMesh] malhas indisponíveis, usando modelos antigos: " .. tostring(res))
+		local res
+		if PetMesh.available ~= false then
+			local ok, r = pcall(PetMesh.buildTemplate, speciesId, s)
+			if ok and r then
+				res = r
+				PetMesh.available = true
+				PetMesh.mode = PetMesh.mode or "mesh"
+			else
+				PetMesh.lastError = tostring(r)
+				if PetMesh.available == nil then
+					PetMesh.available = false
+					PetMesh.mode = "poly"
+					-- não é erro: o jogo segue com os pets low-poly (aviso informativo no Output)
+					print("[PetMesh] o Roblox não liberou o EditableMesh; usando os pets low-poly feitos de peças: " .. tostring(r))
+				end
 			end
 		end
+		if not res then
+			-- sem EditableMesh: mesma anatomia em baixa resolução, feita de peças
+			local ok2, r2 = pcall(PetMesh.buildTemplatePoly, speciesId, s)
+			if ok2 and r2 then
+				res = r2
+			else
+				PetMesh.polyError = tostring(r2)
+				warn("[PetMesh] falhou também o modo de peças: " .. tostring(r2))
+			end
+		end
+		templates[k] = res or false
+		pending[k] = nil
 	end)
 	return nil
 end
@@ -213,7 +364,7 @@ function PetMesh.await(speciesId: string, scale: number?, timeout: number?)
 		if t then
 			return t
 		end
-		if PetMesh.available == false or templates[key(speciesId, scale or 1)] == false then
+		if templates[key(speciesId, scale or 1)] == false then
 			return nil
 		end
 		task.wait(0.1)
@@ -236,14 +387,24 @@ end
 -- Para miniaturas e vitrines (inventário, chocar ovo): malha se já estiver pronta, senão o modelo antigo
 -- (e pede a malha para a próxima vez).
 function PetMesh.display(speciesId: string, mutation: string?, accessory: string?): Model
-	local m = PetMesh.instance(speciesId, 1, mutation, accessory)
-	if m then
+	local t = PetMesh.request(speciesId, 1)
+	if t and not t.poly then
+		local m = t.model:Clone()
+		MutationVisuals.apply(m, mutation)
+		Accessories.apply(m, accessory)
 		return m
 	end
 	local old = CreatureBuilder.build(speciesId, Pets.Species[speciesId], 1)
 	MutationVisuals.apply(old, mutation)
 	Accessories.apply(old, accessory)
 	return old
+end
+
+-- (testes) esquece moldes e o estado da API
+function PetMesh._reset()
+	table.clear(templates)
+	table.clear(pending)
+	PetMesh.available, PetMesh.mode, PetMesh.lastError, PetMesh.polyError = nil, nil, nil, nil
 end
 
 function PetMesh.stats()

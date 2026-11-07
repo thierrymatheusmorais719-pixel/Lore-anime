@@ -63,7 +63,7 @@ pets.forEach((d, i) => {
     G.computeVertexNormals();
     const neon = p.m === 'Neon';
     const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: ROUGH[p.m] ?? 0.7, metalness: p.m === 'Metal' ? 0.7 : 0,
-      transparent: p.tr > 0 || p.m === 'ForceField', opacity: p.m === 'ForceField' ? 0.55 : 1 - p.tr, flatShading: !!p.flat,
+      transparent: p.tr > 0 || p.m === 'ForceField', opacity: p.m === 'ForceField' ? 0.55 : 1 - p.tr, flatShading: !!p.flat, side: p.twoSided ? THREE.DoubleSide : THREE.FrontSide,
       emissive: neon ? 0xffffff : 0x000000, emissiveIntensity: neon ? 0.55 : 0 });
     if (neon) { mat.emissive = new THREE.Color(1, 1, 1); mat.emissiveMap = null; mat.onBeforeCompile = (s) => { s.fragmentShader = s.fragmentShader.replace('vec3 totalEmissiveRadiance = emissive;', 'vec3 totalEmissiveRadiance = vColor.rgb * 1.4;'); }; }
     const mesh = new THREE.Mesh(G, mat);
