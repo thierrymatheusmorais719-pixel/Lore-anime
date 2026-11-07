@@ -103,17 +103,17 @@ de musgo com cachoeiras, cachoeiras caindo da borda da ilha, bonsais, flores rox
     - montinhos suaves e pedras semienterradas;
     - rochas irregulares sob a borda da ilha, que quebram o formato de "bolo de andares".
   - **Vegetação:**
-    - árvores com raízes, tronco afunilado, galhos e copas em camadas (base escura, topo iluminado);
-    - pinheiros, moitas, samambaias e grupos de rochas com musgo;
+    - árvores de galhos e cubos (ver "Árvore de galhos e cubos" abaixo) em três proporções: normal, alta e baixa de copa larga;
+    - moitas, samambaias e grupos de rochas com musgo;
     - penhascos naturais atrás do lago.
   - Tudo é colocado sobre o chão real, encontrado por raycast.
 
 **Folhagem e efeitos visuais:**
 - **Folhagem** (`WorldBuilder.foliage`):
-  - Árvores, bonsais, a Árvore Ancestral, moitas, arbustos de flor e os arbustos colhíveis não são mais bolas.
+  - Moitas, arbustos de flor e os arbustos colhíveis não são mais bolas (as árvores agora usam o modelo de galhos e cubos).
   - Cada copa é um tufo de folhas individuais (triângulos e lâminas finas com material LeafyGrass) apontando para fora em leque, sobre um miolo escuro facetado.
   - As folhas de cima são mais claras (luz do sol) e as de baixo mais escuras.
-  - Raízes aparentes em cunha, samambaias de frondes compridas e musgo em placas.
+  - Samambaias de frondes compridas e musgo em placas.
 - **Efeitos visuais** (`client/Controllers/Fx.luau`), montados em camadas:
   - **Peças de cada efeito:** clarão de luz real (PointLight), faíscas alongadas que caem com a gravidade, brasas, bolas de fogo com fumaça, poeira que se espalha rente ao chão e fragmentos com física que quicam.
   - **Projéteis:** têm rastro (Trail).
@@ -127,6 +127,18 @@ de musgo com cachoeiras, cachoeiras caindo da borda da ilha, bonsais, flores rox
   - vaga-lumes de partículas na Árvore Ancestral;
   - pólen, esporos, cintilações ou névoa, conforme a ilha.
 - **Texturas:** só as embutidas no cliente Roblox (`sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`, em `rbxasset://textures/particles/`).
+
+### Árvore de galhos e cubos (todos os mundos)
+
+`WorldBuilder.branchTree`, a partir da segunda referência do autor (árvore low-poly). Prévia em `docs/preview/arvore_nova.png`.
+
+- **Tronco:** fino, marrom-avermelhado escuro, que se divide em 4 galhos (3 na versão alta, 5 na baixa), e cada galho em dois ramos.
+- **Copa:** em cada ponta, um cacho de cubos girados ao acaso com material Grass (textura de grama do Roblox), em verdes escuros; os cubos de cima são um pouco mais claros e os de baixo ficam na sombra.
+- **Cachos pendentes:** presos por ramos finos nas laterais.
+- **Colisão:** só o tronco colide. De 60 a 100 peças por árvore conforme a proporção (as antigas tinham perto de 160). Com isso o Mundo 2 caiu para ≈ 5.500 peças e o Mundo 3 para ≈ 7.300.
+- **Onde:** todas as árvores dos 5 mundos passam por esse modelo (`oakTree`, `bonsai` e o antigo pinheiro viraram proporções dele), inclusive a árvore gigante dos Celestial Gardens. A copa da Árvore Ancestral do lago também foi refeita com cachos de cubos (o tronco gigante, as raízes e o platô continuam).
+- **Exceção:** o bosque de blocos do Verdant Haven (abaixo) continua com o seu próprio modelo.
+- **Cores:** no Verdant Haven e na Árvore Ancestral, verdes escuros como na referência. No Crystal Hollow os cubos seguem azuis/violeta, e no Skybound Kingdom alguns são dourados ou rosados, para manter a identidade de cada mundo. Basta trocar as cores nas chamadas para deixar tudo verde.
 
 ### Verdant Haven — árvore de blocos (referência do autor)
 
@@ -192,7 +204,7 @@ Construído a partir da arte de referência do autor (`docs/concept/world3_ref.p
 - portais, baús e NPCs funcionam;
 - inimigos e boss estão presentes;
 - raios e arcos rodam sem erro e somem;
-- orçamento: cerca de 8.900 peças, 26 luzes e 74 emissores.
+- orçamento: cerca de 7.300 peças, 26 luzes e 74 emissores.
 
 ### Céu estilo anime 2D e cor de ambiente por mundo
 
@@ -200,7 +212,11 @@ Construído a partir da arte de referência do autor (`docs/concept/world3_ref.p
 
 **Como é feito:**
 - **Sem imagens externas:** o céu é desenhado no próprio jogo, sem skybox e sem IDs de asset.
-- **Gradiente:** pintado em 8 painéis `BillboardGui` ao redor da câmera, com `UIGradient`.
+- **Degradê:** vem da `Atmosphere` do Roblox, tingida pela paleta do mundo (`Color` = horizonte, `Decay` = alto do céu).
+  - **Correção do "céu bugado":** antes o degradê era pintado em 8 painéis `BillboardGui` gigantes em volta da câmera. Só que `BillboardGui` sempre fica paralelo à tela, então ao virar ou inclinar a câmera os painéis giravam, abriam frestas, deixavam o céu padrão aparecer por cima e cobriam as ilhas distantes. Os painéis foram removidos.
+  - Nuvens, faixas, sol e estrelas agora ficam a 1.050–1.500 studs da câmera, além da ilha mais distante que se vê (≈ 800 studs no Skybound Kingdom), então não cobrem mais nenhuma ilha.
+  - O sol e a lua do Roblox ficam escondidos (`Sky.CelestialBodiesShown = false`), para não aparecerem dois sóis.
+  - Nas prévias o degradê é uma aproximação do que a Atmosphere produz; o tom exato no jogo depende do motor do Roblox.
 - **Nuvens:** 14 nuvens planas "cel-shaded" (sombra pastel embaixo, preenchimento e brilho em cima, base reta) e faixas finas no horizonte.
 - **Sol ou lua:** em 2D com halo, posicionado na direção real do sol (ou da lua) do Roblox.
 - **Estrelas:** cintilantes, nos mundos noturnos.
@@ -268,7 +284,7 @@ Construído a partir da arte de referência do autor (`docs/concept/world2_ref.p
 O terreno novo não pode soterrar nenhum ponto de gameplay. O simulador verifica 113 pontos no estado final do terreno, contando as escavações: túnel, salão, passagem secreta, plataformas, ilha, chegadas dos portais e baús.
 
 **Desempenho:**
-- O Mundo 2 tem cerca de 8.000 peças, 45 luzes e 104 emissores, com teto testado de 9.000, 60 e 120.
+- O Mundo 2 tem cerca de 5.500 peças, 45 luzes e 104 emissores, com teto testado de 9.000, 60 e 120.
 - A decoração não colide nem dispara Touched, e peças pequenas não projetam sombra.
 
 **Base do simulador**: 5 ilhas (terreno + decoração), 10 ovos com moedas/essência, 5 ovos especiais,
@@ -334,7 +350,7 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **58 testes passando** |
 | Modelos 3D (182 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) | `python3 tools/run_tests.py luau --smoke` | **3297 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **132 cenários passando** (inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime e o bosque do Mundo 1) |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **135 cenários passando** (inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos e o bosque do Mundo 1) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o

@@ -267,7 +267,7 @@ if (ground === 'terrain') {
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), new THREE.MeshStandardMaterial({ color: 0xecf2ff, roughness: 1 }));
   sea.rotation.x = -Math.PI / 2; sea.position.y = -150; sc.add(sea);
 }
-// Céu anime 2D: mesmo desenho do jogo (Shared/Builders/AnimeSky) — gradiente por elevação,
+// Céu anime 2D: mesmo desenho do jogo (Shared/Builders/AnimeSky) — degradê APROXIMADO da Atmosphere tingida,
 // nuvens cel-shaded como sprites voltados para a câmera, faixas, sol/lua com halo e estrelas.
 if (q.get('sky')) {
   const S = await (await fetch(`data/sky_${q.get('sky')}.json`)).json();
@@ -296,7 +296,7 @@ if (q.get('sky')) {
     sp.position.copy(pos); sp.scale.set(w, h, 1); sc.add(sp); return sp; };
   const circ = (g, x, y, r, c, a) => { g.globalAlpha = a ?? 1; g.fillStyle = rgbs(c); g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; };
   const rrect = (g, x, y, w, h, c, a) => { g.globalAlpha = a ?? 1; g.fillStyle = rgbs(c); g.beginPath(); g.roundRect(x, y, w, h, h / 2); g.fill(); g.globalAlpha = 1; };
-  for (const s of S.stars) { const cv = document.createElement('canvas'); cv.width = cv.height = 16; circ(cv.getContext('2d'), 8, 8, 7, [255, 255, 255], .85); sprite(cv, off(s[0], s[1], PD - 30), s[2], s[2]); }
+  for (const s of S.stars) { const cv = document.createElement('canvas'); cv.width = cv.height = 16; circ(cv.getContext('2d'), 8, 8, 7, [255, 255, 255], .85); sprite(cv, off(s[0], s[1], 1500), s[2], s[2]); }
   for (const s of S.streaks) { const cv = document.createElement('canvas'); cv.width = 512; cv.height = Math.max(8, Math.round(512 * s[4] / s[3]));
     rrect(cv.getContext('2d'), 0, 0, cv.width, cv.height, T.streak, .85); sprite(cv, off(s[0], s[1], s[2]), s[3], s[4]); }
   for (const c of S.clouds) {
@@ -310,7 +310,7 @@ if (q.get('sky')) {
     circ(g, 128, 128, 128, T.glow, .28); circ(g, 128, 128, 87, T.glow, .55); circ(g, 128, 128, 56, T.sun);
     if (T.moon) circ(g, 146, 113, 44, [Math.round((T.top[0] * .7 + T.mid[0] * .3)), Math.round((T.top[1] * .7 + T.mid[1] * .3)), Math.round((T.top[2] * .7 + T.mid[2] * .3))]);
     const sd = q.get('sun') ? q.get('sun').split(',').map(Number) : [60, 30];
-    sprite(cv, off(sd[0], sd[1], PD - 40), 150, 150); }
+    sprite(cv, off(sd[0], sd[1], 1450), 240, 240); }
 }
 // nuvens de tempestade (BillboardGui escuras do jogo) — aproximadas como sprites
 if (q.get('storm')) {

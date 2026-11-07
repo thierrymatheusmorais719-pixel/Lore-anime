@@ -107,11 +107,16 @@ local function updateOffsets(dt: number)
 	local dir = celestialDir()
 	if dir and handle.sun then
 		handle.sun.Enabled = dir.Y > -0.08
-		handle.sun.StudsOffsetWorldSpace = dir.Unit * (AnimeSky.PANEL_DIST - 40)
+		handle.sun.StudsOffsetWorldSpace = dir.Unit * AnimeSky.SUN_DIST
 	end
 end
 
 function SkyClient.init()
+	-- o sol e a lua são desenhados em 2D: esconde os do Roblox para não aparecerem dois
+	local sky = Lighting:FindFirstChildOfClass("Sky")
+	if sky then
+		sky.CelestialBodiesShown = false
+	end
 	anchor = Instance.new("Part")
 	anchor.Name = "AnimeSkyAnchor"
 	anchor.Anchored = true

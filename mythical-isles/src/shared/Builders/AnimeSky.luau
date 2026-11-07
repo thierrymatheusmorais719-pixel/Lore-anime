@@ -1,5 +1,9 @@
 -- Céu estilo ANIME 2D, desenhado no próprio jogo (sem imagens externas nem IDs de asset):
---   * gradiente de céu pintado em painéis BillboardGui ao redor da câmera (UIGradient)
+--   * o degradê do céu vem da própria Atmosphere do Roblox, tingida pela paleta de cada mundo
+--     (Color = horizonte, Decay = alto do céu). Antes ele era pintado em 8 painéis BillboardGui em volta
+--     da câmera, mas BillboardGui sempre fica paralelo à TELA: ao virar/inclinar a câmera os painéis
+--     giravam, abriam frestas, mostravam o céu padrão por cima e escondiam as ilhas distantes (o "céu
+--     bugado"). Agora só ficam no céu peças pequenas e distantes, onde o billboard não aparece.
 --   * nuvens planas "cel-shaded": sombra pastel embaixo, preenchimento, brilho em cima
 --   * faixas de nuvem finas no horizonte, sol (ou lua) 2D com halo e estrelas nos mundos noturnos
 -- Tudo com LightInfluence = 0: cor chapada, sem sombreamento 3D e sem estourar o Bloom.
@@ -11,10 +15,16 @@ local AnimeSky = {}
 
 local rgb = Color3.fromRGB
 
--- Distâncias (studs) a partir da câmera. Os painéis do gradiente ficam atrás de tudo da ilha.
+-- Distâncias (studs) a partir da câmera: tudo além das ilhas mais distantes que se vê de dentro de um
+-- mundo (~800 studs no Skybound Kingdom), para nuvem nenhuma ficar na frente de uma ilha.
+AnimeSky.CLOUD_MIN, AnimeSky.CLOUD_MAX = 1050, 1300
+AnimeSky.STREAK_DIST = 1400
+AnimeSky.SUN_DIST = 1450
+AnimeSky.STAR_DIST = 1500
+-- Só para a prévia (tools/preview): mapeamento elevação → fração do degradê aproximado.
 AnimeSky.PANEL_DIST = 900
-AnimeSky.PANEL_LOW = -15 -- elevação (graus) da borda de baixo do gradiente
-AnimeSky.PANEL_HIGH = 72 -- elevação da borda de cima
+AnimeSky.PANEL_LOW = -15
+AnimeSky.PANEL_HIGH = 72
 
 AnimeSky.Themes = {
 	verdant = { -- manhã esmeralda: azul vivo, horizonte verde-menta, nuvens brancas
@@ -59,12 +69,13 @@ function AnimeSky.panelFrac(elev: number): number
 	return math.clamp((yTop - y) / (yTop - yBot), 0, 1)
 end
 
--- Paradas do gradiente (fração, cor) para um mundo.
+-- Paradas (fração, cor) do degradê APROXIMADO que a Atmosphere tingida produz (usado só pela prévia;
+-- no jogo quem pinta o céu é o motor do Roblox, e o tom exato depende dele).
 function AnimeSky.gradient(worldId: string)
 	local t = theme(worldId)
 	local f = AnimeSky.panelFrac
 	return {
-		{ 0, t.top }, { f(42), t.top:Lerp(t.mid, 0.35) }, { f(22), t.mid }, { f(8), t.mid:Lerp(t.horizon, 0.6) }, { f(0), t.horizon }, { 1, t.below },
+		{ 0, t.top:Lerp(t.decay, 0.3) }, { f(30), t.mid:Lerp(t.decay, 0.2) }, { f(8), t.mid:Lerp(t.fog, 0.6) }, { f(0), t.fog }, { 1, t.fog },
 	}
 end
 
@@ -81,7 +92,7 @@ function AnimeSky.layout(worldId: string)
 	local count = 14
 	for i = 1, count do
 		local az = (i / count) * 360 + rng:NextNumber(-12, 12)
-		local w = rng:NextNumber(150, 300)
+		local w = rng:NextNumber(150, 300) * 1.75
 		local h = w * rng:NextNumber(0.42, 0.55)
 		local puffs = {}
 		-- bolotas arredondadas em cima, base reta (anime cumulus)
@@ -100,16 +111,16 @@ function AnimeSky.layout(worldId: string)
 				table.insert(puffs, { x = x - r * 0.12, y = y - r * 0.45, r = r * 0.42, layer = "hi" })
 			end
 		end
-		table.insert(clouds, { az = az, elev = rng:NextNumber(7, 26), dist = rng:NextNumber(560, 740), w = w, h = h, puffs = puffs, base = 0.86 })
+		table.insert(clouds, { az = az, elev = rng:NextNumber(7, 26), dist = rng:NextNumber(AnimeSky.CLOUD_MIN, AnimeSky.CLOUD_MAX), w = w, h = h, puffs = puffs, base = 0.86 })
 	end
 	local streaks = {}
 	for i = 1, 9 do
-		table.insert(streaks, { az = i * 40 + rng:NextNumber(-15, 15), elev = rng:NextNumber(1.5, 6), dist = 820, w = rng:NextNumber(220, 420), h = rng:NextNumber(10, 18) })
+		table.insert(streaks, { az = i * 40 + rng:NextNumber(-15, 15), elev = rng:NextNumber(1.5, 6), dist = AnimeSky.STREAK_DIST, w = rng:NextNumber(220, 420) * 1.7, h = rng:NextNumber(10, 18) * 1.7 })
 	end
 	local stars = {}
 	if theme(worldId).stars then
 		for _ = 1, 140 do
-			table.insert(stars, { az = rng:NextNumber(0, 360), elev = rng:NextNumber(14, 70), size = rng:NextNumber(1.5, 4.2), twinkle = rng:NextNumber() })
+			table.insert(stars, { az = rng:NextNumber(0, 360), elev = rng:NextNumber(14, 70), size = rng:NextNumber(1.5, 4.2) * 1.67, twinkle = rng:NextNumber() })
 		end
 	end
 	return { clouds = clouds, streaks = streaks, stars = stars }
@@ -162,34 +173,9 @@ function AnimeSky.build(parent: Instance, anchor: BasePart, worldId: string)
 	local t = theme(worldId)
 	local L = AnimeSky.layout(worldId)
 	local handle = { clouds = {}, streaks = {}, stars = {} }
-	-- gradiente: 8 painéis ao redor
-	local D = AnimeSky.PANEL_DIST
-	local yTop = D * math.tan(math.rad(AnimeSky.PANEL_HIGH))
-	local yBot = D * math.tan(math.rad(AnimeSky.PANEL_LOW))
-	local H = yTop - yBot
-	local W = 2 * D * math.tan(math.rad(27)) + 60
-	local stops = {}
-	for _, s in ipairs(AnimeSky.gradient(worldId)) do
-		table.insert(stops, ColorSequenceKeypoint.new(s[1], s[2]))
-	end
-	local seq = ColorSequence.new(stops)
-	for i = 0, 7 do
-		local az = i * 45
-		local off = Vector3.new(math.cos(math.rad(az)) * D, (yTop + yBot) / 2, math.sin(math.rad(az)) * D)
-		local b = billboard(parent, anchor, "SkyPanel" .. i, W, H, off)
-		local fr = Instance.new("Frame")
-		fr.Size = UDim2.fromScale(1, 1)
-		fr.BackgroundColor3 = Color3.new(1, 1, 1)
-		fr.BorderSizePixel = 0
-		local g = Instance.new("UIGradient")
-		g.Color = seq
-		g.Rotation = 90
-		g.Parent = fr
-		fr.Parent = b
-	end
 	-- estrelas (mundos noturnos)
 	for i, s in ipairs(L.stars) do
-		local b = billboard(parent, anchor, "Star" .. i, s.size, s.size, AnimeSky.offset(s.az, s.elev, D - 30))
+		local b = billboard(parent, anchor, "Star" .. i, s.size, s.size, AnimeSky.offset(s.az, s.elev, AnimeSky.STAR_DIST))
 		local st = circle(b, 0.5, 0.5, 0.5, Color3.new(1, 1, 1), 1)
 		st.SizeConstraint = Enum.SizeConstraint.RelativeXY
 		st.Size = UDim2.fromScale(1, 1)
@@ -232,7 +218,7 @@ function AnimeSky.build(parent: Instance, anchor: BasePart, worldId: string)
 		table.insert(handle.clouds, { gui = b, data = c })
 	end
 	-- sol (ou lua) 2D com halo
-	local sun = billboard(parent, anchor, t.moon and "Moon" or "Sun", 150, 150, AnimeSky.offset(60, 40, D - 40))
+	local sun = billboard(parent, anchor, t.moon and "Moon" or "Sun", 240, 240, AnimeSky.offset(60, 40, AnimeSky.SUN_DIST))
 	local halo = circle(sun, 0.5, 0.5, 0.5, t.glow, 1)
 	halo.BackgroundTransparency = 0.72
 	circle(sun, 0.5, 0.5, 0.34, t.glow, 2).BackgroundTransparency = 0.45

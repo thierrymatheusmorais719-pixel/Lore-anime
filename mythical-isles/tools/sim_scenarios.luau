@@ -706,6 +706,48 @@ local function blockTreeChecks()
 	check("árvores de blocos fora das áreas de gameplay (arena, campos, zonas, ovos, portais)", placeOk, detail)
 end
 blockTreeChecks()
+-- Todas as outras árvores (5 mundos) usam o modelo de galhos e cubos da segunda referência
+local function treeStyleChecks()
+	local trees, oldLeaves, noCubes, worlds, maxParts = 0, 0, 0, {}, 0
+	for _, wf in ipairs(workspace.World:GetChildren()) do
+		for _, m in ipairs(wf:GetDescendants()) do
+			if m:IsA("Model") and (m.Name == "Tree" or m.Name == "Pine" or m.Name == "Bonsai") then
+				trees += 1
+				worlds[wf.Name] = true
+				local cubes, n = 0, 0
+				for _, d in ipairs(m:GetDescendants()) do
+					if d:IsA("BasePart") then
+						n += 1
+						if d.Name == "LeafCube" then
+							cubes += 1
+						elseif d.Name == "Leaf" or d.Name == "LeafCore" or d.Name == "Needles" then
+							oldLeaves += 1
+						end
+					end
+				end
+				maxParts = math.max(maxParts, n)
+				if cubes < 20 then
+					noCubes += 1
+				end
+			end
+		end
+	end
+	local nWorlds = 0
+	for _ in pairs(worlds) do
+		nWorlds += 1
+	end
+	check("árvores: todas (fora do bosque de blocos) usam o modelo de galhos e cubos de grama", trees > 100 and oldLeaves == 0 and noCubes == 0 and nWorlds >= 4,
+		string.format("%d árvores em %d mundos, %d folhas antigas, %d sem cachos, máx. %d peças", trees, nWorlds, oldLeaves, noCubes, maxParts))
+	local grove = workspace.World.verdant:FindFirstChild("BlockTreeGrove")
+	local groveCubes = 0
+	for _, d in ipairs(grove and grove:GetDescendants() or {}) do
+		if d.Name == "LeafCube" then
+			groveCubes += 1
+		end
+	end
+	check("árvores: o bosque de blocos do Verdant continua com o seu próprio modelo", grove ~= nil and #grove:GetChildren() == 7 and groveCubes == 0)
+end
+treeStyleChecks()
 
 -- MUNDO 3 — Skybound Kingdom: ilhas flutuantes, pontes, regiões, portais, baús, NPCs
 local function skyboundChecks()
@@ -1196,8 +1238,16 @@ do
 		local panels, clouds = counts()
 		local camPos = workspace.CurrentCamera.CFrame.Position
 		local anchorPart = workspace.CurrentCamera:FindFirstChild("AnimeSkyAnchor")
-		check("céu anime: 8 painéis de gradiente e 14 nuvens 2D, centrado na câmera", skyFolder and panels == 8 and clouds == 14 and anchorPart
+		check("céu anime: 14 nuvens 2D centradas na câmera e nenhum painel de gradiente (degradê vem da Atmosphere)", skyFolder and panels == 0 and clouds == 14 and anchorPart
 			and (anchorPart.Position - camPos).Magnitude < 0.01 and SkyClient.current == "crystal", string.format("%d painéis, %d nuvens", panels, clouds))
+		-- tudo do céu 2D fica além da ilha mais distante visível (~800 studs): nada cobre as ilhas
+		local nearest = math.huge
+		for _, g in ipairs(skyFolder:GetChildren()) do
+			if g:IsA("BillboardGui") then
+				nearest = math.min(nearest, g.StudsOffsetWorldSpace.Magnitude)
+			end
+		end
+		check("céu anime: nuvens, sol e estrelas a mais de 1000 studs da câmera (atrás das ilhas)", nearest > 1000, string.format("mais perto: %.0f", nearest))
 		-- (o servidor reatribui o mundo pela posição a cada 0,5 s: checa logo após a troca)
 		lp:SetAttribute("World", "astral")
 		local _, _, stars, moon = counts()

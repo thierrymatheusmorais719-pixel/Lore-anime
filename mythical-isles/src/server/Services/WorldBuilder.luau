@@ -25,7 +25,7 @@ local CLIFF_COLORS = {
 	Concrete = rgb(52, 44, 82),
 }
 
-local MOSS, MOSS2, BARK, BARK2 = rgb(96, 160, 64), rgb(70, 130, 52), rgb(92, 70, 52), rgb(70, 54, 40)
+local MOSS, MOSS2, BARK = rgb(96, 160, 64), rgb(70, 130, 52), rgb(92, 70, 52)
 
 local function part(props)
 	props.Anchored = true
@@ -463,86 +463,104 @@ local function foliage(parent, center: Vector3, radii: Vector3, leaf: Color3, rn
 end
 WorldBuilder.foliage = foliage
 
--- Raízes aparentes: cunhas altas junto ao tronco que descem até o chão.
-local function rootFlares(parent, pos: Vector3, s: number, rng: Random, bark: Color3, count: number?)
-	for k = 1, count or 4 do
-		local a = k / (count or 4) * math.pi * 2 + rng:NextNumber(-0.3, 0.3)
-		local out = V(math.cos(a), 0, math.sin(a))
-		local at = pos + out * 1.5 * s + V(0, 0.9 * s, 0)
-		-- WedgePart: lado alto em +Z; virado para que o lado alto fique junto ao tronco e a rampa desça para fora
-		wedge({ Name = "Root", Size = V(0.9 * s, 1.9 * s, 2.6 * s), CFrame = CF(at, at + out), Color = bark:Lerp(rgb(0, 0, 0), 0.15), Material = Enum.Material.Wood,
-			CanCollide = true, Parent = parent })
+-- ÁRVORE DE GALHOS E CUBOS (referência do autor) — o modelo de árvore de TODOS os mundos, exceto o
+-- bosque de blocos do Verdant Haven (BlockTree), que continua com o seu próprio modelo.
+--   * tronco fino marrom-avermelhado que se divide em vários galhos, e cada galho em dois ramos;
+--   * em cada ponta, um cacho de cubos girados ao acaso com textura de grama, em verdes escuros
+--     (cubos de cima um pouco mais claros, os de baixo na sombra);
+--   * cachos pendentes nas laterais, presos por ramos finos que descem.
+-- Só o tronco colide (dá para andar por baixo da copa). ~80 peças por árvore.
+local TREE_BARK = rgb(96, 54, 50)
+local TREE_SHADOW = rgb(8, 20, 8)
+
+-- Cacho: n cubos girados ao acaso em volta de `center`; squash > 1 alonga na vertical (cacho pendente).
+local function cubeCluster(parent, center: Vector3, size: number, leaf: Color3, rng: Random, n: number, squash: number?)
+	local sq = squash or 0.65
+	for k = 1, n do
+		local off = k == 1 and Vector3.zero or V(rng:NextNumber(-1, 1), rng:NextNumber(-1, 1) * sq, rng:NextNumber(-1, 1)) * size * 0.5
+		local c = rng:NextNumber(0.72, 1.1) * size
+		local shade = math.clamp(rng:NextNumber(0.1, 0.4) - off.Y / size * 0.4, 0.02, 0.6)
+		part({ Name = "LeafCube", Size = V(c, c * rng:NextNumber(0.85, 1), c * rng:NextNumber(0.9, 1.05)),
+			CFrame = CF(center + off) * ANG(rng:NextNumber(0, 6.28), rng:NextNumber(0, 6.28), rng:NextNumber(0, 6.28)),
+			Color = leaf:Lerp(TREE_SHADOW, shade), Material = Enum.Material.Grass, CanCollide = false, Parent = parent })
 	end
 end
+WorldBuilder.cubeCluster = cubeCluster
 
--- Árvore frondosa: raízes, tronco afunilado e levemente torto, galhos e várias copas.
-local function oakTree(parent, pos: Vector3, s: number, rng: Random, bark: Color3, leaf: Color3, glow: Color3?)
-	local model = Make("Model", { Name = "Tree", Parent = parent })
-	rootFlares(model, pos, s, rng, bark, 5)
-	local radii = { 1.15, 0.92, 0.7 }
-	local lens = { 4.6, 4.0, 3.4 }
-	local cur = pos
-	local dir = V(0, 1, 0)
-	local tops = {}
-	for k = 1, 3 do
-		dir = (dir + V(rng:NextNumber(-0.18, 0.18), 0, rng:NextNumber(-0.18, 0.18))).Unit
-		local nxt = cur + dir * lens[k] * s
-		cyl({ Name = "Trunk", Color = bark, Material = Enum.Material.Wood, Parent = model }, cur, nxt, radii[k] * s)
-		part({ Name = "Knot", Shape = Enum.PartType.Ball, Size = Vector3.one * radii[k] * 2 * s, CFrame = CF(nxt), Color = bark, Material = Enum.Material.Wood, Parent = model })
-		if k >= 2 then
-			for b = 1, 2 do
-				local a = rng:NextNumber(0, 6.28)
-				local bdir = (V(math.cos(a), rng:NextNumber(0.5, 0.9), math.sin(a))).Unit
-				local tip = nxt + bdir * rng:NextNumber(3.2, 4.6) * s
-				cyl({ Name = "Branch", Color = bark, Material = Enum.Material.Wood, CanCollide = false, Parent = model }, nxt - dir * 0.6 * s, tip, 0.34 * s)
-				table.insert(tops, tip)
-			end
+-- opts: name, trunk (altura até a forquilha, ×s), branches (nº de galhos), rise (quanto sobem),
+-- spread (alcance), leader (galho central), cluster (tamanho dos cachos), hang (nº de cachos pendentes)
+local function branchTree(parent, pos: Vector3, s: number, rng: Random, bark: Color3, leaf: Color3, glow: Color3?, opts)
+	opts = opts or {}
+	local model = Make("Model", { Name = opts.name or "Tree", Parent = parent })
+	local barkCol = bark:Lerp(TREE_BARK, 0.75)
+	local spread = opts.spread or 1
+	local rise = opts.rise or 0.85
+	local fork = pos + V(rng:NextNumber(-0.5, 0.5) * s, (opts.trunk or 6.2) * s * rng:NextNumber(0.9, 1.12), rng:NextNumber(-0.5, 0.5) * s)
+	cyl({ Name = "Trunk", Color = barkCol, Material = Enum.Material.Wood, Parent = model }, pos - V(0, 0.8, 0), fork, 0.6 * s)
+	cyl({ Name = "TrunkBase", Color = barkCol:Lerp(rgb(0, 0, 0), 0.12), Material = Enum.Material.Wood, CanCollide = false, Parent = model },
+		pos - V(0, 0.8, 0), pos + V(0, 1.3 * s, 0), 0.8 * s)
+	part({ Name = "Knot", Shape = Enum.PartType.Ball, Size = Vector3.one * 1.3 * s, CFrame = CF(fork), Color = barkCol, Material = Enum.Material.Wood,
+		CanCollide = false, Parent = model })
+	local tips, mids = {}, {}
+	local nb = opts.branches or 4
+	local yaw0 = rng:NextNumber(0, math.pi * 2)
+	for b = 1, nb do
+		local a = yaw0 + (b - 1) / nb * math.pi * 2 + rng:NextNumber(-0.35, 0.35)
+		local dir = V(math.cos(a), rise * rng:NextNumber(0.8, 1.2), math.sin(a)).Unit
+		local mid = fork + dir * rng:NextNumber(4.2, 5.8) * s * spread
+		cyl({ Name = "Branch", Color = barkCol, Material = Enum.Material.Wood, CanCollide = false, Parent = model }, fork - V(0, 0.5 * s, 0), mid, 0.38 * s)
+		table.insert(mids, { at = mid, a = a })
+		for k = -1, 1, 2 do
+			local a2 = a + k * rng:NextNumber(0.4, 0.75)
+			local d2 = V(math.cos(a2), rise * rng:NextNumber(0.5, 1.1) + 0.15, math.sin(a2)).Unit
+			local tip = mid + d2 * rng:NextNumber(3, 4.4) * s * spread
+			cyl({ Name = "Twig", Color = barkCol, Material = Enum.Material.Wood, CanCollide = false, Parent = model }, mid, tip, 0.22 * s)
+			table.insert(tips, tip)
 		end
-		cur = nxt
 	end
-	table.insert(tops, cur + V(0, 1.2 * s, 0))
-	for i, t in ipairs(tops) do
-		local size = (i == #tops and 7.5 or rng:NextNumber(4.8, 6)) * s
-		foliage(model, t + V(0, size * 0.2, 0), V(0.78, 0.52, 0.72) * size, leaf, rng, i == #tops and 26 or 20, 1, 0.7)
+	local top = fork + V(rng:NextNumber(-1, 1) * s, (opts.leader or 5.5) * s, rng:NextNumber(-1, 1) * s)
+	cyl({ Name = "Branch", Color = barkCol, Material = Enum.Material.Wood, CanCollide = false, Parent = model }, fork, top, 0.34 * s)
+	table.insert(tips, top)
+	local cs = (opts.cluster or 3.1) * s
+	for i, t in ipairs(tips) do
+		local main = i == #tips
+		cubeCluster(model, t + V(0, cs * 0.25, 0), cs * (main and 1.25 or rng:NextNumber(0.9, 1.1)), leaf, rng, main and 7 or 5)
+	end
+	-- miolo da copa: fecha o vão entre o galho central e os laterais
+	for k = 1, 2 do
+		local a = yaw0 + k * math.pi + 0.8
+		cubeCluster(model, fork + V(math.cos(a) * 2 * s * spread, (opts.leader or 5.5) * 0.6 * s, math.sin(a) * 2 * s * spread), cs * 1.05, leaf, rng, 4)
+	end
+	-- cachos pendentes nas laterais
+	local hang = opts.hang or 2
+	for i = 1, math.min(hang, #mids) do
+		local m = mids[(i - 1) * math.max(1, math.floor(#mids / hang)) % #mids + 1]
+		local out = V(math.cos(m.a), 0, math.sin(m.a))
+		local p0 = m.at + out * 1.2 * s
+		local p1 = p0 + out * 1.4 * s - V(0, rng:NextNumber(1.8, 2.6) * s, 0)
+		cyl({ Name = "Twig", Color = barkCol, Material = Enum.Material.Wood, CanCollide = false, Parent = model }, p0, p1, 0.16 * s)
+		cubeCluster(model, p1, cs * 0.72, leaf, rng, 3, 1.7)
 	end
 	if glow then
 		for k = 1, 4 do
-			local t = tops[(k - 1) % #tops + 1]
-			part({ Name = "GlowFruit", Shape = Enum.PartType.Ball, Size = Vector3.one * 0.7 * s, CFrame = CF(t + V(rng:NextNumber(-2, 2), -1.6 * s, rng:NextNumber(-2, 2))),
+			local t = tips[(k - 1) * 2 % #tips + 1]
+			part({ Name = "GlowFruit", Shape = Enum.PartType.Ball, Size = Vector3.one * 0.7 * s, CFrame = CF(t - V(rng:NextNumber(-1, 1), 1.6 * s, rng:NextNumber(-1, 1))),
 				Color = glow, Material = Enum.Material.Neon, CanCollide = false, CastShadow = false, Parent = model })
 		end
 	end
 	return model
 end
+WorldBuilder.branchTree = branchTree
+
+-- Nomes antigos (todas as chamadas dos mundos passam por aqui): mesma árvore, proporções diferentes.
+local function oakTree(parent, pos: Vector3, s: number, rng: Random, bark: Color3, leaf: Color3, glow: Color3?)
+	return branchTree(parent, pos, s, rng, bark, leaf, glow, { name = "Tree" })
+end
 WorldBuilder.oakTree = oakTree
 
--- Pinheiro: tronco + camadas piramidais (quatro cunhas por camada).
-local function pineTree(parent, pos: Vector3, s: number, rng: Random, bark: Color3, leaf: Color3, snow: boolean?)
-	local model = Make("Model", { Name = "Pine", Parent = parent })
-	local h = rng:NextNumber(13, 17) * s
-	cyl({ Name = "Trunk", Color = bark, Material = Enum.Material.Wood, Parent = model }, pos - V(0, 0.5, 0), pos + V(0, h * 0.85, 0), 0.7 * s)
-	local tiers = 5
-	local spin = rng:NextNumber(0, 1.57)
-	for t = 0, tiers - 1 do
-		local f = t / (tiers - 1)
-		local width = (8.5 - f * 6) * s
-		local th = (3.6 - f * 0.9) * s
-		local y = h * (0.28 + f * 0.62)
-		local col = leaf:Lerp(rgb(10, 30, 15), 0.25 - f * 0.25)
-		for q = 0, 3 do
-			local a = spin + q * math.pi / 2 + t * 0.4
-			local out = V(math.cos(a), 0, math.sin(a))
-			-- cunha: lado alto (+Z) no eixo do tronco, rampa descendo para fora (-Z = `out`)
-			local at = pos + V(0, y, 0) + out * width / 4
-			Make("WedgePart", { Name = "Needles", Anchored = true, Size = V(width, th, width / 2), CFrame = CF(at, at + out), Color = col, Material = Enum.Material.Grass,
-				CanCollide = false, TopSurface = Enum.SurfaceType.Smooth, BottomSurface = Enum.SurfaceType.Smooth, Parent = model })
-		end
-		if snow then
-			ellipsoid({ Name = "Snow", Size = V(width * 0.5, th * 0.35, width * 0.5), CFrame = CF(pos + V(0, y + th * 0.45, 0)), Color = rgb(245, 250, 255), Material = Enum.Material.Snow,
-				CanCollide = false, CastShadow = false, Parent = model })
-		end
-	end
-	return model
+-- Versão alta e estreita (no lugar do antigo pinheiro).
+local function pineTree(parent, pos: Vector3, s: number, rng: Random, bark: Color3, leaf: Color3)
+	return branchTree(parent, pos, s, rng, bark, leaf, nil, { name = "Pine", trunk = 8.5, branches = 3, rise = 1.9, spread = 0.65, leader = 7.5, cluster = 2.7, hang = 1 })
 end
 
 -- Grupo de rochas: blocos inclinados de tamanhos diferentes, meio enterrados, com musgo opcional.
@@ -664,9 +682,9 @@ function WorldBuilder.decor(worldId: string, parent: Instance)
 			local k = i % 10
 			if worldId == "verdant" then
 				if k == 0 or k == 5 then
-					oakTree(folder, pos, s, rng, BARK, i % 4 == 0 and rgb(92, 158, 64) or rgb(76, 146, 58))
+					oakTree(folder, pos, s, rng, BARK, i % 4 == 0 and rgb(76, 136, 54) or rgb(62, 118, 46))
 				elseif k == 1 then
-					WorldBuilder.bonsai(folder, pos, s * 1.1, rng, i % 3 == 0 and rgb(170, 120, 220) or rgb(110, 185, 70))
+					WorldBuilder.bonsai(folder, pos, s * 1.1, rng, i % 3 == 0 and rgb(84, 140, 56) or rgb(66, 124, 48))
 				elseif k == 2 then
 					rockCluster(folder, pos, s, rng, rgb(112, 116, 108), Enum.Material.Slate, MOSS)
 				elseif k == 3 or k == 8 then
@@ -763,27 +781,9 @@ function WorldBuilder.mossRock(parent, pos: Vector3, s: number)
 	return rockCluster(parent, pos, s, Random.new(math.floor(pos.X * 7 + pos.Z * 13)), rgb(110, 116, 108), Enum.Material.Slate, MOSS)
 end
 
--- Árvore de copa achatada e tronco torto (estilo bonsai/acácia das referências).
+-- Versão baixa e de copa larga e achatada (no lugar do antigo bonsai/acácia).
 function WorldBuilder.bonsai(parent, pos: Vector3, s: number, rng: Random, leaf: Color3)
-	local model = Make("Model", { Name = "Bonsai", Parent = parent })
-	local lean = rng:NextNumber(-0.35, 0.35)
-	local yaw = rng:NextNumber(0, 6.28)
-	local a = CF(pos) * ANG(0, yaw, 0)
-	local p0 = pos
-	local p1 = (a * ANG(0, 0, lean) * CF(0, 7.5 * s, 0)).Position
-	local p2 = p1 + (a * ANG(0, 0, -lean * 1.6)).UpVector * 5.5 * s
-	cyl({ Name = "Trunk", Color = BARK, Material = Enum.Material.Wood, Parent = model }, p0 - V(0, 0.5, 0), p1, 0.85 * s)
-	part({ Name = "Knot", Shape = Enum.PartType.Ball, Size = Vector3.one * 1.6 * s, CFrame = CF(p1), Color = BARK, Material = Enum.Material.Wood, Parent = model })
-	cyl({ Name = "Trunk", Color = BARK, Material = Enum.Material.Wood, Parent = model }, p1, p2, 0.62 * s)
-	rootFlares(model, pos, s * 0.8, rng, BARK2, 3)
-	-- copas achatadas em "pratos" (estilo acácia/bonsai): base escura, topo iluminado
-	for k, o in ipairs({ { 0, 0.6, 0, 11, 2.6 }, { 4.2, -0.6, 1.5, 7, 2 }, { -3.9, -0.1, -1.6, 7.5, 2.1 } }) do
-		local cpos = p2 + (a * CF(o[1] * s, o[2] * s, o[3] * s)).Position - pos
-		if k > 1 then
-			cyl({ Name = "Branch", Color = BARK, Material = Enum.Material.Wood, CanCollide = false, Parent = model }, p2 - V(0, 1.2 * s, 0), cpos - V(0, 0.4 * s, 0), 0.3 * s)
-		end
-		foliage(model, cpos + V(0, 0.2 * s, 0), V(o[4] * 0.5, o[5] * 0.55, o[4] * 0.43) * s, leaf, rng, k == 1 and 22 or 15, 0.45, 0.7)
-	end
+	return branchTree(parent, pos, s, rng, BARK, leaf, nil, { name = "Bonsai", trunk = 4.8, branches = 5, rise = 0.38, spread = 1.15, leader = 3.2, cluster = 3.3, hang = 3 })
 end
 
 function WorldBuilder.flowerBush(parent, pos: Vector3, s: number, rng: Random, color: Color3)
@@ -896,14 +896,14 @@ function WorldBuilder.verdantLandmark(parent: Instance, terrainOk: boolean)
 		local dir = V(math.cos(a), 0, math.sin(a))
 		waterfall(folder, lc + dir * 15.6 + V(0, plateauTop + 0.5, 0), plateauTop + 2, 4.5, dir)
 	end
-	-- ÁRVORE ANCESTRAL (tronco retorcido, raízes, galhos, copas verdes e roxas, cipós)
+	-- ÁRVORE ANCESTRAL (tronco retorcido, raízes, galhos e copa de cubos no estilo da árvore de galhos)
 	local base = lc + V(0, plateauTop + 0.8, 0)
 	local seg = { { 0, 9, 0, 13 }, { 0.12, 8, 0.05, 12 }, { -0.1, 7, -0.06, 12 }, { 0.08, 5.5, 0.04, 11 } }
 	local cfT = CF(base)
 	for _, sgm in ipairs(seg) do
 		local piece = cfT * ANG(sgm[1], 0, sgm[3]) * CF(0, sgm[4] / 2, 0)
 		part({ Name = "AncientTrunk", Shape = Enum.PartType.Cylinder, Size = V(sgm[4] + 1, sgm[2] * 2, sgm[2] * 2), CFrame = piece * ANG(0, 0, rad(90)),
-			Color = BARK, Material = Enum.Material.Wood, Parent = folder })
+			Color = TREE_BARK, Material = Enum.Material.Wood, Parent = folder })
 		part({ Name = "TrunkMoss", Size = V(0.8, sgm[4] * 0.55, sgm[2] * 1.1), CFrame = piece * CF(sgm[2] * 0.95, 0, 0) * ANG(rad(8), 0, rad(-4)), Color = MOSS2, Material = Enum.Material.LeafyGrass,
 			CanCollide = false, Parent = folder })
 		cfT = piece * CF(0, sgm[4] / 2, 0)
@@ -911,7 +911,7 @@ function WorldBuilder.verdantLandmark(parent: Instance, terrainOk: boolean)
 	for i = 1, 8 do
 		local a = i / 8 * math.pi * 2
 		local rootCf = CF(base + V(math.cos(a) * 9, 1.5, math.sin(a) * 9)) * ANG(0, -a, 0) * ANG(0, 0, rad(-28))
-		part({ Name = "Root", Size = V(14, 3.2, 3.6), CFrame = rootCf, Color = BARK2, Material = Enum.Material.Wood, Parent = folder })
+		part({ Name = "Root", Size = V(14, 3.2, 3.6), CFrame = rootCf, Color = TREE_BARK:Lerp(rgb(0, 0, 0), 0.2), Material = Enum.Material.Wood, Parent = folder })
 	end
 	local crown = cfT.Position
 	local canopyCenters = {}
@@ -921,20 +921,27 @@ function WorldBuilder.verdantLandmark(parent: Instance, terrainOk: boolean)
 		local dir = V(math.cos(a), 0.45 + (i % 2) * 0.2, math.sin(a)).Unit
 		local from = crown - V(0, 6 + (i % 3) * 4, 0)
 		local to = from + dir * len
-		part({ Name = "Branch", Size = V(3.2, 3.2, len), CFrame = CF((from + to) / 2, to), Color = BARK, Material = Enum.Material.Wood, Parent = folder })
+		part({ Name = "Branch", Size = V(3.2, 3.2, len), CFrame = CF((from + to) / 2, to), Color = TREE_BARK, Material = Enum.Material.Wood, Parent = folder })
 		table.insert(canopyCenters, to + V(0, 2, 0))
 	end
 	table.insert(canopyCenters, crown + V(0, 6, 0))
+	-- copa no estilo da árvore de galhos e cubos: cachos de cubos de grama em verdes escuros,
+	-- com cachos pendentes presos por ramos finos
 	for i, cpos in ipairs(canopyCenters) do
-		local purple = i % 3 == 0
-		local col = purple and rgb(165, 115, 215) or (i % 2 == 0 and rgb(90, 175, 70) or rgb(110, 190, 80))
-		local big = i == #canopyCenters and 1.5 or 1
-		foliage(folder, cpos + V(0, 1.5, 0), V(12, 5.5, 11) * big, col, Random.new(500 + i), i == #canopyCenters and 34 or 24, 0.8, 0.6)
-		for k = 1, 3 do
-			local off = V(math.cos(k * 2.1) * 8, -4.5, math.sin(k * 2.1) * 7)
-			local len = 6 + (k % 3) * 3
-			part({ Name = "HangingMoss", Size = V(0.5, len, 0.5), CFrame = CF(cpos + off - V(0, len / 2, 0)), Color = rgb(70, 140, 90), Material = Enum.Material.Grass,
-				CanCollide = false, CastShadow = false, Parent = folder })
+		local crng = Random.new(500 + i)
+		local col = i % 2 == 0 and rgb(70, 128, 52) or rgb(58, 112, 46)
+		local big = i == #canopyCenters and 1.35 or 1
+		for k = 1, 4 do
+			local a = k / 4 * math.pi * 2 + crng:NextNumber(-0.4, 0.4)
+			cubeCluster(folder, cpos + V(math.cos(a) * 6 * big, 1.5 + crng:NextNumber(-1, 2), math.sin(a) * 6 * big), 7 * big, col, crng, 5)
+		end
+		cubeCluster(folder, cpos + V(0, 4.5 * big, 0), 8.5 * big, col, crng, 6)
+		for k = 1, 2 do
+			local a = k * 2.6 + i
+			local p0 = cpos + V(math.cos(a) * 8, -1, math.sin(a) * 8)
+			local p1 = p0 + V(math.cos(a) * 2, -(6 + (k % 2) * 3), math.sin(a) * 2)
+			cyl({ Name = "Twig", Color = TREE_BARK, Material = Enum.Material.Wood, CanCollide = false, Parent = folder }, p0, p1, 0.35)
+			cubeCluster(folder, p1, 4.2, col, crng, 3, 1.7)
 		end
 		WorldBuilder.ambient(folder, cpos + V(0, -6, 0), "fireflies", 10)
 	end
@@ -977,7 +984,7 @@ function WorldBuilder.verdantLandmark(parent: Instance, terrainOk: boolean)
 		local pos = lc + V(math.cos(a) * d, 0, math.sin(a) * d)
 		if (pos - w.center).Magnitude < w.radius - 10 then
 			if i % 3 == 0 then
-				WorldBuilder.bonsai(folder, pos, 1.2, rng, i % 2 == 0 and rgb(170, 120, 220) or rgb(110, 185, 70))
+				WorldBuilder.bonsai(folder, pos, 1.2, rng, i % 2 == 0 and rgb(84, 140, 56) or rgb(66, 124, 48))
 			else
 				WorldBuilder.flowerBush(folder, pos, 1.1, rng, i % 2 == 0 and rgb(160, 110, 230) or rgb(200, 150, 255))
 			end
