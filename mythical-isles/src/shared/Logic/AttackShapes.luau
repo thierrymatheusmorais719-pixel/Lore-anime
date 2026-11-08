@@ -100,6 +100,16 @@ function AttackShapes.build(atk, ctx)
 		table.insert(list, { type = "rect", x = ctx.bx - dx * half, z = ctx.bz - dz * half, dx = dx, dz = dz, length = atk.length, width = atk.width })
 		local px, pz = -dz, dx
 		table.insert(list, { type = "rect", x = ctx.bx - px * half, z = ctx.bz - pz * half, dx = px, dz = pz, length = atk.length, width = atk.width })
+	elseif shape == "fan" then
+		-- `count` linhas em leque saindo do boss, a do meio no alvo (Refração Tripla)
+		local dx, dz = unit(ctx.tx - ctx.bx, ctx.tz - ctx.bz)
+		local base = math.atan2(dz, dx)
+		local n = atk.count or 3
+		local spread = math.rad(atk.spread or 30)
+		for i = 1, n do
+			local a = base + (i - (n + 1) / 2) * spread
+			table.insert(list, { type = "rect", x = ctx.bx, z = ctx.bz, dx = math.cos(a), dz = math.sin(a), length = atk.length, width = atk.width })
+		end
 	elseif shape == "safezones" then
 		local safe = {}
 		local base = ctx.rng() * math.pi * 2

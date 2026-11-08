@@ -1064,6 +1064,68 @@ local function onAbilityFx(p)
 		end
 	elseif k == "signature" then
 		signatureFx(p)
+	elseif k == "chain" then
+		-- raio em cadeia (Tempest Wyrm) e choques de poderes dos bosses: raio curto entre dois pontos
+		lightning(p.from, p.to, c, 0.35)
+	elseif k == "chill" then
+		-- estilhaços cristalizam os pés: cristais em volta + anel gelado
+		for i = 1, 6 do
+			local a = i / 6 * math.pi * 2
+			local base = p.at + Vector3.new(math.cos(a), 0, math.sin(a)) * 1.8
+			local shard = part({ Size = Vector3.new(0.5, 0.2, 0.5), CFrame = CFrame.new(base) * CFrame.Angles(0, a, math.rad(15)), Color = c:Lerp(WHITE, 0.4),
+				Material = Enum.Material.Glass, Transparency = 0.2 }, (p.duration or 3) + 0.3)
+			if shard then
+				tween(shard, 0.2, { Size = Vector3.new(0.5, 1.6 + (i % 3) * 0.4, 0.5), CFrame = CFrame.new(base + Vector3.new(0, 0.8, 0)) * CFrame.Angles(0, a, math.rad(15)) })
+				task.delay(p.duration or 3, function()
+					if shard.Parent then
+						tween(shard, 0.25, { Transparency = 1 })
+					end
+				end)
+			end
+		end
+		ring(p.at, 2.6, c:Lerp(WHITE, 0.5), 0.5)
+	elseif k == "bossPower" and p.model then
+		-- PODER de boss: aura na cor do poder em volta do boss pela duração
+		local model = p.model :: Model
+		local root = model.PrimaryPart
+		local dur = p.duration or 2
+		local look = {
+			bark = { Color3.fromRGB(130, 92, 52), Enum.Material.Wood, 0.35 },
+			mirror = { Color3.fromRGB(190, 240, 255), Enum.Material.Glass, 0.55 },
+			static = { Color3.fromRGB(150, 200, 255), Enum.Material.ForceField, 0.2 },
+			drain = { Color3.fromRGB(110, 50, 200), Enum.Material.ForceField, 0.15 },
+			bloom = { Color3.fromRGB(150, 255, 160), Enum.Material.Neon, 0.6 },
+		}
+		local L = look[p.power] or { c, Enum.Material.ForceField, 0.3 }
+		local r = (p.radius or 6) * 2.3
+		local shell = root and part({ Shape = Enum.PartType.Ball, Size = Vector3.one * r, CFrame = root.CFrame, Color = L[1], Material = L[2], Transparency = 1 }, dur + 0.5)
+		if shell then
+			tween(shell, 0.3, { Transparency = L[3] })
+			local conn
+			conn = RunService.Heartbeat:Connect(function()
+				if not shell.Parent or not root.Parent then
+					conn:Disconnect()
+					return
+				end
+				shell.CFrame = root.CFrame
+			end)
+			task.delay(math.max(0.2, dur - 0.3), function()
+				if shell.Parent then
+					tween(shell, 0.3, { Transparency = 1 })
+				end
+			end)
+		end
+		if p.power == "bloom" then
+			onAbilityFx({ kind = "heal", at = p.at, radius = r, color = L[1] })
+		elseif p.power == "static" and root then
+			for i = 1, 4 do
+				local a = i / 4 * math.pi * 2
+				lightning(root.Position + Vector3.new(0, r * 0.4, 0), root.Position + Vector3.new(math.cos(a) * r * 0.7, -r * 0.2, math.sin(a) * r * 0.7), L[1], 0.4)
+			end
+		else
+			shockRing(p.at, r * 0.8, L[1], 0.6)
+		end
+		sparks(p.at + Vector3.new(0, r * 0.3, 0), L[1], 16, 14)
 	end
 end
 onAbilityFxRef = onAbilityFx

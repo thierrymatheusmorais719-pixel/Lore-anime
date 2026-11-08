@@ -18,6 +18,7 @@ local BossModels = require(Shared.Builders.BossModels)
 local Make = require(Shared.Util.Make)
 local Entities = require(script.Parent.Entities)
 local Telegraph = require(script.Parent.Telegraph)
+local BossPowers = require(script.Parent.BossPowers)
 
 local BossService = {}
 
@@ -32,6 +33,7 @@ end
 
 function BossService.init(registry)
 	S = registry
+	BossPowers.bind(registry)
 end
 
 local function serverNow()
@@ -123,6 +125,8 @@ end
 
 local function reset(b)
 	clearSummons(b)
+	BossPowers.clear(b)
+	b.powerReady = {}
 	local e = b.entity
 	e.maxHp = b.cfg.hp
 	e.hp = e.maxHp
@@ -227,25 +231,42 @@ local function resolveAttack(b, atk, shapes)
 		end
 		return
 	end
+	if atk.shape == "power" then
+		BossPowers.activate(b, atk)
+		return
+	end
+	local hitPets, toPlayers, toPets = {}, 0, 0
 	for _, p in ipairs(BossService.participants(b)) do
 		local root = S.CombatService.charRoot(p)
 		if root and AttackShapes.hitsAny(shapes, root.Position.X, root.Position.Z, 1.5) then
-			S.CombatService.hitPlayer(p, atk.pdmg, e)
+			toPlayers += S.CombatService.hitPlayer(p, atk.pdmg, e) or 0
+			BossPowers.onHitPlayer(b, atk, p)
 		end
 		for _, st in ipairs(S.PetService.team(p)) do
 			if st.model and st.model.Parent and inArena(b, st.root.Position) and AttackShapes.hitsAny(shapes, st.root.Position.X, st.root.Position.Z, 1.5) then
-				S.CombatService.hitPet(st, b.cfg.atk, atk.petMult, e)
+				toPets += S.CombatService.hitPet(st, b.cfg.atk, atk.petMult, e) or 0
+				BossPowers.onHitPet(b, atk, st)
+				table.insert(hitPets, st)
 			end
 		end
 	end
+	BossPowers.afterHits(b, atk, hitPets, toPlayers, toPets)
+	BossPowers.linger(b, atk, shapes)
 	S.CombatService.fx("bossImpact", { at = b.arena.center, shapes = shapes, color = b.cfg.color, y = b.arena.center.Y, electric = b.cfg.electric == true })
 end
 
 local function startAttack(b, participants, now: number)
 	local phase = b.cfg.phases[b.phase]
-	local atkId = BossLogic.pickAttack(phase, b.lastAttack, rand)
+	b.powerReady = b.powerReady or {}
+	local atkId = b.forcedAttack or BossLogic.pickAttack(phase, b.lastAttack, rand, function(id)
+		return now < (b.powerReady[id] or 0) -- poder ainda em recarga
+	end)
+	b.forcedAttack = nil
 	b.lastAttack = atkId
 	local atk = b.cfg.attacks[atkId]
+	if atk.cooldown then
+		b.powerReady[atkId] = now + atk.cooldown
+	end
 	local bpos = b.entity.root.Position
 	local tpos = primaryTarget(b, participants)
 	local targets = {}
@@ -265,7 +286,7 @@ local function startAttack(b, participants, now: number)
 		b.orient.CFrame = CFrame.lookAt(Vector3.zero, face.Unit)
 	end
 	local tele = nil
-	if atk.shape ~= "summon" then
+	if atk.shape ~= "summon" and atk.shape ~= "power" then
 		tele = Telegraph.show(shapes, b.arena.center.Y + 0.9, atk.telegraph, atk.label) -- piso da arena: topo em +1.0
 	end
 	S.CombatService.setAction(b.model, atk.anim == "slam" and "Slam" or atk.anim == "sweep" and "Sweep" or atk.anim == "roar" and "Roar"
@@ -278,7 +299,7 @@ local function startAttack(b, participants, now: number)
 	local myPhase = b.phase
 	task.delay(atk.telegraph, function()
 		Telegraph.clear(tele)
-		if b.phase ~= myPhase and atk.shape ~= "summon" then
+		if b.phase ~= myPhase and atk.shape ~= "summon" and atk.shape ~= "power" then
 			return -- ataque cancelado pela transição de fase (o aviso também some)
 		end
 		if atk.anim == "dive" and atk.shape == "line" then
@@ -409,6 +430,7 @@ function BossService.onDefeated(b, killer: Player?)
 	end
 	setState(b, "Defeated")
 	clearSummons(b)
+	BossPowers.clear(b)
 	local e = b.entity
 	S.CombatService.setAction(b.model, "Dead")
 	b.model:SetAttribute("Dead", true)
@@ -473,6 +495,13 @@ function BossService.debugDamage(worldId: string, frac: number)
 		end
 	end
 	return false
+end
+
+-- (testes) o próximo ataque do boss será `atkId` (o sorteio normal continua depois)
+function BossService.forceAttack(b, atkId: string)
+	b.forcedAttack = atkId
+	b.nextAttackAt = 0
+	b.busyUntil = 0
 end
 
 function BossService.list()

@@ -246,19 +246,19 @@ local function eyeGeom(P, c: Vector3, n: Vector3, r: number, o)
 			end
 			return { verts = verts, colors = colors, tris = tris, flat = true }
 		end
-		local layers = { lens(c, R, R * tall, R * 0.6, o.sclera or iris:Lerp(BLACK, 0.72), 12) }
+		local layers = { lens(c, R, R * tall, R * 0.6, o.sclera or iris:Lerp(BLACK, 0.72), 10) }
 		local irisCol = glow and iris:Lerp(WHITE, 0.3) or iris:Lerp(WHITE, 0.1)
-		table.insert(layers, lens(c + n * R * 0.1, R * 0.8, R * 0.8 * tall, R * 0.12, irisCol, 12))
+		table.insert(layers, lens(c + n * R * 0.1, R * 0.8, R * 0.8 * tall, R * 0.12, irisCol, 10))
 		local pc = c + n * R * 0.17
 		local pupilCol = glow and iris:Lerp(BLACK, 0.55) or rgb(10, 8, 12)
 		if o.slit then
 			table.insert(layers, lens(pc, R * 0.17, R * 0.64 * tall, R * 0.08, pupilCol, 6))
 		else
-			table.insert(layers, lens(pc, R * 0.42, R * 0.42 * tall, R * 0.08, pupilCol, 10))
+			table.insert(layers, lens(pc, R * 0.42, R * 0.42 * tall, R * 0.08, pupilCol, 8))
 		end
 		local sc = c + n * R * 0.24
-		table.insert(layers, lens(sc + upv * R * 0.32 - right * R * 0.22, R * 0.2, R * 0.17, R * 0.08, WHITE, 6))
-		table.insert(layers, lens(sc - upv * R * 0.28 + right * R * 0.3, R * 0.09, R * 0.08, R * 0.06, WHITE, 5))
+		table.insert(layers, lens(sc + upv * R * 0.32 - right * R * 0.22, R * 0.2, R * 0.17, R * 0.08, WHITE, 5))
+		table.insert(layers, lens(sc - upv * R * 0.28 + right * R * 0.3, R * 0.09, R * 0.08, R * 0.06, WHITE, 4))
 		return merge(layers)
 	end
 	local eye = loft({ { p = c - n * r * 0.5, w = r, h = r * (o.tall or 1) }, { p = c, w = r, h = r * (o.tall or 1) } }, {
@@ -529,10 +529,10 @@ local function legGeoms(P, o)
 				return ey < -0.6 and darker(sockCol, 0.55) or sockCol
 			end }),
 		}
-		if not MeshKit.low then
-			table.insert(list, loft({ { p = V(0, t * 0.2, 0), w = t * 0.5, h = t * 0.55 }, { p = V(0, -footH + ph * 1.3, -t * 0.15), w = t * 0.5, h = t * 0.55 } },
-				{ seg = 10, steps = 2, up = FWD, color = solid(sockCol) }))
-		end
+		-- tornozelo/metatarso: liga a perna à pata (também no modo de peças; sem ele a pata ficava solta no chão)
+		-- (no modo de peças, seção de 4 lados: liga a pata gastando poucas cunhas)
+		table.insert(list, loft({ { p = V(0, t * 0.2, 0), w = t * 0.5, h = t * 0.55 }, { p = V(0, -footH + ph * 1.3, -t * 0.15), w = t * 0.5, h = t * 0.55 } },
+			{ seg = 10, steps = 2, up = FWD, phase = MeshKit.low and math.pi / 4 or nil, color = solid(sockCol) }))
 		-- dedos e garras (no modo de peças fica só a pata)
 		local nToes = MeshKit.low and 0 or 4
 		for i = 1, nToes do
@@ -753,7 +753,7 @@ local function backExtras(bp, P, kind: string?, topY, L: number, scale: number)
 		mat = "Grass"
 	elseif kind == "flowers" then
 		for i, z in ipairs({ -0.25, 0.05, 0.3 }) do
-			local c = V((i % 2 == 0 and 0.15 or -0.15) * scale, topY(z * L) + 0.04, z * L)
+			local c = V((i % 2 == 0 and 0.15 or -0.15) * scale, topY(z * L) - 0.01, z * L) -- encostada no dorso
 			table.insert(list, loft({ { p = c - V(0, 0.04, 0), w = 0.07 * scale }, { p = c + V(0, 0.04, 0), w = 0.07 * scale } }, { seg = 8, steps = 1, up = FWD, color = solid(rgb(255, 222, 110)) }))
 			for k = 1, 5 do
 				local a = k / 5 * math.pi * 2
@@ -1860,20 +1860,39 @@ local function mammoth(bp, P, m)
 	-- pelagem de capim: fios que caem pelas laterais e franja na testa
 	local strands = {}
 	local shades = { darker(coat, 0.7), darker(coat, 0.85), coat, coat:Lerp(rgb(230, 220, 120), 0.3) }
-	for row = 0, 5 do
+	-- modo de peças: as placas finas viravam lâminas gigantes; lá a pelagem é uma "saia" felpuda contínua
+	-- que cobre o tronco e cai sobre o alto das pernas (bordas recortadas = tufos)
+	for row = 0, MeshKit.low and -1 or 5 do
 		local z = (row - 2.5) * 0.42
 		for _, phi in ipairs({ -80, -55, -30, 30, 55, 80 }) do
 			local s = math.sin(rad(phi))
 			local anchor = V(s * 0.72, math.cos(rad(phi)) * 0.62 + 0.15, z)
 			local len = 0.8 + math.abs(s) * 0.55 + ((row * 7 + phi) % 5) * 0.04
 			local tip = anchor + V(s * 0.25, -len, 0.05)
-			local perp = V(0, 0, 0.18)
+			local perp = V(0, 0, 0.12) -- fios mais finos (antes 0.18: pareciam folhas largas)
 			table.insert(strands, sheet({ anchor - perp, tip - perp * 0.3, tip + V(0, -0.08, 0), tip + perp * 0.3, anchor + perp }, 0.04, shades[(row + math.floor(math.abs(phi) / 25)) % 4 + 1],
 				V(s, 0.3, 0).Unit))
 		end
 	end
 	table.insert(strands, loft({ { p = V(0, 0.55, -0.9), w = 0.62, h = 0.18, jag = 0.25 }, { p = V(0, 0.62, 0.9), w = 0.62, h = 0.2, jag = 0.25 } }, { seg = 14, steps = 3, color = solid(shades[2]) }))
-	addPart(bp, "Coat", "Torso", nil, V(0, 0, 0), merge(strands), { material = "Grass", role = "Accent" })
+	if MeshKit.low then
+		-- manta de capim sobre o dorso (até o meio do flanco) + franja de tufos pendurados nas laterais
+		table.insert(strands, loft({ { p = V(0, 0.2, -1.0), w = 0.62, h = 0.6, hb = 0.36 }, { p = V(0, 0.22, -0.5), w = 0.78, h = 0.64, hb = 0.48 },
+			{ p = V(0, 0.22, 0.1), w = 0.82, h = 0.66, hb = 0.5 }, { p = V(0, 0.21, 0.7), w = 0.76, h = 0.62, hb = 0.48 }, { p = V(0, 0.19, 1.05), w = 0.58, h = 0.54, hb = 0.36 } },
+			{ seg = 14, steps = 1, detail = true, capStart = 0.14, capEnd = 0.14, color = function(_t, _ex, ey)
+				return ey < -0.4 and shades[2] or shades[3]
+			end }))
+		for k = 0, 5 do
+			local z = -0.85 + k * 0.34
+			for _, side in ipairs({ -1, 1 }) do
+				local top = V(side * 0.74, -0.12, z + (side > 0 and 0.08 or -0.08))
+				local tip = top + V(side * 0.1, -0.42 - (k % 3) * 0.06, 0.04)
+				table.insert(strands, loft({ { p = top, w = 0.13, h = 0.09 }, { p = tip, w = 0.02, h = 0.02 } },
+					{ seg = 4, steps = 1, up = FWD, capStart = 0, capEnd = 0.01, color = solid(shades[(k + (side > 0 and 1 or 0)) % 2 == 0 and 1 or 4]) }))
+			end
+		end
+	end
+	addPart(bp, "Coat", "Torso", nil, V(0, 0, 0), merge(strands), { material = "Fabric", role = "Accent" })
 	local fringe = {}
 	for i, x in ipairs({ -0.3, -0.15, 0.0, 0.32 }) do
 		local a = V(x, hd.h * 0.9, -0.05)
@@ -1964,6 +1983,29 @@ function PetAnatomy.decorate(bp, P, tier: number)
 	end
 	local crownPart = head and "Head" or "Torso"
 	local crownAt = hTop
+	if head then
+		-- topo do crânio: média dos vértices mais altos da cabeça. O centro da caixa caía no meio do
+		-- focinho em cabeças compridas (lobo, cervo) e a tiara ficava flutuando na frente da testa.
+		local g = head.geom
+		local _, mx = MeshKit.bounds(g)
+		local sx, sz, n, wMax = 0, 0, 0, 0
+		for _, v in ipairs(g.verts) do
+			if v.Y > mx.Y - 0.08 then
+				sx, sz, n = sx + v.X, sz + v.Z, n + 1
+			end
+		end
+		if n > 0 then
+			local cx, cz = sx / n, sz / n
+			for _, v in ipairs(g.verts) do
+				if v.Y > mx.Y - 0.14 then
+					wMax = math.max(wMax, math.abs(v.X - cx), math.abs(v.Z - cz))
+				end
+			end
+			crownAt = V(cx, mx.Y, cz)
+			hTop = crownAt
+			hW = math.max(0.08, wMax)
+		end
+	end
 	if tier >= 4 then
 		-- marcas brilhantes em "V" ao longo do dorso
 		local marks = {}
@@ -1980,7 +2022,7 @@ function PetAnatomy.decorate(bp, P, tier: number)
 		end
 	end
 	if tier >= 5 then
-		addPart(bp, "Circlet", crownPart, nil, (head or torso).pivot, ring(crownAt - V(0, 0.07, 0), hW * 0.6, 0.03, 16, gold), { material = "Metal", role = "Detail", reflectance = 0.25 })
+		addPart(bp, "Circlet", crownPart, nil, (head or torso).pivot, ring(crownAt - V(0, 0.09, 0), hW * 0.95, 0.03, 16, gold), { material = "Metal", role = "Detail", reflectance = 0.25 })
 		for _, tag in ipairs({ "FL", "FR" }) do
 			local lower = bp.byName["Lower" .. tag]
 			if lower then

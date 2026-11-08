@@ -31,7 +31,6 @@ local lastPlayerAttack: { [Player]: number } = {}
 local abilityLimiter = RateLimiter.new(6, 2, Abilities.GlobalMinInterval)
 local attackLimiter = RateLimiter.new(8, 2, 0.2)
 local targetLimiter = RateLimiter.new(10, 2, 0.05)
-local hasteRestore: { [Player]: number } = {}
 local damageQueue = {}
 
 local losParams = RaycastParams.new()
@@ -173,6 +172,10 @@ function CombatService.damageEntity(e, amount: number, src, crit: boolean?)
 	if not e.alive or e.invulnerable or amount <= 0 then
 		return 0
 	end
+	-- poder de defesa do boss (ex.: Casca Ancestral): corta parte do dano por alguns segundos
+	if e.guardUntil and os.clock() < e.guardUntil then
+		amount *= 1 - (e.guardAmount or 0)
+	end
 	local dealt = math.min(e.hp, amount)
 	e.hp -= dealt
 	local now = os.clock()
@@ -192,6 +195,16 @@ function CombatService.damageEntity(e, amount: number, src, crit: boolean?)
 	queueNumber(e.root.Position + Vector3.new(0, (e.radius or 2) + 2, 0), dealt, crit and "crit" or "hit", crit)
 	if e.onDamaged then
 		e.onDamaged(e, src, dealt)
+	end
+	-- poder de contra-ataque do boss (Espelho Prismático reflete parte do dano; Carga Estática dá choque fixo)
+	if e.thornsUntil and now < e.thornsUntil and src and src.pet and src.pet.model and dealt > 0 then
+		local pet = src.pet
+		local raw = e.thornsFrac and dealt * e.thornsFrac or (e.thornsAtk or 0)
+		if raw > 0 and now >= (pet.thornsHitAt or 0) then
+			pet.thornsHitAt = now + 0.35 -- no máximo ~3 choques por segundo em cada pet
+			CombatService.hitPet(pet, raw, e.thornsMult or 1, e)
+			CombatService.fx("chain", { from = e.root.Position + Vector3.new(0, (e.radius or 2), 0), to = pet.root.Position, color = e.thornsColor or Color3.fromRGB(150, 220, 255) })
+		end
 	end
 	if e.hp <= 0 and e.alive then
 		e.alive = false
@@ -218,21 +231,69 @@ local function petDamage(st, e, mult: number, critBonus: number?)
 end
 CombatService.petDamage = petDamage
 
--- Corrida mais rápida do dono por `duration` s (Vento Veloz e Assinaturas de vento).
-function CombatService.boostWalk(player: Player, amount: number, duration: number)
-	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-	if hum and not hasteRestore[player] then
-		hasteRestore[player] = hum.WalkSpeed
-		hum.WalkSpeed += amount
-		task.delay(duration, function()
-			local h = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-			if h and hasteRestore[player] then
-				h.WalkSpeed = hasteRestore[player]
-			end
-			hasteRestore[player] = nil
-		end)
+-- Velocidade do jogador: modificadores que se combinam sem se atropelar (corrida das habilidades e
+-- lentidão/raízes dos bosses). WalkSpeed = base × (1 − lentidão) + corrida; ao acabar, volta à base.
+local walkMods: { [Player]: { hum: Humanoid, base: number, haste: number, hasteUntil: number, slow: number, slowUntil: number } } = {}
+
+local function applyWalk(player: Player)
+	local m = walkMods[player]
+	if not m then
+		return
+	end
+	local hum = m.hum
+	if not hum.Parent then
+		walkMods[player] = nil
+		return
+	end
+	local now = os.clock()
+	local haste = now < m.hasteUntil and m.haste or 0
+	local slow = now < m.slowUntil and m.slow or 0
+	hum.WalkSpeed = math.max(0, m.base * (1 - slow) + (slow >= 1 and 0 or haste))
+	if haste == 0 and slow == 0 then
+		walkMods[player] = nil
 	end
 end
+
+local function walkMod(player: Player)
+	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	if not hum then
+		return nil
+	end
+	local m = walkMods[player]
+	if m and m.hum ~= hum then
+		m = nil -- personagem novo (renasceu): começa da velocidade dele
+	end
+	if not m then
+		m = { hum = hum, base = hum.WalkSpeed, haste = 0, hasteUntil = 0, slow = 0, slowUntil = 0 }
+		walkMods[player] = m
+	end
+	return m
+end
+
+-- Corrida mais rápida do dono por `duration` s (Vento Veloz e Assinaturas de vento). Não acumula.
+function CombatService.boostWalk(player: Player, amount: number, duration: number)
+	local m = walkMod(player)
+	if not m or os.clock() < m.hasteUntil then
+		return
+	end
+	m.haste, m.hasteUntil = amount, os.clock() + duration
+	applyWalk(player)
+	task.delay(duration + 0.02, applyWalk, player)
+end
+
+-- Lentidão do jogador (amount 0..1; 1 = preso no lugar) por `duration` s. Fica a mais forte/mais longa.
+function CombatService.slowPlayer(player: Player, amount: number, duration: number)
+	local m = walkMod(player)
+	if not m then
+		return
+	end
+	local now = os.clock()
+	m.slow = math.max(now < m.slowUntil and m.slow or 0, math.clamp(amount, 0, 1))
+	m.slowUntil = math.max(m.slowUntil, now + duration)
+	applyWalk(player)
+	task.delay(duration + 0.02, applyWalk, player)
+end
+CombatService._walkMods = walkMods -- (testes)
 
 -------------------------------------------------------------------------------
 -- Dano em pets e jogadores (vindo de inimigos/bosses)
@@ -272,14 +333,15 @@ function CombatService.hitPlayer(player: Player, amount: number, attacker)
 	local char = player.Character
 	local hum = char and char:FindFirstChildOfClass("Humanoid")
 	if not hum or hum.Health <= 0 then
-		return
+		return 0
 	end
 	if S.WorldService.inSafeZone((char :: Model):GetPivot().Position) then
-		return
+		return 0
 	end
 	local scaled = math.floor(amount * (0.9 + rand() * 0.2))
 	hum:TakeDamage(scaled)
 	queueNumber((char :: Model):GetPivot().Position + Vector3.new(0, 3, 0), scaled, "player")
+	return scaled
 end
 
 function CombatService.refreshPlayerHealth(player: Player)
@@ -592,7 +654,7 @@ local function petTick(dt: number)
 				if now >= st.shieldUntil then
 					st.shield = 0
 				end
-				if oroot and now >= st.knockedUntil then
+				if oroot and now >= st.knockedUntil and now >= (st.stunUntil or 0) then -- preso por raízes/vinhas de boss: não ataca
 					st.target = chooseTarget(player, st, oroot)
 					local e = st.target
 					if e then
@@ -629,7 +691,7 @@ function CombatService.start()
 	Players.PlayerRemoving:Connect(function(p)
 		focus[p] = nil
 		lastPlayerAttack[p] = nil
-		hasteRestore[p] = nil
+		walkMods[p] = nil
 		abilityLimiter:clear(p)
 		attackLimiter:clear(p)
 		targetLimiter:clear(p)

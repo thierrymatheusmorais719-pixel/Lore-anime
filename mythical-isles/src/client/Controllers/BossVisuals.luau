@@ -61,6 +61,19 @@ local function attach(e): boolean
 		-- silhueta na cor da energia do boss (contorno que destaca o boss no escuro da arena)
 		local info = BossConfig.Info[model:GetAttribute("BossId")]
 		PetMesh.outline(vis, info and info.color or Color3.fromRGB(14, 10, 20), 0.3)
+		-- durante um PODER o boss fica tingido da cor dele (preenchimento leve do Highlight)
+		local hl = vis:FindFirstChild("ToonOutline") :: Highlight
+		local function tint()
+			local untilT = model:GetAttribute("PowerUntil")
+			local on = untilT ~= nil and workspace:GetServerTimeNow() < untilT
+			hl.FillColor = info and info.color or Color3.new(1, 1, 1)
+			hl.FillTransparency = on and 0.72 or 1
+			if on then
+				task.delay(untilT - workspace:GetServerTimeNow() + 0.05, tint)
+			end
+		end
+		model:GetAttributeChangedSignal("PowerUntil"):Connect(tint)
+		tint()
 		local root = vis.PrimaryPart :: BasePart
 		root.Anchored = true
 		e.vis, e.root, e.poly = vis, root, t.poly

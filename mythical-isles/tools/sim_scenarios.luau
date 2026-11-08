@@ -1140,6 +1140,15 @@ local function fightBoss(worldId)
 		return origStart(atk, ctx)
 	end
 	for i = 1, #b.cfg.phases do
+		if i == #b.cfg.phases then
+			-- a fase final tem vários ataques: garante que o de zonas seguras aparece no teste
+			for _, id in ipairs(b.cfg.phases[i].attacks) do
+				if b.cfg.attacks[id].shape == "safezones" then
+					SIM.run(0.5)
+					S.BossService.forceAttack(b, id)
+				end
+			end
+		end
 		for _ = 1, 30 do
 			act(pX, "Attack", b.model)
 			SIM.run(0.4)
@@ -1147,7 +1156,8 @@ local function fightBoss(worldId)
 		end
 		phases[b.phase] = true
 		if i < #b.cfg.phases then
-			S.BossService.debugDamage(worldId, (b.cfg.phases[i].at - b.cfg.phases[i + 1].at) + 0.02)
+			-- a partir da vida ATUAL (poderes como o Florescer curam o boss durante a luta)
+			S.BossService.debugDamage(worldId, math.max(0.02, b.entity.hp / b.entity.maxHp - b.cfg.phases[i + 1].at + 0.02))
 			SIM.run(3)
 		end
 	end
@@ -1234,6 +1244,9 @@ check("perfil é salvo no DataStore ao sair", store.writes > writes0)
 	-- freeze: segura o inimigo parado (nos testes de vários pulsos ele não sai andando da área)
 	local function place(e, offset: Vector3, freeze: boolean?)
 		e.model:PivotTo(CFrame.new(P + offset + Vector3.new(0, e.root.Position.Y - e.model:GetPivot().Position.Y, 0)))
+		if e.humanoid then
+			e.humanoid:MoveTo(e.root.Position) -- cancela a caminhada de antes (senão ele segue andando até o destino antigo)
+		end
 		e.hp = e.maxHp
 		e.stunnedUntil, e.slowUntil, e.slowAmount = freeze and os.clock() + 20 or 0, 0, 0
 		table.clear(e.marks)
@@ -1345,11 +1358,17 @@ check("perfil é salvo no DataStore ao sair", store.writes > writes0)
 	place(foes[1], Vector3.new(0, 0, 0), true)
 	place(foes[2], Vector3.new(0, 0, 5), true)
 	t3[3].model:PivotTo(CFrame.new(P + Vector3.new(-14, 0, 0)))
+	-- isola o tornado: os outros pets da equipe ficam parados (sem a Onda de Choque deles empurrar os alvos)
+	for _, i in ipairs({ 1, 2, 4 }) do
+		t3[i].stunUntil = os.clock() + 6
+		t3[i].fury = 0
+	end
 	SIM.run(0.1)
 	r = SigS.cast(ps, t3[3], foes[1])
 	SIM.run(5.2)
 	-- o tornado nasce no pet e anda até o alvo: acerta nos pulsos finais, várias vezes
-	expect(r and r.hits >= 4 and r.targets[foes[1]] and r.targets[foes[2]], "Vendaval Esmeralda: " .. tostring(r and r.hits))
+	expect(r and r.hits >= 4 and r.targets[foes[1]] and r.targets[foes[2]], string.format("Vendaval Esmeralda: %s golpes, alvo2 %s (vivo %s, dist %.1f)", tostring(r and r.hits),
+		tostring(r and r.targets[foes[2]]), tostring(foes[2] and foes[2].alive), foes[2] and ((foes[2].root.Position - foes[1].root.Position) * Vector3.new(1, 0, 1)).Magnitude or -1))
 	-- Fúria em combate real: com a barra cheia o próximo golpe do pet é o Assinatura (e a barra zera)
 	place(foes[1], Vector3.new(0, 0, 0))
 	local hero = t3[4]
@@ -2411,6 +2430,202 @@ end
 
 -- telemetria geral ---------------------------------------------------------------
 SIM.run(3)
+-- MECÂNICAS PRÓPRIAS DOS BOSSES (BossPowers): cada efeito e poder numa luta real -----------------
+;(function()
+	local before = #SIM.errors
+	local pm = SIM.addPlayer("Poder", 707)
+	SIM.run(1)
+	local dm = S.DataService.get(pm)
+	for _, w in ipairs(Worlds.Order) do
+		dm.worlds[w] = true
+	end
+	dm.team = {}
+	for _, sp in ipairs({ "kit_1", "leafcat_1", "owlet_1", "cap_1" }) do
+		table.insert(dm.team, InventoryLogic.addPet(dm, sp, nil, os.time(), "teste").uid)
+	end
+	S.PetService.spawnTeam(pm)
+	SIM.run(0.5)
+	local fxKinds = {}
+	local origFx = S.CombatService.fx
+	S.CombatService.fx = function(kind, payload)
+		fxKinds[kind] = (fxKinds[kind] or 0) + 1
+		return origFx(kind, payload)
+	end
+	local function hum()
+		return pm.Character:FindFirstChildOfClass("Humanoid")
+	end
+	local function bossOf(worldId)
+		for _, x in ipairs(S.BossService.list()) do
+			if x.world == worldId then
+				return x
+			end
+		end
+	end
+	-- coloca o jogador e os pets juntos na arena, cheios de vida
+	local function gather(b)
+		local spot = b.arena.center + Vector3.new(0, 3, 14)
+		SIM.teleport(pm, spot)
+		local h = hum()
+		h.MaxHealth, h.Health = 1e7, 1e7
+		for i, st in ipairs(S.PetService.team(pm)) do
+			st.hp, st.maxHp, st.knockedUntil, st.stunUntil = 1e7, 1e7, 0, 0
+			st.model:PivotTo(CFrame.new(spot + Vector3.new((i - 2.5) * 1.6, -2, 1.5)))
+		end
+		SIM.run(0.05)
+	end
+	local function startFight(worldId)
+		local b = bossOf(worldId)
+		if not b.entity or b.state == "Defeated" then
+			SIM.run(b.cfg.respawn + 1)
+		end
+		gather(b)
+		for _ = 1, 30 do
+			if b.state == "Fight" then
+				break
+			end
+			SIM.run(0.5)
+			gather(b)
+		end
+		b.entity.hp = b.entity.maxHp
+		return b
+	end
+	local function force(b, id)
+		gather(b)
+		S.BossService.forceAttack(b, id)
+		SIM.run(0.12)
+		gather(b)
+		local atk = b.cfg.attacks[id]
+		SIM.run(atk.telegraph + 0.15)
+	end
+	local function zones()
+		local n = 0
+		for _, z in ipairs(workspace.Telegraphs:GetChildren()) do
+			if z.Name == "BossZone" then
+				n += 1
+			end
+		end
+		return n
+	end
+
+	-- ELDERROOT: Prisão de Espinhos prende e deixa espinhos; Casca Ancestral corta o dano
+	local b = startFight("verdant")
+	check("bosses: luta começa para testar os poderes (Elderroot)", b.state == "Fight", b.state)
+	local base = hum().WalkSpeed
+	force(b, "thorn_prison")
+	local stunned = 0
+	for _, st in ipairs(S.PetService.team(pm)) do
+		if (st.stunUntil or 0) > os.clock() then
+			stunned += 1
+		end
+	end
+	check("Elderroot — Prisão de Espinhos: jogador preso, pets sem atacar e campo de espinhos no chão",
+		hum().WalkSpeed == 0 and stunned >= 1 and zones() >= 1, string.format("velocidade %s, pets presos %d, zonas %d", tostring(hum().WalkSpeed), stunned, zones()))
+	SIM.run(4.5)
+	check("Elderroot — depois das raízes o jogador volta à velocidade normal e o campo some", hum().WalkSpeed == base and zones() == 0,
+		string.format("%s/%s, zonas %d", tostring(hum().WalkSpeed), tostring(base), zones()))
+	SIM.clearMessages(pm)
+	force(b, "ancient_bark")
+	local e = b.entity
+	local hp0 = e.hp
+	local dealt = S.CombatService.damageEntity(e, 1000, { player = pm })
+	check("Elderroot — Casca Ancestral: dano recebido cai 55% e o jogador é avisado",
+		math.abs(dealt - 450) < 1 and math.abs((hp0 - e.hp) - 450) < 1 and #SIM.messages(pm, "BossPower") == 1 and b.model:GetAttribute("Power") == "bark", tostring(dealt))
+	check("Elderroot — poder entra em recarga (não repete logo)", (b.powerReady.ancient_bark or 0) > os.clock() + 10)
+
+	-- PRISM TITAN: estilhaços deixam lento, Refração Tripla em leque, Espelho Prismático reflete
+	b = startFight("crystal")
+	base = hum().WalkSpeed
+	force(b, "shard_rain")
+	check("Prism Titan — Chuva de Estilhaços deixa o jogador lento", hum().WalkSpeed < base * 0.7 and hum().WalkSpeed > 0, tostring(hum().WalkSpeed))
+	SIM.run(3.2)
+	local built = {}
+	local origBuild = AttackShapes.build
+	AttackShapes.build = function(atk, ctx)
+		local sh = origBuild(atk, ctx)
+		built[atk.shape] = #sh
+		return sh
+	end
+	force(b, "prism_split")
+	AttackShapes.build = origBuild
+	check("Prism Titan — Refração Tripla: três feixes em leque", built.fan == 3, tostring(built.fan))
+	force(b, "prism_mirror")
+	local pet = S.PetService.team(pm)[1]
+	local petHp = pet.hp
+	S.CombatService.damageEntity(b.entity, 2000, { player = pm, pet = pet, kind = "pet" })
+	check("Prism Titan — Espelho Prismático devolve dano ao pet que bateu", pet.hp < petHp and (fxKinds.chain or 0) > 0, string.format("%d -> %d", petHp, pet.hp))
+
+	-- TEMPEST WYRM: raio em cadeia, células de tempestade que ficam, carga estática
+	b = startFight("sky")
+	local chain0 = fxKinds.chain or 0
+	force(b, "lightning_marks")
+	check("Tempest Wyrm — Marcas de Relâmpago pulam em cadeia entre os pets", (fxKinds.chain or 0) > chain0, tostring((fxKinds.chain or 0) - chain0))
+	force(b, "storm_cells")
+	check("Tempest Wyrm — Células de Tempestade ficam no chão", zones() >= 1, tostring(zones()))
+	SIM.run(5.5)
+	force(b, "static_charge")
+	pet = S.PetService.team(pm)[2]
+	pet.thornsHitAt = 0
+	petHp = pet.hp
+	S.CombatService.damageEntity(b.entity, 300, { player = pm, pet = pet, kind = "pet" })
+	check("Tempest Wyrm — Carga Estática dá choque no pet que bate", pet.hp < petHp, string.format("%d -> %d", petHp, pet.hp))
+
+	-- THE WILDERBLOOM: poça de veneno (lentidão), Laço de Vinhas prende, Florescer cura com os brotos
+	b = startFight("wilds")
+	base = hum().WalkSpeed
+	force(b, "spore_marks")
+	SIM.run(0.7)
+	check("Wilderbloom — Esporos deixam poça de veneno que deixa lento", zones() >= 1 and hum().WalkSpeed < base, string.format("zonas %d, velocidade %s", zones(), tostring(hum().WalkSpeed)))
+	SIM.run(5)
+	force(b, "vine_snare")
+	check("Wilderbloom — Laço de Vinhas prende o jogador", hum().WalkSpeed == 0, tostring(hum().WalkSpeed))
+	SIM.run(2)
+	force(b, "summon_sprouts")
+	local alive = 0
+	for _, x in ipairs(b.summons) do
+		if x.alive then
+			alive += 1
+		end
+	end
+	b.entity.hp = b.entity.maxHp * 0.7 -- ainda na fase 1 (abaixo de 60% ela troca de fase e fica invulnerável)
+	local hpB = b.entity.hp
+	force(b, "rebloom")
+	local want = b.entity.maxHp * (0.03 + 0.015 * alive)
+	check("Wilderbloom — Florescer cura mais com brotos vivos", alive >= 1 and math.abs((b.entity.hp - hpB) - want) < want * 0.01,
+		string.format("%d brotos, curou %.0f (esperado %.0f)", alive, b.entity.hp - hpB, want))
+
+	-- VOID SOVEREIGN: Fendas drenam energia/Fúria, Buraco Negro fica e prende, Fome do Vazio rouba vida
+	b = startFight("astral")
+	for _, st in ipairs(S.PetService.team(pm)) do
+		st.energy, st.fury = 50, 3
+	end
+	force(b, "rift_lines")
+	-- (a energia volta a encher aos poucos e cada golpe do pet soma 1 de Fúria: mede logo depois)
+	local drained = 0
+	for _, st in ipairs(S.PetService.team(pm)) do
+		if st.energy < 10 and (st.fury or 0) <= 1 then
+			drained += 1
+		end
+	end
+	check("Void Sovereign — Fendas sugam a energia e a Fúria dos pets atingidos", drained >= 1, tostring(drained))
+	base = hum().WalkSpeed
+	force(b, "black_hole")
+	SIM.run(0.7)
+	check("Void Sovereign — Buraco Negro fica no chão e deixa lento quem está dentro", zones() >= 1 and hum().WalkSpeed < base, string.format("zonas %d", zones()))
+	SIM.run(5)
+	force(b, "void_hunger")
+	b.entity.hp = b.entity.maxHp * 0.8 -- ainda na fase 1
+	local hpV = b.entity.hp
+	force(b, "star_marks")
+	check("Void Sovereign — Fome do Vazio: o boss se cura com o dano que causa", b.entity.hp > hpV, string.format("%.0f -> %.0f", hpV, b.entity.hp))
+	check("bosses: poderes mostram o efeito no cliente (aura) e marcam o modelo", (fxKinds.bossPower or 0) >= 5 and b.model:GetAttribute("Power") == "drain")
+
+	S.CombatService.fx = origFx
+	-- sai da arena (o boss para de atacar) e espera as áreas que ainda estavam no chão acabarem
+	SIM.teleport(pm, Worlds.Info.verdant.center + Vector3.new(0, 4, 20))
+	SIM.run(7)
+	check("bosses: áreas de poder somem sozinhas e nenhum erro no servidor", zones() == 0 and #SIM.errors == before, string.format("zonas %d, erro %s", zones(), tostring(SIM.errors[before + 1])))
+end)()
+
 check("nenhum erro de execução no servidor durante os cenários", #SIM.errors == 0, SIM.errors[1])
 check("nenhum aviso de falha (servidor ou cliente)", #SIM.warnings == 0, SIM.warnings[1])
 check("todas as mensagens enviadas ao cliente são serializáveis", true)

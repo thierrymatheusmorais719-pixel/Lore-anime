@@ -7,8 +7,8 @@ salvamento. Tudo em **Luau**, organizado para **Rojo**. Mapa, criaturas, bosses,
 vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`).
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
-> Luau, contra o dump público da API do Roblox, com 62 testes de lógica, 3866 verificações dos modelos 3D e
-> **181 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> Luau, contra o dump público da API do Roblox, com 65 testes de lógica, 3866 verificações dos modelos 3D e
+> **200 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -47,7 +47,7 @@ nenhum dos dois modos funcionar.
 Access to API Services*. Sem isso o jogo roda em **modo memória** e avisa na tela e no Output que nada será
 salvo.
 
-Ao dar Play no Studio, o servidor imprime `[Testes] Testes: 62 passaram…` (os testes de lógica rodam
+Ao dar Play no Studio, o servidor imprime `[Testes] Testes: 65 passaram…` (os testes de lógica rodam
 automaticamente no Studio) e o menu **Opções** ganha a seção **Testes (somente no Studio)**, com comandos
 para moedas, itens, mundos, nível máximo, evento de sorte, avançar fase do boss, tesouro e Estrela Errante.
 Esses comandos são recusados em servidores publicados (`RunService:IsStudio()`).
@@ -264,6 +264,36 @@ Se nenhum dos dois modos funcionar, o boss antigo continua visível.
 polida, cristal/neon), as paletas e a tipografia, os componentes (moldura rúnica, botões, barras "recipiente",
 slots), o HUD, o diálogo com NPCs, o inventário de pets, a loja e os ovos, o menu de mundos e as animações,
 com propriedades do Roblox Studio.
+
+### Ataques e poderes próprios dos bosses
+
+Além das formas no chão (círculo, linha, cruz, anel, cone), cada boss tem mecânicas que só ele usa
+(`Config/Bosses.luau`, `Services/BossPowers.luau`). Os **poderes** aparecem com uma faixa na tela ("✦ Casca
+Ancestral — Dano recebido −55% por 6 s"), uma aura em volta do boss e o boss tingido da cor dele; têm recarga
+(não repetem em seguida) e só entram a partir da fase 2:
+
+| Boss | Ataques próprios | Poder |
+|---|---|---|
+| Elderroot | **Prisão de Espinhos**: prende o jogador (2 s) e os pets atingidos, e deixa um campo de espinhos por 4 s | **Casca Ancestral**: −55% de dano recebido por 6 s |
+| Prism Titan | **Chuva de Estilhaços** deixa lento (−45%, 3 s); **Refração Tripla**: três feixes em leque | **Espelho Prismático**: devolve 30% do dano de cada golpe de pet ao pet, por 6 s |
+| Tempest Wyrm | **Marcas de Relâmpago** pulam em cadeia para até 2 pets perto de cada pet atingido; **Células de Tempestade** ficam 5 s soltando raios | **Carga Estática**: por 7 s, todo pet que bate leva choque |
+| The Wilderbloom | **Esporos** deixam poças de veneno (dano + lentidão por 5 s); **Laço de Vinhas** prende quem está no cone | **Florescer**: cura 3% + 1,5% por broto vivo (derrubar os brotos é a resposta) |
+| Void Sovereign | **Fendas** sugam a energia e a Fúria dos pets; **Buraco Negro** fica 5 s no chão, causa dano e deixa muito lento | **Fome do Vazio**: por 8 s cura 40% do dano que causar |
+
+Base no código: lentidão/prisão do jogador por modificadores de velocidade que se combinam com a corrida das
+habilidades (`CombatService.slowPlayer`), pets presos não atacam (`stunUntil`), redução de dano, reflexo e choque em
+`CombatService.damageEntity`, sorteio de ataque que pula poderes em recarga (`BossLogic.pickAttack`).
+
+### Pets: partes corrigidas (modo de peças)
+
+Antes/depois em `docs/preview/pets_fix_antes.jpg` e `pets_fix_depois.jpg`:
+- **Patas soltas:** no modo de peças o tornozelo que liga a perna à pata não era criado, e as patas ficavam como
+  discos no chão separados das pernas (raposa, gato, lobo, leão, cervo...). Agora a perna chega até a pata.
+- **Tiara (Lendário+) flutuando:** era posicionada pelo centro da caixa da cabeça, que em cabeças compridas (lobo,
+  cervo) cai no focinho. Agora fica no topo do crânio, com o raio da cabeça ali.
+- **Mamute de capim:** as 36 placas finas da pelagem viravam lâminas verdes gigantes; agora é uma manta de capim no
+  dorso com franja de tufos, e o corpo aparece.
+- **Flores nas costas** encostadas no corpo (antes ficavam um pouco acima).
 
 ### Visual v3 dos pets e bosses (modo de peças, sem EditableMesh)
 
@@ -597,9 +627,9 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Sintaxe de todos os arquivos | `luau-compile --null` em cada `.luau` | ok |
 | Variáveis indefinidas / código suspeito | `python3 tools/lint.py luau-analyze` | 0 avisos |
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
-| Lógica pura | `python3 tools/run_tests.py luau` | **62 testes passando** |
+| Lógica pura | `python3 tools/run_tests.py luau` | **65 testes passando** |
 | Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", ≤ 18.000 triângulos) + bosses anatômicos nos dois modos (todas as juntas do boss antigo, mesma altura de raiz, pés no chão, peças de energia com cor, ≤ 20.000 / 3.400 triângulos) | `python3 tools/run_tests.py luau --smoke` | **3866 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **181 cenários passando** (inclui o visual v3 dos pets e bosses: contorno de desenho, sem textura de grama, olhos com brilho no modo de peças e sombreamento pela altura; a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **200 cenários passando** (inclui as mecânicas próprias dos 5 bosses numa luta real: prender, lentidão, leque, espelho, raio em cadeia, áreas que ficam, carga estática, veneno, vinhas, Florescer com brotos, drenagem e Fome do Vazio; o visual v3 dos pets e bosses: contorno de desenho, sem textura de grama, olhos com brilho no modo de peças e sombreamento pela altura; a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -660,7 +690,7 @@ travamento) foi exercitada.
 
 ## 7. Roteiro para conferir no Studio
 
-1. **Play**: o Output deve mostrar `mundos construídos`, `servidor pronto` e `[Testes] Testes: 62 passaram`.
+1. **Play**: o Output deve mostrar `mundos construídos`, `servidor pronto` e `[Testes] Testes: 65 passaram`.
 2. Ande até o **Ovo do Bosque** (E) → painel com as chances → *Chocar 1* → animação → o pet segue você.
 3. Clique num **arbusto** → os pets mineram (moedas sobem e o número dourado aparece).
 4. Vá até os **Thornlings** (lado −Z da ilha) → eles devem perseguir, atacar com aviso, voltar se você fugir.

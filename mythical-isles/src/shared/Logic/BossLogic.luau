@@ -16,16 +16,24 @@ function BossLogic.phaseIndex(hpFrac: number, phases): number
 end
 
 -- Escolhe um ataque da fase, evitando repetir o último quando há alternativa.
-function BossLogic.pickAttack(phase, lastAttack: string?, rng): string
+-- Sorteia o próximo ataque da fase, sem repetir o último. `blocked(id)` (opcional) tira da roleta o que
+-- ainda está em recarga (poderes dos bosses); se tudo estiver bloqueado, ignora o bloqueio.
+function BossLogic.pickAttack(phase, lastAttack: string?, rng, blocked: ((string) -> boolean)?): string
 	local pool = phase.attacks
 	if #pool == 1 then
 		return pool[1]
 	end
-	local options = {}
+	local options, fallback = {}, {}
 	for _, id in ipairs(pool) do
 		if id ~= lastAttack then
-			table.insert(options, id)
+			table.insert(fallback, id)
+			if not blocked or not blocked(id) then
+				table.insert(options, id)
+			end
 		end
+	end
+	if #options == 0 then
+		options = fallback
 	end
 	local i = math.floor(rng() * #options) + 1
 	return options[math.min(i, #options)]

@@ -164,7 +164,8 @@ return function(t)
 				last = ph.at
 				for _, a in ipairs(ph.attacks) do
 					t.ok(b.attacks[a] ~= nil, id .. " ataque " .. a)
-					t.ok(b.attacks[a].telegraph >= 1.0, id .. " aviso curto " .. a)
+					-- ataques com dano: pelo menos 1 s de aviso para dar tempo de sair da área
+					t.ok(b.attacks[a].shape == "power" or b.attacks[a].telegraph >= 1.0, id .. " aviso curto " .. a)
 				end
 			end
 		end
@@ -179,6 +180,61 @@ return function(t)
 			t.ok(a ~= last, "repetiu")
 			last = a
 		end
+	end)
+
+	t.test("mecânicas próprias: todo boss tem um poder e um efeito ou área que fica no chão", function()
+		local POWERS = { bark = true, mirror = true, static = true, bloom = true, drain = true }
+		for id, b in pairs(Bosses.Info) do
+			local powers, special = 0, 0
+			for aid, a in pairs(b.attacks) do
+				if a.shape == "power" then
+					powers += 1
+					t.ok(POWERS[a.power], id .. " poder desconhecido " .. aid)
+					t.ok((a.cooldown or 0) >= 10, id .. " poder sem recarga " .. aid)
+					t.ok(a.telegraph >= 0.5 and a.telegraph <= 1.5, id .. " conjuração " .. aid)
+					if a.power ~= "bloom" then
+						t.ok(a.duration and a.duration >= 3 and a.duration <= 10, id .. " duração " .. aid)
+						t.ok(a.amount and a.amount > 0 and a.amount < 1, id .. " intensidade " .. aid)
+					end
+				end
+				if a.effect or a.linger then
+					special += 1
+				end
+				if a.linger then
+					t.ok(a.linger.tick >= 0.4 and a.linger.duration <= 6 and a.linger.pdmg < a.pdmg, id .. " área que fica muito forte " .. aid)
+				end
+				if a.effect and a.effect.root then
+					t.ok(a.effect.root <= 2.5, id .. " prende por tempo demais " .. aid)
+				end
+			end
+			t.ok(powers >= 1, id .. " sem poder próprio")
+			t.ok(special >= 1, id .. " sem efeito próprio")
+		end
+	end)
+
+	t.test("poder em recarga sai da roleta (e volta quando tudo está bloqueado)", function()
+		local phase = { attacks = { "a", "p", "b" } }
+		local rng = t.rng(5)
+		for _ = 1, 300 do
+			local id = BossLogic.pickAttack(phase, nil, rng, function(x)
+				return x == "p"
+			end)
+			t.ok(id ~= "p", "poder em recarga foi sorteado")
+		end
+		local only = BossLogic.pickAttack({ attacks = { "a", "p" } }, "a", rng, function(x)
+			return x == "p"
+		end)
+		t.eq(only, "p")
+	end)
+
+	t.test("Refração Tripla: 3 linhas em leque, a do meio no alvo", function()
+		local atk = Bosses.Info.prism_titan.attacks.prism_split
+		local shapes = AttackShapes.build(atk, { bx = 0, bz = 0, tx = 0, tz = 50, targets = {}, ax = 0, az = 0, ar = 70, rng = t.rng(1) })
+		t.eq(#shapes, 3)
+		t.ok(AttackShapes.hitsAny(shapes, 0, 30), "linha do meio aponta para o alvo")
+		local side = math.rad(atk.spread)
+		t.ok(AttackShapes.hitsAny(shapes, math.sin(side) * 40, math.cos(side) * 40), "linha lateral")
+		t.ok(not AttackShapes.hitsAny(shapes, math.sin(side / 2) * 50, math.cos(side / 2) * 50), "fresta entre as linhas")
 	end)
 
 	t.test("participação: presença sozinha não dá recompensa", function()
