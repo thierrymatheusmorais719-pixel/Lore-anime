@@ -587,28 +587,65 @@ end
 
 local energy: { [Model]: any } = {}
 
-local function setupEnergy(model: Instance)
-	task.wait()
-	if not model:IsA("Model") then
+-- Cor da energia de uma peça (as malhas novas guardam a cor no atributo; a cor da MeshPart é branca).
+local function energyColor(p: BasePart): Color3
+	local c = p:GetAttribute("EnergyColor")
+	return typeof(c) == "Color3" and c or p.Color
+end
+
+-- model: onde estão as peças EnergyFx; source: de onde vêm os atributos (o boss do servidor, quando o
+-- visual é o boss novo do BossVisuals).
+local function setupEnergy(model: Instance, source: Instance?, now: boolean?)
+	if not now then
+		task.wait()
+	end
+	if not model:IsA("Model") or energy[model :: Model] then
 		return
+	end
+	if not source and model:GetAttribute("MeshVisual") then
+		return -- o boss antigo está escondido: a energia vai para o visual novo
 	end
 	local list = {}
 	for _, d in ipairs(model:GetDescendants()) do
 		if d:IsA("BasePart") and d:GetAttribute("EnergyFx") then
-			local l = Instance.new("PointLight")
-			l.Color = d.Color
-			l.Range = 10
-			l.Brightness = 0.6
-			l.Shadows = false
-			l.Parent = d
-			local e = emit(d :: BasePart, { color = ColorSequence.new(WHITE, d.Color), emission = 1, size = seq(0, 0.7, 1, 0), speed = NumberRange.new(2, 6),
-				life = NumberRange.new(0.3, 0.6), drag = 3, z = 1 }, 0)
-			table.insert(list, { part = d, light = l, emit = e })
+			local color = energyColor(d)
+			-- reaproveita a luz/partículas se o visual já esteve na cena (sai e volta com a distância)
+			local l = d:FindFirstChild("EnergyLight") :: PointLight?
+			if not l then
+				l = Instance.new("PointLight")
+				l.Name = "EnergyLight"
+				l.Color = color
+				l.Range = 10
+				l.Brightness = 0.6
+				l.Shadows = false
+				l.Parent = d
+			end
+			local e = d:FindFirstChild("EnergyEmit") :: ParticleEmitter?
+			if not e then
+				e = emit(d :: BasePart, { color = ColorSequence.new(WHITE, color), emission = 1, size = seq(0, 0.7, 1, 0), speed = NumberRange.new(2, 6),
+					life = NumberRange.new(0.3, 0.6), drag = 3, z = 1 }, 0)
+				e.Name = "EnergyEmit"
+			end
+			table.insert(list, { part = d, light = l, emit = e, color = color })
 		end
 	end
+	local src = source or model
 	if #list > 0 then
-		energy[model :: Model] = { parts = list, lastAt = model:GetAttribute("ActionAt") or 0 }
+		energy[model :: Model] = { parts = list, lastAt = src:GetAttribute("ActionAt") or 0, source = src }
 	end
+end
+
+-- O boss novo (BossVisuals) assumiu: tira a energia do modelo antigo e liga nas peças novas.
+local function retargetEnergy(server: Model, visual: Model)
+	local old = energy[server]
+	if old then
+		energy[server] = nil
+		for _, p in ipairs(old.parts) do
+			p.light:Destroy()
+			p.emit:Destroy()
+		end
+	end
+	setupEnergy(visual, server, true)
 end
 
 local function updateEnergy()
@@ -619,9 +656,10 @@ local function updateEnergy()
 			energy[model] = nil
 			continue
 		end
-		local wEnd = model:GetAttribute("WindupEnd") or 0
+		local src = st.source
+		local wEnd = src:GetAttribute("WindupEnd") or 0
 		local left = wEnd - now
-		local charging = left > 0 and left < 3 and model:GetAttribute("Dead") ~= true
+		local charging = left > 0 and left < 3 and src:GetAttribute("Dead") ~= true
 		local k = charging and (1 - math.clamp(left / 1.6, 0, 1)) or 0
 		for _, p in ipairs(st.parts) do
 			p.light.Brightness = 0.5 + pulse * 0.4 + k * 4
@@ -629,27 +667,28 @@ local function updateEnergy()
 			p.emit.Rate = charging and (lowVfx() and 12 or 40) or 0
 		end
 		-- energia elétrica (Tempest Wyrm): arcos curtos saltando das peças carregadas
-		if charging and model:GetAttribute("EnergyKind") == "electric" and os.clock() - (st.lastArc or 0) > (lowVfx() and 0.35 or 0.12) then
+		if charging and src:GetAttribute("EnergyKind") == "electric" and os.clock() - (st.lastArc or 0) > (lowVfx() and 0.35 or 0.12) then
 			st.lastArc = os.clock()
-			local src = st.parts[math.random(1, #st.parts)].part
+			local pick = st.parts[math.random(1, #st.parts)]
 			local off = Vector3.new(math.random() - 0.5, math.random() - 0.3, math.random() - 0.5) * 12
-			lightning(src.Position, src.Position + off, src.Color, 0.25)
+			lightning(pick.part.Position, pick.part.Position + off, pick.color, 0.25)
 		end
-		local at = model:GetAttribute("ActionAt") or 0
+		local at = src:GetAttribute("ActionAt") or 0
 		if at > st.lastAt then
 			st.lastAt = at
 			if now - at < 1 then
 				for _, p in ipairs(st.parts) do
 					p.emit:Emit(lowVfx() and 6 or 16)
 				end
-				local core = st.parts[1].part
-				flash(core.Position, core.Color, 30, 5, 0.4)
+				local core = st.parts[1]
+				flash(core.part.Position, core.color, 30, 5, 0.4)
 			end
 		end
 	end
 end
 Fx.updateEnergy = updateEnergy
 Fx.trackEnergy = setupEnergy
+Fx.retargetEnergy = retargetEnergy
 
 -------------------------------------------------------------------------------
 -- Indicadores de ataque (geometria vem do servidor; aqui só a animação)

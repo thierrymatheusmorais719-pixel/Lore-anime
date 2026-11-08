@@ -246,6 +246,98 @@ table.sort(anatList)
 print(string.format("Malhas: %d espécies, %d anatomias, média %.0f triângulos e %.0f partes por pet, máx. %d (%s)", meshStats.species, #anatList,
 	meshStats.tris / math.max(1, meshStats.species), meshStats.parts / math.max(1, meshStats.species), meshStats.maxTris, meshStats.maxId))
 print("  anatomias: " .. table.concat(anatList, ", "))
+-- BOSSES NOVOS (BossAnatomy): mesmas juntas do modelo antigo (as animações dos bosses continuam),
+-- pés no chão na altura do servidor, energia nas peças certas e orçamento dos dois modos
+local BossAnatomy = require(__proxy("Builders/BossAnatomy"))
+for id in pairs(Bosses.Info) do
+	checks += 1
+	local okOld, oldModel, oldH = pcall(BossModels.build, id)
+	if not okOld then
+		fail("boss antigo " .. id .. ": " .. tostring(oldModel))
+		continue
+	end
+	local oldJoints, oldEnergy = {}, 0
+	for _, d in ipairs(oldModel:GetDescendants()) do
+		if d.ClassName == "Motor6D" and d.Name ~= "Fixed" then
+			oldJoints[d.Name] = true
+		elseif d:IsA("BasePart") and d:GetAttribute("EnergyFx") then
+			oldEnergy += 1
+		end
+	end
+	if not BossAnatomy.has(id) then
+		fail("boss " .. id .. ": sem planta anatômica")
+		continue
+	end
+	for _, low in ipairs({ false, true }) do
+		local label = "boss novo " .. id .. (low and " (peças)" or " (malha)")
+		local ok, bp = pcall(BossAnatomy.blueprint, id, { low = low })
+		if not ok then
+			fail(label .. ": " .. tostring(bp))
+			continue
+		end
+		local names, joints, energy = {}, {}, 0
+		local y0, y1 = math.huge, -math.huge
+		for _, p in ipairs(bp.parts) do
+			if names[p.name] then
+				fail(label .. ": parte repetida " .. p.name)
+			end
+			names[p.name] = true
+			if p.parent and not names[p.parent] then
+				fail(label .. ": " .. p.name .. " antes do pai " .. tostring(p.parent))
+			end
+			if p.joint then
+				joints[p.joint] = true
+			end
+			if p.attrs and p.attrs.EnergyFx then
+				energy += 1
+				if type(p.attrs.EnergyColor) ~= "table" and typeof(p.attrs.EnergyColor) ~= "Color3" or p.attrs.EnergyColor.R == nil then
+					fail(label .. ": EnergyFx sem cor em " .. p.name)
+				end
+			end
+			local g = p.geom
+			if #g.tris == 0 then
+				fail(label .. ": parte vazia " .. p.name)
+			end
+			for _, tri in ipairs(g.tris) do
+				if tri[1] < 1 or tri[2] < 1 or tri[3] < 1 or tri[1] > #g.verts or tri[2] > #g.verts or tri[3] > #g.verts then
+					fail(label .. ": índice inválido em " .. p.name)
+					break
+				end
+			end
+			for i, v in ipairs(g.verts) do
+				if v.X ~= v.X or v.Y ~= v.Y or v.Z ~= v.Z or not g.colors[i] then
+					fail(label .. ": vértice inválido em " .. p.name)
+					break
+				end
+				if p.name:sub(1, 5) ~= "Orbit" then
+					y0, y1 = math.min(y0, v.Y + p.pivot.Y), math.max(y1, v.Y + p.pivot.Y)
+				end
+			end
+		end
+		for j in pairs(oldJoints) do
+			if not joints[j] then
+				fail(label .. ": falta a junta " .. j .. " (o Animator anima os bosses por ela)")
+			end
+		end
+		if math.abs(bp.hover - oldH) > 1e-6 then
+			fail(string.format("%s: altura da raiz %.2f diferente do servidor (%.2f)", label, bp.hover, oldH))
+		end
+		if math.abs(y0 + bp.hover) > 0.9 then
+			fail(string.format("%s: pés fora do chão (base %.2f, raiz a %.2f do chão)", label, y0, bp.hover))
+		end
+		if y1 - y0 < 20 then
+			fail(string.format("%s: pequeno demais (%.1f studs de altura)", label, y1 - y0))
+		end
+		if energy < math.min(oldEnergy, 5) then
+			fail(string.format("%s: %d peças de energia (antigo tinha %d)", label, energy, oldEnergy))
+		end
+		local n = PetAnatomy.triangles(bp, low)
+		if (low and n > 3400) or (not low and n > 20000) then
+			fail(string.format("%s: %d triângulos (orçamento %d)", label, n, low and 3400 or 20000))
+		end
+		print(string.format("  boss novo %-15s %-7s %2d partes, %5d triângulos, %.0f studs de altura", id, low and "peças" or "malha", #bp.parts, n, y1 - y0))
+	end
+end
 local _ = MeshKit
 
 print(string.format("Construtores: %d pets (média %.0f peças, máx. %d), %d inimigos, %d bosses, %d verificações, %d falhas",

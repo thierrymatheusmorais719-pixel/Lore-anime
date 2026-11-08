@@ -7,8 +7,8 @@ salvamento. Tudo em **Luau**, organizado para **Rojo**. Mapa, criaturas, bosses,
 vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`).
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
-> Luau, contra o dump público da API do Roblox, com 58 testes de lógica, 3669 verificações dos modelos 3D e
-> **143 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> Luau, contra o dump público da API do Roblox, com 58 testes de lógica, 3866 verificações dos modelos 3D e
+> **155 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -39,6 +39,9 @@ rojo serve               # e no Studio: plugin Rojo → Connect
 
 Sem a opção o jogo usa o modo low-poly e avisa com uma mensagem rápida. A caixa de erro na tela só aparece se
 nenhum dos dois modos funcionar.
+
+**Bosses 3D novos:** seguem a mesma regra, sozinhos — low-poly de peças sem configurar nada
+(`docs/preview/boss_line_low.jpg`), malhas lisas com a opção ligada (`docs/preview/boss_line_mesh.jpg`).
 
 **Para testar o salvamento (DataStore):** publique o lugar e ative *Game Settings → Security → Enable Studio
 Access to API Services*. Sem isso o jogo roda em **modo memória** e avisa na tela e no Output que nada será
@@ -77,7 +80,7 @@ portal para o próximo mundo (Crystal Hollow → Skybound Kingdom → Whispering
 | 4 | **Combate com pets** | `Config/Combat.luau`, `Logic/PetStats.luau`, `CombatService.luau` | vida, ataque, defesa, velocidade, alcance, energia, crítico; 5 funções (Tanque, Atacante, Suporte, Explorador, Especialista), testadas para que nenhuma domine em todos os atributos |
 | 5 | **Modelos dos inimigos** | `Builders/EnemyModels.luau` | 14 espécies originais com construtor próprio, mais a invocação da Wilderbloom e a Estrela Errante (16 modelos). Silhuetas distintas (bulbo de espinhos, gigante de raízes, fera espinhosa, aracnídeo de cristal, golem, verme, orbe elétrico, felino de nuvem, cavaleiro alado, pantera de névoa, cervo oco, tartaruga-árvore, sentinela flutuante, guardião do portal) |
 | 6 | **IA** | `Logic/EnemyBrain.luau`, `EnemyService.luau` | Idle, Patrulha, Investigação, Perseguição, Ataque, Recuperação, Retorno e Derrota. Detecção com linha de visão, histerese de alvo, coleira por distância e tempo, retorno invulnerável com cura, detecção de travamento. PathfindingService para inimigos terrestres e voo direto com desvio por raycast para os voadores. Alcance verificado no servidor |
-| 7 | **Bosses** | `Config/Bosses.luau`, `Builders/BossModels.luau`, `BossService.luau` | Elderroot, Prism Titan, Tempest Wyrm (fase aérea), The Wilderbloom (invocações, zonas seguras), Void Sovereign (4 fases). Entrada, fases com transição invulnerável, aviso do próximo ataque, respawn, reset se a arena esvaziar, vida que escala com os jogadores |
+| 7 | **Bosses** | `Config/Bosses.luau`, `Builders/BossModels.luau` (servidor), `Builders/BossAnatomy.luau` + `BossVisuals.luau` (visual no cliente), `BossService.luau` | Elderroot, Prism Titan, Tempest Wyrm (fase aérea), The Wilderbloom (invocações, zonas seguras), Void Sovereign (4 fases). Entrada, fases com transição invulnerável, aviso do próximo ataque, respawn, reset se a arena esvaziar, vida que escala com os jogadores |
 | 8 | **Arenas** | `WorldBuilder.arena` | piso, borda luminosa (limite), 10 pilares com luz, decoração temática, portão de entrada. Só quem está **dentro** da arena causa dano e participa |
 | 9 | **Habilidades** | `Config/Abilities.luau`, `CombatService.useAbility` | Investida, Projétil, Escudo (provoca), Cura, Onda de Choque, Quebrar Defesa, Vento Veloz, Faro do Tesouro (marca e revela), Laço de Raízes, Chuva Estelar. Recarga, custo, alcance, efeito no servidor, limite anti-spam, ranks 1–5 |
 | 10 | **Drops** | `Config/Drops.luau`, `Logic/DropLogic.luau`, `RewardService.luau` | tabelas por inimigo/boss/tesouro; a sorte só afeta entradas marcadas e **sempre com teto**. Variantes de pet, ovos especiais, cosméticos, catalisadores, troféus. Cada jogador elegível rola com a própria sorte |
@@ -199,6 +202,37 @@ raiz do pet, e esconde o modelo antigo só na tela dele. Mutações e acessório
 miniaturas do inventário e a revelação do ovo usam a malha quando ela já está pronta.
 **Se a API de malhas não funcionar** (ex.: desligada nas configurações do jogo), o cliente mantém o modelo antigo,
 sem erro.
+
+### Bosses anatômicos (malha ou low-poly)
+
+Os 5 bosses foram refeitos com a mesma técnica dos pets, seguindo a arte conceitual (`docs/concept/bosses.png`).
+Prévias: `docs/preview/boss_line_mesh.jpg`, `boss_line_low.jpg` e `boss_*_pair.jpg` (malha | low-poly lado a lado).
+
+- **Elderroot:** colosso de casca com relevo de sulcos, musgo nas faces de cima, placas de casca no peito,
+  rachaduras verdes, cristal no peito, galhada ramificada com folhas, órbitas fundas com olhos verdes, presas,
+  barba de raízes, punhos de nós de madeira e pés de raízes com garras.
+- **Prism Titan:** rocha facetada em blocos (peitorais, costelas, abdômen, corcova), aglomerados de cristal de vidro
+  com núcleo luminoso (costas, ombros, coroa, antebraços, joelhos), coração de energia com casca de vidro e veios,
+  olhos em fenda e punhos enormes.
+- **Tempest Wyrm:** dragão de prata com dorso azulado e ventre em placas, pescoço articulado em 3 juntas, cabeça
+  com dentes, chifres e espinhos dourados, olhos e boca elétricos, asas com ossos dourados, membrana recortada e
+  veios elétricos, 4 patas com garras e esporões, cauda de 8 segmentos com lâmina.
+- **The Wilderbloom:** fera de casca corcunda com espinhos espalhados pela superfície, coração e veios rosa, coroa
+  de 8 pétalas de cristal articuladas, braços com garras e 4 cipós espinhosos que se enrolam com cristais na ponta.
+- **Void Sovereign:** armadura facetada com frisos dourados, gema no peito, túnica de 10 placas até o chão com barra
+  brilhante, capa com dobras e forro roxo, elmo com viseira e olhos roxos, coroa de chifres dourados, auréola com
+  espinhos, ombreiras em camadas e 8 cristais em órbita.
+
+**Como entra no jogo** (`client/Controllers/BossVisuals.luau`): o servidor continua com o boss de sempre (posição,
+IA, fases, ataques, vida, hitbox). O cliente monta o boss novo (`Builders/BossAnatomy.luau` → `Builders/BossMesh.luau`,
+mesmo construtor dos pets: `PetMesh.assemble`) **só quando o jogador chega perto da arena**, prende na raiz do boss
+do servidor e esconde o antigo na tela dele; ao se afastar, o boss novo sai da cena. As juntas têm **os mesmos
+nomes** do modelo antigo (Body, Neck, Jaw, ArmL/R, LegL/R, LegFL…, WingL/R, NeckSeg1–3, Seg1–8, Petal1–8, Root1–4,
+Orbit, OrbitHalo), então o `Animator` anima o boss novo com os mesmos golpes, rugidos, preparação e derrota, lendo os
+atributos do boss do servidor. A energia (`Fx`) passa para as peças novas (núcleo, olhos, punhos, gema, veios das
+asas, ponta da cauda), com os arcos elétricos do Wyrm. Peso: 7.000–16.000 triângulos por boss em malha; no modo
+low-poly 2.500–3.100 triângulos (≈ 5.000–6.200 cunhas), montados em lotes para não travar.
+Se nenhum dos dois modos funcionar, o boss antigo continua visível.
 
 ### Ilhas ampliadas: anel de mata para exploração
 
@@ -402,7 +436,8 @@ src/
 │  │             Enemies, Bosses, Quests, Exploration  ← todo o balanceamento fica aqui
 │  ├─ Logic/     regras PURAS e testáveis: LuckLogic, HatchLogic, DropLogic, PetStats, CombatRules,
 │  │             AttackShapes, EnemyBrain, BossLogic, DataSchema, InventoryLogic, QuestLogic, CollectionLogic
-│  ├─ Builders/  ModelKit, CreatureBuilder (pets), MutationVisuals, Accessories, EnemyModels, BossModels
+│  ├─ Builders/  ModelKit, CreatureBuilder (pets), MutationVisuals, Accessories, EnemyModels, BossModels,
+│  │             MeshKit, PetAnatomy, PetMesh (pets de malha), BossAnatomy, BossMesh (bosses de malha)
 │  ├─ Tests/     TestRunner + *.spec (rodam no Studio e no CLI)
 │  ├─ Util/      Make, RateLimiter
 │  └─ Net        Remotes: Request (RemoteFunction), Action e Push (RemoteEvents)
@@ -450,8 +485,8 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Variáveis indefinidas / código suspeito | `python3 tools/lint.py luau-analyze` | 0 avisos |
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **58 testes passando** |
-| Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", ≤ 18.000 triângulos) | `python3 tools/run_tests.py luau --smoke` | **3669 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **143 cenários passando** (inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
+| Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", ≤ 18.000 triângulos) + bosses anatômicos nos dois modos (todas as juntas do boss antigo, mesma altura de raiz, pés no chão, peças de energia com cor, ≤ 20.000 / 3.400 triângulos) | `python3 tools/run_tests.py luau --smoke` | **3866 verificações, 0 falhas** |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **155 cenários passando** (inclui o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -569,6 +604,14 @@ travamento) foi exercitada.
     esculpidos e importados pelo 3D Importer, com texturas.
   - Peso: em média 8.400 triângulos e 22 MeshParts por pet (máx. 14.800). As malhas são feitas uma vez por espécie
     e clonadas. Confira no MicroProfiler com muitos jogadores.
+- **Bosses anatômicos — o que ainda precisa do Studio:**
+  - Não foram vistos dentro do Roblox. O simulador confere a montagem, as juntas, a animação, a energia e a troca
+    de modo; as prévias mostram a geometria real. Aparência com os materiais do Roblox e desempenho só no Studio.
+  - No modo low-poly cada boss tem ≈ 5.000–6.200 peças (cunhas soldadas a ossos animados). Por isso só o boss de que
+    o jogador está perto é montado. Confira no MicroProfiler, principalmente no celular.
+  - "100x melhor" não é medida: o salto real é de ~250 peças primitivas por boss para superfícies contínuas com
+    relevo, cor por vértice e milhares de faces. Modelos esculpidos à mão e texturizados (3D Importer) ainda
+    seriam o próximo nível.
 - Não há som.
 - O modelo de peças antigo (~70 peças por pet) continua sendo criado no servidor, porque é ele que segue o dono e
   luta; no cliente ele fica invisível quando a malha está pronta.

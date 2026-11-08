@@ -1705,6 +1705,121 @@ do
 		end
 	end
 	check("barra do boss com fase aparece no cliente e telegraphs animam sem erro", sawBar and #SIM.errors == before, SIM.errors[before + 1])
+	-- BOSS NOVO: o cliente troca o boss de peças do servidor pelo anatômico (malhas ou low-poly de peças)
+	local function bossVisualChecks()
+		local BossVisuals = require(__proxy("Client/Controllers/BossVisuals"))
+		local BossMesh = require(__proxy("Shared/Builders/BossMesh"))
+		local PetMesh = require(__proxy("Shared/Builders/PetMesh"))
+		local beforeB = #SIM.errors
+		local model = cb.model
+		local function waitVisual(limit)
+			local e
+			for _ = 1, limit do
+				frames(15)
+				heal()
+				e = BossVisuals.entries[model]
+				if e and e.vis and e.vis.Parent == model then
+					return e
+				end
+			end
+			return e
+		end
+		local function scan(vis)
+			local r = { meshParts = 0, wedges = 0, hidden = true, motors = {}, lights = {}, oldLights = 0 }
+			for _, d in ipairs(vis:GetDescendants()) do
+				if d.ClassName == "MeshPart" then
+					r.meshParts += 1
+				elseif d.ClassName == "WedgePart" then
+					r.wedges += 1
+				elseif d.ClassName == "Motor6D" then
+					r.motors[d.Name] = d
+				elseif d.ClassName == "PointLight" and d.Parent:GetAttribute("EnergyFx") then
+					table.insert(r.lights, d)
+				end
+			end
+			for _, d in ipairs(model:GetDescendants()) do
+				if not d:IsDescendantOf(vis) then
+					if d:IsA("BasePart") and d.LocalTransparencyModifier ~= 1 then
+						r.hidden = false
+					end
+					if d.ClassName == "PointLight" and d.Enabled ~= false then
+						r.oldLights += 1
+					end
+				end
+			end
+			return r
+		end
+		local e = waitVisual(40)
+		local vis = e and e.vis
+		local r = vis and scan(vis)
+		check("boss novo: o cliente troca o Prism Titan pelo modelo anatômico de malhas e esconde o de peças do servidor",
+			r ~= nil and r.meshParts >= 15 and r.hidden and vis:GetAttribute("PolyBoss") == false,
+			r and string.format("%d MeshParts, escondido=%s", r.meshParts, tostring(r.hidden)) or "sem visual")
+		local missing = {}
+		for _, d in ipairs(model:GetDescendants()) do
+			if d.ClassName == "Motor6D" and d.Name ~= "Fixed" and vis and not d:IsDescendantOf(vis) and not r.motors[d.Name] then
+				table.insert(missing, d.Name)
+			end
+		end
+		check("boss novo: tem todas as juntas animadas do boss antigo e acompanha a raiz do servidor",
+			vis ~= nil and #missing == 0 and (vis.PrimaryPart.Position - model.PrimaryPart.Position).Magnitude < 0.05, table.concat(missing, ","))
+		if vis then
+			workspace.CurrentCamera.CFrame = CFrame.new(model.PrimaryPart.Position + Vector3.new(0, 10, 40), model.PrimaryPart.Position)
+			local probe = r.motors.Body
+			local arm = r.motors.ArmL
+			local b0, a0 = probe and probe.Transform, arm and arm.Transform
+			frames(30)
+			check("boss novo: as juntas são animadas pelo Animator com os atributos do boss do servidor",
+				probe ~= nil and arm ~= nil and (probe.Transform ~= b0 or arm.Transform ~= a0))
+			local idle = r.lights[1] and r.lights[1].Brightness or 0
+			model:SetAttribute("WindupEnd", workspace:GetServerTimeNow() + 0.2)
+			Fx.updateEnergy()
+			local charged = r.lights[1] and r.lights[1].Brightness or 0
+			check("boss novo: núcleo, olhos e punhos do visual novo carregam energia (e a do modelo antigo some)", #r.lights >= 5 and charged > idle + 2 and r.oldLights == 0,
+				string.format("%d luzes, repouso %.1f, carga %.1f, luzes antigas %d", #r.lights, idle, charged, r.oldLights))
+			-- longe da arena o boss novo sai da cena; de volta, reaparece animado
+			local back = lp.Character.PrimaryPart.Position
+			SIM.teleport(lp, back + Vector3.new(2500, 0, 0))
+			frames(60)
+			local gone = vis.Parent == nil
+			SIM.teleport(lp, back)
+			local e2 = waitVisual(10)
+			local t0 = r.motors.Body.Transform
+			frames(20)
+			check("boss novo: sai da cena quando o jogador se afasta e volta animado quando ele retorna",
+				gone and e2 ~= nil and e2.vis == vis and vis.Parent == model and r.motors.Body.Transform ~= t0)
+		end
+		check("boss novo: nenhum erro no cliente", #SIM.errors == beforeB, SIM.errors[beforeB + 1])
+		-- sem 'Allow Mesh / Image APIs': o mesmo boss em low-poly de peças, animado
+		local asset = game:GetService("AssetService")
+		local origCreate = asset.CreateEditableMesh
+		asset.CreateEditableMesh = function()
+			error("EditableMesh is not accessible. Go to the Security Tab in Experience Settings to enable this API.")
+		end
+		PetMesh._reset()
+		BossMesh._reset()
+		if e and e.vis then
+			e.vis:Destroy()
+			e.vis = nil
+		end
+		local beforeP = #SIM.errors
+		local ep = waitVisual(60)
+		local pv = ep and ep.vis
+		local rp = pv and scan(pv)
+		local movedPoly = false
+		if rp and rp.motors.Body then
+			local t0 = rp.motors.Body.Transform
+			frames(20)
+			movedPoly = rp.motors.Body.Transform ~= t0
+		end
+		check("sem 'Allow Mesh / Image APIs': o boss vira o low-poly de peças (cunhas), escondendo o antigo, animado e sem erro",
+			rp ~= nil and pv:GetAttribute("PolyBoss") == true and rp.wedges > 1500 and rp.wedges <= 7000 and rp.hidden and movedPoly and #SIM.errors == beforeP,
+			rp and string.format("%d cunhas, animado=%s, erro=%s", rp.wedges, tostring(movedPoly), tostring(SIM.errors[beforeP + 1])) or "sem visual")
+		asset.CreateEditableMesh = origCreate
+		PetMesh._reset()
+		BossMesh._reset()
+	end
+	bossVisualChecks()
 	-- mensagens do servidor processadas pelo cliente
 	before = #SIM.errors
 	local Push = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes"):FindFirstChild("Push")

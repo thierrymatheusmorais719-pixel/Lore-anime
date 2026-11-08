@@ -110,6 +110,7 @@ function MeshKit.loft(keys, opts): Geom
 		end
 	end
 	local rings = subdivide(keys, steps)
+	local phase = opts.phase or 0 -- gira a seção (ex.: seção de 4 lados alinhada aos eixos = caixa)
 	local up = opts.up or V(0, 1, 0)
 	local colorFn = opts.color
 	local baseColor = opts.base or Color3.new(1, 1, 1)
@@ -148,7 +149,7 @@ function MeshKit.loft(keys, opts): Geom
 		local e = 2 / pw
 		local jag = r.jag or 0
 		for j = 0, seg - 1 do
-			local th = (j / seg) * math.pi * 2
+			local th = (j / seg) * math.pi * 2 + phase
 			local ex, ey = sgnPow(math.cos(th), e), sgnPow(math.sin(th), e)
 			local hh = ey >= 0 and (r.h or r.w) or (r.hb or r.h or r.w)
 			-- "jag": seção em estrela (tufos de pelo da juba, do peito e da cauda)

@@ -120,70 +120,6 @@ PetMesh.HELP = "Os pets 3D novos (malhas anatômicas) estão DESLIGADOS e os pet
 	.. "  4) Pare e dê Play de novo.\n"
 	.. "Erro do Roblox: "
 
--- Constrói o molde de uma espécie (pode demorar: cria as malhas). Devolve { model, bp } ou nil.
-function PetMesh.buildTemplate(speciesId: string, scale: number)
-	local sp = Pets.Species[speciesId]
-	if not sp then
-		return nil
-	end
-	local bp = PetAnatomy.blueprint(speciesId, sp, scale)
-	local model = Instance.new("Model")
-	model.Name = "PetMesh"
-	local root = Instance.new("Part")
-	root.Name = "Root"
-	root.Size = Vector3.one * 0.4
-	root.Transparency = 1
-	root.CanCollide, root.CanQuery, root.CanTouch, root.Massless, root.Anchored = false, false, false, true, false
-	root.CFrame = CFrame.new()
-	root.Parent = model
-	model.PrimaryPart = root
-	local made = {}
-	for _, p in ipairs(bp.parts) do
-		local mp, center = meshPart(p.geom)
-		mp.Name = p.name
-		mp.Color = Color3.new(1, 1, 1) -- as cores estão nos vértices
-		mp.Material = MATERIALS[p.material] or Enum.Material.SmoothPlastic
-		mp.Transparency = p.transparency
-		mp.Reflectance = p.reflectance
-		mp.CanCollide, mp.CanQuery, mp.CanTouch, mp.Massless, mp.Anchored = false, false, false, true, false
-		mp.CastShadow = p.transparency < 0.5 and p.material ~= "Neon" and p.material ~= "ForceField"
-		mp:SetAttribute("Role", p.role)
-		for k, v in pairs(p.attrs or {}) do
-			mp:SetAttribute(k, v)
-		end
-		mp.CFrame = CFrame.new(p.pivot + center)
-		mp.Parent = model
-		made[p.name] = mp
-	end
-	for _, p in ipairs(bp.parts) do
-		local part = made[p.name]
-		local parentPart = (p.parent and made[p.parent]) or root
-		local m6 = Instance.new("Motor6D")
-		m6.Name = p.joint or "Fixed"
-		m6.Part0 = parentPart
-		m6.Part1 = part
-		m6.C0 = parentPart.CFrame:Inverse() * CFrame.new(p.pivot)
-		m6.C1 = part.CFrame:Inverse() * CFrame.new(p.pivot)
-		m6.Parent = part
-	end
-	effects(model, bp)
-	model:SetAttribute("Anatomy", bp.anatomy)
-	model:SetAttribute("Gait", bp.gait)
-	model:SetAttribute("Kind", bp.kind)
-	model:SetAttribute("Hover", bp.hover)
-	model:SetAttribute("Flies", bp.flies == true)
-	model:SetAttribute("Species", speciesId)
-	model:SetAttribute("Tier", bp.tier)
-	model:SetAttribute("Heavy", bp.heavy == true)
-	model:SetAttribute("MeshPet", true)
-	return { model = model, bp = bp }
-end
-
--------------------------------------------------------------------------------
--- Modo de peças (sem EditableMesh): cada triângulo da malha low-poly vira 2 WedgeParts presas ao "osso"
--- da parte do corpo; os ossos têm as mesmas juntas (Motor6D) e a mesma animação do modo de malhas.
--------------------------------------------------------------------------------
-
 local POLY_MATERIAL = { Fabric = Enum.Material.SmoothPlastic } -- textura de tecido fica ruidosa em faces pequenas
 
 -- Triângulo com duas cunhas (técnica clássica do Roblox). Devolve quantas peças criou.
@@ -236,14 +172,36 @@ end
 
 PetMesh._triangle = triangle -- (testes)
 
-function PetMesh.buildTemplatePoly(speciesId: string, scale: number)
-	local sp = Pets.Species[speciesId]
-	if not sp then
-		return nil
+local function avgColor(g): Color3
+	local r, gg, b, n = 0, 0, 0, 0
+	for _, c in ipairs(g.colors) do
+		r, gg, b, n = r + c.R, gg + c.G, b + c.B, n + 1
 	end
-	local bp = PetAnatomy.blueprint(speciesId, sp, scale, { low = true })
+	if n == 0 then
+		return Color3.new(1, 1, 1)
+	end
+	return Color3.new(r / n, gg / n, b / n)
+end
+
+local function whiteColors(g)
+	local cols = table.create(#g.colors)
+	local white = Color3.new(1, 1, 1)
+	for i = 1, #g.colors do
+		cols[i] = white
+	end
+	return { verts = g.verts, colors = cols, tris = g.tris, flat = g.flat, keep = g.keep }
+end
+
+--[[ Monta um Model a partir de uma planta (pets e bosses usam o mesmo formato).
+	poly = false: uma MeshPart por parte do corpo (EditableMesh, cor por vértice).
+	poly = true: cada parte vira um "osso" invisível com as faces da malha em WedgeParts soldadas.
+	Juntas Motor6D nos pivôs (eixos alinhados) com os nomes da planta. Peças Neon ficam com a cor
+	média na própria peça (o brilho do Neon usa a cor da peça). opts.yieldEvery: no modo de peças,
+	espera um frame a cada N peças criadas (bosses têm milhares). Devolve (model, facetas). ]]
+function PetMesh.assemble(bp, poly: boolean, opts)
+	opts = opts or {}
 	local model = Instance.new("Model")
-	model.Name = "PetMesh"
+	model.Name = opts.name or "PetMesh"
 	local root = Instance.new("Part")
 	root.Name = "Root"
 	root.Size = Vector3.one * 0.4
@@ -252,41 +210,64 @@ function PetMesh.buildTemplatePoly(speciesId: string, scale: number)
 	root.CFrame = CFrame.new()
 	root.Parent = model
 	model.PrimaryPart = root
-	local th = 0.05 * bp.scale
-	local bones, facets = {}, 0
+	local made, facets, sinceYield = {}, 0, 0
+	local th = 0.05 * (bp.scale or 1)
 	for _, p in ipairs(bp.parts) do
-		local mn, mx = MeshKit.bounds(p.geom)
-		local center = (mn + mx) / 2
-		local bone = Instance.new("Part")
-		bone.Name = p.name
-		local sz = mx - mn
-		bone.Size = Vector3.new(math.max(sz.X, 0.2), math.max(sz.Y, 0.2), math.max(sz.Z, 0.2))
-		bone.Transparency = 1
-		bone.CanCollide, bone.CanQuery, bone.CanTouch, bone.Massless, bone.Anchored = false, false, false, true, false
-		bone.CFrame = CFrame.new(p.pivot + center)
-		bone:SetAttribute("Role", p.role)
-		for k, v in pairs(p.attrs or {}) do
-			bone:SetAttribute(k, v)
+		local neon = p.material == "Neon"
+		local avg = avgColor(p.geom)
+		local inst: BasePart
+		if not poly then
+			local mp, center = meshPart(neon and whiteColors(p.geom) or p.geom)
+			mp.Color = neon and avg or Color3.new(1, 1, 1) -- as cores estão nos vértices
+			mp.Material = MATERIALS[p.material] or Enum.Material.SmoothPlastic
+			mp.Transparency = p.transparency
+			mp.Reflectance = p.reflectance
+			mp.CastShadow = p.transparency < 0.5 and p.material ~= "Neon" and p.material ~= "ForceField"
+			mp.CFrame = CFrame.new(p.pivot + center)
+			inst = mp
+		else
+			local mn, mx = MeshKit.bounds(p.geom)
+			local sz = mx - mn
+			local bone = Instance.new("Part")
+			bone.Size = Vector3.new(math.max(sz.X, 0.2), math.max(sz.Y, 0.2), math.max(sz.Z, 0.2))
+			bone.Transparency = 1
+			bone.Color = avg
+			bone.CFrame = CFrame.new(p.pivot + (mn + mx) / 2)
+			inst = bone
 		end
-		bone.Parent = model
-		bones[p.name] = bone
-		local props = {
-			material = POLY_MATERIAL[p.material] or MATERIALS[p.material] or Enum.Material.SmoothPlastic, transparency = p.transparency, reflectance = p.reflectance,
-			shadow = p.transparency < 0.5 and p.material ~= "Neon" and p.material ~= "ForceField", role = p.role,
-		}
-		local g = p.geom
-		for i, t in ipairs(g.tris) do
-			if not g.keep or g.keep[i] then
-				local a, b, c = g.verts[t[1]], g.verts[t[2]], g.verts[t[3]]
-				local ca, cb, cc = g.colors[t[1]], g.colors[t[2]], g.colors[t[3]]
-				props.color = Color3.new((ca.R + cb.R + cc.R) / 3, (ca.G + cb.G + cc.G) / 3, (ca.B + cb.B + cc.B) / 3)
-				facets += triangle(a + p.pivot, b + p.pivot, c + p.pivot, th, props, bone)
+		inst.Name = p.name
+		inst.CanCollide, inst.CanQuery, inst.CanTouch, inst.Massless, inst.Anchored = false, false, false, true, false
+		inst:SetAttribute("Role", p.role)
+		for k, v in pairs(p.attrs or {}) do
+			inst:SetAttribute(k, v)
+		end
+		inst.Parent = model
+		made[p.name] = inst
+		if poly then
+			local props = {
+				material = POLY_MATERIAL[p.material] or MATERIALS[p.material] or Enum.Material.SmoothPlastic, transparency = p.transparency, reflectance = p.reflectance,
+				shadow = p.transparency < 0.5 and p.material ~= "Neon" and p.material ~= "ForceField", role = p.role,
+			}
+			local g = p.geom
+			for i, t in ipairs(g.tris) do
+				if not g.keep or g.keep[i] then
+					local a, b, c = g.verts[t[1]], g.verts[t[2]], g.verts[t[3]]
+					local ca, cb, cc = g.colors[t[1]], g.colors[t[2]], g.colors[t[3]]
+					props.color = Color3.new((ca.R + cb.R + cc.R) / 3, (ca.G + cb.G + cc.G) / 3, (ca.B + cb.B + cc.B) / 3)
+					local n = triangle(a + p.pivot, b + p.pivot, c + p.pivot, th, props, inst)
+					facets += n
+					sinceYield += n
+					if opts.yieldEvery and sinceYield >= opts.yieldEvery then
+						sinceYield = 0
+						task.wait()
+					end
+				end
 			end
 		end
 	end
 	for _, p in ipairs(bp.parts) do
-		local part = bones[p.name]
-		local parentPart = (p.parent and bones[p.parent]) or root
+		local part = made[p.name]
+		local parentPart = (p.parent and made[p.parent]) or root
 		local m6 = Instance.new("Motor6D")
 		m6.Name = p.joint or "Fixed"
 		m6.Part0 = parentPart
@@ -295,6 +276,10 @@ function PetMesh.buildTemplatePoly(speciesId: string, scale: number)
 		m6.C1 = part.CFrame:Inverse() * CFrame.new(p.pivot)
 		m6.Parent = part
 	end
+	return model, facets
+end
+
+local function petAttributes(model: Model, bp, speciesId: string)
 	effects(model, bp)
 	model:SetAttribute("Anatomy", bp.anatomy)
 	model:SetAttribute("Gait", bp.gait)
@@ -305,6 +290,33 @@ function PetMesh.buildTemplatePoly(speciesId: string, scale: number)
 	model:SetAttribute("Tier", bp.tier)
 	model:SetAttribute("Heavy", bp.heavy == true)
 	model:SetAttribute("MeshPet", true)
+end
+
+-- Constrói o molde de uma espécie (pode demorar: cria as malhas). Devolve { model, bp } ou nil.
+function PetMesh.buildTemplate(speciesId: string, scale: number)
+	local sp = Pets.Species[speciesId]
+	if not sp then
+		return nil
+	end
+	local bp = PetAnatomy.blueprint(speciesId, sp, scale)
+	local model = PetMesh.assemble(bp, false)
+	petAttributes(model, bp, speciesId)
+	return { model = model, bp = bp }
+end
+
+-------------------------------------------------------------------------------
+-- Modo de peças (sem EditableMesh): cada triângulo da malha low-poly vira 2 WedgeParts presas ao "osso"
+-- da parte do corpo; os ossos têm as mesmas juntas (Motor6D) e a mesma animação do modo de malhas.
+-------------------------------------------------------------------------------
+
+function PetMesh.buildTemplatePoly(speciesId: string, scale: number)
+	local sp = Pets.Species[speciesId]
+	if not sp then
+		return nil
+	end
+	local bp = PetAnatomy.blueprint(speciesId, sp, scale, { low = true })
+	local model, facets = PetMesh.assemble(bp, true)
+	petAttributes(model, bp, speciesId)
 	model:SetAttribute("PolyPet", true)
 	model:SetAttribute("Facets", facets)
 	return { model = model, bp = bp, poly = true, facets = facets }

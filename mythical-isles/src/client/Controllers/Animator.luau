@@ -69,7 +69,9 @@ local function legPhase(name: string): number
 	return LEG_PHASE[name:sub(4)] or 0
 end
 
-local function track(model: Model)
+-- source: modelo de onde vêm os atributos (Action, WindupEnd, Dead...). O visual novo dos bosses
+-- (BossVisuals) é animado aqui com os atributos do boss do servidor.
+local function track(model: Model, source: Model?)
 	if tracked[model] or not model:IsA("Model") then
 		return
 	end
@@ -103,10 +105,11 @@ local function track(model: Model)
 		end)
 		return
 	end
+	local src = source or model
 	local entry = {
-		model = model, root = root, joints = joints, lastPos = root.Position, speed = 0, seed = math.random() * 10,
-		scale = math.max(size.Y, 2), isBoss = model:GetAttribute("BossId") ~= nil, prism = nil, faded = false,
-		flies = model:GetAttribute("Flies") == true or model:GetAttribute("Rig") == "floater" or model:GetAttribute("BossId") == "tempest_wyrm",
+		model = model, source = src, root = root, joints = joints, lastPos = root.Position, speed = 0, seed = math.random() * 10,
+		scale = math.max(size.Y, 2), isBoss = src:GetAttribute("BossId") ~= nil, prism = nil, faded = false,
+		flies = src:GetAttribute("Flies") == true or src:GetAttribute("Rig") == "floater" or src:GetAttribute("BossId") == "tempest_wyrm",
 	}
 	if model:GetAttribute("PrismaticCycle") then
 		entry.prism = {}
@@ -174,6 +177,7 @@ local function animate(entry, t: number, dt: number, now: number)
 		return -- modelo antigo do pet escondido: quem aparece é o de malha
 	end
 	local model = entry.model
+	local src = entry.source or model
 	local root = entry.root
 	local pos = root.Position
 	local vel = (pos - entry.lastPos) / math.max(dt, 1 / 240)
@@ -184,12 +188,12 @@ local function animate(entry, t: number, dt: number, now: number)
 	local s = entry.scale
 	local tt = t + entry.seed
 
-	local action = model:GetAttribute("Action")
-	local actionAt = model:GetAttribute("ActionAt") or 0
+	local action = src:GetAttribute("Action")
+	local actionAt = src:GetAttribute("ActionAt") or 0
 	local since = now - actionAt
-	local windupEnd = model:GetAttribute("WindupEnd") or 0
-	local dead = model:GetAttribute("Dead") == true
-	local hitAt = model:GetAttribute("HitAt") or 0
+	local windupEnd = src:GetAttribute("WindupEnd") or 0
+	local dead = src:GetAttribute("Dead") == true
+	local hitAt = src:GetAttribute("HitAt") or 0
 	local hurt = math.clamp(1 - (now - hitAt) / 0.25, 0, 1)
 	if hurt > 0.95 and entry.lastHit ~= hitAt then
 		entry.lastHit = hitAt
@@ -214,7 +218,7 @@ local function animate(entry, t: number, dt: number, now: number)
 		fadeOut(entry)
 	end
 
-	local knocked = model:GetAttribute("Knocked") == true
+	local knocked = src:GetAttribute("Knocked") == true
 	if knocked ~= entry.knocked then
 		entry.knocked = knocked
 		for _, d in ipairs(model:GetDescendants()) do
