@@ -332,6 +332,7 @@ addParts(parts);
 if (q.get('player')) avatar(...v3(q.get('player')));
 document.getElementById('title').textContent = q.get('title') || '';
 
+if (q.get('notag')) document.getElementById('tag').style.display = 'none';
 if (q.get('hud')) {
   const hud = document.getElementById('hud');
   const add = (html) => hud.insertAdjacentHTML('beforeend', html);

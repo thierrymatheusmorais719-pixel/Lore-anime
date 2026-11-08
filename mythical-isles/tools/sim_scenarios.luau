@@ -1453,6 +1453,101 @@ do
 		end
 	end
 	check("todos os painéis abrem com dados reais", okAll)
+	-- UI NOVA (docs/UI_DESIGN_SYSTEM.md): HUD rúnico, janela com desfoque, grade de pets e menu de mundos
+	;(function()
+		local before = #SIM.errors
+		local hud = lp.PlayerGui:FindFirstChild("HUD")
+		local plaque = hud and hud:FindFirstChild("WorldPlaque")
+		local counters = hud and hud:FindFirstChild("Counters")
+		local menu = hud and hud:FindFirstChild("Menu")
+		local status = hud and hud:FindFirstChild("Status")
+		local nCounters, nHex = 0, 0
+		for _, c in ipairs(counters and counters:GetChildren() or {}) do
+			if c.ClassName == "Frame" then
+				nCounters += 1
+			end
+		end
+		for _, c in ipairs(menu and menu:GetChildren() or {}) do
+			if c.ClassName == "TextButton" then
+				nHex += 1
+			end
+		end
+		check("HUD novo: placa do mundo, 4 contadores (3 moedas + material do mundo), 7 hexágonos e painel de status",
+			plaque ~= nil and nCounters == 4 and nHex == 7 and status ~= nil, string.format("contadores %d, hexágonos %d", nCounters, nHex))
+		local coinsAmount = counters and counters:FindFirstChild("coins") and counters.coins:FindFirstChild("Pill") and counters.coins.Pill:FindFirstChild("Amount")
+		check("HUD novo: contador de moedas mostra o saldo do perfil", coinsAmount ~= nil and coinsAmount.Text == require(__proxy("Client/Controllers/UIKit")).fmt(State.profile.coins), coinsAmount and coinsAmount.Text)
+		local hp = status and status:FindFirstChild("Body") and status.Body:FindFirstChild("HP")
+		frames(3)
+		local hpText = hp and hp:FindFirstChild("Text") and hp.Text.Text or ""
+		check("HUD novo: barra de vida mostra a vida do avatar", hpText:find("/", 1, true) ~= nil, hpText)
+		-- a placa segue o atributo World (que o servidor define pela posição): ir até o Crystal Hollow troca a placa
+		local Worlds = require(__proxy("Shared/Config/Worlds"))
+		local wname = plaque and plaque:FindFirstChild("WorldName")
+		local backTo = lp.Character.PrimaryPart.Position
+		SIM.teleport(lp, Worlds.Info.crystal.center + Vector3.new(0, 4, 14))
+		SIM.run(1)
+		frames(40)
+		local nowWorld = lp:GetAttribute("World")
+		check("HUD novo: placa acompanha o mundo atual", nowWorld == "crystal" and wname ~= nil and wname.Text == "Crystal Hollow", tostring(nowWorld) .. " / " .. (wname and wname.Text or "?"))
+		SIM.teleport(lp, backTo)
+		SIM.run(1)
+		frames(40)
+		-- janela: abre com desfoque e escurecimento, fecha limpando
+		Panels.open("Pets")
+		frames(20)
+		local pgui = lp.PlayerGui:FindFirstChild("Panels")
+		local modal = pgui and pgui:FindFirstChild("Modal")
+		local blurFx = game:GetService("Lighting"):FindFirstChild("PanelBlur")
+		check("janela rúnica abre com escurecimento e desfoque", modal ~= nil and modal.Visible and pgui.Scrim.Visible and blurFx ~= nil and blurFx.Size > 5,
+			blurFx and tostring(blurFx.Size))
+		local grid = modal and modal.Body.Content:FindFirstChild("Grid")
+		local nSlots, nSel = 0, 0
+		for _, c in ipairs(grid and grid:GetChildren() or {}) do
+			if c.Name == "Slot" then
+				nSlots += 1
+				if c:FindFirstChild("Selected").Visible then
+					nSel += 1
+				end
+			end
+		end
+		local nPets = 0
+		for _ in pairs(State.profile.pets) do
+			nPets += 1
+		end
+		check("grade de pets: um slot por pet e exatamente um selecionado", nSlots == nPets and nSel == (nPets > 0 and 1 or 0), string.format("%d slots, %d pets, %d selecionados", nSlots, nPets, nSel))
+		-- menu de mundos com alguns mundos ainda fechados (cópia local do perfil; o servidor não muda)
+		local realWorlds = State.profile.worlds
+		State.profile.worlds = { verdant = true, crystal = true }
+		Panels.open("Map")
+		frames(5)
+		local cards = modal.Body.Content:FindFirstChild("Cards")
+		local nCards, nLocked, chainsOk = 0, 0, true
+		for _, c in ipairs(cards and cards:GetChildren() or {}) do
+			if c.ClassName == "Frame" then
+				nCards += 1
+				local locked = State.profile.worlds[c.Name] ~= true
+				local art = c:FindFirstChild("Art")
+				local links = 0
+				for _, l in ipairs(art and art:GetChildren() or {}) do
+					if l.Name == "Link" then
+						links += 1
+					end
+				end
+				if locked then
+					nLocked += 1
+					chainsOk = chainsOk and links >= 10 and art:FindFirstChild("Lock") ~= nil
+				else
+					chainsOk = chainsOk and links == 0
+				end
+			end
+		end
+		State.profile.worlds = realWorlds
+		check("menu de mundos: 5 cartões; só os bloqueados têm correntes e cadeado", nCards == 5 and nLocked == 3 and chainsOk, string.format("%d cartões, %d bloqueados", nCards, nLocked))
+		Panels.close()
+		frames(20)
+		check("fechar a janela tira o desfoque e o escurecimento", not modal.Visible and not pgui.Scrim.Visible and blurFx.Size < 0.5, tostring(blurFx.Size))
+		check("UI nova: nenhum erro no cliente", #SIM.errors == before, SIM.errors[before + 1])
+	end)()
 	local before = #SIM.errors
 	local ok, err = pcall(Panels.open, "Egg", "crystal_egg")
 	frames(3)
@@ -1464,7 +1559,7 @@ do
 	local res = State.request("Hatch", { egg = "crystal_egg", count = 3 })
 	local Fx = require(__proxy("Client/Controllers/Fx"))
 	-- todos os efeitos visuais (habilidades, inimigos, bosses, recursos) rodam sem erro e limpam as peças
-	do
+	;(function()
 		local beforeFx = #SIM.errors
 		local here = lp.Character.PrimaryPart.Position
 		local col = Color3.fromRGB(255, 200, 120)
@@ -1507,7 +1602,7 @@ do
 		leftover += #workspace:FindFirstChild("LocalDebris"):GetChildren()
 		check("efeitos visuais: todos os tipos rodam e as peças temporárias somem", okFx and #SIM.errors == beforeFx and leftover == 0,
 			errFx or SIM.errors[beforeFx + 1] or ("sobraram " .. leftover .. " peças"))
-	end
+	end)()
 	-- regiões no cliente: nome da região na tela + luz/névoa da região (Azure Caverns)
 	do
 		local reg = S.WorldService.Regions.crystal

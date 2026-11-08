@@ -3,6 +3,9 @@
 
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Pets = require(Shared.Config.Pets)
@@ -30,7 +33,7 @@ local Panels = {}
 local T = UIKit.Theme
 local new = UIKit.new
 
-local gui, modal, titleLabel, content
+local gui, modal, titleLabel, content, scrim, blur, titlePlaque
 local current = nil
 local selectedPet = nil
 
@@ -67,9 +70,10 @@ local function costText(cost)
 end
 
 local function preview(parent: Instance, pet)
-	local vp = new("ViewportFrame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = T.bg2, BackgroundTransparency = 0.2, LightColor = Color3.new(1, 1, 1),
+	local vp = new("ViewportFrame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, LightColor = Color3.new(1, 1, 1),
 		Ambient = Color3.fromRGB(160, 160, 180), Parent = parent })
 	UIKit.corner(vp, 10)
+	vp:SetAttribute("Species", pet.species)
 	local cam = Instance.new("Camera")
 	cam.FieldOfView = 38
 	cam.Parent = vp
@@ -99,6 +103,7 @@ end
 local function thumb(parent: Instance, species: string, mutation: string?, accessory: string?)
 	local vp = new("ViewportFrame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, LightColor = Color3.new(1, 1, 1),
 		Ambient = Color3.fromRGB(170, 170, 190), LightDirection = Vector3.new(-1, -1.5, -1), ZIndex = 3, Parent = parent })
+	vp:SetAttribute("Species", species)
 	local cam = Instance.new("Camera")
 	cam.FieldOfView = 34
 	cam.Parent = vp
@@ -123,6 +128,19 @@ local MAX_THUMBS = 48
 -- PETS
 -------------------------------------------------------------------------------
 
+local RARITY_ABBR = { Common = "C", Uncommon = "I", Rare = "R", Epic = "É", Legendary = "L", Mythic = "M", Secret = "S", Celestial = "✦" }
+
+-- chip de atributo (ícone + valor) no detalhe do pet
+local function statChip(parent, icon: string, value: string, color: Color3)
+	local f = new("Frame", { BackgroundColor3 = T.inset, BackgroundTransparency = 0.15, BorderSizePixel = 0, Parent = parent })
+	UIKit.corner(f, 8)
+	UIKit.stroke(f, T.edgeDark, 2, 0)
+	UIKit.label({ Position = UDim2.fromOffset(6, 0), Size = UDim2.new(0, 22, 1, 0), Text = icon, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 1, Parent = f })
+	UIKit.label({ Position = UDim2.fromOffset(30, 0), Size = UDim2.new(1, -34, 1, 0), Text = value, Font = T.title, TextSize = 15, TextColor3 = color, TextWrapped = false,
+		TextStrokeTransparency = 0.2, TextStrokeColor3 = T.edgeDark, Parent = f })
+	return f
+end
+
 local function petDetail(parent, uid)
 	local p = State.profile
 	local pet = p.pets[uid]
@@ -130,38 +148,80 @@ local function petDetail(parent, uid)
 		return
 	end
 	local sp = Pets.Species[pet.species]
+	local rar = Rarities.Info[sp.rarity]
 	local d = State.derived and State.derived.petStats and State.derived.petStats[uid]
 	local role = Combat.Roles[sp.role]
 	local ab = Abilities.Info[sp.ability]
-	local box = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = parent })
-	local pv = new("Frame", { Size = UDim2.new(1, 0, 0, 150), BackgroundTransparency = 1, Parent = box })
-	preview(pv, pet)
+	local box = new("Frame", { Name = "Detail", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = parent })
+	-- palco do retrato: gradiente da raridade + modelo 3D girando
+	local stage = new("Frame", { Name = "Stage", Position = UDim2.fromOffset(10, 10), Size = UDim2.new(1, -20, 0, 128), BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, Parent = box })
+	UIKit.corner(stage, 12)
+	new("UIGradient", { Rotation = 90, Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, UIKit.darken(rar.color, 0.55)), ColorSequenceKeypoint.new(0.65, UIKit.darken(rar.color, 0.15)),
+		ColorSequenceKeypoint.new(1, UIKit.darken(rar.color, 0.7)) }), Parent = stage })
+	UIKit.stroke(stage, UIKit.darken(rar.color, 0.6), 3, 0)
+	local pedestal = new("Frame", { Name = "Pedestal", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -8), Size = UDim2.fromOffset(150, 22), BackgroundColor3 = UIKit.lighten(rar.color, 0.3),
+		BackgroundTransparency = 0.6, BorderSizePixel = 0, Parent = stage })
+	UIKit.corner(pedestal, 100)
+	preview(stage, pet)
+	-- nome, mutação e raridade
 	local mut = pet.mutation and Mutations.Info[pet.mutation]
-	UIKit.label({ Position = UDim2.fromOffset(0, 154), Size = UDim2.new(1, 0, 0, 24), Font = T.title, TextSize = 19,
-		Text = (mut and string.format('<font color="#%s">%s</font> ', mut.color:ToHex(), pet.mutation) or "") .. sp.name
-			.. string.format('  <font size="13" color="#%s">%s</font>', rarityColor(sp.rarity):ToHex(), Rarities.Info[sp.rarity].label), Parent = box })
-	local stats = d and string.format("Vida %s · Ataque %.0f · Defesa %.0f · Vel. %.2f/s · Alcance %d · Crítico %d%%",
-		UIKit.fmt(d.hp), d.atk, d.def, d.aspd, d.range, math.floor(d.crit * 100)) or ""
-	UIKit.label({ Position = UDim2.fromOffset(0, 178), Size = UDim2.new(1, 0, 0, 34), TextSize = 12, TextColor3 = T.muted,
-		Text = string.format("%s · %s · Nv %d/%d · XP %d/%d\n%s", role.label, Combat.Tiers[pet.tier].label, pet.level, d and d.levelCap or 0, pet.xp or 0, d and d.xpNext or 0, stats), Parent = box })
-	UIKit.label({ Position = UDim2.fromOffset(0, 214), Size = UDim2.new(1, 0, 0, 34), TextSize = 12,
-		Text = string.format("<b>%s %s</b> (rank %d/%d, recarga %.1fs, custo %d): %s", ab.icon, ab.label, pet.abilityRank or 1, Abilities.MaxRank, d and d.cooldown or ab.cooldown, ab.cost, ab.desc), Parent = box })
+	UIKit.label({ Position = UDim2.fromOffset(10, 144), Size = UDim2.new(1, -120, 0, 26), Font = T.title, TextSize = 22, TextWrapped = false, TextTruncate = Enum.TextTruncate.AtEnd,
+		TextStrokeTransparency = 0, TextStrokeColor3 = T.edgeDark,
+		Text = (mut and string.format('<font color="#%s">%s</font> ', mut.color:ToHex(), pet.mutation) or "") .. sp.name, Parent = box })
+	local pill = new("Frame", { Name = "Rarity", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 146), Size = UDim2.fromOffset(104, 22), BackgroundColor3 = Color3.new(1, 1, 1),
+		BorderSizePixel = 0, Parent = box })
+	UIKit.corner(pill, 100)
+	UIKit.rarityFill(pill, rar.color, rar.rank, rar.accent)
+	UIKit.stroke(pill, UIKit.darken(rar.color, 0.6), 2, 0)
+	UIKit.label({ Size = UDim2.fromScale(1, 1), Text = rar.label, Font = T.title, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0,
+		TextStrokeColor3 = UIKit.darken(rar.color, 0.7), Parent = pill })
+	-- nível e XP (recipiente)
+	local xpb = UIKit.vesselBar({ Name = "XP", Position = UDim2.fromOffset(10, 176), Size = UDim2.new(1, -20, 0, 20), color = T.xp, textSize = 12, Parent = box })
+	local xpNext = d and d.xpNext or 0
+	xpb.set(xpNext > 0 and (pet.xp or 0) / xpNext or 1, string.format("Nv %d/%d · %s · %s · XP %s/%s", pet.level, d and d.levelCap or 0, role.label, Combat.Tiers[pet.tier].label,
+		UIKit.fmt(pet.xp or 0), UIKit.fmt(xpNext)))
+	-- atributos
+	local chips = new("Frame", { Name = "Stats", Position = UDim2.fromOffset(10, 204), Size = UDim2.new(1, -20, 0, 54), BackgroundTransparency = 1, Parent = box })
+	new("UIGridLayout", { CellSize = UDim2.new(1 / 3, -4, 0, 25), CellPadding = UDim2.fromOffset(6, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = chips })
+	if d then
+		statChip(chips, "❤", UIKit.fmt(d.hp), T.hp)
+		statChip(chips, "⚔", string.format("%.0f", d.atk), Color3.fromRGB(255, 150, 110))
+		statChip(chips, "🛡", string.format("%.0f", d.def), T.info)
+		statChip(chips, "⚡", string.format("%.2f/s", d.aspd), T.fury)
+		statChip(chips, "🎯", tostring(d.range), T.energy)
+		statChip(chips, "💥", math.floor(d.crit * 100) .. "%", T.cancel)
+	end
+	-- ataques próprios (habilidade, Assinatura e passiva) numa área rolável
+	local actionsCount = 5
+	if not pet.mutation then
+		for id, n in pairs(p.items) do
+			local info = Items.Info[id]
+			if info and info.kind == "catalyst" and n > 0 then
+				actionsCount += 1
+			end
+		end
+	end
+	local rows = math.ceil(actionsCount / 2)
+	local actionsH = rows * 30 + (rows - 1) * 5
+	local info = UIKit.scroll({ Name = "Moves", Position = UDim2.fromOffset(10, 264), Size = UDim2.new(1, -20, 1, -(264 + actionsH + 18)), ScrollBarThickness = 5, Parent = box })
+	UIKit.list(info, Enum.FillDirection.Vertical, 4)
+	UIKit.label({ LayoutOrder = 1, Size = UDim2.new(1, -6, 0, 34), TextSize = 12,
+		Text = string.format("<b>%s %s</b> (rank %d/%d, recarga %.1fs, custo %d): %s", ab.icon, ab.label, pet.abilityRank or 1, Abilities.MaxRank, d and d.cooldown or ab.cooldown, ab.cost, ab.desc), Parent = info })
 	local sig = Signatures.forSpecies(pet.species)
 	if sig then
-		UIKit.label({ Position = UDim2.fromOffset(0, 248), Size = UDim2.new(1, 0, 0, 30), TextSize = 12, TextColor3 = Color3.fromRGB(255, 220, 140),
-			Text = string.format("<b>✦ Assinatura: %s</b> (Fúria %d golpes): %s", sig.name, Signatures.furyMax(sp.rarity), sig.desc), Parent = box })
+		UIKit.label({ LayoutOrder = 2, Size = UDim2.new(1, -6, 0, 32), TextSize = 12, TextColor3 = Color3.fromRGB(255, 220, 140),
+			Text = string.format("<b>✦ Assinatura: %s</b> (Fúria %d golpes): %s", sig.name, Signatures.furyMax(sp.rarity), sig.desc), Parent = info })
 	end
-	local below = sig and 30 or 0
-	local perkText = ""
 	if sp.perk then
-		perkText = sp.perk.kind == "luck" and string.format("Passiva: +%d%% sorte (%s) na equipe", math.floor(sp.perk.bonus * 100 + 0.5), LuckConfig.CategoryLabels[sp.perk.category] or "tudo")
-			or string.format("Passiva: +%d%% moedas", math.floor(sp.perk.bonus * 100 + 0.5))
+		UIKit.label({ LayoutOrder = 3, Size = UDim2.new(1, -6, 0, 16), TextSize = 12, TextColor3 = T.luck,
+			Text = sp.perk.kind == "luck" and string.format("Passiva: +%d%% sorte (%s) na equipe", math.floor(sp.perk.bonus * 100 + 0.5), LuckConfig.CategoryLabels[sp.perk.category] or "tudo")
+				or string.format("Passiva: +%d%% moedas", math.floor(sp.perk.bonus * 100 + 0.5)), Parent = info })
 	end
-	UIKit.label({ Position = UDim2.fromOffset(0, 248 + below), Size = UDim2.new(1, 0, 0, 18), TextSize = 12, TextColor3 = T.luck, Text = perkText, Parent = box })
-	local actions = new("Frame", { Position = UDim2.fromOffset(0, 270 + below), Size = UDim2.new(1, 0, 1, -270 - below), BackgroundTransparency = 1, Parent = box })
-	local grid = new("UIGridLayout", { CellSize = UDim2.new(0.5, -4, 0, 30), CellPadding = UDim2.fromOffset(6, 6), Parent = actions })
+	-- ações
+	local actions = new("Frame", { Name = "Actions", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 10, 1, -10), Size = UDim2.new(1, -20, 0, actionsH), BackgroundTransparency = 1, Parent = box })
+	new("UIGridLayout", { CellSize = UDim2.new(0.5, -3, 0, 30), CellPadding = UDim2.fromOffset(6, 5), SortOrder = Enum.SortOrder.LayoutOrder, Parent = actions })
 	local inTeam = table.find(p.team, uid) ~= nil
-	UIKit.button({ Text = inTeam and "Remover da equipe" or "Colocar na equipe", TextSize = 13, BackgroundColor3 = inTeam and T.red or T.green, Parent = actions }, function()
+	UIKit.button({ LayoutOrder = 1, Text = inTeam and "Remover da equipe" or "⚔ Equipar", TextSize = 13, BackgroundColor3 = inTeam and T.cancel or T.confirm, Parent = actions }, function()
 		local team = table.clone(p.team)
 		if inTeam then
 			table.remove(team, table.find(team, uid))
@@ -174,13 +234,14 @@ local function petDetail(parent, uid)
 		toastResult(State.request("SetTeam", { uids = team }))
 	end)
 	local evoText = (d and d.evolution) and ("Evoluir: " .. costText(d.evolution)) or "Estágio máximo"
-	UIKit.button({ Text = evoText, TextSize = 11, TextWrapped = true, BackgroundColor3 = (d and d.canEvolve) and T.yellow or T.gray, Parent = actions }, function()
+	UIKit.button({ LayoutOrder = 2, Text = evoText, TextSize = 11, TextWrapped = true, BackgroundColor3 = (d and d.canEvolve) and T.yellow or T.gray, Parent = actions }, function()
 		toastResult(State.request("Evolve", { uid = uid }))
 	end)
-	UIKit.button({ Text = d and d.abilityCost and ("Melhorar habilidade: " .. costText(d.abilityCost)) or "Habilidade no máximo", TextSize = 11, TextWrapped = true, Parent = actions }, function()
+	UIKit.button({ LayoutOrder = 3, Text = d and d.abilityCost and ("Melhorar habilidade: " .. costText(d.abilityCost)) or "Habilidade no máximo", TextSize = 11, TextWrapped = true,
+		BackgroundColor3 = T.info, Parent = actions }, function()
 		toastResult(State.request("UpgradeAbility", { uid = uid }))
 	end)
-	UIKit.button({ Text = pet.locked and "🔒 Destrancar" or "🔓 Trancar", TextSize = 13, Parent = actions }, function()
+	UIKit.button({ LayoutOrder = 4, Text = pet.locked and "🔒 Destrancar" or "🔓 Trancar", TextSize = 13, BackgroundColor3 = T.info, Parent = actions }, function()
 		State.request("Lock", { uid = uid })
 	end)
 	-- acessório: alterna entre os cosméticos possuídos
@@ -191,34 +252,95 @@ local function petDetail(parent, uid)
 		end
 	end
 	table.sort(owned)
-	UIKit.button({ Text = "Acessório: " .. (pet.accessory and Items.label(pet.accessory) or "nenhum"), TextSize = 11, Parent = actions }, function()
+	UIKit.button({ LayoutOrder = 5, Text = "Acessório: " .. (pet.accessory and Items.label(pet.accessory) or "nenhum"), TextSize = 11, BackgroundColor3 = T.purple, Parent = actions }, function()
 		local idx = pet.accessory and table.find(owned, pet.accessory) or 0
 		local nextItem = owned[idx + 1]
 		toastResult(State.request("Accessory", { uid = uid, item = nextItem }))
 	end)
 	if not pet.mutation then
 		for id, n in pairs(p.items) do
-			local info = Items.Info[id]
-			if info and info.kind == "catalyst" and n > 0 then
-				UIKit.button({ Text = string.format("Aplicar %s (%d)", info.label, n), TextSize = 11, BackgroundColor3 = T.purple, Parent = actions }, function()
+			local cinfo = Items.Info[id]
+			if cinfo and cinfo.kind == "catalyst" and n > 0 then
+				UIKit.button({ LayoutOrder = 6, Text = string.format("Aplicar %s (%d)", cinfo.label, n), TextSize = 11, BackgroundColor3 = T.purple, Parent = actions }, function()
 					toastResult(State.request("Catalyst", { uid = uid, item = id }))
 				end)
 			end
 		end
 	end
-	UIKit.button({ Text = pet.locked and "Trancado" or "Liberar (+essência)", TextSize = 12, BackgroundColor3 = T.red, Parent = actions }, function()
+	UIKit.button({ LayoutOrder = 9, Text = pet.locked and "Trancado" or "Liberar (+essência)", TextSize = 12, BackgroundColor3 = pet.locked and T.gray or T.cancel, Parent = actions }, function()
 		if not pet.locked then
 			selectedPet = nil
 			toastResult(State.request("Release", { uids = { uid } }))
 		end
 	end)
-	local _ = grid
+end
+
+-- SLOT DE PET (Design System 3.5): gradiente da raridade (brilho girando do Épico para cima), retrato 3D,
+-- sigla da raridade, mutação, nível, marca de equipado e cadeado.
+local function petSlot(parent, order: number, e, inTeam: boolean, withThumb: boolean, onClick)
+	local sp = Pets.Species[e.pet.species]
+	local rar = Rarities.Info[sp.rarity]
+	local slot = new("TextButton", { Name = "Slot", LayoutOrder = order, BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, Text = "", AutoButtonColor = false, Parent = parent })
+	UIKit.corner(slot, 12)
+	UIKit.rarityFill(slot, rar.color, rar.rank, rar.accent)
+	UIKit.stroke(slot, inTeam and T.confirm or UIKit.darken(rar.color, 0.6), inTeam and 4 or 3, 0)
+	local sc = new("UIScale", { Parent = slot })
+	-- brilho de seleção (aceso só no pet selecionado; trocar a seleção não reconstrói a grade)
+	local glow = new("Frame", { Name = "Selected", Position = UDim2.fromOffset(-5, -5), Size = UDim2.new(1, 10, 1, 10), BackgroundTransparency = 1, Visible = e.uid == selectedPet, Parent = slot })
+	UIKit.corner(glow, 16)
+	local gs = UIKit.stroke(glow, Color3.new(1, 1, 1), 3, 0.1)
+	UIKit.animate(glow, function(t)
+		if glow.Visible then
+			gs.Transparency = 0.15 + (math.sin(t * 5) + 1) * 0.2
+		end
+	end)
+	sc.Scale = e.uid == selectedPet and 1.05 or 1
+	local view = new("Frame", { Name = "View", Position = UDim2.fromOffset(5, 5), Size = UDim2.new(1, -10, 0, 72), BackgroundColor3 = T.inset, BackgroundTransparency = 0.6,
+		BorderSizePixel = 0, ZIndex = 2, Parent = slot })
+	UIKit.corner(view, 9)
+	if withThumb then
+		thumb(view, e.pet.species, e.pet.mutation, e.pet.accessory)
+	end
+	local abbr = new("Frame", { Name = "Abbr", Position = UDim2.fromOffset(3, 3), Size = UDim2.fromOffset(20, 18), BackgroundColor3 = UIKit.darken(rar.color, 0.45), BorderSizePixel = 0, ZIndex = 5, Parent = slot })
+	UIKit.corner(abbr, 6)
+	UIKit.stroke(abbr, T.edgeDark, 2, 0)
+	UIKit.label({ Size = UDim2.fromScale(1, 1), Text = RARITY_ABBR[sp.rarity] or "?", Font = T.title, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 6,
+		TextStrokeTransparency = 0.4, Parent = abbr })
+	local mut = e.pet.mutation and Mutations.Info[e.pet.mutation]
+	if mut then
+		local m = new("Frame", { Name = "Mutation", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -3, 0, inTeam and 25 or 3), Size = UDim2.fromOffset(20, 20), Rotation = 45,
+			BackgroundColor3 = mut.color, BorderSizePixel = 0, ZIndex = 5, Parent = slot })
+		UIKit.corner(m, 4)
+		UIKit.stroke(m, UIKit.darken(mut.color, 0.6), 2, 0)
+	end
+	if inTeam then
+		UIKit.icon(slot, { Name = "Equipped", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -2, 0, 2), Size = UDim2.fromOffset(22, 22), color = T.confirm, Text = "✓", ZIndex = 6 })
+	end
+	UIKit.label({ Name = "PetName", Position = UDim2.fromOffset(4, 78), Size = UDim2.new(1, -8, 0, 16), TextSize = 12, Font = T.title, TextXAlignment = Enum.TextXAlignment.Center,
+		TextWrapped = false, TextTruncate = Enum.TextTruncate.AtEnd, Text = sp.name, ZIndex = 3, TextStrokeTransparency = 0, TextStrokeColor3 = T.edgeDark, Parent = slot })
+	local lv = new("Frame", { Name = "Level", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -4), Size = UDim2.new(1, -10, 0, 17), BackgroundColor3 = T.inset,
+		BackgroundTransparency = 0.25, BorderSizePixel = 0, ZIndex = 3, Parent = slot })
+	UIKit.corner(lv, 100)
+	UIKit.label({ Size = UDim2.fromScale(1, 1), Text = string.format("Nv %d %s%s", e.pet.level, string.rep("★", e.pet.tier), e.pet.locked and " 🔒" or ""), Font = T.title, TextSize = 12,
+		TextColor3 = Color3.fromRGB(255, 232, 140), TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, ZIndex = 4, Parent = lv })
+	slot.MouseEnter:Connect(function()
+		TweenService:Create(sc, TweenInfo.new(0.12), { Scale = 1.07 }):Play()
+	end)
+	slot.MouseLeave:Connect(function()
+		TweenService:Create(sc, TweenInfo.new(0.12), { Scale = e.uid == selectedPet and 1.05 or 1 }):Play()
+	end)
+	slot.Activated:Connect(function()
+		UIKit.burst(slot, rar.accent or rar.color)
+		onClick()
+	end)
+	return slot
 end
 
 local function petsPanel()
 	local p = State.profile
-	local header = UIKit.frame({ Size = UDim2.new(1, 0, 0, 44), BackgroundColor3 = T.bg2, Parent = content })
-	UIKit.pad(header, 6)
+	local header = new("Frame", { Name = "Header", Size = UDim2.new(1, 0, 0, 46), BackgroundColor3 = T.inset, BackgroundTransparency = 0.2, BorderSizePixel = 0, Parent = content })
+	UIKit.corner(header, 12)
+	UIKit.stroke(header, T.edgeDark, 2, 0)
 	local syn = {}
 	for _, id in ipairs(State.derived and State.derived.synergies or {}) do
 		for _, s in ipairs(Combat.Synergies) do
@@ -230,71 +352,68 @@ local function petsPanel()
 	for _, w in ipairs(State.derived and State.derived.sets or {}) do
 		table.insert(syn, "<b>Conjunto " .. Worlds.Info[w].name .. "</b> (+" .. math.floor(Combat.WorldSet.damage * 100) .. "% dano lá)")
 	end
-	UIKit.label({ Size = UDim2.new(1, -150, 1, 0), TextSize = 12, Text = string.format("Equipe %d/%d · Sinergias: %s", #p.team, Combat.TeamSize, #syn > 0 and table.concat(syn, ", ") or "nenhuma"), Parent = header })
-	UIKit.button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.fromScale(1, 0), Size = UDim2.new(0, 140, 1, 0), Text = "Melhor equipe", TextSize = 13, Parent = header }, function()
+	local count = 0
+	for _ in pairs(p.pets) do
+		count += 1
+	end
+	UIKit.label({ Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -310, 1, 0), TextSize = 12,
+		Text = string.format("⚔ <b>Equipe %d/%d</b> · Sinergias: %s", #p.team, Combat.TeamSize, #syn > 0 and table.concat(syn, ", ") or "nenhuma"), Parent = header })
+	UIKit.label({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -176, 0.5, 0), Size = UDim2.fromOffset(110, 30), Text = "🐾 " .. count .. " pets", Font = T.title, TextSize = 16,
+		TextXAlignment = Enum.TextXAlignment.Right, TextColor3 = T.muted, Parent = header })
+	UIKit.button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -7, 0.5, 0), Size = UDim2.fromOffset(160, 34), Text = "★ Equipar Melhor", TextSize = 15, BackgroundColor3 = T.confirm,
+		Parent = header }, function()
 		toastResult(State.request("AutoTeam"))
 	end)
-	local list = UIKit.scroll({ Position = UDim2.fromOffset(0, 50), Size = UDim2.new(0.55, -6, 1, -50), Parent = content })
-	new("UIGridLayout", { CellSize = UDim2.fromOffset(112, 134), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
-	local detail = new("Frame", { Position = UDim2.new(0.55, 6, 0, 50), Size = UDim2.new(0.45, -6, 1, -50), BackgroundTransparency = 1, Parent = content })
+	local list = UIKit.scroll({ Name = "Grid", Position = UDim2.fromOffset(0, 54), Size = UDim2.new(0.56, -6, 1, -54), Parent = content })
+	new("UIPadding", { PaddingTop = UDim.new(0, 6), PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6), Parent = list })
+	new("UIGridLayout", { CellSize = UDim2.fromOffset(104, 118), CellPadding = UDim2.fromOffset(8, 10), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+	local detail = new("Frame", { Name = "DetailPane", Position = UDim2.new(0.56, 6, 0, 54), Size = UDim2.new(0.44, -6, 1, -54), BackgroundColor3 = T.panelDark, BackgroundTransparency = 0.15,
+		BorderSizePixel = 0, Parent = content })
+	UIKit.corner(detail, 14)
+	UIKit.stroke(detail, T.edgeDark, 3, 0)
 	local entries = {}
 	for uid, pet in pairs(p.pets) do
 		local power = State.derived and State.derived.petStats and State.derived.petStats[uid] and State.derived.petStats[uid].power or 0
-		table.insert(entries, { uid = uid, pet = pet, power = power })
+		table.insert(entries, { uid = uid, pet = pet, power = power, rank = Rarities.rank(Pets.Species[pet.species].rarity) })
 	end
+	-- equipados primeiro, depois raridade e poder
 	table.sort(entries, function(a, b)
 		local ta, tb = table.find(p.team, a.uid) ~= nil, table.find(p.team, b.uid) ~= nil
 		if ta ~= tb then
 			return ta
 		end
+		if a.rank ~= b.rank then
+			return a.rank > b.rank
+		end
 		return a.power > b.power
 	end)
-	for i, e in ipairs(entries) do
-		local sp = Pets.Species[e.pet.species]
-		local rar = Rarities.Info[sp.rarity]
-		local card = UIKit.button({ LayoutOrder = i, Text = "", BackgroundColor3 = UIKit.darken(rar.color, 0.15), Parent = list }, function()
-			selectedPet = e.uid
-			for _, c in ipairs(detail:GetChildren()) do
+	local slots = {}
+	local function select(uid: string)
+		selectedPet = uid
+		for id, sl in pairs(slots) do
+			local on = id == uid
+			sl:FindFirstChild("Selected").Visible = on
+			sl:FindFirstChildOfClass("UIScale").Scale = on and 1.05 or 1
+		end
+		for _, c in ipairs(detail:GetChildren()) do
+			if c.Name == "Detail" then
 				c:Destroy()
 			end
-			petDetail(detail, e.uid)
+		end
+		petDetail(detail, uid)
+	end
+	for i, e in ipairs(entries) do
+		slots[e.uid] = petSlot(list, i, e, table.find(p.team, e.uid) ~= nil, i <= MAX_THUMBS, function()
+			select(e.uid)
 		end)
-		if e.uid == selectedPet then
-			local st = card:FindFirstChildOfClass("UIStroke")
-			if st then
-				st.Color = Color3.new(1, 1, 1)
-				st.Thickness = 4
-			end
-		end
-		local view = new("Frame", { Position = UDim2.fromOffset(4, 4), Size = UDim2.new(1, -8, 0, 84), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.82,
-			BorderSizePixel = 0, ZIndex = 2, Parent = card })
-		UIKit.corner(view, 10)
-		if i <= MAX_THUMBS then
-			thumb(view, e.pet.species, e.pet.mutation, e.pet.accessory)
-		end
-		local mut = e.pet.mutation and Mutations.Info[e.pet.mutation]
-		if mut then
-			local tag = UIKit.frame({ Position = UDim2.fromOffset(4, 4), Size = UDim2.fromOffset(70, 18), BackgroundColor3 = mut.color, radius = 9, ZIndex = 5, Parent = card })
-			UIKit.stroke(tag, UIKit.darken(mut.color, 0.6), 2, 0)
-			UIKit.label({ Size = UDim2.fromScale(1, 1), Text = e.pet.mutation, Font = T.title, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Center,
-				TextStrokeColor3 = UIKit.darken(mut.color, 0.7), TextStrokeTransparency = 0, ZIndex = 6, Parent = tag })
-		end
-		if table.find(p.team, e.uid) then
-			UIKit.icon(card, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -2, 0, 2), Size = UDim2.fromOffset(24, 24), color = T.green, Text = "⚔", ZIndex = 6 })
-		end
-		UIKit.label({ Position = UDim2.fromOffset(4, 88), Size = UDim2.new(1, -8, 0, 20), TextSize = 14, Font = T.title, TextXAlignment = Enum.TextXAlignment.Center,
-			TextWrapped = false, TextTruncate = Enum.TextTruncate.AtEnd, Text = sp.name, ZIndex = 3, TextStrokeTransparency = 0.1, Parent = card })
-		UIKit.label({ Position = UDim2.fromOffset(4, 108), Size = UDim2.new(1, -8, 0, 20), TextSize = 13, Font = T.title, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 3,
-			TextColor3 = Color3.fromRGB(255, 235, 140), TextStrokeTransparency = 0.1,
-			Text = string.format("Nv %d %s%s", e.pet.level, string.rep("★", e.pet.tier), e.pet.locked and " 🔒" or ""), Parent = card })
 	end
 	if #entries == 0 then
 		UIKit.label({ Size = UDim2.new(1, 0, 0, 40), Text = "Você ainda não tem pets. Vá até uma estação de ovos (E) para chocar o primeiro!", TextSize = 14, Parent = list })
 	end
 	if selectedPet and p.pets[selectedPet] then
-		petDetail(detail, selectedPet)
+		select(selectedPet)
 	elseif entries[1] then
-		petDetail(detail, entries[1].uid)
+		select(entries[1].uid)
 	end
 end
 
@@ -587,32 +706,160 @@ end
 -- MAPA
 -------------------------------------------------------------------------------
 
+-- MENU DE MUNDOS (Design System, seção 7): cartões com a arte do mundo; os bloqueados ficam escuros,
+-- presos por correntes e com um cadeado de runa pulsando. Trilha de progresso embaixo.
+local WORLD_ART = { verdant = "🌳", crystal = "💎", sky = "🏛", wilds = "🌲", astral = "⭐" }
+
+-- corrente em diagonal: elos girados posicionados ao longo da reta (cada elo é independente,
+-- assim a rotação não depende de herança entre Frames)
+local function chain(parent: Instance, x0: number, y0: number, x1: number, y1: number)
+	local dx, dy = x1 - x0, y1 - y0
+	local len = math.sqrt(dx * dx + dy * dy)
+	local ang = math.deg(math.atan2(dy, dx))
+	local n = math.floor(len / 13)
+	for k = 0, n do
+		local f = k / n
+		local side = k % 2 == 1
+		local link = new("Frame", { Name = "Link", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(x0 + dx * f, y0 + dy * f),
+			Size = side and UDim2.fromOffset(16, 5) or UDim2.fromOffset(18, 10), Rotation = ang, BackgroundColor3 = side and Color3.fromRGB(108, 110, 128) or Color3.fromRGB(138, 140, 160),
+			BorderSizePixel = 0, ZIndex = 6, Parent = parent })
+		UIKit.corner(link, 5)
+		UIKit.stroke(link, Color3.fromRGB(30, 30, 40), 2, 0)
+	end
+end
+
+local function travelFx(worldId: string)
+	local w = Worlds.Info[worldId]
+	local veil = new("Frame", { Name = "TravelVeil", Size = UDim2.fromScale(1, 1), BackgroundColor3 = UIKit.darken(w.palette.accent, 0.55), BackgroundTransparency = 1, ZIndex = 80, Parent = gui })
+	local title = UIKit.label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.46), Size = UDim2.fromOffset(900, 80), Text = w.name, Font = T.title, TextSize = 64,
+		TextXAlignment = Enum.TextXAlignment.Center, TextTransparency = 1, TextStrokeTransparency = 1, TextStrokeColor3 = T.edgeDark, ZIndex = 81, Parent = veil })
+	TweenService:Create(veil, TweenInfo.new(0.35), { BackgroundTransparency = 0.05 }):Play()
+	TweenService:Create(title, TweenInfo.new(0.35), { TextTransparency = 0, TextStrokeTransparency = 0 }):Play()
+	task.delay(1.1, function()
+		TweenService:Create(veil, TweenInfo.new(0.45), { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(title, TweenInfo.new(0.45), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+		task.wait(0.5)
+		veil:Destroy()
+	end)
+end
+
 local function mapPanel()
 	local p = State.profile
-	local list = UIKit.scroll({ Size = UDim2.fromScale(1, 1), Parent = content })
-	UIKit.list(list, Enum.FillDirection.Vertical, 8)
+	local here = Players.LocalPlayer:GetAttribute("World") or "verdant"
+	UIKit.label({ Size = UDim2.new(1, 0, 0, 26), Text = "Escolha um mundo para viajar. Cada mundo aberto libera ovos, inimigos e um boss novos.", TextSize = 14,
+		TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = T.muted, Parent = content })
+	local row = new("Frame", { Name = "Cards", Position = UDim2.fromOffset(0, 34), Size = UDim2.new(1, 0, 0, 356), BackgroundTransparency = 1, Parent = content })
+	UIKit.list(row, Enum.FillDirection.Horizontal, 12, Enum.HorizontalAlignment.Center)
+	local CARD_W, ART_H = 160, 150
 	for i, id in ipairs(Worlds.Order) do
 		local w = Worlds.Info[id]
-		local unlocked = p.worlds[id]
-		local prevOk = i == 1 or p.worlds[Worlds.Order[i - 1]]
-		local row = UIKit.frame({ LayoutOrder = i, Size = UDim2.new(1, -8, 0, 62), BackgroundColor3 = T.bg2, Parent = list })
-		UIKit.stroke(row, w.palette.accent, 2, unlocked and 0.1 or 0.6)
+		local unlocked = p.worlds[id] == true
+		local prevOk = i == 1 or p.worlds[Worlds.Order[i - 1]] == true
+		local accent = w.palette.accent
+		local card = new("Frame", { Name = id, LayoutOrder = i, Size = UDim2.fromOffset(CARD_W, 350), BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, Parent = row })
+		UIKit.corner(card, 14)
+		new("UIGradient", { Rotation = 90, Color = ColorSequence.new(T.stoneTop, T.stoneBot), Parent = card })
+		UIKit.stroke(card, unlocked and accent or Color3.fromRGB(70, 70, 86), unlocked and 4 or 3, 0)
+		-- arte do mundo
+		local art = new("Frame", { Name = "Art", Position = UDim2.fromOffset(6, 6), Size = UDim2.new(1, -12, 0, ART_H), BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0,
+			ClipsDescendants = true, Parent = card })
+		UIKit.corner(art, 10)
+		local top, bottom = w.palette.fog, w.palette.ground
+		if not unlocked then
+			top, bottom = Color3.fromRGB(96, 96, 112), Color3.fromRGB(48, 48, 60)
+		end
+		new("UIGradient", { Rotation = 90, Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, top), ColorSequenceKeypoint.new(0.62, top:Lerp(bottom, 0.5)), ColorSequenceKeypoint.new(1, bottom) }), Parent = art })
+		-- colina e marco do mundo
+		local hill = new("Frame", { Name = "Hill", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 1, -34), Size = UDim2.new(1.4, 0, 0, 80), BackgroundColor3 = unlocked and UIKit.darken(w.palette.ground, 0.15) or Color3.fromRGB(40, 40, 50),
+			BorderSizePixel = 0, Parent = art })
+		UIKit.corner(hill, 100)
+		UIKit.label({ Name = "Landmark", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -18), Size = UDim2.fromOffset(96, 96), Text = WORLD_ART[id] or "✦", TextSize = 78,
+			TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 1, TextTransparency = unlocked and 0 or 0.55, ZIndex = 2, Parent = art })
+		if not unlocked then
+			local shade = new("Frame", { Name = "Shade", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.45, BorderSizePixel = 0, ZIndex = 4, Parent = art })
+			UIKit.corner(shade, 10)
+			local aw = CARD_W - 12
+			chain(art, -6, 8, aw + 6, ART_H - 8)
+			chain(art, aw + 6, 8, -6, ART_H - 8)
+			-- cadeado mágico com runa do acento pulsando
+			local lock = new("Frame", { Name = "Lock", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(58, 58), BackgroundColor3 = Color3.new(1, 1, 1),
+				BorderSizePixel = 0, ZIndex = 8, Parent = art })
+			UIKit.corner(lock, 100)
+			new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(240, 210, 130), Color3.fromRGB(150, 104, 40)), Parent = lock })
+			UIKit.stroke(lock, T.woodEdge, 3, 0)
+			UIKit.label({ Size = UDim2.fromScale(1, 1), Text = "🔒", TextSize = 30, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 1, ZIndex = 9, Parent = lock })
+			local ring = new("Frame", { Name = "Rune", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(72, 72), BackgroundTransparency = 1, ZIndex = 7, Parent = art })
+			UIKit.corner(ring, 100)
+			local rs = UIKit.stroke(ring, accent, 4, 0.4)
+			UIKit.animate(ring, function(t)
+				rs.Transparency = 0.6 + math.sin(t * (2 * math.pi / 1.4)) * 0.2
+			end)
+		end
+		-- textos
+		UIKit.label({ Position = UDim2.fromOffset(10, ART_H + 12), Size = UDim2.new(1, -20, 0, 14), Text = "MUNDO " .. i, Font = T.body, TextSize = 11, TextColor3 = unlocked and accent or T.muted,
+			TextXAlignment = Enum.TextXAlignment.Center, Parent = card })
+		UIKit.label({ Position = UDim2.fromOffset(8, ART_H + 26), Size = UDim2.new(1, -16, 0, 46), Text = w.name, Font = T.title, TextSize = 20, TextXAlignment = Enum.TextXAlignment.Center,
+			TextStrokeTransparency = 0, TextStrokeColor3 = T.edgeDark, Parent = card })
 		local boss = Bosses.Info[w.bossId]
-		UIKit.label({ Position = UDim2.fromOffset(10, 0), Size = UDim2.new(1, -190, 1, 0), TextSize = 13,
-			Text = string.format("<b>%d. %s</b>\nBoss: %s · Atributos de pets x%.2f", i, w.name, boss.name, w.statMult), Parent = row })
-		local text = unlocked and "Viajar" or prevOk and string.format("Abrir (%s moedas)", UIKit.fmt(w.unlockCost)) or "Bloqueado"
-		UIKit.button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.fromOffset(170, 36), Text = text, TextSize = 13,
-			BackgroundColor3 = unlocked and T.blue or prevOk and T.yellow or T.gray, Parent = row }, function()
-			if unlocked then
+		UIKit.label({ Position = UDim2.fromOffset(8, ART_H + 72), Size = UDim2.new(1, -16, 0, 30), Text = string.format("Boss: %s\nAtributos x%.2f", boss.name, w.statMult), TextSize = 11,
+			TextColor3 = T.muted, TextXAlignment = Enum.TextXAlignment.Center, Parent = card })
+		local bottomY = 350 - 10
+		if id == here and unlocked then
+			local tag = new("Frame", { Name = "Here", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, bottomY), Size = UDim2.new(1, -20, 0, 34), BackgroundColor3 = accent,
+				BorderSizePixel = 0, Parent = card })
+			UIKit.corner(tag, 100)
+			UIKit.stroke(tag, UIKit.darken(accent, 0.6), 3, 0)
+			UIKit.label({ Size = UDim2.fromScale(1, 1), Text = "📍 Você está aqui", Font = T.title, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0,
+				TextStrokeColor3 = UIKit.darken(accent, 0.7), Parent = tag })
+			local tsc = new("UIScale", { Parent = tag })
+			UIKit.animate(tag, function(t)
+				tsc.Scale = 1 + math.sin(t * 3) * 0.035
+			end)
+		elseif unlocked then
+			UIKit.button({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, bottomY), Size = UDim2.new(1, -20, 0, 36), Text = "Teleportar", TextSize = 16, BackgroundColor3 = T.confirm,
+				Parent = card }, function()
 				local r = State.request("Teleport", { world = id })
 				toastResult(r)
 				if r.ok then
 					Panels.close()
+					travelFx(id)
 				end
-			elseif prevOk then
-				toastResult(State.request("UnlockWorld", { world = id }))
-			end
-		end)
+			end)
+		else
+			local cost = w.unlockCost
+			local have = p.coins or 0
+			UIKit.label({ Position = UDim2.fromOffset(8, ART_H + 106), Size = UDim2.new(1, -16, 0, 20), Text = "● " .. UIKit.fmt(cost) .. " Moedas", Font = T.title, TextSize = 15,
+				TextColor3 = T.gold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0, TextStrokeColor3 = T.edgeDark, Parent = card })
+			local prog = UIKit.vesselBar({ Name = "Need", Position = UDim2.fromOffset(12, ART_H + 130), Size = UDim2.new(1, -24, 0, 14), color = T.gold, textSize = 10, Parent = card })
+			prog.set(cost > 0 and have / cost or 1, "")
+			local canPay = prevOk and have >= cost
+			local text = not prevOk and ("Abra o Mundo " .. (i - 1)) or canPay and "Desbloquear" or ("Faltam ● " .. UIKit.fmt(cost - have))
+			UIKit.button({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, bottomY), Size = UDim2.new(1, -20, 0, 36), Text = text, TextSize = canPay and 16 or 12,
+				BackgroundColor3 = canPay and T.yellow or T.gray, Parent = card }, function()
+				if canPay then
+					local r = State.request("UnlockWorld", { world = id })
+					toastResult(r)
+					if r.ok then
+						UIKit.burst(card, accent, 16)
+						UIKit.pop(card, 0.2)
+					end
+				end
+			end)
+		end
+	end
+	-- trilha de progresso
+	local track = new("Frame", { Name = "Track", Position = UDim2.fromOffset(0, 400), Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1, Parent = content })
+	local total = #Worlds.Order * CARD_W + (#Worlds.Order - 1) * 12
+	local x0 = -total / 2 + CARD_W / 2
+	local line = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(total - CARD_W, 6), BackgroundColor3 = T.inset, BorderSizePixel = 0, Parent = track })
+	UIKit.corner(line, 3)
+	UIKit.stroke(line, T.edgeDark, 2, 0)
+	for i, id in ipairs(Worlds.Order) do
+		local on = p.worlds[id] == true
+		local dot = new("Frame", { Name = "Stop", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, x0 + (i - 1) * (CARD_W + 12), 0.5, 0), Size = UDim2.fromOffset(22, 22),
+			BackgroundColor3 = on and Worlds.Info[id].palette.accent or T.inset, BorderSizePixel = 0, ZIndex = 2, Parent = track })
+		UIKit.corner(dot, 100)
+		UIKit.stroke(dot, T.edgeDark, 3, 0)
 	end
 end
 
@@ -766,7 +1013,7 @@ end
 -------------------------------------------------------------------------------
 
 local BUILDERS = { Pets = petsPanel, Items = itemsPanel, Luck = luckPanel, Bestiary = bestiaryPanel, Quests = questsPanel, Map = mapPanel, Settings = settingsPanel }
-local TITLES = { Pets = "Pets e Equipe", Items = "Itens", Luck = "Sorte", Bestiary = "Bestiário", Quests = "Missões", Map = "Mapa das Ilhas", Settings = "Opções" }
+local TITLES = { Pets = "Pets e Equipe", Items = "Itens", Luck = "Sorte", Bestiary = "Bestiário", Quests = "Missões", Map = "Mundos", Settings = "Opções" }
 
 local PANEL_COLORS = {
 	Pets = T.orange, Items = T.blue, Luck = T.green, Bestiary = T.purple, Quests = T.yellow, Map = T.teal, Settings = T.gray, Egg = T.pink,
@@ -778,21 +1025,32 @@ function Panels.open(name: string, arg)
 	end
 	current = { name = name, arg = arg }
 	if not modal.Visible then
-		UIKit.pop(modal, 0.08)
+		-- abertura (Design System 6): escurece e desfoca o mundo, a janela entra com "Back Out"
+		local os = modal:FindFirstChild("OpenScale") :: UIScale
+		os.Scale = 0.85
+		TweenService:Create(os, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+		scrim.Visible = true
+		scrim.BackgroundTransparency = 1
+		TweenService:Create(scrim, TweenInfo.new(0.25), { BackgroundTransparency = 0.45 }):Play()
+		TweenService:Create(blur, TweenInfo.new(0.25), { Size = 14 }):Play()
 	end
 	modal.Visible = true
-	local ribbon = modal:FindFirstChild("Ribbon")
+	-- cor do painel nas runas dos cantos, no brilho e nos cristais da placa
 	local color = PANEL_COLORS[name] or T.orange
-	if ribbon then
-		local g = ribbon:FindFirstChildOfClass("UIGradient")
-		if g then
-			g.Color = ColorSequence.new(UIKit.lighten(color, 0.12), UIKit.darken(color, 0.12))
+	for _, c in ipairs(modal:GetChildren()) do
+		if c.Name == "CornerRune" then
+			c.BackgroundColor3 = color
+		elseif c.Name == "Glow" then
+			local st = c:FindFirstChildOfClass("UIStroke")
+			if st then
+				st.Color = color
+			end
 		end
-		local st = ribbon:FindFirstChildOfClass("UIStroke")
-		if st then
-			st.Color = UIKit.darken(color, 0.6)
+	end
+	for _, c in ipairs(titlePlaque:GetChildren()) do
+		if c.Name == "Gem" then
+			c.BackgroundColor3 = color
 		end
-		titleLabel.TextStrokeColor3 = UIKit.darken(color, 0.7)
 	end
 	clear()
 	titleLabel.Text = TITLES[name] or name
@@ -805,26 +1063,32 @@ end
 
 function Panels.close()
 	modal.Visible = false
+	scrim.Visible = false
+	TweenService:Create(blur, TweenInfo.new(0.2), { Size = 0 }):Play()
 	current = nil
 end
 
 function Panels.init()
 	gui = UIKit.screen("Panels", 10)
-	modal = UIKit.frame({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.52), Size = UDim2.fromOffset(880, 540), BackgroundColor3 = T.bg2,
-		Visible = false, radius = 18, Parent = gui })
-	UIKit.stroke(modal, T.stroke, 5, 0)
-	-- borda interna clara
-	local inner = new("Frame", { Position = UDim2.fromOffset(4, 4), Size = UDim2.new(1, -8, 1, -8), BackgroundTransparency = 1, Parent = modal })
-	UIKit.corner(inner, 15)
-	UIKit.stroke(inner, Color3.fromRGB(150, 130, 255), 2, 0.4)
-	local ribbon = UIKit.frame({ Name = "Ribbon", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0, 2), Size = UDim2.fromOffset(340, 50), BackgroundColor3 = T.orange, radius = 25, Parent = modal })
-	UIKit.stroke(ribbon, UIKit.darken(T.orange, 0.6), 4, 0)
-	titleLabel = UIKit.label({ Size = UDim2.fromScale(1, 1), Text = "", Font = T.title, TextSize = 28, TextXAlignment = Enum.TextXAlignment.Center,
-		TextStrokeColor3 = UIKit.darken(T.orange, 0.7), TextStrokeTransparency = 0, Parent = ribbon })
-	local close = UIKit.button({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -6, 0, 6), Size = UDim2.fromOffset(48, 48), Text = "✕", TextSize = 26,
-		BackgroundColor3 = T.red, ZIndex = 5, Parent = modal }, Panels.close)
-	UIKit.corner(close, 24)
-	content = new("Frame", { Position = UDim2.fromOffset(18, 40), Size = UDim2.new(1, -36, 1, -54), BackgroundTransparency = 1, Parent = modal })
+	scrim = new("Frame", { Name = "Scrim", Size = UDim2.fromScale(1, 1), BackgroundColor3 = T.scrim, BackgroundTransparency = 1, BorderSizePixel = 0, Active = true, Visible = false, Parent = gui })
+	blur = Lighting:FindFirstChild("PanelBlur") or new("BlurEffect", { Name = "PanelBlur", Size = 0, Parent = Lighting })
+	local body
+	modal, body = UIKit.runeFrame({ Name = "Modal", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.53), Size = UDim2.fromOffset(900, 560), Visible = false,
+		glow = true, radius = 20, Parent = gui })
+	-- placa de madeira do título com cristais nas pontas
+	titlePlaque, titleLabel = UIKit.woodPlaque({ Name = "TitlePlaque", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0, 0), Size = UDim2.fromOffset(360, 54), Text = "",
+		TextSize = 30, radius = 16, ZIndex = 4, Parent = modal })
+	for _, x in ipairs({ 0, 1 }) do
+		local gem = new("Frame", { Name = "Gem", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(x, 0, 0.5, 0), Size = UDim2.fromOffset(22, 22), Rotation = 45,
+			BackgroundColor3 = T.orange, BorderSizePixel = 0, ZIndex = 5, Parent = titlePlaque })
+		UIKit.corner(gem, 4)
+		UIKit.stroke(gem, T.edgeDark, 3, 0)
+		new("UIGradient", { Rotation = 0, Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(140, 140, 140)), Parent = gem })
+	end
+	local close = UIKit.button({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -2, 0, 2), Size = UDim2.fromOffset(50, 50), Text = "✕", TextSize = 26,
+		BackgroundColor3 = T.cancel, ZIndex = 6, Parent = modal }, Panels.close)
+	UIKit.corner(close, 25)
+	content = new("Frame", { Name = "Content", Position = UDim2.fromOffset(22, 42), Size = UDim2.new(1, -44, 1, -60), BackgroundTransparency = 1, Parent = body })
 	HUD.openPanel = Panels.open
 	State.on("OpenEgg", function(p)
 		Panels.open("Egg", p.egg)

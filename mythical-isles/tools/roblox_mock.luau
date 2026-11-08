@@ -229,14 +229,43 @@ NumberSequenceKeypoint = ctor("NumberSequenceKeypoint")
 ColorSequence = ctor("ColorSequence")
 ColorSequenceKeypoint = ctor("ColorSequenceKeypoint")
 NumberRange = ctor("NumberRange")
-UDim = ctor("UDim")
-UDim2 = { new = function(...)
-	return { ... }
-end, fromScale = function(...)
-	return { ... }
-end, fromOffset = function(...)
-	return { ... }
+-- UDim / UDim2 com campos reais (Scale/Offset, X/Y) e soma: a prévia da interface (tools/preview/export_ui)
+-- calcula o layout a partir deles. Num bloco `do` para não gastar registradores do trecho principal
+-- (o simulador concatena tudo num arquivo só e o Luau limita 200 locais por função).
+do
+local UDimMT = {}
+UDimMT.__index = UDimMT
+UDimMT.__add = function(a, b)
+	return setmetatable({ __type = "UDim", Scale = a.Scale + b.Scale, Offset = a.Offset + b.Offset }, UDimMT)
+end
+UDimMT.__eq = function(a, b)
+	return a.Scale == b.Scale and a.Offset == b.Offset
+end
+UDim = { new = function(sc, off)
+	return setmetatable({ __type = "UDim", Scale = sc or 0, Offset = off or 0 }, UDimMT)
 end }
+local UDim2MT = {}
+UDim2MT.__index = UDim2MT
+local function udim2(xs, xo, ys, yo)
+	return setmetatable({ __type = "UDim2", X = UDim.new(xs, xo), Y = UDim.new(ys, yo), Width = UDim.new(xs, xo), Height = UDim.new(ys, yo) }, UDim2MT)
+end
+UDim2MT.__add = function(a, b)
+	return udim2(a.X.Scale + b.X.Scale, a.X.Offset + b.X.Offset, a.Y.Scale + b.Y.Scale, a.Y.Offset + b.Y.Offset)
+end
+UDim2MT.__sub = function(a, b)
+	return udim2(a.X.Scale - b.X.Scale, a.X.Offset - b.X.Offset, a.Y.Scale - b.Y.Scale, a.Y.Offset - b.Y.Offset)
+end
+UDim2MT.__eq = function(a, b)
+	return a.X == b.X and a.Y == b.Y
+end
+UDim2 = { new = function(xs, xo, ys, yo)
+	return udim2(xs or 0, xo or 0, ys or 0, yo or 0)
+end, fromScale = function(x, y)
+	return udim2(x or 0, 0, y or 0, 0)
+end, fromOffset = function(x, y)
+	return udim2(0, x or 0, 0, y or 0)
+end }
+end
 
 -- Enum: qualquer Enum.X.Y existe (os nomes são verificados por tools/api_check.py).
 -- Itens são cacheados para que comparações (==) funcionem.
@@ -419,6 +448,16 @@ function Inst.FindFirstChildWhichIsA(self, cls)
 		if c:IsA(cls) then
 			return c
 		end
+	end
+	return nil
+end
+function Inst.FindFirstAncestorWhichIsA(self, cls)
+	local p = self.Parent
+	while p do
+		if p:IsA(cls) then
+			return p
+		end
+		p = p.Parent
 	end
 	return nil
 end

@@ -26,20 +26,21 @@ const ids = (q.get('ids') || '').split(',').filter(Boolean);
 const cols = Number(q.get('cols') || Math.min(ids.length, 5));
 const gap = Number(q.get('gap') || 7);
 const W = innerWidth, H = innerHeight;
-const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: q.get('bg') === 'none' });
 renderer.setSize(W, H); renderer.setPixelRatio(1);
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
 document.body.appendChild(renderer.domElement);
 const sc = new THREE.Scene();
-sc.background = new THREE.Color(q.get('bg') || '#9fc7ef');
+sc.background = q.get('bg') === 'none' ? null : new THREE.Color(q.get('bg') || '#9fc7ef');
 sc.add(new THREE.HemisphereLight(0xe8f2ff, 0x5a6a48, 1.1));
 const sun = new THREE.DirectionalLight(0xfff2dc, 2.4);
 sun.position.set(-30, 60, 40); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, far: 200 });
 sc.add(sun);
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ color: q.get('floor') || '#8cc46c', roughness: 1 }));
-floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; if (!q.get('fit')) sc.add(floor);
+if (q.get('fit')) document.getElementById('tag').style.display = 'none';
 const ROUGH = { Fabric: 0.92, SmoothPlastic: 0.45, Glass: 0.1, Neon: 1, Metal: 0.25, Grass: 0.9, Wood: 0.85, Slate: 0.9, ForceField: 1 };
 const lbls = [];
 let maxW = 0;
@@ -79,6 +80,16 @@ pets.forEach((d, i) => {
 const camera = new THREE.PerspectiveCamera(Number(q.get('fov') || 40), W / H, 0.1, 1000);
 camera.position.set(...(q.get('pos') || '0,8,26').split(',').map(Number));
 camera.lookAt(new THREE.Vector3(...(q.get('look') || '0,2,0').split(',').map(Number)));
+if (q.get('fit')) {
+  // miniatura: enquadra o pet sozinho (vista 3/4 de frente), usado pelas miniaturas da prévia da UI
+  const box = new THREE.Box3();
+  sc.traverse(o => { if (o.isMesh && o !== floor) box.expandByObject(o); });
+  const c = box.getCenter(new THREE.Vector3()), r = box.getSize(new THREE.Vector3()).length() / 2;
+  const dist = r / Math.sin(camera.fov * Math.PI / 360) * 0.92;
+  const dir = new THREE.Vector3(0.55, 0.38, 1).normalize();
+  camera.position.copy(c).addScaledVector(dir, dist);
+  camera.lookAt(c);
+}
 document.getElementById('title').textContent = q.get('title') || '';
 if (q.get('labels') !== '0') for (const l of lbls) {
   const v = l.pos.clone().project(camera);

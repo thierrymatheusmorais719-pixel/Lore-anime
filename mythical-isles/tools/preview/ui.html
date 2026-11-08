@@ -1,0 +1,187 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Mythical Isles - UI preview</title>
+<link rel="stylesheet" href="data/fonts/local.css">
+<style>
+  html, body { margin: 0; padding: 0; background: #1b2a1d; overflow: hidden; }
+  #stage { position: relative; overflow: hidden; background-size: cover; background-position: center; }
+  .g { position: absolute; box-sizing: border-box; }
+  .st { position: absolute; box-sizing: border-box; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+  .tx { position: absolute; display: flex; box-sizing: border-box; line-height: 1.08; white-space: pre; }
+  .tx.wrap { white-space: pre-wrap; word-break: break-word; }
+  .tx > span.in { display: block; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+// Renderiza o JSON exportado por tools/preview/export_ui.luau (árvore de GUI real do cliente,
+// com layout calculado pelo simulador) em HTML/CSS para gerar capturas de tela sem o Roblox Studio.
+// É uma aproximação: UIGradient/UIStroke/fontes são mapeados para equivalentes em CSS.
+const qs = new URLSearchParams(location.search);
+const scene = qs.get('scene') || 'hud';
+const bg = qs.get('bg');
+const FONTS = {
+  FredokaOne: ["'Fredoka One'", 400], GothamBold: ["'Montserrat'", 700], GothamBlack: ["'Montserrat'", 900],
+  GothamMedium: ["'Montserrat'", 700], Gotham: ["'Montserrat'", 700], PatrickHand: ["'Patrick Hand'", 400],
+  SourceSansBold: ["'Montserrat'", 700], Cartoon: ["'Fredoka One'", 400], Arcade: ["'Fredoka One'", 400],
+};
+const EMOJI = ", 'Noto Color Emoji', sans-serif";
+const rgb = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+const mul = (a, b) => [a[0] * b[0] / 255, a[1] * b[1] / 255, a[2] * b[2] / 255].map(Math.round);
+
+function sampleSeq(seq, t) {
+  if (!seq || !seq.length) return null;
+  if (t <= seq[0][0]) return seq[0][1];
+  for (let i = 1; i < seq.length; i++) {
+    if (t <= seq[i][0]) {
+      const [t0, v0] = seq[i - 1], [t1, v1] = seq[i];
+      const k = t1 > t0 ? (t - t0) / (t1 - t0) : 0;
+      if (Array.isArray(v0)) return v0.map((x, j) => x + (v1[j] - x) * k);
+      return v0 + (v1 - v0) * k;
+    }
+  }
+  return seq[seq.length - 1][1];
+}
+
+// UIGradient -> linear-gradient CSS (a cor base multiplica a sequência, como no Roblox)
+function gradCss(g, base, baseA) {
+  const times = new Set([0, 1]);
+  g.c.forEach(s => times.add(s[0]));
+  (g.t || []).forEach(s => times.add(s[0]));
+  const rad = g.rot * Math.PI / 180;
+  const shift = (g.ox || 0) * Math.cos(rad) + (g.oy || 0) * Math.sin(rad);
+  const stops = [...times].sort((a, b) => a - b).map(t => {
+    const c = mul(base, sampleSeq(g.c, t).map(Math.round));
+    const tr = g.t && g.t.length ? sampleSeq(g.t, t) : 0;
+    return `${rgb(c, baseA * (1 - tr))} ${((t + shift) * 100).toFixed(2)}%`;
+  });
+  return `linear-gradient(${g.rot + 90}deg, ${stops.join(', ')})`;
+}
+
+function richToHtml(s, rich) {
+  const esc = s.replace(/&(?![a-z#0-9]+;)/gi, '&amp;');
+  if (!rich) return esc.replace(/</g, '&lt;');
+  return esc
+    .replace(/<font\s+([^>]*)>/gi, (m, attrs) => {
+      let st = '';
+      const col = attrs.match(/color\s*=\s*["']([^"']+)["']/i);
+      if (col) st += `color:${col[1]};`;
+      const sz = attrs.match(/size\s*=\s*["'](\d+)["']/i);
+      if (sz) st += `font-size:${sz[1]}px;`;
+      return `<span style="${st}">`;
+    })
+    .replace(/<\/font>/gi, '</span>')
+    .replace(/<stroke[^>]*>|<\/stroke>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n');
+}
+
+function fitText(box, inner, item) {
+  let lo = 4, hi = Math.min(100, item.h * 1.4);
+  for (let i = 0; i < 14; i++) {
+    const mid = (lo + hi) / 2;
+    box.style.fontSize = mid + 'px';
+    if (inner.scrollWidth <= item.w + 0.5 && inner.scrollHeight <= item.h + 0.5) lo = mid; else hi = mid;
+  }
+  box.style.fontSize = lo + 'px';
+}
+
+async function main() {
+  const data = await (await fetch(`data/ui_${scene}.json?${Date.now()}`)).json();
+  const stage = document.getElementById('stage');
+  stage.style.width = data.w + 'px';
+  stage.style.height = data.h + 'px';
+  if (bg) {
+    // fundo 3D (captura do render.html); blur=N imita o BlurEffect que o jogo liga com as janelas abertas
+    const back = document.createElement('div');
+    Object.assign(back.style, { position: 'absolute', inset: '0', backgroundImage: `url(${bg})`, backgroundSize: 'cover', backgroundPosition: 'center', zIndex: 0 });
+    if (qs.get('blur')) { back.style.filter = `blur(${qs.get('blur')}px)`; back.style.transform = 'scale(1.03)'; }
+    stage.appendChild(back);
+  }
+  await document.fonts.ready;
+  let z = 1;
+  const loads = [];
+  // recorte (ClipsDescendants): clip-path em coordenadas locais de cada caixa
+  const clipFor = (it, x, y, w, h) => {
+    if (!it.cl) return '';
+    const [cx, cy, cw, ch] = it.cl;
+    const t = Math.max(0, cy - y), l = Math.max(0, cx - x);
+    const b = Math.max(0, (y + h) - (cy + ch)), r = Math.max(0, (x + w) - (cx + cw));
+    return (t || l || b || r) ? `inset(${t}px ${r}px ${b}px ${l}px)` : '';
+  };
+  for (const it of data.items) {
+    if (it.cl && (it.cl[2] <= 0 || it.cl[3] <= 0 || it.x >= it.cl[0] + it.cl[2] || it.y >= it.cl[1] + it.cl[3] || it.x + it.w <= it.cl[0] || it.y + it.h <= it.cl[1])) continue;
+    const rot = it.rot ? `rotate(${it.rot}deg)` : '';
+    const rad = it.rad || 0;
+    // contorno (UIStroke Border) desenhado por fora da caixa
+    if (it.st && it.st.mode === 'Border' && it.st.t < 1) {
+      const s = document.createElement('div');
+      s.className = 'st';
+      const th = it.st.th;
+      Object.assign(s.style, {
+        left: (it.x - th) + 'px', top: (it.y - th) + 'px', width: (it.w + 2 * th) + 'px', height: (it.h + 2 * th) + 'px',
+        padding: th + 'px', borderRadius: (rad ? rad + th : 0) + 'px', zIndex: z + 1, transform: rot,
+        background: it.st.g ? gradCss(it.st.g, it.st.c, 1 - it.st.t) : rgb(it.st.c, 1 - it.st.t),
+        clipPath: clipFor(it, it.x - th, it.y - th, it.w + 2 * th, it.h + 2 * th),
+      });
+      stage.appendChild(s);
+    }
+    const d = document.createElement('div');
+    d.className = 'g';
+    Object.assign(d.style, { left: it.x + 'px', top: it.y + 'px', width: it.w + 'px', height: it.h + 'px', borderRadius: rad + 'px', zIndex: z, transform: rot, clipPath: clipFor(it, it.x, it.y, it.w, it.h) });
+    const isText = it.tx !== undefined;
+    if (it.bgT < 1) {
+      d.style.background = it.gr ? gradCss(it.gr, it.bg, 1 - it.bgT) : rgb(it.bg, 1 - it.bgT);
+    }
+    if (it.sp) {
+      // retrato do pet: miniatura gerada pela prévia 3D das malhas (pets3d.html), se existir
+      const img = document.createElement('img');
+      img.src = `data/petthumbs/${it.sp}.png`;
+      loads.push(new Promise(res => { img.onload = res; img.onerror = () => { img.remove(); res(); }; }));
+      Object.assign(img.style, { width: '100%', height: '100%', objectFit: 'contain', display: 'block' });
+      d.appendChild(img);
+    }
+    stage.appendChild(d);
+    z += 2;
+    if (isText && it.tt < 1) {
+      const t = document.createElement('div');
+      t.className = 'tx' + (it.wrap ? ' wrap' : '');
+      const f = FONTS[it.f] || ["'Montserrat'", 700];
+      Object.assign(t.style, {
+        left: it.x + 'px', top: it.y + 'px', width: it.w + 'px', height: it.h + 'px', zIndex: z, transform: rot,
+        fontFamily: f[0] + EMOJI, fontWeight: f[1], fontSize: it.ts + 'px', color: rgb(it.tc, 1 - it.tt),
+        justifyContent: it.xa === 'Left' ? 'flex-start' : it.xa === 'Right' ? 'flex-end' : 'center',
+        alignItems: it.ya === 'Top' ? 'flex-start' : it.ya === 'Bottom' ? 'flex-end' : 'center',
+        textAlign: it.xa === 'Left' ? 'left' : it.xa === 'Right' ? 'right' : 'center',
+        clipPath: clipFor(it, it.x, it.y, it.w, it.h),
+      });
+      const inner = document.createElement('span');
+      inner.className = 'in';
+      inner.innerHTML = richToHtml(it.tx, it.rich);
+      if (it.st && it.st.mode === 'Contextual' && it.st.t < 1) {
+        inner.style.webkitTextStroke = `${it.st.th * 2}px ${rgb(it.st.c, 1 - it.st.t)}`;
+        inner.style.paintOrder = 'stroke fill';
+      } else if (it.tst < 1) {
+        const c = rgb(it.tsk, 1 - it.tst);
+        inner.style.textShadow = `-1px -1px 0 ${c}, 1px -1px 0 ${c}, -1px 1px 0 ${c}, 1px 1px 0 ${c}, 0 1.5px 0 ${c}`;
+      }
+      if (it.gr && it.bgT >= 1) {
+        inner.style.background = gradCss(it.gr, it.tc, 1 - it.tt);
+        inner.style.webkitBackgroundClip = 'text';
+        inner.style.color = 'transparent';
+      }
+      t.appendChild(inner);
+      stage.appendChild(t);
+      if (it.tsc) fitText(t, inner, it);
+      z += 1;
+    }
+  }
+  await Promise.race([Promise.all(loads), new Promise(r => setTimeout(r, 8000))]);
+  window.READY = true;
+}
+main().catch(e => { console.error(e); document.title = 'ERR ' + e.message; window.READY = true; });
+</script>
+</body>
+</html>

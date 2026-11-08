@@ -611,3 +611,7 @@ sem bloquear o jogo.
 | 7 | Testes | No simulador: abrir cada janela, os estados dos botões, o fluxo de diálogo e o desbloqueio de mundo sem erro (como os cenários atuais dos painéis) |
 
 **Ordem sugerida:** 1 → 2 → 3 (Pets e Mundos primeiro) → 5 → 4 → 6. Cada etapa deixa o jogo jogável.
+
+**Estado atual:** etapas 1 e 2 feitas; etapa 3 feita para a janela (moldura rúnica, placa, desfoque, abertura), Pets e
+Mundos — os outros painéis abrem na janela nova com o conteúdo antigo. Etapas 4 a 6 ainda não começaram. Para ver a UI
+sem o Studio: `python3 tools/run_tests.py luau --uiexport` + `tools/preview/ui.html` (README, seção 3).

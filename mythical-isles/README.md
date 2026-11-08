@@ -8,7 +8,7 @@ vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
 > Luau, contra o dump público da API do Roblox, com 62 testes de lógica, 3866 verificações dos modelos 3D e
-> **167 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> **176 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -263,7 +263,34 @@ Se nenhum dos dois modos funcionar, o boss antigo continua visível.
 `docs/UI_DESIGN_SYSTEM.md`: especificação da interface nova. Cobre a identidade visual (pedra rúnica, madeira
 polida, cristal/neon), as paletas e a tipografia, os componentes (moldura rúnica, botões, barras "recipiente",
 slots), o HUD, o diálogo com NPCs, o inventário de pets, a loja e os ovos, o menu de mundos e as animações,
-com propriedades do Roblox Studio. **Ainda não implementada**: a interface atual continua a mesma.
+com propriedades do Roblox Studio.
+
+### Interface nova no jogo (HUD, janelas, pets e mundos)
+
+O guia acima já está **implementado no cliente** para o HUD, a janela dos painéis, o inventário de pets e o menu
+de mundos (`client/Controllers/UIKit.luau`, `HUD.luau`, `Panels.luau`):
+- **Componentes novos no `UIKit`:** moldura rúnica (`runeFrame`: sombra, pedra com gradiente, friso de relevo, runas
+  de cristal nos cantos, brilho pulsando), placa de madeira (`woodPlaque`), barra "recipiente" com seiva fluindo,
+  bolhas e flash de dano (`vesselBar`), botão hexágono rúnico (`hexButton`), contador de moeda que conta e solta
+  partículas (`counter`), partículas de clique (`burst`), gradiente de raridade girando do Épico para cima
+  (`rarityFill`) e um único laço de animação a 30 quadros/s para toda a UI (`animate`).
+- **HUD:** placa de madeira do mundo atual (vira ao trocar de mundo e abre o Menu de Mundos), contadores de Moedas,
+  Essência, Fragmentos Astrais e do material do mundo (Seiva Verdejante, Estilhaço Prismático…), selo de sorte,
+  7 hexágonos laterais com nome e aviso pulsando, painel de status com retrato, **vida real do avatar** (pulsa em
+  vermelho abaixo de 25%) e o XP da equipe, cartão de missão em pedra rúnica, notificações, feed e anúncios no mesmo
+  estilo. O jogador não tem nível próprio no jogo: o painel mostra o **nível médio da equipe**.
+- **Janelas:** escurecimento + `BlurEffect` no `Lighting`, entrada com "Back Out", placa de título de madeira e as runas
+  dos cantos na cor de cada painel.
+- **Pets:** grade de slots com o gradiente da raridade, retrato 3D, sigla da raridade, mutação, nível, marca de equipado e
+  cadeado; equipados primeiro, depois raridade e poder; trocar a seleção não reconstrói a grade. Detalhe com palco do
+  retrato girando, XP em recipiente, chips de atributos, habilidade, Assinatura e passiva.
+- **Mundos:** 5 cartões; os fechados ficam escuros, presos por correntes em X e com cadeado de runa pulsando, mostram o
+  custo, a barra do saldo até o custo e "Faltam ● N"; o atual pulsa "Você está aqui"; teleporte com véu na cor do mundo.
+- **Prévia sem o Studio:** `python3 tools/run_tests.py luau --uiexport` roda o cliente real no simulador e exporta a
+  árvore de GUI com o layout calculado; `tools/preview/ui.html` desenha esse JSON em HTML/CSS (imagens em `docs/preview/ui_hud.jpg`, `ui_hud_fx.jpg`, `ui_pets.jpg` e `ui_map.jpg`).
+- **Ainda não feito (do guia):** Gemas/Robux, Loja, diálogo dos NPCs, Excluir Auto e fusão (seções marcadas **[novo]**);
+  os outros painéis (Itens, Sorte, Bestiário, Missões, Opções, Ovo) já usam a janela nova, mas o conteúdo deles mantém o
+  layout antigo.
 
 ### Farol Ancestral e ruínas (Mundo 2 — Crystal Hollow)
 
@@ -557,7 +584,7 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **62 testes passando** |
 | Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", ≤ 18.000 triângulos) + bosses anatômicos nos dois modos (todas as juntas do boss antigo, mesma altura de raiz, pés no chão, peças de energia com cor, ≤ 20.000 / 3.400 triângulos) | `python3 tools/run_tests.py luau --smoke` | **3866 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **167 cenários passando** (inclui o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **176 cenários passando** (inclui a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -685,6 +712,11 @@ travamento) foi exercitada.
     seriam o próximo nível.
 - **Ataques Assinatura — o que ainda precisa do Studio:** os efeitos visuais foram executados no simulador (todos os
   estilos rodam e limpam as peças), mas não vistos na tela; o equilíbrio de dano em partidas reais.
+- **Interface nova — o que ainda precisa do Studio:** não foi vista dentro do Roblox. As capturas em `docs/preview/ui_*.jpg`
+  são a árvore de GUI real do cliente com o layout calculado pelo simulador e desenhada em HTML/CSS: fontes, `UIStroke`,
+  `UIGradient`, emojis e o `BlurEffect` são aproximados, e os retratos dos pets vêm da prévia 3D das malhas (no jogo são
+  `ViewportFrame`). Confira no Studio a legibilidade no celular, o hover dos hexágonos e o custo do laço de animação com
+  muitos slots de raridade alta.
 - **Árvore-Santuário — o que ainda precisa do Studio:** subir a rampa, a escada e os galhos com o personagem real
   (o simulador confere geometria, inclinação, altura livre e o elevador, mas não a física do Humanoid), a sombra da copa
   e o desempenho das ~4.800 peças a mais.
