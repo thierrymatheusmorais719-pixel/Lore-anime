@@ -258,6 +258,13 @@ Se nenhum dos dois modos funcionar, o boss antigo continua visível.
 - **Peso:** ≈ 4.840 peças (3.506 cunhas da casca + 1.330 peças). A ilha 1 passa a ter ≈ 17.600 peças.
   `Worlds.verdant.ceiling = 340`: quem está no alto da árvore continua "no Verdant Haven".
 
+### Guia de interface (UI/UX)
+
+`docs/UI_DESIGN_SYSTEM.md`: especificação da interface nova. Cobre a identidade visual (pedra rúnica, madeira
+polida, cristal/neon), as paletas e a tipografia, os componentes (moldura rúnica, botões, barras "recipiente",
+slots), o HUD, o diálogo com NPCs, o inventário de pets, a loja e os ovos, o menu de mundos e as animações,
+com propriedades do Roblox Studio. **Ainda não implementada**: a interface atual continua a mesma.
+
 ### Farol Ancestral e ruínas (Mundo 2 — Crystal Hollow)
 
 `server/Services/BeaconTower.luau`, construído por `CrystalHollow.buildBeacon` no fim do caminho oeste do vale
