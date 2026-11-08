@@ -81,4 +81,38 @@ function Facets.build(g, th: number, props, parent: Instance, filter): number
 	return n
 end
 
+-- SOMBREAMENTO "ASSADO" do modo de peças (pets e bosses sem EditableMesh). Cada face é uma cor chapada,
+-- então o volume vem daqui: cor um pouco mais saturada (visual de desenho) e oclusão pela altura do
+-- corpo (patas e barriga mais escuras, costas e cabeça mais claras), como a luz de baixo que falta.
+Facets.TOON_SAT = 1.18
+Facets.TOON_AO = 0.3
+function Facets.toonRGB(r: number, g: number, b: number, y01: number): (number, number, number)
+	local gray = (r + g + b) / 3
+	local k = Facets.TOON_SAT
+	r, g, b = gray + (r - gray) * k, gray + (g - gray) * k, gray + (b - gray) * k
+	local ao = (1 - Facets.TOON_AO) + Facets.TOON_AO * math.clamp(y01, 0, 1) ^ 0.7
+	local lift = 1.05
+	return math.clamp(r * ao * lift, 0, 1), math.clamp(g * ao * lift, 0, 1), math.clamp(b * ao * lift, 0, 1)
+end
+
+-- Altura mínima e máxima de uma planta (pets/bosses), para a oclusão pela altura.
+function Facets.heightRange(bp): (number, number)
+	local lo, hi = math.huge, -math.huge
+	for _, p in ipairs(bp.parts) do
+		for _, v in ipairs(p.geom.verts) do
+			local y = v.Y + p.pivot.Y
+			if y < lo then
+				lo = y
+			end
+			if y > hi then
+				hi = y
+			end
+		end
+	end
+	if lo > hi then
+		return 0, 1
+	end
+	return lo, math.max(hi, lo + 0.01)
+end
+
 return Facets

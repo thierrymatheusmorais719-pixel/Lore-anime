@@ -1903,6 +1903,46 @@ do
 		check("sem 'Allow Mesh / Image APIs': os pets da equipe viram os low-poly de peças, animados e sem caixa de erro",
 			polySwapped > 0 and polySwapped == total and PetMesh.mode == "poly" and movedPoly and #SIM.errors == errsBefore,
 			string.format("%d/%d low-poly, modo=%s, animado=%s, erro=%s", polySwapped, total, tostring(PetMesh.mode), tostring(movedPoly), tostring(SIM.errors[errsBefore + 1])))
+		-- visual v3: contorno de desenho nos pets do jogador, nada de textura de grama, olhos em camadas e
+		-- sombreamento pela altura (faces de baixo mais escuras que as de cima)
+		;(function()
+			local hl = polyMesh and polyMesh:FindFirstChild("ToonOutline")
+			local grass, lowSum, lowN, highSum, highN = 0, 0, 0, 0, 0
+			local torso = polyMesh and polyMesh:FindFirstChild("Torso")
+			local y0 = torso and torso.Position.Y or 0 -- centro do tronco
+			local whites = 0
+			for _, d in ipairs(polyMesh and polyMesh:GetDescendants() or {}) do
+				if d.ClassName == "WedgePart" then
+					if d.Material == Enum.Material.Grass then
+						grass += 1
+					end
+					local c = d.Color
+					local lum = (c.R + c.G + c.B) / 3
+					local rel = d.Position.Y - y0
+					if d.Parent and d.Parent.Name == "Torso" then
+						if rel < 0 then
+							lowSum, lowN = lowSum + lum, lowN + 1
+						else
+							highSum, highN = highSum + lum, highN + 1
+						end
+					end
+					if d.Parent and d.Parent.Name == "Face" and c.R > 0.97 and c.G > 0.97 and c.B > 0.97 then
+						whites += 1
+					end
+				end
+			end
+			check("visual dos pets: contorno de desenho (Highlight só com a linha) nos pets do jogador",
+				hl ~= nil and hl.ClassName == "Highlight" and hl.FillTransparency == 1 and hl.OutlineTransparency < 0.5, hl and "ok" or "sem contorno")
+			check("visual dos pets: nenhuma face com textura de grama", polyMesh ~= nil and grass == 0, grass .. " cunhas de grama")
+			check("visual dos pets: olhos com brilho branco no modo de peças", whites >= 4, whites .. " cunhas brancas no rosto")
+			-- a mesma cor fica mais escura embaixo (oclusão pela altura) e um pouco mais saturada
+			local Facets = require(__proxy("Shared/Builders/Facets"))
+			local rl, gl, bl = Facets.toonRGB(0.6, 0.4, 0.3, 0)
+			local rh, gh, bh = Facets.toonRGB(0.6, 0.4, 0.3, 1)
+			check("visual dos pets: sombreamento pela altura (mesma cor mais escura embaixo, mais saturada)",
+				rl + gl + bl < (rh + gh + bh) * 0.8 and (rh - bh) > (0.6 - 0.3), string.format("baixo %.2f, alto %.2f", rl + gl + bl, rh + gh + bh))
+			local _ = lowSum + lowN + highSum + highN
+		end)()
 		asset.CreateEditableMesh = origCreate
 		PetMesh._reset()
 	end
@@ -2080,6 +2120,10 @@ do
 		check("boss novo: o cliente troca o Prism Titan pelo modelo anatômico de malhas e esconde o de peças do servidor",
 			r ~= nil and r.meshParts >= 15 and r.hidden and vis:GetAttribute("PolyBoss") == false,
 			r and string.format("%d MeshParts, escondido=%s", r.meshParts, tostring(r.hidden)) or "sem visual")
+		local bossHl = vis and vis:FindFirstChild("ToonOutline")
+		local bossColor = require(__proxy("Shared/Config/Bosses")).Info.prism_titan.color
+		check("boss novo: silhueta na cor da energia do boss (Highlight só com a linha)",
+			bossHl ~= nil and bossHl.FillTransparency == 1 and bossHl.OutlineColor == bossColor, bossHl and "cor diferente" or "sem contorno")
 		local missing = {}
 		for _, d in ipairs(model:GetDescendants()) do
 			if d.ClassName == "Motor6D" and d.Name ~= "Fixed" and vis and not d:IsDescendantOf(vis) and not r.motors[d.Name] then

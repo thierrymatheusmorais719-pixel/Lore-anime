@@ -38,8 +38,7 @@
       "Terrain": {
         "$className": "Terrain",
         "$properties": {
-          "Decoration": true,
-          "GrassLength": 0.85,
+          "Decoration": false,
           "WaterColor": [
             0.05,
             0.42,

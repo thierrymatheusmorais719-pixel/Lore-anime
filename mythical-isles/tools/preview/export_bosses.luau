@@ -2,6 +2,7 @@
 -- Uso: python3 tools/run_tests.py luau --bossexport > saida.txt  (linhas "PETMESH boss_<id>[__low] {json}")
 local BossAnatomy = require(__proxy("Builders/BossAnatomy"))
 local PetAnatomy = require(__proxy("Builders/PetAnatomy"))
+local Facets = require(__proxy("Builders/Facets"))
 
 local function num(x)
 	return string.format("%.3f", x)
@@ -16,6 +17,7 @@ for _, id in ipairs(BossAnatomy.Ids) do
 		local t0 = os.clock()
 		local bp = BossAnatomy.blueprint(id, { low = low })
 		local parts = {}
+		local yLo, yHi = Facets.heightRange(bp)
 		for _, p in ipairs(bp.parts) do
 			local v, c, t = {}, {}, {}
 			local g = p.geom
@@ -25,7 +27,12 @@ for _, id in ipairs(BossAnatomy.Ids) do
 				for i, tri in ipairs(g.tris) do
 					if not g.keep or g.keep[i] then
 						local ca, cb, cc = g.colors[tri[1]], g.colors[tri[2]], g.colors[tri[3]]
-						local cs = col255({ R = (ca.R + cb.R + cc.R) / 3, G = (ca.G + cb.G + cc.G) / 3, B = (ca.B + cb.B + cc.B) / 3 })
+						local r, gg, bb = (ca.R + cb.R + cc.R) / 3, (ca.G + cb.G + cc.G) / 3, (ca.B + cb.B + cc.B) / 3
+						if p.material ~= "Neon" and p.transparency < 0.3 and p.material ~= "ForceField" then
+							local cy = (g.verts[tri[1]].Y + g.verts[tri[2]].Y + g.verts[tri[3]].Y) / 3 + p.pivot.Y
+							r, gg, bb = Facets.toonRGB(r, gg, bb, (cy - yLo) / (yHi - yLo))
+						end
+						local cs = col255({ R = r, G = gg, B = bb })
 						for q = 1, 3 do
 							local w = g.verts[tri[q]] + p.pivot
 							v[#v + 1] = num(w.X) .. "," .. num(w.Y + bp.hover) .. "," .. num(w.Z)
@@ -47,7 +54,7 @@ for _, id in ipairs(BossAnatomy.Ids) do
 			end
 			if #t > 0 then
 				parts[#parts + 1] = string.format('{"n":"%s","m":"%s","tr":%s,"flat":%s,"twoSided":%s,"v":[%s],"c":[%s],"t":[%s]}', p.name,
-					(low and p.material == "Fabric") and "SmoothPlastic" or p.material, num(p.transparency), (low or g.flat) and "true" or "false", low and "true" or "false",
+					((low and p.material == "Fabric") or p.material == "Grass") and "SmoothPlastic" or p.material, num(p.transparency), (low or g.flat) and "true" or "false", low and "true" or "false",
 					table.concat(v, ","), table.concat(c, ","), table.concat(t, ","))
 			end
 		end

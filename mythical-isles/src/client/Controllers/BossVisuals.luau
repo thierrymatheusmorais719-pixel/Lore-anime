@@ -10,6 +10,8 @@ local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local BossMesh = require(Shared.Builders.BossMesh)
+local PetMesh = require(Shared.Builders.PetMesh)
+local BossConfig = require(Shared.Config.Bosses)
 local Animator = require(script.Parent.Animator)
 local Fx = require(script.Parent.Fx)
 
@@ -56,6 +58,9 @@ local function attach(e): boolean
 		end
 		local vis = t.model:Clone()
 		vis.Name = "Visual"
+		-- silhueta na cor da energia do boss (contorno que destaca o boss no escuro da arena)
+		local info = BossConfig.Info[model:GetAttribute("BossId")]
+		PetMesh.outline(vis, info and info.color or Color3.fromRGB(14, 10, 20), 0.3)
 		local root = vis.PrimaryPart :: BasePart
 		root.Anchored = true
 		e.vis, e.root, e.poly = vis, root, t.poly

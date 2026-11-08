@@ -95,6 +95,9 @@ local function attach(model: Model)
 		mroot.Anchored = true
 		mroot.CFrame = server.CFrame * offset
 		mesh.Name = "Visual"
+		if model:GetAttribute("Owner") == game:GetService("Players").LocalPlayer.UserId then
+			PetMesh.outline(mesh) -- traço de desenho nos pets do próprio jogador
+		end
 		model:SetAttribute("MeshVisual", true) -- atributo local: o Animator deixa o modelo antigo de lado
 		mesh.Parent = model
 		for _, d in ipairs(model:GetDescendants()) do

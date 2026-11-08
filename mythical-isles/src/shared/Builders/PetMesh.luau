@@ -33,7 +33,8 @@ local keep = {} -- referências aos EditableMesh (mantêm as malhas vivas)
 
 local MATERIALS = {
 	Fabric = Enum.Material.Fabric, SmoothPlastic = Enum.Material.SmoothPlastic, Glass = Enum.Material.Glass, Neon = Enum.Material.Neon,
-	Metal = Enum.Material.Metal, Grass = Enum.Material.Grass, Wood = Enum.Material.Wood, Slate = Enum.Material.Slate, ForceField = Enum.Material.ForceField,
+	-- folhas e musgo dos pets/bosses: liso (a textura de grama do Roblox deixava o bicho com cara de gramado)
+	Metal = Enum.Material.Metal, Grass = Enum.Material.SmoothPlastic, Wood = Enum.Material.Wood, Slate = Enum.Material.Slate, ForceField = Enum.Material.ForceField,
 }
 
 local function key(speciesId: string, scale: number): string
@@ -121,7 +122,8 @@ PetMesh.HELP = "Os pets 3D novos (malhas anatômicas) estão DESLIGADOS e os pet
 	.. "  4) Pare e dê Play de novo.\n"
 	.. "Erro do Roblox: "
 
-local POLY_MATERIAL = { Fabric = Enum.Material.SmoothPlastic } -- textura de tecido fica ruidosa em faces pequenas
+-- texturas de tecido e de grama ficam ruidosas em faces pequenas (e a de grama parecia capim no pet)
+local POLY_MATERIAL = { Fabric = Enum.Material.SmoothPlastic, Grass = Enum.Material.SmoothPlastic }
 
 -- Triângulo com duas cunhas soldadas ao osso (Builders/Facets). Devolve quantas peças criou.
 local function triangle(a: Vector3, b: Vector3, c: Vector3, th: number, props, parent: BasePart): number
@@ -170,6 +172,10 @@ function PetMesh.assemble(bp, poly: boolean, opts)
 	model.PrimaryPart = root
 	local made, facets, sinceYield = {}, 0, 0
 	local th = 0.05 * (bp.scale or 1)
+	local yLo, yHi = 0, 1
+	if poly then
+		yLo, yHi = Facets.heightRange(bp)
+	end
 	for _, p in ipairs(bp.parts) do
 		local neon = p.material == "Neon"
 		local avg = avgColor(p.geom)
@@ -206,12 +212,18 @@ function PetMesh.assemble(bp, poly: boolean, opts)
 				material = POLY_MATERIAL[p.material] or MATERIALS[p.material] or Enum.Material.SmoothPlastic, transparency = p.transparency, reflectance = p.reflectance,
 				shadow = p.transparency < 0.5 and p.material ~= "Neon" and p.material ~= "ForceField", role = p.role,
 			}
+			-- peças que brilham ou são translúcidas ficam com a cor pura
+			local shade = not neon and p.transparency < 0.3 and p.material ~= "ForceField"
 			local g = p.geom
 			for i, t in ipairs(g.tris) do
 				if not g.keep or g.keep[i] then
 					local a, b, c = g.verts[t[1]], g.verts[t[2]], g.verts[t[3]]
 					local ca, cb, cc = g.colors[t[1]], g.colors[t[2]], g.colors[t[3]]
-					props.color = Color3.new((ca.R + cb.R + cc.R) / 3, (ca.G + cb.G + cc.G) / 3, (ca.B + cb.B + cc.B) / 3)
+					local r, gg, bb = (ca.R + cb.R + cc.R) / 3, (ca.G + cb.G + cc.G) / 3, (ca.B + cb.B + cc.B) / 3
+					if shade then
+						r, gg, bb = Facets.toonRGB(r, gg, bb, ((a.Y + b.Y + c.Y) / 3 + p.pivot.Y - yLo) / (yHi - yLo))
+					end
+					props.color = Color3.new(r, gg, bb)
 					local n = triangle(a + p.pivot, b + p.pivot, c + p.pivot, th, props, inst)
 					facets += n
 					sinceYield += n
@@ -368,6 +380,25 @@ function PetMesh.display(speciesId: string, mutation: string?, accessory: string
 	MutationVisuals.apply(old, mutation)
 	Accessories.apply(old, accessory)
 	return old
+end
+
+-- CONTORNO DE DESENHO: um Highlight só com a linha (sem preenchimento) em volta do modelo inteiro,
+-- como o traço de um anime. O Roblox desenha no máximo 31 Highlights por cliente, então o jogo usa
+-- só nos pets do próprio jogador (até 4) e no boss por perto.
+function PetMesh.outline(model: Model, color: Color3?, transparency: number?): Highlight
+	local h = model:FindFirstChild("ToonOutline") :: Highlight?
+	if not h then
+		h = Instance.new("Highlight")
+		h.Name = "ToonOutline"
+		h.FillTransparency = 1
+		h.DepthMode = Enum.HighlightDepthMode.Occluded
+		h.Parent = model
+	end
+	local hl = h :: Highlight
+	hl.OutlineColor = color or Color3.fromRGB(28, 20, 34)
+	hl.OutlineTransparency = transparency or 0.2
+	hl.Adornee = model
+	return hl
 end
 
 -- (testes) esquece moldes e o estado da API

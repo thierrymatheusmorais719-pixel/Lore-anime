@@ -8,7 +8,7 @@ vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
 > Luau, contra o dump público da API do Roblox, com 62 testes de lógica, 3866 verificações dos modelos 3D e
-> **176 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> **181 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -122,7 +122,7 @@ Entram sozinhos nos ovos do Mundo 1 (o peso de cada raridade é dividido entre a
   - Média de 70 peças por pet (antes eram 31).
 - **Luz** (`default.project.json` + `WorldClient`):
   - Iluminação Future com reflexos do céu (`EnvironmentDiffuse/SpecularScale` = 1) e sombras suaves.
-  - Atmosphere com névoa e brilho do sol, nuvens dinâmicas (`Clouds`) e grama animada do Terrain (`Decoration`).
+  - Atmosphere com névoa e brilho do sol e nuvens dinâmicas (`Clouds`). A grama animada do Terrain (`Decoration`) fica **desligada**: as lâminas altas cobriam os pets.
   - Bloom contido, raios de sol, correção de cor e uma leve profundidade de campo ao fundo.
   - Cada ilha tem seu próprio perfil de clima.
 - **Terreno e vegetação** (`WorldBuilder`):
@@ -264,6 +264,21 @@ Se nenhum dos dois modos funcionar, o boss antigo continua visível.
 polida, cristal/neon), as paletas e a tipografia, os componentes (moldura rúnica, botões, barras "recipiente",
 slots), o HUD, o diálogo com NPCs, o inventário de pets, a loja e os ovos, o menu de mundos e as animações,
 com propriedades do Roblox Studio.
+
+### Visual v3 dos pets e bosses (modo de peças, sem EditableMesh)
+
+O que aparece para quem não pode ligar "Allow Mesh / Image APIs" (pets e bosses feitos de cunhas) ficou mais legível
+(antes/depois em `docs/preview/visual3_*.jpg`):
+- **Grama removida:** a grama animada do Terrain (`Terrain.Decoration`) está desligada no `default.project.json`, e as
+  partes de folha/musgo dos pets e bosses usam material liso em vez da textura `Grass` do Roblox (que deixava o bicho
+  com cara de gramado).
+- **Olhos novos no modo de peças:** cada triângulo tem uma cor só, então o degradê de íris/pupila virava um borrão escuro.
+  Agora o olho é feito em discos planos de cor sólida (globo, íris, pupila e dois brilhos brancos), maior e saindo um
+  pouco da cabeça de baixa resolução. Custa ~60 triângulos a mais por pet.
+- **Sombreamento "assado":** cores um pouco mais saturadas e oclusão pela altura (patas e barriga mais escuras, costas e
+  cabeça mais claras), o que dá volume às faces chapadas (`Facets.toonRGB`).
+- **Contorno de desenho:** um `Highlight` só com a linha (sem preenchimento) nos pets do próprio jogador e, no boss por
+  perto, uma silhueta na cor da energia dele. O Roblox desenha no máximo 31 Highlights por cliente; o jogo usa até 5.
 
 ### Interface nova no jogo (HUD, janelas, pets e mundos)
 
@@ -584,7 +599,7 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **62 testes passando** |
 | Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", ≤ 18.000 triângulos) + bosses anatômicos nos dois modos (todas as juntas do boss antigo, mesma altura de raiz, pés no chão, peças de energia com cor, ≤ 20.000 / 3.400 triângulos) | `python3 tools/run_tests.py luau --smoke` | **3866 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **176 cenários passando** (inclui a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **181 cenários passando** (inclui o visual v3 dos pets e bosses: contorno de desenho, sem textura de grama, olhos com brilho no modo de peças e sombreamento pela altura; a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -712,6 +727,9 @@ travamento) foi exercitada.
     seriam o próximo nível.
 - **Ataques Assinatura — o que ainda precisa do Studio:** os efeitos visuais foram executados no simulador (todos os
   estilos rodam e limpam as peças), mas não vistos na tela; o equilíbrio de dano em partidas reais.
+- **Visual v3 — o que ainda precisa do Studio:** as imagens de antes/depois são da geometria real renderizada fora do
+  Roblox; o contorno da prévia é uma aproximação do `Highlight` (no jogo ele só contorna a silhueta externa). Os pets
+  continuam low-poly no modo de peças: o salto grande de qualidade ainda é ligar o EditableMesh (malhas suaves).
 - **Interface nova — o que ainda precisa do Studio:** não foi vista dentro do Roblox. As capturas em `docs/preview/ui_*.jpg`
   são a árvore de GUI real do cliente com o layout calculado pelo simulador e desenhada em HTML/CSS: fontes, `UIStroke`,
   `UIGradient`, emojis e o `BlurEffect` são aproximados, e os retratos dos pets vêm da prévia 3D das malhas (no jogo são
@@ -727,7 +745,7 @@ travamento) foi exercitada.
   colisão nas copas). Confira o FPS no celular; se pesar, aumente `cell` em `WorldBuilder.Ring` (menos árvores)
   ou ligue o StreamingEnabled (ver acima).
   Os efeitos de partícula não aparecem nas prévias, só no jogo.
-- As prévias em `docs/preview/` são renderizadas fora do Roblox: não mostram a grama animada, as texturas
+- As prévias em `docs/preview/` são renderizadas fora do Roblox: não mostram as texturas
   dos materiais, as nuvens nem a Atmosphere reais.
 - O PathfindingService real não foi exercitado (no simulador sempre cai na rota alternativa).
 - Anúncios globais dependem do MessagingService (limites do Roblox). O código limita a publicação a 10 por

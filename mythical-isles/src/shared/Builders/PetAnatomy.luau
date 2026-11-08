@@ -223,8 +223,46 @@ local function eyeGeom(P, c: Vector3, n: Vector3, r: number, o)
 	local upv = right:Cross(n).Unit
 	local iris = o.iris or P.iris
 	local glow = o.glow or P.glowEyes
+	if MeshKit.low then
+		-- Modo de peças: cada triângulo tem UMA cor (a média dos vértices), então o degradê de íris/pupila
+		-- some num borrão escuro. Aqui o olho é feito em camadas de cor sólida, uma na frente da outra:
+		-- globo, íris, pupila e dois brilhos. Um pouco maior, para ler bem de longe.
+		-- a cabeça de baixa resolução tem faces retas que cobrem a parte de cima do olho: o olho sai um
+		-- pouco para fora da superfície e fica maior (estilo anime)
+		local R = r * 1.3
+		c = c + n * r * 0.32
+		local tall = o.tall or 1
+		-- discos planos em leque (como um decalque de olho de anime), cada camada um pouco à frente da
+		-- anterior. Só a face da frente: no modo de peças cada triângulo já vira cunhas com espessura.
+		local function lens(center: Vector3, w: number, h: number, _depth: number, col: Color3, segs: number)
+			local verts, colors, tris = { center + n * math.min(w, h) * 0.04 }, { col }, {}
+			for k = 0, segs - 1 do
+				local a = k / segs * math.pi * 2
+				table.insert(verts, center + right * math.cos(a) * w + upv * math.sin(a) * h)
+				table.insert(colors, col)
+			end
+			for k = 1, segs do
+				table.insert(tris, { 1, 1 + k, 1 + (k % segs) + 1 })
+			end
+			return { verts = verts, colors = colors, tris = tris, flat = true }
+		end
+		local layers = { lens(c, R, R * tall, R * 0.6, o.sclera or iris:Lerp(BLACK, 0.72), 12) }
+		local irisCol = glow and iris:Lerp(WHITE, 0.3) or iris:Lerp(WHITE, 0.1)
+		table.insert(layers, lens(c + n * R * 0.1, R * 0.8, R * 0.8 * tall, R * 0.12, irisCol, 12))
+		local pc = c + n * R * 0.17
+		local pupilCol = glow and iris:Lerp(BLACK, 0.55) or rgb(10, 8, 12)
+		if o.slit then
+			table.insert(layers, lens(pc, R * 0.17, R * 0.64 * tall, R * 0.08, pupilCol, 6))
+		else
+			table.insert(layers, lens(pc, R * 0.42, R * 0.42 * tall, R * 0.08, pupilCol, 10))
+		end
+		local sc = c + n * R * 0.24
+		table.insert(layers, lens(sc + upv * R * 0.32 - right * R * 0.22, R * 0.2, R * 0.17, R * 0.08, WHITE, 6))
+		table.insert(layers, lens(sc - upv * R * 0.28 + right * R * 0.3, R * 0.09, R * 0.08, R * 0.06, WHITE, 5))
+		return merge(layers)
+	end
 	local eye = loft({ { p = c - n * r * 0.5, w = r, h = r * (o.tall or 1) }, { p = c, w = r, h = r * (o.tall or 1) } }, {
-		seg = MeshKit.low and 8 or 14, steps = 1, up = upv, capStart = 0, capEnd = r * 0.34, capRings = MeshKit.low and 1 or 4, detail = not MeshKit.low,
+		seg = 14, steps = 1, up = upv, capStart = 0, capEnd = r * 0.34, capRings = 4, detail = true,
 		color = function(_t, _ex, _ey, p)
 			local d = p - c
 			local along = d:Dot(n)
@@ -243,9 +281,6 @@ local function eyeGeom(P, c: Vector3, n: Vector3, r: number, o)
 			return o.sclera or iris:Lerp(BLACK, 0.72)
 		end,
 	})
-	if MeshKit.low then
-		return eye
-	end
 	local shineP = c + n * r * 0.3 + upv * r * 0.36 - right * r * 0.22
 	local shine = loft({ { p = shineP - n * r * 0.05, w = r * 0.16, h = r * 0.13 }, { p = shineP + n * r * 0.04, w = r * 0.16, h = r * 0.13 } },
 		{ seg = 8, steps = 1, up = upv, capStart = 0, capEnd = r * 0.05, color = solid(WHITE) })
