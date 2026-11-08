@@ -1,11 +1,12 @@
--- GREAT SANCTUARY TREE — a Árvore-Santuário no centro do Verdant Haven (Mundo 1).
+-- GREAT SANCTUARY TREE — a Árvore-Santuário do Verdant Haven (Mundo 1), no lugar da Árvore Ancestral:
+-- sobre o lago turquesa, com o platô e as cachoeiras embaixo do tronco.
 --
--- Escala: ~300 studs de altura, copa de ~240 studs de diâmetro: visível de qualquer ponto da ilha.
--- O tronco fica SUSPENSO sobre 6 raízes em arco (tipo figueira), então a praça, as estações de ovo e os
--- portais continuam embaixo dela, num "santuário" coberto pelas raízes.
+-- Escala: ~310 studs de altura, copa de ~280 studs de diâmetro: visível de qualquer ponto da ilha.
+-- O tronco fica SUSPENSO sobre 6 raízes em arco (tipo figueira) que pousam em volta do lago; as raízes
+-- desviam da arena, dos penhascos atrás do lago e do campo de recursos.
 --
 -- Andares (alturas acima do chão):
---   0      Praça das Raízes, poças de seiva, coluna do Elevador de Seiva
+--   0      margem do lago, poças de seiva, coluna do Elevador de Seiva
 --   ~49    Coração da Raiz: deck em volta do tronco (chega-se pela Escadaria da Raiz ou pelo elevador)
 --   49-206 rampa em espiral pela casca; 4 GALHOS SUSPENSOS saem dela como estradas até ninhos com baús
 --   ~207   Copas Celestiais: deck dentro da copa + terraços de folhas para subir pulando
@@ -44,10 +45,12 @@ SanctuaryTree.CROWN_Y = 302 -- Coroa Estelar
 SanctuaryTree.RAMP_RISE, SanctuaryTree.RAMP_STEP = 1.4, 12 -- subida (studs) e giro (graus) por tábua
 SanctuaryTree.BRANCH_Y = { 86, 114, 142, 170 } -- galhos-estrada (altura da junção com a rampa)
 SanctuaryTree.BRANCH_LEN = { 104, 92, 112, 96 }
--- raízes em arco (θ em graus): evitam portais (262°/278°), ovos (200°/340°), campos de recurso e a arena
-SanctuaryTree.ROOTS = { 25, 75, 120, 165, 225, 310 }
-SanctuaryTree.STAIR_ROOT = 225 -- a raiz com a escadaria (pousa mais longe: subida suave)
-SanctuaryTree.LIFT_THETA = 142
+-- raízes em arco (θ em graus, em volta do centro da árvore): no lago da Árvore Ancestral elas evitam a
+-- arena (≈ 17° ± 40°), os penhascos atrás do lago (≈ 140° ± 35°) e o campo de recursos (≈ 278° ± 28°)
+SanctuaryTree.ROOTS = { 70, 100, 185, 215, 245, 335 }
+SanctuaryTree.STAIR_ROOT = 335 -- a raiz com a escadaria (voltada para a praça; pousa mais longe: subida suave)
+SanctuaryTree.LIFT_THETA = 300 -- coluna do elevador na margem do lago, do lado da praça
+SanctuaryTree.LIFT_R = 41
 
 local function solid(c: Color3)
 	return function()
@@ -168,7 +171,8 @@ end
 
 -- Ângulo (graus) da rampa em espiral numa altura.
 function SanctuaryTree.rampTheta(y: number): number
-	return SanctuaryTree.LIFT_THETA + 26 + (y - SanctuaryTree.HUB_Y) / SanctuaryTree.RAMP_RISE * SanctuaryTree.RAMP_STEP
+	-- começa 30° depois da chegada da escadaria (sem passar por cima dela)
+	return SanctuaryTree.STAIR_ROOT + 30 + (y - SanctuaryTree.HUB_Y) / SanctuaryTree.RAMP_RISE * SanctuaryTree.RAMP_STEP
 end
 
 --[[ Constrói a árvore. Devolve:
@@ -266,8 +270,8 @@ function SanctuaryTree.build(parent: Instance, center: Vector3, makeChest)
 	local hubY = SanctuaryTree.HUB_Y
 	do
 		local r0 = trunkR(hubY) - 1.5
-		local r1 = r0 + 11
-		local n = 18
+		local r1 = r0 + 15 -- chega até a coluna do elevador, na margem do lago
+		local n = 20
 		for i = 0, n - 1 do
 			local a0, a1 = i / n * 360, (i + 1) / n * 360
 			local am = (a0 + a1) / 2
@@ -321,8 +325,13 @@ function SanctuaryTree.build(parent: Instance, center: Vector3, makeChest)
 			prev = q
 		end
 		-- patamar no topo: liga o fim da rampa ao deck da copa (passando por cima da abertura)
-		local landing = polar(c, SanctuaryTree.rampTheta(SanctuaryTree.RAMP_TOP) + 16, trunkR(SanctuaryTree.CANOPY_Y) + 5.6, SanctuaryTree.CANOPY_Y)
-		plank(walk, prev, landing, 8, PLANK, "RampLanding")
+		local endA = SanctuaryTree.rampTheta(SanctuaryTree.RAMP_TOP)
+		local rr = trunkR(SanctuaryTree.CANOPY_Y) + 5.6
+		local mid = polar(c, endA + 15, rr, SanctuaryTree.CANOPY_Y - 0.5)
+		local landing = polar(c, endA + 30, rr, SanctuaryTree.CANOPY_Y)
+		plank(walk, prev, mid, 8, PLANK, "RampLanding")
+		plank(walk, mid, landing, 8, PLANK_DARK, "RampLanding")
+		table.insert(out.ramp, mid)
 		table.insert(out.ramp, landing)
 	end
 
@@ -470,8 +479,9 @@ function SanctuaryTree.build(parent: Instance, center: Vector3, makeChest)
 		for i = 0, n - 1 do
 			local am = (i + 0.5) / n * 360
 			local inner, outer = polar(c, am, r0, cy), polar(c, am, r1, cy)
+			-- (as tábuas são retangulares: perto do tronco cada uma cobre ~20° a mais para cada lado)
 			local behind = (rampEnd - am) % 360
-			if behind < 68 and behind > -1 then
+			if behind < 72 or behind > 336 then
 				continue
 			end
 			part(walk, { Name = "CanopyDeck", Size = V(2 * math.pi * r1 / n + 1.5, 1, r1 - r0), CFrame = CF((inner + outer) / 2 - V(0, 0.5, 0), outer - V(0, 0.5, 0)),
@@ -598,7 +608,7 @@ function SanctuaryTree.build(parent: Instance, center: Vector3, makeChest)
 	emitter(deco, c + V(0, hubY + 8, 0), V(60, 14, 60), { name = "HubFireflies", color = rgb(200, 255, 140), rate = 6, life = 6, speed = 1.5, size = 0.35 })
 
 	-- ELEVADOR DE SEIVA: coluna de seiva da praça até o Coração da Raiz + estações nos andares
-	local liftFoot = polar(c, SanctuaryTree.LIFT_THETA, 32, 0)
+	local liftFoot = polar(c, SanctuaryTree.LIFT_THETA, SanctuaryTree.LIFT_R, 0)
 	part(deco, { Name = "SapColumn", Shape = Enum.PartType.Cylinder, Size = V(hubY - 1, 4.5, 4.5), CFrame = CF(liftFoot + V(0, hubY / 2 - 0.5, 0)) * CFrame.Angles(0, 0, rad(90)),
 		Color = SAP, Material = M.Neon, Transparency = 0.45, CastShadow = false })
 	emitter(deco, liftFoot + V(0, hubY / 2, 0), V(3, hubY - 4, 3), { name = "SapBubbles", color = rgb(255, 230, 150), rate = 8, life = 3, speed = 5, size = 0.4, accel = V(0, 8, 0) })
@@ -612,15 +622,34 @@ function SanctuaryTree.build(parent: Instance, center: Vector3, makeChest)
 	local function outwardAt(th: number)
 		return V(math.cos(rad(th)), 0, math.sin(rad(th)))
 	end
-	station("ground", "Praça das Raízes", liftFoot + V(0, 0.4, 0) + outwardAt(SanctuaryTree.LIFT_THETA) * 4, 1, outwardAt(SanctuaryTree.LIFT_THETA))
-	station("hub", "Coração da Raiz", polar(c, SanctuaryTree.LIFT_THETA, trunkR(hubY) + 6, hubY), 2, outwardAt(SanctuaryTree.LIFT_THETA))
+	station("ground", "Margem do Lago", liftFoot + V(0, 0.4, 0) + outwardAt(SanctuaryTree.LIFT_THETA) * 4, 1, outwardAt(SanctuaryTree.LIFT_THETA))
+	station("hub", "Coração da Raiz", polar(c, SanctuaryTree.LIFT_THETA, trunkR(hubY) + 8, hubY), 2, outwardAt(SanctuaryTree.LIFT_THETA))
 	local nest2 = out.branchEnds[2]
 	station("boughs", "Galhos Suspensos", nest2 + ((c - nest2) * V(1, 0, 1)).Unit * 6, 3, ((c - nest2) * V(1, 0, 1)))
 	station("canopy", "Copas Celestiais", polar(c, SanctuaryTree.LIFT_THETA, 34, cy), 4, outwardAt(SanctuaryTree.LIFT_THETA))
 	station("crown", "Coroa Estelar", c + V(-10, crownY, 0), 5, V(-1, 0, 0), "elderroot")
 
 	out.parts = #model:GetDescendants()
+	out.center = c
+	out.footprint = SanctuaryTree.footprint(c)
 	return out
+end
+
+-- Áreas no chão ocupadas pela árvore (pés das raízes, escadaria, coluna do elevador, tronco sobre o
+-- lago): a decoração e a mata não podem nascer nelas. { pos, r }
+function SanctuaryTree.footprint(c: Vector3)
+	local list = { { pos = c, r = 30 } }
+	for _, th in ipairs(SanctuaryTree.ROOTS) do
+		if th == SanctuaryTree.STAIR_ROOT then
+			for _, d in ipairs({ 52, 72, 92 }) do
+				table.insert(list, { pos = polar(c, th, d, 0), r = 12 })
+			end
+		else
+			table.insert(list, { pos = polar(c, th, 68, 0), r = 12 })
+		end
+	end
+	table.insert(list, { pos = polar(c, SanctuaryTree.LIFT_THETA, SanctuaryTree.LIFT_R + 2, 0), r = 8 })
+	return list
 end
 
 return SanctuaryTree

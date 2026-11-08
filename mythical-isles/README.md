@@ -8,7 +8,7 @@ vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
 > Luau, contra o dump público da API do Roblox, com 62 testes de lógica, 3866 verificações dos modelos 3D e
-> **163 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> **167 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -239,10 +239,12 @@ Se nenhum dos dois modos funcionar, o boss antigo continua visível.
 `server/Services/SanctuaryTree.luau` + `SanctuaryService.luau` (Elevador de Seiva) + `client/Controllers/SanctuaryClient.luau`
 (runas). Prévias: `docs/preview/arvore_santuario_*.jpg`.
 
-- **Escala:** ~310 studs de altura e copa de ~280 studs de diâmetro, no centro da ilha: visível de qualquer ponto.
-- **Tronco suspenso sobre 6 raízes em arco:** a praça, as estações de ovo e os portais continuam no lugar, agora
-  embaixo da árvore. Poças de seiva brilhante nos pés das raízes.
-- **Andares:** Praça das Raízes (chão) → **Escadaria da Raiz** (degraus de 1,25 stud por cima da raiz longa) →
+- **Lugar:** no lago turquesa onde ficava a Árvore Ancestral (que ela substituiu), longe da praça do spawn. O tronco
+  fica suspenso sobre o lago, com o platô e as cachoeiras embaixo dele.
+- **Escala:** ~310 studs de altura e copa de ~280 studs de diâmetro: visível de qualquer ponto da ilha.
+- **6 raízes em arco** pousam em volta do lago, desviando da arena, dos penhascos e do campo de recursos; a
+  **Escadaria da Raiz** fica virada para a praça. Poças de seiva brilhante nos pés das raízes.
+- **Andares:** Margem do Lago (chão) → **Escadaria da Raiz** (degraus de 1,25 stud por cima da raiz longa) →
   **Coração da Raiz** (deck em anel, ~49 studs) → **rampa em espiral** pela casca (≤ 15° por tábua, com corrimão) →
   **4 Galhos Suspensos** que saem da rampa como estradas de tábuas até **ninhos com baús** → **Copas Celestiais** (deck
   dentro da copa, flores de luz, terraços de folhas para subir pulando) → **Coroa Estelar** (mirante com altar e
@@ -255,6 +257,23 @@ Se nenhum dos dois modos funcionar, o boss antigo continua visível.
   pelos sulcos, esporos dourados caindo da copa, vagalumes, lanternas de esporos, rosetas e flores-estrela.
 - **Peso:** ≈ 4.840 peças (3.506 cunhas da casca + 1.330 peças). A ilha 1 passa a ter ≈ 17.600 peças.
   `Worlds.verdant.ceiling = 340`: quem está no alto da árvore continua "no Verdant Haven".
+
+### Farol Ancestral e ruínas (Mundo 2 — Crystal Hollow)
+
+`server/Services/BeaconTower.luau`, construído por `CrystalHollow.buildBeacon` no fim do caminho oeste do vale
+(θ 294°, 100 studs do centro, entre as zonas de inimigos). Feito a partir da imagem do autor. Prévias:
+`docs/preview/farol_ancestral*.jpg`.
+
+- **Torre-farol de ~110 studs** em treliça de pedra que se alarga para cima (anéis octogonais, montantes e
+  travessas em X), base em degraus com painéis de runas violeta, brilho violeta na cintura, coroa de pontas, um
+  **cristal azul gigante** (vidro com núcleo de neon, luz e brilhos) e um **feixe de luz** subindo ao céu.
+- **10 raízes de pedra com veios violeta** espalhando-se pelo chão (malha em cunhas, sem EditableMesh).
+- **Ruínas em volta:** portal de pedra (trilito) na entrada — no lugar do antigo arco do caminho oeste —,
+  colunata com vigas, círculo de pedras em pé (algumas caídas, com runas), colunas quebradas, blocos e lajes
+  do piso antigo, e **3 ilhotas flutuantes** com árvores de cristal. As peças só nascem fora das zonas de inimigos
+  e dos campos; a área ficou reservada (sem árvores da decoração por cima).
+- **Região com nome** ("Farol Ancestral — Ruínas do Farol") e o baú **Relicário do Farol**.
+- **Peso:** ≈ 2.200 peças (contado à parte do orçamento do mundo).
 
 ### Ataques Assinatura (um ataque próprio por pet do Verdant Haven)
 
@@ -531,7 +550,7 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **62 testes passando** |
 | Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", ≤ 18.000 triângulos) + bosses anatômicos nos dois modos (todas as juntas do boss antigo, mesma altura de raiz, pés no chão, peças de energia com cor, ≤ 20.000 / 3.400 triângulos) | `python3 tools/run_tests.py luau --smoke` | **3866 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **163 cenários passando** (inclui os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **167 cenários passando** (inclui o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o

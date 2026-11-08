@@ -547,8 +547,8 @@ do
 		nGates += 1
 	end
 	for cid in pairs(reg and reg.chests or {}) do
-		if cid:find("_wild_", 1, true) then
-			continue
+		if cid:find("_wild_", 1, true) or cid == "beacon_chest" then
+			continue -- (baús do anel de mata e o Relicário do Farol Ancestral são contados nos cenários deles)
 		end
 		nChests += 1
 	end
@@ -587,7 +587,11 @@ do
 	check("chegada de cada portal de região fica dentro da própria região", okReg)
 	-- desempenho: peças, luzes e emissores do mundo 2
 	local nParts, nLights, nEmit = 0, 0, 0
+	local beaconSite = workspace.World.crystal.CrystalHollow:FindFirstChild("AncientBeaconSite")
 	for _, d in ipairs(workspace.World.crystal:GetDescendants()) do
+		if beaconSite and d:IsDescendantOf(beaconSite) then
+			continue -- o Farol Ancestral tem orçamento próprio (cenário do farol)
+		end
 		if d:IsA("BasePart") then
 			nParts += 1
 		elseif d.ClassName == "PointLight" then
@@ -795,9 +799,10 @@ local function ringChecks()
 		end
 		local nParts, nLights, nEmit = 0, 0, 0
 		local treeModel = wf and wf:FindFirstChild("SanctuaryTree")
+		local beaconSite = wf and wf:FindFirstChild("CrystalHollow") and wf.CrystalHollow:FindFirstChild("AncientBeaconSite")
 		for _, d in ipairs(wf and wf:GetDescendants() or {}) do
-			if treeModel and d:IsDescendantOf(treeModel) then
-				continue -- a Árvore-Santuário tem orçamento próprio (cenário da árvore)
+			if (treeModel and d:IsDescendantOf(treeModel)) or (beaconSite and d:IsDescendantOf(beaconSite)) then
+				continue -- a Árvore-Santuário e o Farol Ancestral têm orçamento próprio (cenários deles)
 			end
 			if d:IsA("BasePart") then
 				nParts += 1
@@ -815,6 +820,42 @@ local function ringChecks()
 		end
 	end
 	check("ilhas ampliadas: anel de mata com floresta densa, 6 lugares e 6 baús em cada mundo, dentro do orçamento", okAll, table.concat(detail, ", "))
+	-- FAROL ANCESTRAL (Mundo 2): torre-farol da imagem do autor + ruínas em volta, baú e região com nome
+	;(function()
+		local WS = require(__proxy("Server/Services/WorldService"))
+		local CH = require(__proxy("Server/Services/CrystalHollow"))
+		local RegionsCfg = require(__proxy("Shared/Config/Regions"))
+		local site = workspace.World.crystal.CrystalHollow:FindFirstChild("AncientBeaconSite")
+		local reg = WS.Regions.crystal
+		local b = reg and reg.beacon
+		if not site or not b then
+			check("Farol Ancestral construído em Crystal Hollow", false, "sem farol")
+			return
+		end
+		local parts, top, lattice, glowing = 0, -math.huge, 0, 0
+		for _, d in ipairs(site:GetDescendants()) do
+			if d:IsA("BasePart") then
+				parts += 1
+				if d.Name ~= "SkyBeam" and d.Name ~= "SkyBeamGlow" then
+					top = math.max(top, d.Position.Y)
+				end
+				if d.Name == "Post" or d.Name == "Brace" or d.Name == "Ring" then
+					lattice += 1
+				end
+				if d.Material == Enum.Material.Neon then
+					glowing += 1
+				end
+			end
+		end
+		local base = RegionsCfg.polar("crystal", CH.BEACON.theta, CH.BEACON.dist)
+		check("Farol Ancestral: torre em treliça de ~110 studs com cristal, feixe de luz e veios violeta, dentro do orçamento",
+			top - base.Y >= 100 and lattice >= 150 and glowing >= 30 and parts <= 2600 and site:FindFirstChild("AncientBeacon"):FindFirstChild("Detail"):FindFirstChild("SkyBeam") ~= nil,
+			string.format("topo %.0f, %d vigas, %d peças brilhantes, %d peças", top - base.Y, lattice, glowing, parts))
+		check("Farol Ancestral: ruínas em volta (portal de pedra, colunata, pedras em pé, colunas quebradas) e ilhotas flutuantes",
+			b.ruins >= 20 and b.isles == 3 and site.BeaconRuins:FindFirstChild("GateLintel") ~= nil and site.BeaconRuins:FindFirstChild("ColonnadeBeam") ~= nil, b.ruins .. " ruínas")
+		check("Farol Ancestral: tem nome de região, baú registrado e fica no caminho oeste do vale",
+			RegionsCfg.at("crystal", base) == "ancient_beacon" and reg.chests.beacon_chest ~= nil and RegionsCfg.at("crystal", base + Vector3.new(0, 0, 200)) ~= "ancient_beacon")
+	end)()
 	local badTree
 	for _, id in ipairs({ "verdant", "crystal", "wilds", "astral" }) do
 		local w = Worlds.Info[id]
@@ -2041,10 +2082,23 @@ do
 				parts += 1
 				y0, y1 = math.min(y0, d.Position.Y), math.max(y1, d.Position.Y)
 				if d.Parent and d.Parent.Name == "Canopy" then
-					rMax = math.max(rMax, ((d.Position - Worlds.Info.verdant.center) * Vector3.new(1, 0, 1)).Magnitude)
+					rMax = math.max(rMax, ((d.Position - t.center) * Vector3.new(1, 0, 1)).Magnitude)
 				end
 			end
 		end
+		-- fica no lugar da Árvore Ancestral (lago), não na praça do spawn
+		local WBx = require(__proxy("Server/Services/WorldBuilder"))
+		local lakeL = WBx.Layout.verdantLake
+		local lakeC = WBx.polar(Worlds.Info.verdant.center, lakeL.theta, lakeL.dist)
+		local onLake = ((t.center - lakeC) * Vector3.new(1, 0, 1)).Magnitude < 1
+		local ancientGone = true
+		for _, dsc in ipairs(workspace.World.verdant:GetDescendants()) do
+			if dsc.Name == "AncientTrunk" then
+				ancientGone = false
+			end
+		end
+		check("Árvore-Santuário: no lugar da Árvore Ancestral (sobre o lago), longe da praça do spawn",
+			onLake and ancientGone and ((t.center - Worlds.Info.verdant.center) * Vector3.new(1, 0, 1)).Magnitude > 120)
 		check("Árvore-Santuário: domina o mapa (≥ 290 studs de altura, copa ≥ 240 de diâmetro) dentro do orçamento de peças",
 			y1 - Worlds.Info.verdant.center.Y >= 290 and rMax * 2 >= 240 and parts <= 6500 and t.runes >= 150,
 			string.format("altura %.0f, copa %.0f, %d peças (%d cunhas), %d runas", y1, rMax * 2, parts, t.facets, t.runes))

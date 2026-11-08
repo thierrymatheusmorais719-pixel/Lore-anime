@@ -908,55 +908,7 @@ function WorldBuilder.verdantLandmark(parent: Instance, terrainOk: boolean)
 		local dir = V(math.cos(a), 0, math.sin(a))
 		waterfall(folder, lc + dir * 15.6 + V(0, plateauTop + 0.5, 0), plateauTop + 2, 4.5, dir)
 	end
-	-- ÁRVORE ANCESTRAL (tronco retorcido, raízes, galhos e copa de cubos no estilo da árvore de galhos)
-	local base = lc + V(0, plateauTop + 0.8, 0)
-	local seg = { { 0, 9, 0, 13 }, { 0.12, 8, 0.05, 12 }, { -0.1, 7, -0.06, 12 }, { 0.08, 5.5, 0.04, 11 } }
-	local cfT = CF(base)
-	for _, sgm in ipairs(seg) do
-		local piece = cfT * ANG(sgm[1], 0, sgm[3]) * CF(0, sgm[4] / 2, 0)
-		part({ Name = "AncientTrunk", Shape = Enum.PartType.Cylinder, Size = V(sgm[4] + 1, sgm[2] * 2, sgm[2] * 2), CFrame = piece * ANG(0, 0, rad(90)),
-			Color = TREE_BARK, Material = Enum.Material.Wood, Parent = folder })
-		part({ Name = "TrunkMoss", Size = V(0.8, sgm[4] * 0.55, sgm[2] * 1.1), CFrame = piece * CF(sgm[2] * 0.95, 0, 0) * ANG(rad(8), 0, rad(-4)), Color = MOSS2, Material = Enum.Material.LeafyGrass,
-			CanCollide = false, Parent = folder })
-		cfT = piece * CF(0, sgm[4] / 2, 0)
-	end
-	for i = 1, 8 do
-		local a = i / 8 * math.pi * 2
-		local rootCf = CF(base + V(math.cos(a) * 9, 1.5, math.sin(a) * 9)) * ANG(0, -a, 0) * ANG(0, 0, rad(-28))
-		part({ Name = "Root", Size = V(14, 3.2, 3.6), CFrame = rootCf, Color = TREE_BARK:Lerp(rgb(0, 0, 0), 0.2), Material = Enum.Material.Wood, Parent = folder })
-	end
-	local crown = cfT.Position
-	local canopyCenters = {}
-	for i = 1, 6 do
-		local a = i / 6 * math.pi * 2 + 0.4
-		local len = 20 + (i % 3) * 4
-		local dir = V(math.cos(a), 0.45 + (i % 2) * 0.2, math.sin(a)).Unit
-		local from = crown - V(0, 6 + (i % 3) * 4, 0)
-		local to = from + dir * len
-		part({ Name = "Branch", Size = V(3.2, 3.2, len), CFrame = CF((from + to) / 2, to), Color = TREE_BARK, Material = Enum.Material.Wood, Parent = folder })
-		table.insert(canopyCenters, to + V(0, 2, 0))
-	end
-	table.insert(canopyCenters, crown + V(0, 6, 0))
-	-- copa no estilo da árvore de galhos e cubos: cachos de cubos de grama em verdes escuros,
-	-- com cachos pendentes presos por ramos finos
-	for i, cpos in ipairs(canopyCenters) do
-		local crng = Random.new(500 + i)
-		local col = i % 2 == 0 and rgb(70, 128, 52) or rgb(58, 112, 46)
-		local big = i == #canopyCenters and 1.35 or 1
-		for k = 1, 4 do
-			local a = k / 4 * math.pi * 2 + crng:NextNumber(-0.4, 0.4)
-			cubeCluster(folder, cpos + V(math.cos(a) * 6 * big, 1.5 + crng:NextNumber(-1, 2), math.sin(a) * 6 * big), 7 * big, col, crng, 5)
-		end
-		cubeCluster(folder, cpos + V(0, 4.5 * big, 0), 8.5 * big, col, crng, 6)
-		for k = 1, 2 do
-			local a = k * 2.6 + i
-			local p0 = cpos + V(math.cos(a) * 8, -1, math.sin(a) * 8)
-			local p1 = p0 + V(math.cos(a) * 2, -(6 + (k % 2) * 3), math.sin(a) * 2)
-			cyl({ Name = "Twig", Color = TREE_BARK, Material = Enum.Material.Wood, CanCollide = false, Parent = folder }, p0, p1, 0.35)
-			cubeCluster(folder, p1, 4.2, col, crng, 3, 1.7)
-		end
-		WorldBuilder.ambient(folder, cpos + V(0, -6, 0), "fireflies", 10)
-	end
+	-- (a Árvore Ancestral foi substituída pela Árvore-Santuário gigante: SanctuaryTree, sobre este lago)
 	-- penhascos de musgo atrás do lago com cachoeiras altas
 	local side = V(-outward.Z, 0, outward.X)
 	for i = -3, 3 do

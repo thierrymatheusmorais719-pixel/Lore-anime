@@ -77,6 +77,10 @@ Regions.Info = {
 		world = "crystal", name = "Prism Lake", subtitle = "Lago Prisma", theta = 140, dist = 165, radius = 76, priority = 3,
 		sound = "lake", profile = { density = 0.24, haze = 1.4, glare = 0.4, rays = 0.1, sat = 0.12 },
 	},
+	ancient_beacon = {
+		world = "crystal", name = "Farol Ancestral", subtitle = "Ruínas do Farol", theta = 294, dist = 100, radius = 52, priority = 2,
+		sound = "valley", profile = { haze = 1.2, rays = 0.18, exposure = 0.12, tint = Color3.fromRGB(240, 236, 255) },
+	},
 	titans_domain = {
 		world = "crystal", name = "Titan's Domain", subtitle = "Domínio do Titã", theta = 90, dist = 128, radius = 98, priority = 2,
 		sound = "titan", profile = { density = 0.34, haze = 1.0, contrast = 0.14, tint = Color3.fromRGB(236, 230, 255), sat = 0.06 },
@@ -112,10 +116,7 @@ Regions.Reserved = {
 	verdant = { -- bosque da árvore de blocos (árvore de destaque + família)
 		{ theta = 38, dist = 120, r = 30 }, { theta = 24, dist = 152, r = 14 }, { theta = 52, dist = 185, r = 14 },
 		{ theta = 34, dist = 196, r = 14 }, { theta = 20, dist = 132, r = 12 }, { theta = 40, dist = 80, r = 12 }, { theta = 66, dist = 216, r = 12 },
-		-- Árvore-Santuário: pés das raízes em arco, escadaria da raiz e coluna do Elevador de Seiva
-		{ theta = 25, dist = 68, r = 12 }, { theta = 75, dist = 68, r = 12 }, { theta = 120, dist = 68, r = 12 }, { theta = 165, dist = 68, r = 12 },
-		{ theta = 310, dist = 68, r = 12 }, { theta = 225, dist = 52, r = 12 }, { theta = 225, dist = 72, r = 12 }, { theta = 225, dist = 92, r = 12 },
-		{ theta = 142, dist = 34, r = 8 },
+		-- (a Árvore-Santuário registra os pés das raízes, a escadaria e o elevador ao ser construída)
 	},
 	sky = {
 		{ theta = 345, dist = 205, r = 24 }, -- cais do Cloud Harbor
@@ -141,6 +142,7 @@ Regions.Reserved = {
 		{ theta = 52, dist = 80, r = 16 }, -- lagoa do rio
 		{ theta = 125, dist = 66, r = 13 }, -- lagoa do vale
 		{ theta = 90, dist = 216, r = 30 }, -- templo, espigões e relicário atrás da arena
+		{ theta = 294, dist = 100, r = 72 }, -- Farol Ancestral (torre, raízes e o campo de ruínas em volta)
 	},
 }
 

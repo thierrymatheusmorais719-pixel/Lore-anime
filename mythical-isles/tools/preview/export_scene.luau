@@ -99,7 +99,7 @@ end
 do
 	local crystal = Worlds.Info.crystal
 	local function inCrystal(part)
-		return ((part.Position - crystal.center) * Vector3.new(1, 0, 1)).Magnitude < crystal.radius + 40 and math.abs(part.Position.Y) < 180
+		return ((part.Position - crystal.center) * Vector3.new(1, 0, 1)).Magnitude < crystal.radius + 40 and part.Position.Y > -180 and part.Position.Y < 420
 	end
 	dump("crystal", { workspace:FindFirstChild("World"):FindFirstChild("crystal"), workspace:FindFirstChild("Enemies"), workspace:FindFirstChild("Bosses"),
 		workspace:FindFirstChild("Resources") }, inCrystal)

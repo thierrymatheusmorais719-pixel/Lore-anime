@@ -20,6 +20,7 @@ local Worlds = require(Shared.Config.Worlds)
 local Make = require(Shared.Util.Make)
 local WorldBuilder = require(script.Parent.WorldBuilder)
 local CrystalKit = require(script.Parent.CrystalKit)
+local BeaconTower = require(script.Parent.BeaconTower)
 
 local CrystalHollow = {}
 
@@ -233,9 +234,7 @@ local function buildValley(folder: Instance, rng: Random, out_)
 			end
 		end
 	end
-	-- arco antigo em ruínas no caminho oeste
-	local ap = P(300, 72)
-	CrystalKit.arch(f, facing(ap, C), 9, 13, 3, rng, true)
+	-- (o arco antigo do caminho oeste virou o portal de pedra das ruínas do Farol Ancestral: buildBeacon)
 	-- NPC e portal de região
 	local npcModel, npcPrompt = CrystalKit.npc(f, facing(P(120, 34), C), "Lyra, a Sábia", rgb(70, 60, 150), "blue")
 	table.insert(out_.npcs, { id = "lyra", model = npcModel, prompt = npcPrompt, name = "Lyra", lines = {
@@ -252,6 +251,29 @@ local function buildValley(folder: Instance, rng: Random, out_)
 	local cp = P(138, 58)
 	local chest, prompt = CrystalKit.chest(f, facing(cp, C), "Baú do Vale")
 	out_.chests.valley_chest = { model = chest, prompt = prompt, pos = cp, title = "Baú do Vale", region = "crystal_valley" }
+end
+
+-------------------------------------------------------------------------------
+-- Farol Ancestral — torre-farol em treliça com cristal gigante e ruínas (imagem do autor), no fim do
+-- caminho oeste do vale, entre as zonas de inimigos
+-------------------------------------------------------------------------------
+
+CrystalHollow.BEACON = { theta = 294, dist = 100 }
+
+local function buildBeacon(folder: Instance, rng: Random, out_)
+	local f = Make("Folder", { Name = "AncientBeaconSite", Parent = folder })
+	local pos = WorldBuilder.groundAt(P(CrystalHollow.BEACON.theta, CrystalHollow.BEACON.dist))
+	local toCenter = (C - pos) * V(1, 0, 1)
+	local t = BeaconTower.build(f, pos, toCenter, rng)
+	-- as ruínas só nascem em lugar livre (fora das zonas de inimigos e dos campos) e fora da torre
+	local function free(q: Vector3, m: number): boolean
+		return ((q - pos) * V(1, 0, 1)).Magnitude > 40 + m and WorldBuilder.isFree("crystal", q, m, true)
+	end
+	local ruins, isles = BeaconTower.ruins(f, pos, toCenter.Unit, rng, free)
+	local chest, prompt = CrystalKit.chest(f, t.chestCF, "Relicário do Farol")
+	out_.chests.beacon_chest = { model = chest, prompt = prompt, pos = t.chestCF.Position, title = "Relicário do Farol", region = "ancient_beacon" }
+	t.ruins, t.isles = ruins, isles
+	out_.beacon = t
 end
 
 -------------------------------------------------------------------------------
@@ -646,7 +668,7 @@ function CrystalHollow.build(folder: Instance, terrainOk: boolean)
 	path({ P(105, 28), P(112, 46) })
 	local builders = {
 		{ "Crystal Valley", buildValley }, { "Shattered Peaks", buildPeaks }, { "Azure Caverns", buildCaverns },
-		{ "Prism Lake", buildLake }, { "Titan's Domain", buildTitan },
+		{ "Prism Lake", buildLake }, { "Titan's Domain", buildTitan }, { "Ancient Beacon", buildBeacon },
 	}
 	for i, b in ipairs(builders) do
 		-- cada região é independente: se uma falhar, as outras continuam (e o erro é reportado)

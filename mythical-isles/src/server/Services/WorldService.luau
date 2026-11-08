@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Worlds = require(Shared.Config.Worlds)
+local Regions = require(Shared.Config.Regions)
 local Bosses = require(Shared.Config.Bosses)
 local Make = require(Shared.Util.Make)
 local InventoryLogic = require(Shared.Logic.InventoryLogic)
@@ -66,12 +67,20 @@ function WorldService.build()
 		if id == "verdant" then
 			WorldBuilder.verdantLandmark(folder, terrainOk)
 			WorldBuilder.blockGrove(folder)
-			-- Árvore-Santuário gigante no centro (praça, ovos e portais ficam sob as raízes em arco)
-			local okTree, tree = pcall(SanctuaryTree.build, folder, w.center, function(parent, cf, title)
+			-- Árvore-Santuário gigante no lugar da Árvore Ancestral (sobre o lago turquesa)
+			local lake = WorldBuilder.Layout.verdantLake
+			local treeCenter = WorldBuilder.polar(w.center, lake.theta, lake.dist)
+			local okTree, tree = pcall(SanctuaryTree.build, folder, treeCenter, function(parent, cf, title)
 				return WorldBuilder.shrineChest(parent, cf, title, { accent = Color3.fromRGB(150, 255, 140) })
 			end)
 			if okTree then
 				WorldService.Sanctuary = tree
+				-- a decoração e a mata (construídas depois) não nascem nos pés das raízes nem na escadaria
+				local reserved = Regions.Reserved.verdant
+				for _, f in ipairs(tree.footprint) do
+					local d = (f.pos - w.center) * Vector3.new(1, 0, 1)
+					table.insert(reserved, { theta = math.deg(math.atan2(d.Z, d.X)), dist = d.Magnitude, r = f.r })
+				end
 			else
 				local rs = game:GetService("ReplicatedStorage")
 				rs:SetAttribute("ServerErrors", ((rs:GetAttribute("ServerErrors") or "") .. "\n\nÁrvore-Santuário: " .. tostring(tree)))
