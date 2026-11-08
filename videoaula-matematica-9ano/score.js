@@ -16,16 +16,66 @@
   const clock = makeClock({ bpm: 80, offset: 0 }); // 1 tempo = 0,75 s · 1 compasso = 3 s
   const { T, BEAT } = clock;
 
+  // ---------------- narração (ElevenLabs) ----------------
+  // Cada fala tem uma chave (hash do texto). voice-timings.js guarda a duração real de cada fala
+  // já gerada; sem ela, usamos uma estimativa. Os tempos da lousa seguem a voz.
+  const VT = (node ? (() => { try { return require('./voice-timings.js'); } catch (e) { return {}; } })() : globalThis.VOICE_TIMINGS) || {};
+  const NARRATION = new Map();
+  const vkey = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; return 'v' + h.toString(16) + s.length.toString(16); };
+  function voice(text) {
+    text = text.replace(/\s+/g, ' ').replace(/\s+([,.!?:;])/g, '$1').replace(/([,.])\1+/g, '$1').trim();
+    if (!text || !/[\p{L}\d]/u.test(text)) return null;
+    const key = vkey(text);
+    NARRATION.set(key, text);
+    const d = VT[key] ?? (0.4 + text.length / 14.5);
+    return { key, text, d };
+  }
+  const NUM = { 2: ['meio', 'meios'], 3: ['terço', 'terços'], 4: ['quarto', 'quartos'], 5: ['quinto', 'quintos'], 6: ['sexto', 'sextos'], 7: ['sétimo', 'sétimos'], 8: ['oitavo', 'oitavos'], 9: ['nono', 'nonos'], 10: ['décimo', 'décimos'], 100: ['centésimo', 'centésimos'] };
+  const frac = (n, d) => { const w = NUM[d]; if (!w) return ` ${n} sobre ${d} `; return ` ${n === '1' ? 'um' : n} ${n === '1' ? w[0] : w[1]} `; };
+  // texto da lousa -> português falado
+  function say(s) {
+    let t = ' ' + s + ' ';
+    const R = (a, b) => { t = t.replace(a, b); };
+    R(/:\)|:\(/g, '');
+    R(/\{CC, CK, KC, KK\}/g, 'cara cara, cara coroa, coroa cara, coroa coroa');
+    R(/(\d) (\d{3})(?!\d)/g, '$1$2'); R(/(\d) (\d{3})(?!\d)/g, '$1$2');
+    R(/R\$ ?([\d.,]+)/g, '$1 reais');
+    R(/Ex\.:/g, 'Exemplo:'); R(/\bnº/g, 'número'); R(/\bEx\./g, 'Exemplo');
+    R(/\b([fh])\(([^()]+)\)/g, '$1 de $2'); R(/\bP\(/g, 'a probabilidade de ('); R(/\bV\(/g, 'vértice (');
+    R(/\(([^()]+)\)²/g, ' o quadrado de $1'); R(/\(([^()]+)\)³/g, ' o cubo de $1');
+    R(/(\d+)\/(\d+)/g, (_, n, d) => frac(n, d));
+    R(/\bcm²/g, ' centímetros quadrados'); R(/\bm²/g, ' metros quadrados'); R(/\bkm²/g, ' quilômetros quadrados');
+    R(/\bcm³/g, ' centímetros cúbicos'); R(/\bdm³/g, ' decímetro cúbico'); R(/\bm³/g, ' metros cúbicos');
+    R(/²/g, ' ao quadrado'); R(/³/g, ' ao cubo');
+    R(/x₁/g, 'x um'); R(/x₂/g, 'x dois');
+    R(/√/g, ' raiz de '); R(/±/g, ' mais ou menos '); R(/≈/g, ' aproximadamente '); R(/≠/g, ' diferente de ');
+    R(/≤/g, ' menor ou igual a '); R(/≥/g, ' maior ou igual a ');
+    R(/→|←/g, ', '); R(/·/g, ' vezes '); R(/×/g, ' por '); R(/÷/g, ' dividido por ');
+    R(/=/g, ' igual a '); R(/>/g, ' maior que '); R(/</g, ' menor que ');
+    R(/(^|[\s(])−\s?(\d)/g, '$1 menos $2'); R(/−/g, ' menos '); R(/\+/g, ' mais ');
+    R(/°/g, ' graus'); R(/π/g, ' pi '); R(/Δ/g, ' delta '); R(/Ω/g, ' ômega '); R(/%/g, ' por cento');
+    R(/\bai\b/g, 'ângulo interno'); R(/\bae\b/g, 'ângulo externo'); R(/\bac\b/g, 'ângulo central');
+    R(/\bxv\b/g, 'x do vértice'); R(/\byv\b/g, 'y do vértice'); R(/\btv\b/g, 't do vértice');
+    R(/\b4ac\b/g, '4 a c'); R(/\b(\d+)([a-z]{1,2})\b/g, (_, d, l) => d + ' ' + l.split('').join(' ')); R(/\bax\b/g, 'a x'); R(/\bbx\b/g, 'b x');
+    R(/[(){}|✓]/g, ' '); R(/\.\.\./g, '.'); R(/"/g, '');
+    R(/\b[A-ZÀ-Ý]{3,}\b/g, (w) => w.toLowerCase());
+    return t.replace(/\s+/g, ' ').trim();
+  }
+
   // ---------------- marcação das linhas ----------------
   // '# ' fórmula (amarelo, em destaque) · '! ' erro comum (rosa) · '> ' dica (azul) · '' linha em branco
-  const CPS = 13; // caracteres por segundo de leitura (ritmo calmo, de quem está aprendendo)
+  // uma linha também pode ser [texto da lousa, texto falado] ('' = sem fala)
   const PAUSE = 12; // segundos de "pause e tente"
   function parse(s) {
+    let spoken;
+    if (Array.isArray(s)) { spoken = s[1]; s = s[0]; }
     if (s === '') return { type: 'b', text: '' };
-    if (s.startsWith('# ')) return { type: 'f', text: s.slice(2) };
-    if (s.startsWith('! ')) return { type: 'e', text: s.slice(2) };
-    if (s.startsWith('> ')) return { type: 't', text: s.slice(2) };
-    return { type: 'n', text: s };
+    let p = { type: 'n', text: s };
+    if (s.startsWith('# ')) p = { type: 'f', text: s.slice(2) };
+    else if (s.startsWith('! ')) p = { type: 'e', text: s.slice(2) };
+    else if (s.startsWith('> ')) p = { type: 't', text: s.slice(2) };
+    p.spoken = spoken !== undefined ? spoken : (p.type === 'e' ? 'Atenção! ' : '') + say(p.text);
+    return p;
   }
   function wrap(text, max) {
     if (text.length <= max) return [text];
@@ -36,18 +86,24 @@
     if (cur) out.push(cur);
     return out;
   }
-  // linhas -> [{text, type, src, at, dur}], tempos relativos ao início da cena
+  // linhas -> [{text, type, src, at, dur, voice}], tempos relativos ao início da cena; a voz dita o ritmo
   function layLines(raw, start, max) {
     const lines = []; let at = start;
     raw.forEach((s, src) => {
       const p = parse(s);
-      if (p.type === 'b') { lines.push({ ...p, src, at, dur: 0 }); at += 0.35; return; }
+      if (p.type === 'b') { lines.push({ ...p, src, at, dur: 0 }); at += 0.3; return; }
       const parts = p.type === 'f' ? [p.text] : wrap(p.text, max);
+      const v = voice(p.spoken);
+      const total = parts.reduce((a, x) => a + x.length, 0);
+      const span = v ? v.d : 0.6 + total / 16;
+      let acc = 0;
       parts.forEach((txt, k) => {
-        const dur = Math.min(1.6, 0.35 + txt.length / 34); // tempo para o giz "escrever"
-        lines.push({ type: p.type, text: txt, src, at, dur, cont: k > 0 });
-        at += 0.75 + txt.length / CPS + (p.type === 'f' ? 0.9 : 0);
+        const ta = at + span * (acc / total);
+        acc += txt.length;
+        const dur = Math.max(0.4, Math.min(1.8, span * (txt.length / total), 0.35 + txt.length / 30));
+        lines.push({ type: p.type, text: txt, src, at: ta, dur, cont: k > 0, voice: k === 0 ? v : null });
       });
+      at += span + 0.5 + (p.type === 'f' ? 0.5 : 0);
     });
     return { lines, end: at };
   }
@@ -56,33 +112,51 @@
   // ---------------- construtores de cena ----------------
   const SCENES = [];
   let chapter = 0, chapterName = 'Abertura';
-  const CH = (num, title, sub, topics) => { chapter = num; chapterName = title; SCENES.push({ kind: 'chapter', num, title, sub, topics: topics || [], dur: snap(9) }); };
-  const B = (title, raw, fig) => {
+  const CH = (num, title, sub, topics) => {
+    chapter = num; chapterName = title;
+    const v = voice(num === 6 ? `Chegamos à revisão final! Vamos ver: ${topics.map(say).join(', ')}.` : `Aula ${num}: ${title}, ${sub}. Nesta aula vamos ver: ${topics.map(say).join(', ')}.`);
+    SCENES.push({ kind: 'chapter', num, title, sub, topics: topics || [], voices: [{ at: 0.6, ...v }], dur: snap(Math.max(9, 0.6 + v.d + 1.5)) });
+  };
+  // título falado no início, depois as linhas
+  const titled = (title, spokenTitle) => { const v = voice(spokenTitle ?? say(title)); return { v, start: Math.max(1.1, 0.4 + (v ? v.d + 0.45 : 0)) }; };
+  const B = (title, raw, fig, spokenTitle) => {
     const max = fig ? 56 : 80;
-    const { lines, end } = layLines(raw, 1.1, max);
-    SCENES.push({ kind: 'board', title, lines, fig, dur: snap(end + 2.6) });
+    const tt = titled(title, spokenTitle);
+    const { lines, end } = layLines(raw, tt.start, max);
+    SCENES.push({ kind: 'board', title, lines, fig, voices: tt.v ? [{ at: 0.4, ...tt.v }] : [], dur: snap(end + 2.2) });
   };
   // exercício: enunciado + cronômetro de pausa, depois uma lousa com a resolução
   const EX = (title, q, sol, fig, figQ) => {
-    const { lines, end } = layLines(q, 1.1, 75);
-    const timer = { t0: end + 0.6, t1: end + 0.6 + PAUSE };
-    SCENES.push({ kind: 'ex', title, lines, fig: figQ, timer, dur: snap(timer.t1 + 0.9) });
+    const tt = titled(title);
+    // o enunciado é falado de uma vez só (é uma frase), as linhas aparecem acompanhando a fala
+    const qv = voice(say(q.join(' ')));
+    const qraw = q.map((s, i) => [s, '']);
+    const { lines } = layLines(qraw, tt.start, 75);
+    const tot = q.reduce((a, s) => a + s.length, 0); let acc = 0;
+    lines.forEach((l) => { l.at = tt.start + qv.d * (acc / tot); acc += l.text.length; l.dur = Math.min(1.8, Math.max(0.5, qv.d * l.text.length / tot)); });
+    lines[0].voice = qv;
+    const pv = voice('Agora pause o vídeo e tente resolver sozinho. Depois confira a resolução.');
+    const t0 = tt.start + qv.d + 0.8;
+    const timer = { t0, t1: t0 + Math.max(PAUSE, pv.d + 3) };
+    SCENES.push({ kind: 'ex', title, lines, fig: figQ, timer, voices: [{ at: 0.4, ...tt.v }, { at: t0, ...pv }], dur: snap(timer.t1 + 0.9) });
     const qShort = q.join(' ');
-    B('Resolução — ' + title, ['> ' + (qShort.length > 70 ? qShort.slice(0, 67) + '...' : qShort), ...sol], fig);
+    B('Resolução — ' + title, [['> ' + (qShort.length > 70 ? qShort.slice(0, 67) + '...' : qShort), ''], ...sol], fig, `Vamos resolver o ${title.replace(/ — .*/, '')}.`);
     SCENES[SCENES.length - 1].solution = true;
   };
   const LIST = (title, items, from) => { // bloco da lista final: 4 questões e um cronômetro
-    const raw = []; items.forEach((it, i) => { raw.push(`${from + i}) ${it}`); });
-    const { lines, end } = layLines(raw, 1.1, 80);
-    const timer = { t0: end + 0.6, t1: end + 0.6 + 20 };
-    SCENES.push({ kind: 'ex', title, lines, timer, list: true, dur: snap(timer.t1 + 0.9) });
+    const raw = []; items.forEach((it, i) => { raw.push([`${from + i}) ${it}`, `Questão ${from + i}. ${say(it)}`]); });
+    const tt = titled(title, `Questões ${from} a ${from + items.length - 1}.`);
+    const { lines, end } = layLines(raw, tt.start, 80);
+    const pv = voice('Pause o vídeo e resolva estas questões no caderno.');
+    const timer = { t0: end + 0.4, t1: end + 0.4 + 20 };
+    SCENES.push({ kind: 'ex', title, lines, timer, list: true, voices: [{ at: 0.4, ...tt.v }, { at: timer.t0, ...pv }], dur: snap(timer.t1 + 0.9) });
   };
   const tagScenes = () => { for (const s of SCENES) if (s.chapter === undefined) { s.chapter = chapter; s.chapterName = chapterName; } };
 
   // =====================================================================
   // ABERTURA
   // =====================================================================
-  SCENES.push({ kind: 'intro', dur: snap(12) });
+  { const v = voice('Olá! Seja bem-vindo à videoaula completa de Matemática do nono ano, capítulo 15. Vamos começar do zero e estudar polígonos regulares, áreas e volumes, função quadrática, estatística e probabilidade. Pegue lápis e caderno, e vamos lá!'); SCENES.push({ kind: 'intro', voices: [{ at: 0.8, ...v }], dur: snap(Math.max(12, v.d + 2.5)) }); }
   B('Como usar esta videoaula', [
     'Vamos começar do ZERO. Não precisa saber nada antes!',
     'Cada aula explica primeiro o básico e depois avança.',
@@ -985,7 +1059,7 @@
     '19) total 20 → P = 6/20 = 3/10 = 30%',
     '20) Ω = {CC, CK, KC, KK} → 3 com cara → P = 3/4 = 75%',
   ]);
-  SCENES.push({ kind: 'end', dur: snap(13.5) });
+  { const v = voice('Parabéns por chegar até o final! Reveja as partes difíceis quantas vezes precisar. Errar faz parte de aprender. Bons estudos, você consegue!'); SCENES.push({ kind: 'end', voices: [{ at: 0.8, ...v }], dur: snap(Math.max(13.5, v.d + 4)) }); }
   tagScenes();
 
   // ---------------- tempos absolutos ----------------
@@ -995,9 +1069,11 @@
   const CHAPTERS = SCENES.filter((s) => s.kind === 'chapter').map((s) => ({ num: s.num, title: s.title, t: s.t0 }));
 
   // eventos de som tirados do roteiro (o filme lê os mesmos tempos)
-  const ev = { lines: [], scenes: [], ticks: [], bells: [], chapters: [] };
+  const ev = { lines: [], scenes: [], ticks: [], bells: [], chapters: [], voice: [] };
   for (const s of SCENES) {
     ev.scenes.push({ t: s.t0, kind: s.kind });
+    for (const v of s.voices || []) if (v.key) ev.voice.push({ t: s.t0 + v.at, key: v.key, d: v.d });
+    for (const l of s.lines || []) if (l.voice) ev.voice.push({ t: s.t0 + l.at, key: l.voice.key, d: l.voice.d });
     if (s.kind === 'chapter') ev.chapters.push(s.t0);
     for (const l of s.lines || []) if (l.type !== 'b') ev.lines.push({ t: s.t0 + l.at, dur: l.dur, type: l.type, sol: !!s.solution });
     if (s.timer) {
@@ -1023,6 +1099,6 @@
   const S = {}; // seções para levels.js
   SCENES.forEach((s) => { if (s.kind === 'chapter') S['aula' + s.num] = [s.t0, s.t1]; });
 
-  const SCORE = { FPS, FORMAT, W, H, SAFE, WIDE, STYLE, DURATION, clock, T, BEAT, S, m, chords, chordAt, SCENES, CHAPTERS, ev, markers, PAUSE };
+  const SCORE = { FPS, FORMAT, W, H, SAFE, WIDE, STYLE, DURATION, clock, T, BEAT, S, m, chords, chordAt, SCENES, CHAPTERS, ev, markers, PAUSE, NARRATION: [...NARRATION].map(([key, text]) => ({ key, text })) };
   if (node) module.exports = SCORE; else globalThis.SCORE = SCORE;
 })();

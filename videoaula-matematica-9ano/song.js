@@ -54,7 +54,25 @@ for (const s of ev.scenes) if (s.t > 0.1) events.push({ t: s.t, buf: I.paperFwip
 for (const t of ev.chapters) SND.chime().forEach((b, i) => events.push({ t: t + i * 0.18, buf: b, g: 0.2 }));
 for (const t of ev.ticks) events.push({ t, buf: SND.tick, g: 0.16 });
 for (const t of ev.bells) events.push({ t, buf: SND.bell, g: 0.14 });
-const list = [];
+// narração: cada fala decodificada para 48 kHz mono e colocada no seu tempo
+const VDIR = path.join(__dirname, 'voice');
+const decode = (f) => { const b = execFileSync('ffmpeg', ['-v', 'error', '-i', f, '-f', 'f32le', '-ac', '1', '-ar', String(SR), '-'], { maxBuffer: 1 << 28 }); return new Float32Array(b.buffer, b.byteOffset, b.length / 4); };
+const vevents = []; let missing = 0;
+for (const v of ev.voice) { const f = path.join(VDIR, v.key + '.mp3'); if (fs.existsSync(f)) vevents.push({ t: v.t, file: f, g: 1 }); else missing++; }
+if (missing) console.log(`(${missing} falas ainda sem áudio: rode node tools/voice.js)`);
+const list = [], vlist = [];
+for (let k = 0; k < nChunks; k++) {
+  const t0v = k * CH, lenv = Math.min(CH, DURATION - t0v);
+  const vb = new Bus(Math.ceil(lenv * SR) + 1);
+  for (const e of vevents) {
+    if (e.t > t0v + lenv || e.t < t0v - 30) continue;
+    const buf = decode(e.file), i0 = Math.round((e.t - t0v) * SR);
+    for (let j = Math.max(0, -i0); j < buf.length && i0 + j < vb.L.length; j++) { vb.L[i0 + j] += buf[j]; vb.R[i0 + j] += buf[j]; }
+  }
+  const fv = path.join(out, `vo_${String(k).padStart(2, '0')}.wav`);
+  MIX.writeWav(fv, vb); vlist.push(`file '${fv}'`);
+}
+fs.writeFileSync(path.join(out, 'vo.txt'), vlist.join('\n'));
 for (let k = 0; k < nChunks; k++) {
   const t0 = k * CH, len = Math.min(CH, DURATION - t0);
   const bus = new Bus(Math.ceil(len * SR) + 1);
@@ -72,7 +90,8 @@ fs.writeFileSync(path.join(out, 'sfx.txt'), list.join('\n'));
 execFileSync('ffmpeg', ['-loglevel', 'error', '-y',
   '-stream_loop', '-1', '-i', path.join(out, 'loop.wav'),
   '-f', 'concat', '-safe', '0', '-i', path.join(out, 'sfx.txt'),
-  '-filter_complex', `[0:a]atrim=0:${DURATION.toFixed(3)},afade=t=in:d=2,afade=t=out:st=${(DURATION - 4).toFixed(3)}:d=4[mu];[1:a]atrim=0:${DURATION.toFixed(3)}[fx];[mu][fx]amix=inputs=2:normalize=0,volume=1.6,alimiter=limit=0.84[o]`,
+  '-f', 'concat', '-safe', '0', '-i', path.join(out, 'vo.txt'),
+  '-filter_complex', `[0:a]atrim=0:${DURATION.toFixed(3)},afade=t=in:d=2,afade=t=out:st=${(DURATION - 4).toFixed(3)}:d=4[mu];[1:a]atrim=0:${DURATION.toFixed(3)}[fx];[2:a]atrim=0:${DURATION.toFixed(3)},asplit=2[vo][key];[mu][key]sidechaincompress=threshold=0.02:ratio=6:attack=20:release=400[duck];[duck][fx][vo]amix=inputs=3:normalize=0,volume=1.6,alimiter=limit=0.84[o]`,
   '-map', '[o]', '-ar', '48000', '-c:a', 'pcm_s16le', path.join(out, 'music.wav')]);
-for (const l of list) fs.unlinkSync(l.slice(6, -1));
+for (const l of [...list, ...vlist]) fs.unlinkSync(l.slice(6, -1));
 console.log(`wrote out/music.wav (${(DURATION / 60).toFixed(1)} min, ${events.length} efeitos)`);
