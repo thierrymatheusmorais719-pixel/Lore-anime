@@ -11,6 +11,7 @@
 local AssetService = game:GetService("AssetService")
 
 local MeshKit = require(script.Parent.MeshKit)
+local Facets = require(script.Parent.Facets)
 local PetAnatomy = require(script.Parent.PetAnatomy)
 local CreatureBuilder = require(script.Parent.CreatureBuilder)
 local MutationVisuals = require(script.Parent.MutationVisuals)
@@ -122,52 +123,9 @@ PetMesh.HELP = "Os pets 3D novos (malhas anatômicas) estão DESLIGADOS e os pet
 
 local POLY_MATERIAL = { Fabric = Enum.Material.SmoothPlastic } -- textura de tecido fica ruidosa em faces pequenas
 
--- Triângulo com duas cunhas (técnica clássica do Roblox). Devolve quantas peças criou.
+-- Triângulo com duas cunhas soldadas ao osso (Builders/Facets). Devolve quantas peças criou.
 local function triangle(a: Vector3, b: Vector3, c: Vector3, th: number, props, parent: BasePart): number
-	local ab, ac, bc = b - a, c - a, c - b
-	local abd, acd, bcd = ab:Dot(ab), ac:Dot(ac), bc:Dot(bc)
-	if abd > acd and abd > bcd then
-		c, a = a, c
-	elseif acd > bcd and acd > abd then
-		a, b = b, a
-	end
-	ab, ac, bc = b - a, c - a, c - b
-	local cr = ac:Cross(ab)
-	if cr.Magnitude < 1e-7 or bc.Magnitude < 1e-4 then
-		return 0
-	end
-	local right = cr.Unit
-	local up = bc:Cross(right).Unit
-	local back = bc.Unit
-	local height = math.abs(ab:Dot(up))
-	if height < 0.004 then
-		return 0
-	end
-	local made = 0
-	for k = 1, 2 do
-		local len = k == 1 and math.abs(ab:Dot(back)) or math.abs(ac:Dot(back))
-		if len > 0.004 then
-			local w = Instance.new("WedgePart")
-			w.Name = "Facet"
-			w.Size = Vector3.new(th, height, len)
-			w.CFrame = k == 1 and CFrame.fromMatrix((a + b) / 2, right, up, back) or CFrame.fromMatrix((a + c) / 2, -right, up, -back)
-			w.Color = props.color
-			w.Material = props.material
-			w.Transparency = props.transparency
-			w.Reflectance = props.reflectance
-			w.CanCollide, w.CanQuery, w.CanTouch, w.Massless, w.Anchored = false, false, false, true, false
-			w.CastShadow = props.shadow
-			w.TopSurface, w.BottomSurface = Enum.SurfaceType.Smooth, Enum.SurfaceType.Smooth
-			w:SetAttribute("Role", props.role)
-			local weld = Instance.new("WeldConstraint")
-			weld.Part0 = parent
-			weld.Part1 = w
-			weld.Parent = w
-			w.Parent = parent
-			made += 1
-		end
-	end
-	return made
+	return Facets.triangle(a, b, c, th, props, parent)
 end
 
 PetMesh._triangle = triangle -- (testes)

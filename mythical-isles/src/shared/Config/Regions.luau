@@ -112,6 +112,10 @@ Regions.Reserved = {
 	verdant = { -- bosque da árvore de blocos (árvore de destaque + família)
 		{ theta = 38, dist = 120, r = 30 }, { theta = 24, dist = 152, r = 14 }, { theta = 52, dist = 185, r = 14 },
 		{ theta = 34, dist = 196, r = 14 }, { theta = 20, dist = 132, r = 12 }, { theta = 40, dist = 80, r = 12 }, { theta = 66, dist = 216, r = 12 },
+		-- Árvore-Santuário: pés das raízes em arco, escadaria da raiz e coluna do Elevador de Seiva
+		{ theta = 25, dist = 68, r = 12 }, { theta = 75, dist = 68, r = 12 }, { theta = 120, dist = 68, r = 12 }, { theta = 165, dist = 68, r = 12 },
+		{ theta = 310, dist = 68, r = 12 }, { theta = 225, dist = 52, r = 12 }, { theta = 225, dist = 72, r = 12 }, { theta = 225, dist = 92, r = 12 },
+		{ theta = 142, dist = 34, r = 8 },
 	},
 	sky = {
 		{ theta = 345, dist = 205, r = 24 }, -- cais do Cloud Harbor

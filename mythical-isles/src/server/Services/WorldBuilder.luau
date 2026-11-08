@@ -1061,6 +1061,8 @@ local function ringChest(parent: Instance, at: CFrame, title: string, st)
 	return model, prompt
 end
 
+WorldBuilder.shrineChest = ringChest
+
 -- Arbusto leve de cubos (sub-bosque): 3 peças.
 local function cubeShrub(parent, pos: Vector3, s: number, leaf: Color3, rng: Random)
 	cubeCluster(parent, pos + V(0, 1.1 * s, 0), 2.3 * s, leaf, rng, 3, 0.5)

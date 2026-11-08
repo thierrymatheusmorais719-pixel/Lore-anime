@@ -16,6 +16,7 @@ Worlds.Info = {
 		center = Vector3.new(0, 0, 0),
 		radius = 345,
 		core = 230,
+		ceiling = 340, -- a Árvore-Santuário sobe até ~310 studs: o jogador lá em cima continua no Verdant Haven
 		unlockCost = 0,
 		statMult = 1.0,
 		ground = "Grass",

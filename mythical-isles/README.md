@@ -8,7 +8,7 @@ vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
 > Luau, contra o dump público da API do Roblox, com 58 testes de lógica, 3866 verificações dos modelos 3D e
-> **155 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> **161 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -233,6 +233,28 @@ atributos do boss do servidor. A energia (`Fx`) passa para as peças novas (núc
 asas, ponta da cauda), com os arcos elétricos do Wyrm. Peso: 7.000–16.000 triângulos por boss em malha; no modo
 low-poly 2.500–3.100 triângulos (≈ 5.000–6.200 cunhas), montados em lotes para não travar.
 Se nenhum dos dois modos funcionar, o boss antigo continua visível.
+
+### Árvore-Santuário (Great Sanctuary Tree) — Verdant Haven
+
+`server/Services/SanctuaryTree.luau` + `SanctuaryService.luau` (Elevador de Seiva) + `client/Controllers/SanctuaryClient.luau`
+(runas). Prévias: `docs/preview/arvore_santuario_*.jpg`.
+
+- **Escala:** ~310 studs de altura e copa de ~280 studs de diâmetro, no centro da ilha: visível de qualquer ponto.
+- **Tronco suspenso sobre 6 raízes em arco:** a praça, as estações de ovo e os portais continuam no lugar, agora
+  embaixo da árvore. Poças de seiva brilhante nos pés das raízes.
+- **Andares:** Praça das Raízes (chão) → **Escadaria da Raiz** (degraus de 1,25 stud por cima da raiz longa) →
+  **Coração da Raiz** (deck em anel, ~49 studs) → **rampa em espiral** pela casca (≤ 15° por tábua, com corrimão) →
+  **4 Galhos Suspensos** que saem da rampa como estradas de tábuas até **ninhos com baús** → **Copas Celestiais** (deck
+  dentro da copa, flores de luz, terraços de folhas para subir pulando) → **Coroa Estelar** (mirante com altar e
+  relicário, ~302 studs).
+- **Elevador de Seiva:** estações em cada andar com "Subir"/"Descer" para o vizinho, validadas no servidor (perto da
+  estação, sem pular andar). A **Coroa Estelar só abre depois de vencer o Elderroot**. Os pets vão junto.
+- **6 baús novos** (4 ninhos, copa e coroa) no sistema de baús-santuário (recompensa e recarga por jogador).
+- **Detalhes:** casca com relevo de sulcos e musgo nas faces de cima (malha convertida em cunhas, sem EditableMesh),
+  6 anéis de **runas** que acendem em ondas subindo pelo tronco (douradas depois do Elderroot), **seiva** escorrendo
+  pelos sulcos, esporos dourados caindo da copa, vagalumes, lanternas de esporos, rosetas e flores-estrela.
+- **Peso:** ≈ 4.840 peças (3.506 cunhas da casca + 1.330 peças). A ilha 1 passa a ter ≈ 17.600 peças.
+  `Worlds.verdant.ceiling = 340`: quem está no alto da árvore continua "no Verdant Haven".
 
 ### Ilhas ampliadas: anel de mata para exploração
 
@@ -612,6 +634,9 @@ travamento) foi exercitada.
   - "100x melhor" não é medida: o salto real é de ~250 peças primitivas por boss para superfícies contínuas com
     relevo, cor por vértice e milhares de faces. Modelos esculpidos à mão e texturizados (3D Importer) ainda
     seriam o próximo nível.
+- **Árvore-Santuário — o que ainda precisa do Studio:** subir a rampa, a escada e os galhos com o personagem real
+  (o simulador confere geometria, inclinação, altura livre e o elevador, mas não a física do Humanoid), a sombra da copa
+  e o desempenho das ~4.800 peças a mais.
 - Não há som.
 - O modelo de peças antigo (~70 peças por pet) continua sendo criado no servidor, porque é ele que segue o dono e
   luta; no cliente ele fica invisível quando a malha está pronta.

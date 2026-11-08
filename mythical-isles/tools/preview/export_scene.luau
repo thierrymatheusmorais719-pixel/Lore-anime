@@ -73,7 +73,7 @@ local char = p.Character
 print(string.format("PLAYER %s %s %s", num(char.PrimaryPart.Position.X), num(char.PrimaryPart.Position.Y), num(char.PrimaryPart.Position.Z)))
 local verdant = Worlds.Info.verdant
 local function inVerdant(part)
-	return ((part.Position - verdant.center) * Vector3.new(1, 0, 1)).Magnitude < verdant.radius + 30 and math.abs(part.Position.Y) < 120
+	return ((part.Position - verdant.center) * Vector3.new(1, 0, 1)).Magnitude < verdant.radius + 30 and part.Position.Y > -120 and part.Position.Y < 360
 end
 dump("island", { workspace:FindFirstChild("World"):FindFirstChild("verdant"), workspace:FindFirstChild("Enemies"), workspace:FindFirstChild("Bosses"),
 	workspace:FindFirstChild("Resources"), workspace:FindFirstChild("Pets") }, inVerdant)

@@ -11,12 +11,14 @@ local Net = require(Shared.Net)
 local WorldBuilder = require(script.Parent.WorldBuilder)
 local CrystalHollow = require(script.Parent.CrystalHollow)
 local SkyKingdom = require(script.Parent.SkyKingdom)
+local SanctuaryTree = require(script.Parent.SanctuaryTree)
 
 local WorldService = {}
 
 local S
 local Push
 WorldService.Layout = {} -- [worldId] = { center, radius, spawnCF, arena, enemyZones, resourceFields, eggStations }
+WorldService.Sanctuary = nil -- Árvore-Santuário do Verdant Haven (SanctuaryTree.build)
 WorldService.Regions = {} -- [worldId] = { gates, chests, npcs } (regiões construídas à mão; ver RegionService)
 
 function WorldService.init(registry)
@@ -64,6 +66,16 @@ function WorldService.build()
 		if id == "verdant" then
 			WorldBuilder.verdantLandmark(folder, terrainOk)
 			WorldBuilder.blockGrove(folder)
+			-- Árvore-Santuário gigante no centro (praça, ovos e portais ficam sob as raízes em arco)
+			local okTree, tree = pcall(SanctuaryTree.build, folder, w.center, function(parent, cf, title)
+				return WorldBuilder.shrineChest(parent, cf, title, { accent = Color3.fromRGB(150, 255, 140) })
+			end)
+			if okTree then
+				WorldService.Sanctuary = tree
+			else
+				local rs = game:GetService("ReplicatedStorage")
+				rs:SetAttribute("ServerErrors", ((rs:GetAttribute("ServerErrors") or "") .. "\n\nÁrvore-Santuário: " .. tostring(tree)))
+			end
 		elseif id == "crystal" or id == "sky" then
 			local reg = (id == "crystal" and CrystalHollow or SkyKingdom).build(folder, terrainOk)
 			WorldService.Regions[id] = reg
@@ -87,6 +99,14 @@ function WorldService.build()
 				reg.walkPoints[label] = q
 			end
 			reg.ring = ring
+			WorldService.Regions[id] = reg
+		end
+		-- baús da Árvore-Santuário (ninhos, copa, coroa) usam o mesmo sistema dos baús-santuário
+		if id == "verdant" and WorldService.Sanctuary then
+			local reg = WorldService.Regions[id] or { gates = {}, chests = {}, npcs = {}, walkPoints = {} }
+			for cid, ch in pairs(WorldService.Sanctuary.chests) do
+				reg.chests[cid] = ch
+			end
 			WorldService.Regions[id] = reg
 		end
 
@@ -149,7 +169,8 @@ function WorldService.worldAt(pos: Vector3): string?
 	for _, id in ipairs(Worlds.Order) do
 		local w = Worlds.Info[id]
 		local d = (pos - w.center) * Vector3.new(1, 0, 1)
-		if d.Magnitude <= (w.extent or w.radius + 40) and math.abs(pos.Y - w.center.Y) < 120 then
+		local dy = pos.Y - w.center.Y
+		if d.Magnitude <= (w.extent or w.radius + 40) and dy > -120 and dy < (w.ceiling or 120) then
 			return id
 		end
 	end

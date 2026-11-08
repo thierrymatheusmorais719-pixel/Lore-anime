@@ -794,7 +794,11 @@ local function ringChecks()
 			end
 		end
 		local nParts, nLights, nEmit = 0, 0, 0
+		local treeModel = wf and wf:FindFirstChild("SanctuaryTree")
 		for _, d in ipairs(wf and wf:GetDescendants() or {}) do
+			if treeModel and d:IsDescendantOf(treeModel) then
+				continue -- a Árvore-Santuário tem orçamento próprio (cenário da árvore)
+			end
 			if d:IsA("BasePart") then
 				nParts += 1
 			elseif d:IsA("PointLight") or d:IsA("SpotLight") then
@@ -1832,6 +1836,152 @@ do
 	Push:FireClient(lp, "OpenUnlock", { world = "sky" })
 	frames(400)
 	check("cliente processa toasts, drops, anúncios, fases e vitórias", #SIM.errors == before, SIM.errors[before + 1])
+	-- ÁRVORE-SANTUÁRIO (Verdant Haven): escala, caminhos que dá para andar, elevador de seiva, baús e runas
+	local function sanctuaryChecks()
+		local WS = require(__proxy("Server/Services/WorldService"))
+		local Tree = require(__proxy("Server/Services/SanctuaryTree"))
+		local SS = require(__proxy("Server/Services/SanctuaryService"))
+		local RS2 = require(__proxy("Server/Services/RegionService"))
+		local SC = require(__proxy("Client/Controllers/SanctuaryClient"))
+		local t = WS.Sanctuary
+		local before = #SIM.errors
+		if not t then
+			check("Árvore-Santuário construída no centro do Verdant Haven", false, "sem árvore")
+			return
+		end
+		local y0, y1, parts = math.huge, -math.huge, 0
+		local rMax = 0
+		for _, d in ipairs(t.model:GetDescendants()) do
+			if d:IsA("BasePart") then
+				parts += 1
+				y0, y1 = math.min(y0, d.Position.Y), math.max(y1, d.Position.Y)
+				if d.Parent and d.Parent.Name == "Canopy" then
+					rMax = math.max(rMax, ((d.Position - Worlds.Info.verdant.center) * Vector3.new(1, 0, 1)).Magnitude)
+				end
+			end
+		end
+		check("Árvore-Santuário: domina o mapa (≥ 290 studs de altura, copa ≥ 240 de diâmetro) dentro do orçamento de peças",
+			y1 - Worlds.Info.verdant.center.Y >= 290 and rMax * 2 >= 240 and parts <= 6500 and t.runes >= 150,
+			string.format("altura %.0f, copa %.0f, %d peças (%d cunhas), %d runas", y1, rMax * 2, parts, t.facets, t.runes))
+		-- rampa contínua (subida e passo de cada tábua) do Coração da Raiz até a copa; escada com degraus baixos
+		local okRamp, worst = true, ""
+		for i = 2, #t.ramp do
+			local a, b = t.ramp[i - 1], t.ramp[i]
+			local rise = b.Y - a.Y
+			local run = ((b - a) * Vector3.new(1, 0, 1)).Magnitude
+			if rise > 1.6 or rise < -0.01 or run > 9 or math.deg(math.atan2(rise, math.max(run, 1e-3))) > 25 then
+				okRamp, worst = false, string.format("tábua %d: sobe %.2f em %.2f", i, rise, run)
+			end
+		end
+		local okStairs = true
+		for i = 2, #t.stairs do
+			if t.stairs[i].Y - t.stairs[i - 1].Y > 1.35 then
+				okStairs = false
+			end
+		end
+		check("Árvore-Santuário: rampa em espiral contínua (≤ 25°) do Coração da Raiz até as Copas e escadaria de degraus baixos até o Coração",
+			okRamp and okStairs and #t.ramp > 100 and t.ramp[#t.ramp].Y >= Tree.CANOPY_Y - 0.5 and math.abs(t.stairs[#t.stairs].Y - Tree.HUB_Y) < 0.5, worst)
+		-- altura livre: nenhum deck/tábua colidível a menos de 6 studs acima da rampa e da escada
+		local blockers = {}
+		for _, d in ipairs(t.model:FindFirstChild("Walkways"):GetChildren()) do
+			if d:IsA("BasePart") and d.CanCollide and not d.Name:find("Rail") and not d.Name:find("Rope") then
+				table.insert(blockers, d)
+			end
+		end
+		local hit
+		local function clear(q, label)
+			for _, d in ipairs(blockers) do
+				for _, h in ipairs({ 2, 3.5, 5 }) do
+					local l = d.CFrame:Inverse() * (q + Vector3.new(0, h, 0))
+					if math.abs(l.X) < d.Size.X / 2 and math.abs(l.Y) < d.Size.Y / 2 and math.abs(l.Z) < d.Size.Z / 2 then
+						hit = string.format("%s a %.0f studs: %s acima (%.0f)", label, q.Y, d.Name, h)
+						return
+					end
+				end
+			end
+		end
+		for i, q in ipairs(t.ramp) do
+			if not hit and i % 2 == 0 then
+				clear(q, "rampa")
+			end
+		end
+		for i, q in ipairs(t.stairs) do
+			if not hit and i % 3 == 0 then
+				clear(q, "escada")
+			end
+		end
+		check("Árvore-Santuário: altura livre para o jogador em toda a rampa e na escadaria", hit == nil, hit)
+		-- elevador de seiva: perto da estação sobe/desce; longe ou pulando andar recusa; Coroa só depois do Elderroot
+		local d = S.DataService.get(lp)
+		local savedBoss = d.bestiary.bosses.elderroot
+		d.bestiary.bosses.elderroot = nil
+		SIM.teleport(lp, t.stops.ground.pos + Vector3.new(0, 3, 0))
+		SIM.run(1.5)
+		local skip = SS.ride(lp, "boughs")
+		SIM.run(1.5)
+		local up1 = SS.ride(lp, "hub")
+		local atHub = (lp.Character.PrimaryPart.Position - t.stops.hub.pos).Magnitude < 12
+		SIM.run(1.5)
+		SIM.teleport(lp, t.stops.canopy.pos + Vector3.new(0, 3, 0))
+		SIM.run(1.5)
+		local locked = SS.ride(lp, "crown")
+		d.bestiary.bosses.elderroot = savedBoss or { n = 1 }
+		SIM.run(1.5)
+		local open = SS.ride(lp, "crown")
+		local atCrown = lp.Character.PrimaryPart.Position.Y > Tree.CROWN_Y
+		SIM.run(1.5)
+		SIM.teleport(lp, Worlds.Info.verdant.center + Vector3.new(150, 5, 150))
+		SIM.run(1.5)
+		local far = SS.ride(lp, "hub")
+		check("Elevador de Seiva: sobe perto da estação, recusa de longe e pulando andar; Coroa Estelar só depois de vencer o Elderroot",
+			skip.ok == false and up1.ok and atHub and locked.ok == false and open.ok and atCrown and far.ok == false,
+			string.format("pular=%s subir=%s hub=%s trava=%s coroa=%s longe=%s", tostring(skip.ok), tostring(up1.ok), tostring(atHub), tostring(locked.ok), tostring(open.ok), tostring(far.ok)))
+		if not savedBoss then
+			d.bestiary.bosses.elderroot = nil
+		end
+		-- baús dos ninhos/copa/coroa usam o sistema de baús-santuário
+		local nChests, okClaim = 0, true
+		for cid, chest in pairs(t.chests) do
+			nChests += 1
+			if WS.Regions.verdant.chests[cid] ~= chest then
+				okClaim = false
+			end
+		end
+		local nest = t.chests.sanct_nest1
+		SIM.teleport(lp, nest.pos + Vector3.new(2, 3, 0))
+		SIM.run(1.5)
+		local r = RS2.claim(lp, "verdant", "sanct_nest1")
+		check("Árvore-Santuário: 6 baús (4 ninhos, copa e coroa) registrados e abrem de perto", nChests == 6 and okClaim and r.ok, tostring(r.msg))
+		-- runas: o cliente acende as runas em ondas; douradas depois de vencer o Elderroot
+		local n = SC.scan(t.model)
+		local sample
+		for _, dsc in ipairs(t.model:GetDescendants()) do
+			if dsc:GetAttribute("RuneRing") == 1 then
+				sample = dsc
+				break
+			end
+		end
+		SC.update(0.2)
+		local c1 = sample and sample.Color
+		SC.update(SC.PERIOD * 0.55)
+		local c2 = sample and sample.Color
+		local State = require(__proxy("Client/Controllers/State"))
+		local prof = State.profile
+		local hadBoss = prof and prof.bestiary.bosses.elderroot
+		if prof then
+			prof.bestiary.bosses.elderroot = { n = 1 }
+		end
+		SC.update(0.2)
+		local gold = sample and sample.Color
+		if prof then
+			prof.bestiary.bosses.elderroot = hadBoss
+		end
+		check("Árvore-Santuário: runas pulsam em ondas no cliente e ficam douradas depois do Elderroot",
+			n >= 150 and c1 ~= nil and c1 ~= c2 and gold ~= nil and gold.R > gold.B + 0.2 and #SIM.errors == before, SIM.errors[before + 1])
+		SIM.teleport(lp, Worlds.Info.verdant.center + Vector3.new(0, 4, 14))
+		SIM.run(1)
+	end
+	sanctuaryChecks()
 	SIM.localPlayer = nil
 end
 
