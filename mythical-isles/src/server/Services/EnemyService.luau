@@ -247,6 +247,11 @@ local function moveTo(e, goal: Vector3, dt: number)
 		stopMoving(e)
 		return
 	end
+	-- lentidão (Assinaturas: esporos, seiva, tremor): reduz a velocidade enquanto durar
+	local speed = e.cfg.speed * (os.clock() < (e.slowUntil or 0) and (1 - (e.slowAmount or 0)) or 1)
+	if e.humanoid and e.humanoid.WalkSpeed ~= speed then
+		e.humanoid.WalkSpeed = speed
+	end
 	if e.align then
 		-- voadores: linha reta; sobe se houver obstáculo à frente (alternativa ao pathfinding)
 		local from = e.root.Position
@@ -261,7 +266,7 @@ local function moveTo(e, goal: Vector3, dt: number)
 			end
 		end
 		e.align.Position = Vector3.new(goal.X, y, goal.Z)
-		e.align.MaxVelocity = e.cfg.speed
+		e.align.MaxVelocity = speed
 		if dir.Magnitude > 0.5 then
 			e.orient.CFrame = CFrame.lookAt(Vector3.zero, dir.Unit)
 		end

@@ -376,6 +376,492 @@ local function s_len(sh): number
 	return sh.length or 10
 end
 
+local onAbilityFxRef
+-------------------------------------------------------------------------------
+-- Ataques ASSINATURA dos pets (SignatureService): um estilo de efeito por ataque
+-------------------------------------------------------------------------------
+
+local V3 = Vector3.new
+
+local function flatDir(a: Vector3, b: Vector3): Vector3
+	local d = Vector3.new(b.X - a.X, 0, b.Z - a.Z)
+	return d.Magnitude > 0.05 and d.Unit or Vector3.new(0, 0, -1)
+end
+
+-- Nome do ataque sobre o pet (sobe e some).
+local function sigName(model: Model?, text: string, color: Color3)
+	if not model or not model.PrimaryPart then
+		return
+	end
+	local a = part({ Size = Vector3.one * 0.2, CFrame = model.PrimaryPart.CFrame + V3(0, 3.5, 0), Transparency = 1 }, 1.5)
+	if not a then
+		return
+	end
+	local g = Instance.new("BillboardGui")
+	g.Size = UDim2.fromOffset(280, 34)
+	g.AlwaysOnTop = true
+	g.MaxDistance = 150
+	g.Parent = a
+	local l = Instance.new("TextLabel")
+	l.BackgroundTransparency = 1
+	l.Size = UDim2.fromScale(1, 1)
+	l.Font = Enum.Font.FredokaOne
+	l.TextScaled = true
+	l.Text = "✦ " .. text .. " ✦"
+	l.TextColor3 = WHITE:Lerp(color, 0.55)
+	l.TextStrokeTransparency = 0.1
+	l.TextStrokeColor3 = Color3.new(0, 0, 0):Lerp(color, 0.25)
+	l.Parent = g
+	tween(a, 1.4, { CFrame = a.CFrame + V3(0, 3, 0) })
+	task.delay(0.9, function()
+		tween(l, 0.5, { TextTransparency = 1, TextStrokeTransparency = 1 })
+	end)
+end
+
+-- Folhas/pétalas que giram para fora de um ponto.
+local function leafSwirl(at: Vector3, radius: number, color: Color3, n: number, rise: number?)
+	n = scaled(n)
+	for i = 1, n do
+		local a = i / n * math.pi * 2 + math.random() * 0.4
+		local leaf = part({ Size = V3(0.7, 0.12, 1.1), CFrame = CFrame.new(at + V3(0, 1, 0)) * CFrame.Angles(0, a, 0), Color = color:Lerp(WHITE, math.random() * 0.25),
+			Material = Enum.Material.SmoothPlastic }, 0.9)
+		if leaf then
+			local dest = at + V3(math.cos(a) * radius, 1 + (rise or 1.5) * math.random(), math.sin(a) * radius)
+			tween(leaf, 0.7, { CFrame = CFrame.new(dest) * CFrame.Angles(math.random() * 3, a + 2.5, math.random() * 3), Transparency = 1 })
+		end
+	end
+end
+
+-- Raízes que brotam do chão em volta de um ponto.
+local function rootSpikes(at: Vector3, radius: number, color: Color3, count: number, height: number, life: number)
+	count = scaled(count)
+	for i = 1, count do
+		local a = i / count * math.pi * 2 + math.random() * 0.3
+		local d = radius * (0.35 + math.random() * 0.65)
+		local base = at + V3(math.cos(a) * d, -0.5, math.sin(a) * d)
+		local root = part({ Size = V3(0.9, 0.2, 0.9), CFrame = CFrame.new(base), Color = Color3.fromRGB(92, 64, 40):Lerp(color, 0.25), Material = Enum.Material.Wood }, life)
+		if root then
+			local h = height * (0.6 + math.random() * 0.6)
+			tween(root, 0.22 + math.random() * 0.15, { Size = V3(0.9, h, 0.9), CFrame = CFrame.new(base) * CFrame.Angles(0, -a, 0) * CFrame.Angles(0, 0, math.rad(15 + math.random() * 20)) * CFrame.new(0, h / 2, 0) })
+			task.delay(life - 0.35, function()
+				if root.Parent then
+					tween(root, 0.3, { Size = V3(0.9, 0.2, 0.9), Transparency = 1 })
+				end
+			end)
+		end
+	end
+	dust(at, nil, 6, 1.6 + radius * 0.12, radius)
+	embers(at + V3(0, 1, 0), color, 10, radius)
+end
+
+-- Rachadura/onda ao longo de uma linha no chão.
+local function groundLine(from: Vector3, dir: Vector3, length: number, color: Color3, roots: boolean)
+	local steps = math.clamp(math.floor(length / 4), 3, 9)
+	for i = 0, steps do
+		local f = i / steps
+		local at = from + dir * length * f
+		task.delay(f * 0.3, function()
+			dust(at, nil, 3, 2, 6)
+			if roots then
+				rootSpikes(at, 2, color, 3, 4, 1.6)
+			else
+				sparks(at, color, 4, 12)
+				debris(at, DUST, 1, 14)
+			end
+		end)
+	end
+end
+
+local SIG = {}
+
+SIG.bite = function(p, c)
+	impact(p.to, c, 0.9)
+	leafSwirl(p.to, 4, c, 8)
+	sparks(p.to + V3(0, 1, 0), WHITE, 8, 14)
+end
+SIG.bloom = function(p, c)
+	shockRing(p.at, p.radius or 6, c, 0.45)
+	leafSwirl(p.at, p.radius or 6, c, 14, 3)
+	flash(p.at + V3(0, 2, 0), c, 14, 2, 0.5)
+end
+SIG.roll = function(p, c)
+	for k = 0, (p.n or 2) - 1 do
+		task.delay(k * (p.interval or 0.3), function()
+			projectile(p.from, p.to, c, 0.18, 2.4, "energy", function()
+				impact(p.to, c, 0.8)
+				dust(p.to, nil, 4, 2, 6)
+			end)
+		end)
+	end
+end
+SIG.kick = function(p, c)
+	for k = 0, (p.n or 2) - 1 do
+		task.delay(k * (p.interval or 0.2), function()
+			impact(p.to, c, 0.8)
+			leafSwirl(p.to, 3, c, 6)
+			shockRing(p.to, 3.5, c, 0.25)
+		end)
+	end
+end
+SIG.peck = function(p, c)
+	for k = 0, (p.n or 3) - 1 do
+		task.delay(k * (p.interval or 0.15), function()
+			sparks(p.to + V3(0, 1, 0), c, 6, 12)
+			flash(p.to, c, 6, 2, 0.12)
+		end)
+	end
+end
+SIG.acorn = function(p, c)
+	local pts = p.points or {}
+	local prev = p.from
+	for i, q in ipairs(pts) do
+		local from = prev
+		task.delay((i - 1) * 0.22, function()
+			projectile(from, q, c, 0.2, 0.9, "energy", function()
+				impact(q, c, 0.6)
+			end)
+		end)
+		prev = q
+	end
+end
+SIG.tongue = function(p, c)
+	local len = (p.to - p.from).Magnitude
+	local t = part({ Size = V3(0.45, 0.45, 0.2), CFrame = CFrame.lookAt(p.from, p.to), Color = c, Material = Enum.Material.SmoothPlastic }, 0.6)
+	if t then
+		tween(t, 0.15, { Size = V3(0.45, 0.45, len), CFrame = CFrame.lookAt(p.from, p.to) * CFrame.new(0, 0, -len / 2) })
+		task.delay(0.2, function()
+			tween(t, 0.25, { Size = V3(0.45, 0.45, 0.2), CFrame = CFrame.lookAt(p.from, p.to), Transparency = 1 })
+		end)
+	end
+	task.delay(0.15, impact, p.to, c, 0.6)
+end
+SIG.leafwrap = function(p, c)
+	leafSwirl(p.to, 2.5, c, 12, 3)
+	shockRing(p.from, 10, Color3.fromRGB(150, 220, 255), 0.5)
+end
+SIG.feathers = function(p, c)
+	local dir = flatDir(p.from, p.to)
+	local half = math.rad((p.angle or 40) / 2)
+	local n = p.n or 5
+	for i = 1, n do
+		local a = -half + (i - 1) / math.max(1, n - 1) * half * 2
+		local d = CFrame.Angles(0, a, 0):VectorToWorldSpace(dir)
+		task.delay(i * 0.04, function()
+			local dest = p.from + d * (p.range or 20)
+			projectile(p.from, dest, c, 0.22, 0.7, "energy", function()
+				sparks(dest, c, 3, 8)
+			end)
+		end)
+	end
+end
+SIG.spores = function(p, c)
+	for k = 0, (p.n or 4) - 1 do
+		task.delay(k * (p.interval or 0.7), function()
+			local a = anchorAt(p.at + V3(0, 1.5, 0), 1.6)
+			if a then
+				emit(a, { color = ColorSequence.new(WHITE, c), emission = 1, size = seq(0, 0, 0.3, 0.5, 1, 0), speed = NumberRange.new(1, (p.radius or 8) * 0.6),
+					life = NumberRange.new(1, 1.5), spread = Vector2.new(180, 180), drag = 1.5, accel = V3(0, 1, 0) }, 22)
+			end
+			shockRing(p.at, p.radius or 8, c, 0.6)
+		end)
+	end
+end
+SIG.ram = function(p, c)
+	onAbilityFxRef({ kind = "charge", from = p.from, to = p.to, color = c })
+	debris(p.to, DUST, 4, 18)
+end
+SIG.claw = function(p, c)
+	for k = 0, 1 do
+		task.delay(k * (p.interval or 0.2), function()
+			local cf = CFrame.lookAt(p.to + V3(0, 1.5, 0), p.from + V3(0, 1.5, 0)) * CFrame.Angles(0, 0, math.rad(k == 0 and 45 or -45))
+			local s = part({ Size = V3(0.25, 0.25, 0.25), CFrame = cf, Color = c }, 0.5)
+			if s then
+				tween(s, 0.18, { Size = V3(0.25, 5, 0.25) })
+				task.delay(0.2, function()
+					tween(s, 0.25, { Transparency = 1 })
+				end)
+			end
+			sparks(p.to + V3(0, 1.5, 0), c, 8, 14)
+		end)
+	end
+end
+SIG.splash = function(p, c)
+	projectile(p.from + V3(0, 2, 0), p.at, c, 0.3, 1.6, "energy", function()
+		shockRing(p.at, p.radius or 7, c, 0.5)
+		local pool = part({ Shape = Enum.PartType.Cylinder, Size = V3(0.2, (p.radius or 7) * 1.6, (p.radius or 7) * 1.6), CFrame = CFrame.new(p.at + V3(0, 0.15, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+			Color = c, Transparency = 0.35 }, 3)
+		if pool then
+			task.delay(2.4, function()
+				tween(pool, 0.5, { Transparency = 1 })
+			end)
+		end
+		sparks(p.at, c, 12, 14)
+	end)
+end
+SIG.hoot = function(p, c)
+	for k = 0, 2 do
+		task.delay(k * 0.12, function()
+			shockRing(p.from:Lerp(p.to, (k + 1) / 3) + V3(0, 1.5, 0), 2 + k, c, 0.35)
+		end)
+	end
+	task.delay(0.35, function()
+		flash(p.to, c, 10, 3, 0.4)
+		embers(p.to + V3(0, 2, 0), c, 8, 2)
+	end)
+end
+SIG.thorns = function(p, c)
+	local n = scaled(14)
+	for i = 1, n do
+		local a = i / n * math.pi * 2
+		local d = V3(math.cos(a), 0, math.sin(a))
+		local spike = part({ Size = V3(0.3, 0.3, 1.4), CFrame = CFrame.lookAt(p.at + V3(0, 1.2, 0), p.at + V3(0, 1.2, 0) + d), Color = c, Material = Enum.Material.SmoothPlastic }, 0.5)
+		if spike then
+			tween(spike, 0.35, { CFrame = CFrame.lookAt(p.at + V3(0, 1.2, 0) + d * (p.radius or 9), p.at + V3(0, 1.2, 0) + d * ((p.radius or 9) + 1)), Transparency = 0.6 })
+		end
+	end
+	shockRing(p.at, p.radius or 9, c, 0.35)
+end
+SIG.quake = function(p, c)
+	local at = p.angle and (p.from + flatDir(p.from, p.to) * (p.range or 12) * 0.5) or p.at
+	local r = p.radius or (p.range or 12) * 0.6
+	shockRing(at, r, c, 0.4)
+	dust(at, nil, 12, 3, r * 1.3)
+	debris(at, DUST, 6, 18)
+	sparks(at + V3(0, 1, 0), c, 10, 16)
+	shake(at, 0.7, 0.3)
+end
+SIG.breath = function(p, c)
+	local dir = flatDir(p.from, p.to)
+	local half = math.rad((p.angle or 35) / 2)
+	for k = 0, (p.n or 6) - 1 do
+		task.delay(k * (p.interval or 0.25), function()
+			for _ = 1, 2 do
+				local d = CFrame.Angles(0, (math.random() * 2 - 1) * half, 0):VectorToWorldSpace(dir)
+				local dest = p.from + d * (p.range or 20) * (0.6 + math.random() * 0.4)
+				projectile(p.from + V3(0, 1.5, 0), dest, c, 0.25, 0.9, "energy", function()
+					embers(dest, c, 3, 2)
+				end)
+			end
+		end)
+	end
+end
+SIG.stampede = function(p, c)
+	local dir = flatDir(p.from, p.to)
+	onAbilityFxRef({ kind = "charge", from = p.from, to = p.to, color = c })
+	groundLine(p.from, dir, p.length or 20, c, false)
+end
+SIG.dome = function(p, c)
+	local r = (p.radius or 14) * 0.9
+	local b = part({ Shape = Enum.PartType.Ball, Size = Vector3.one * 2, CFrame = CFrame.new(p.at), Color = c, Material = Enum.Material.ForceField, Transparency = 0.2 }, 5)
+	if b then
+		tween(b, 0.35, { Size = Vector3.one * r * 2 })
+		task.delay(4.4, function()
+			tween(b, 0.5, { Transparency = 1 })
+		end)
+	end
+	leafSwirl(p.at, r, Color3.fromRGB(255, 200, 230), 12, 4)
+	flash(p.at + V3(0, 2, 0), c, r * 1.5, 2, 0.6)
+end
+SIG.ambush = function(p, c)
+	dust(p.from, nil, 10, 3, 6)
+	task.delay(0.12, function()
+		impact(p.to, c, 1)
+		flash(p.to, c, 10, 3, 0.25)
+		sparks(p.to + V3(0, 1, 0), WHITE, 10, 16)
+	end)
+end
+SIG.berries = function(p, c)
+	local r = (p.radius or 18) * 0.6
+	for i = 1, scaled(12) do
+		local land = p.at + V3((math.random() * 2 - 1) * r, 0, (math.random() * 2 - 1) * r)
+		task.delay(i * 0.05, function()
+			projectile(land + V3(0, 16, 0), land, c, 0.45, 0.8, "energy", function()
+				sparks(land, c, 3, 8)
+			end)
+		end)
+	end
+	onAbilityFxRef({ kind = "heal", at = p.at, radius = p.radius or 18, color = Color3.fromRGB(140, 255, 170) })
+end
+SIG.petals = function(p, c)
+	for k = 0, (p.n or 3) - 1 do
+		task.delay(k * (p.interval or 0.3), function()
+			leafSwirl(p.at, p.radius or 8, c, 12, 2.5)
+			shockRing(p.at, p.radius or 8, c, 0.3)
+		end)
+	end
+end
+SIG.rootline = function(p, c)
+	local dir = flatDir(p.from, p.to)
+	groundLine(p.from, dir, p.length or 24, c, true)
+	shake(p.from + dir * (p.length or 24) * 0.5, (p.width or 6) > 8 and 0.9 or 0.5, 0.35)
+end
+SIG.pounce = function(p, c)
+	local mid = (p.from + p.to) / 2 + V3(0, 8, 0)
+	projectile(p.from, mid, c, 0.15, 1.6, "energy", function()
+		projectile(mid, p.to, c, 0.15, 1.6, "energy", function()
+			impact(p.to, c, 1.2)
+			shockRing(p.to, 5, c, 0.35)
+			sparks(p.to, Color3.fromRGB(255, 200, 120), 14, 18)
+		end)
+	end)
+end
+SIG.orbs = function(p, c)
+	for i, q in ipairs(p.points or { p.to }) do
+		task.delay(i * 0.08, function()
+			projectile(p.from + V3(0, 2, 0), q, c, 0.45, 1.5, "energy", function()
+				impact(q, c, 0.9)
+				shockRing(q, 4, c, 0.3)
+			end)
+		end)
+	end
+end
+SIG.totem = function(p, c)
+	local at = p.anchor or p.at
+	local life = (p.n or 8) * (p.interval or 1) + 0.4
+	local pole = part({ Size = V3(1.6, 0.2, 1.6), CFrame = CFrame.new(at), Color = Color3.fromRGB(110, 76, 46), Material = Enum.Material.Wood }, life)
+	if pole then
+		tween(pole, 0.3, { Size = V3(1.6, 7, 1.6), CFrame = CFrame.new(at + V3(0, 3.5, 0)) })
+	end
+	local crown = part({ Size = V3(1.2, 1.2, 1.2), CFrame = CFrame.new(at + V3(0, 7.6, 0)) * CFrame.Angles(math.rad(45), math.rad(45), 0), Color = c }, life)
+	if crown then
+		local l = Instance.new("PointLight")
+		l.Color, l.Range, l.Brightness = c, 16, 2
+		l.Parent = crown
+	end
+	for k = 0, (p.n or 8) - 1 do
+		task.delay(k * (p.interval or 1) + 0.2, function()
+			shockRing(at, p.radius or 12, c, 0.5)
+			embers(at + V3(0, 6, 0), c, 4, 2)
+		end)
+	end
+end
+SIG.fortress = function(p, c)
+	local r = 6
+	for i = 1, scaled(10) do
+		local a = i / 10 * math.pi * 2
+		local base = p.at + V3(math.cos(a) * r, -0.5, math.sin(a) * r)
+		local t = part({ Size = V3(1.6, 0.2, 1.6), CFrame = CFrame.new(base), Color = Color3.fromRGB(100, 70, 44), Material = Enum.Material.Wood }, 6)
+		if t then
+			tween(t, 0.35, { Size = V3(1.6, 7, 1.6), CFrame = CFrame.new(base + V3(0, 3.5, 0)) })
+			task.delay(5.4, function()
+				tween(t, 0.4, { Size = V3(1.6, 0.2, 1.6), CFrame = CFrame.new(base), Transparency = 1 })
+			end)
+		end
+	end
+	SIG.dome(p, c)
+end
+SIG.howl = function(p, c)
+	shockRing(p.from, 10, c, 0.5)
+	flash(p.from + V3(0, 2, 0), c, 14, 2, 0.4)
+	for i, q in ipairs(p.points or { p.to }) do
+		task.delay(0.15 + i * 0.1, function()
+			projectile(p.from + V3(0, 1.5, 0), q, c, 0.35, 2.2, "energy", function()
+				impact(q, c, 1)
+				leafSwirl(q, 3, c, 6)
+			end)
+		end)
+	end
+end
+SIG.roar = function(p, c)
+	SIG.thorns(p, c)
+	flash(p.at + V3(0, 3, 0), c, (p.radius or 16) * 1.5, 3, 0.4)
+	dust(p.at, nil, 10, 3, (p.radius or 16))
+	shake(p.at, 0.9, 0.4)
+end
+SIG.vibration = function(p, c)
+	for k = 0, (p.n or 3) - 1 do
+		task.delay(k * (p.interval or 0.3), function()
+			local r = (p.radius or 8) + (p.grow or 0) * k
+			shockRing(p.at, r, c, 0.45)
+			dust(p.at, nil, 6, 2.5, r)
+			flash(p.at + V3(0, 2, 0), c, r, 2, 0.25)
+			shake(p.at, 0.5, 0.2)
+		end)
+	end
+end
+SIG.tornado = function(p, c)
+	local total = (p.n or 10) * (p.interval or 0.5)
+	local a = anchorAt(p.from + V3(0, 3, 0), total + 0.5)
+	if a then
+		a.Size = V3(4, 6, 4)
+		emit(a, { tex = TEX.smoke, color = ColorSequence.new(WHITE, c), emission = 0.6, size = seq(0, 1.5, 1, 3), transparency = seq(0, 0.5, 1, 1), speed = NumberRange.new(3, 6),
+			life = NumberRange.new(0.6, 1), spread = Vector2.new(10, 180), accel = V3(0, 10, 0), rot = NumberRange.new(-300, 300), rate = lowVfx() and 12 or 40 }, 0)
+		emit(a, { color = ColorSequence.new(c), emission = 1, size = seq(0, 0.4, 1, 0), speed = NumberRange.new(6, 10), life = NumberRange.new(0.5, 0.9),
+			spread = Vector2.new(20, 180), accel = V3(0, 14, 0), rate = lowVfx() and 8 or 24 }, 0)
+		tween(a, total, { CFrame = CFrame.new(p.to + V3(0, 3, 0)) }, Enum.EasingStyle.Sine)
+	end
+	for k = 0, (p.n or 10) - 1, 2 do
+		task.delay(k * (p.interval or 0.5), function()
+			local at = p.from:Lerp(p.to, math.min(1, k / math.max(1, (p.n or 10) - 2)))
+			leafSwirl(at, p.radius or 7, c, 6, 6)
+		end)
+	end
+end
+SIG.meteors = function(p, c)
+	for k = 0, (p.n or 7) - 1 do
+		task.delay(k * (p.interval or 0.18), function()
+			local a = math.random() * math.pi * 2
+			local land = p.at + V3(math.cos(a), 0, math.sin(a)) * (p.radius or 16) * 0.7 * math.random()
+			projectile(land + V3(12, 42, 8), land, c, 0.4, 2, "meteor", function()
+				fireball(land + V3(0, 1, 0), c, 1.3)
+				shockRing(land, 5, c, 0.35)
+				dust(land, nil, 4, 2.5, 8)
+				shake(land, 0.4, 0.2)
+			end)
+		end)
+	end
+	task.delay(0.1, shockRing, p.at, p.radius or 16, c, 1)
+end
+SIG.winddance = function(p, c)
+	onAbilityFxRef({ kind = "haste", at = p.at, radius = p.radius or 12, color = c })
+	leafSwirl(p.at, p.radius or 12, c, 14, 5)
+end
+SIG.ancientroots = function(p, c)
+	rootSpikes(p.at, p.radius or 18, c, 22, 9, 2.4)
+	shockRing(p.at, p.radius or 18, c, 0.6)
+	flash(p.at + V3(0, 3, 0), c, (p.radius or 18) * 1.3, 3, 0.5)
+	shake(p.at, 1, 0.45)
+end
+SIG.forestheart = function(p, c)
+	onAbilityFxRef({ kind = "heal", at = p.at, radius = p.radius or 20, color = c })
+	shockRing(p.at, p.radius or 20, c, 0.6)
+	leafSwirl(p.at, p.radius or 20, c, 18, 5)
+	rootSpikes(p.at, 4, c, 8, 5, 1.8)
+	shake(p.at, 0.7, 0.35)
+end
+SIG.eclipse = function(p, c)
+	local c2 = p.color2 or Color3.fromRGB(80, 40, 140)
+	local r = p.radius or 22
+	local disc = part({ Shape = Enum.PartType.Cylinder, Size = V3(0.4, 2, 2), CFrame = CFrame.new(p.at + V3(0, 26, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = c2, Transparency = 0.25 },
+		(p.n or 4) * (p.interval or 0.4) + 1)
+	if disc then
+		tween(disc, 0.4, { Size = V3(0.4, r * 2, r * 2) })
+	end
+	for k = 0, (p.n or 4) - 1 do
+		task.delay(0.3 + k * (p.interval or 0.4), function()
+			for _ = 1, 3 do
+				local land = p.at + V3((math.random() * 2 - 1) * r * 0.7, 0, (math.random() * 2 - 1) * r * 0.7)
+				projectile(land + V3(0, 26, 0), land, c, 0.25, 1.4, "energy", function()
+					impact(land, c, 0.9)
+				end)
+			end
+			shockRing(p.at, r, c, 0.4)
+		end)
+	end
+end
+
+local function signatureFx(p)
+	local c = p.color or Color3.new(1, 1, 1)
+	sigName(p.model, p.name or "", c)
+	local fn = SIG[p.style]
+	if fn then
+		fn(p, c)
+	else
+		impact(p.to or p.at, c, 1)
+	end
+end
+Fx.signatureStyles = SIG
+
 local function onAbilityFx(p)
 	local c = p.color or Color3.new(1, 1, 1)
 	local k = p.kind
@@ -576,8 +1062,11 @@ local function onAbilityFx(p)
 		if strongest > 0 then
 			shake(Vector3.new(p.at.X, p.y, p.at.Z), 1.3 * strongest, 0.45)
 		end
+	elseif k == "signature" then
+		signatureFx(p)
 	end
 end
+onAbilityFxRef = onAbilityFx
 
 -------------------------------------------------------------------------------
 -- Energia dos bosses: peças marcadas com o atributo EnergyFx (núcleo, olhos, punhos do Prism

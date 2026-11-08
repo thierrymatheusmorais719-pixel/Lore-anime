@@ -7,8 +7,8 @@ salvamento. Tudo em **Luau**, organizado para **Rojo**. Mapa, criaturas, bosses,
 vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`).
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
-> Luau, contra o dump público da API do Roblox, com 58 testes de lógica, 3866 verificações dos modelos 3D e
-> **161 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> Luau, contra o dump público da API do Roblox, com 62 testes de lógica, 3866 verificações dos modelos 3D e
+> **163 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -47,7 +47,7 @@ nenhum dos dois modos funcionar.
 Access to API Services*. Sem isso o jogo roda em **modo memória** e avisa na tela e no Output que nada será
 salvo.
 
-Ao dar Play no Studio, o servidor imprime `[Testes] Testes: 58 passaram…` (os testes de lógica rodam
+Ao dar Play no Studio, o servidor imprime `[Testes] Testes: 62 passaram…` (os testes de lógica rodam
 automaticamente no Studio) e o menu **Opções** ganha a seção **Testes (somente no Studio)**, com comandos
 para moedas, itens, mundos, nível máximo, evento de sorte, avançar fase do boss, tesouro e Estrela Errante.
 Esses comandos são recusados em servidores publicados (`RunService:IsStudio()`).
@@ -255,6 +255,29 @@ Se nenhum dos dois modos funcionar, o boss antigo continua visível.
   pelos sulcos, esporos dourados caindo da copa, vagalumes, lanternas de esporos, rosetas e flores-estrela.
 - **Peso:** ≈ 4.840 peças (3.506 cunhas da casca + 1.330 peças). A ilha 1 passa a ter ≈ 17.600 peças.
   `Worlds.verdant.ceiling = 340`: quem está no alto da árvore continua "no Verdant Haven".
+
+### Ataques Assinatura (um ataque próprio por pet do Verdant Haven)
+
+`shared/Config/Signatures.luau` (catálogo), `server/Services/SignatureService.luau` (execução e validação),
+`client/Controllers/Fx.luau` (efeitos), barra de **Fúria** no HUD da equipe e a descrição no painel do pet.
+
+- **Como funciona:** cada ataque básico do pet enche a **Fúria** (5 golpes nos Comuns/Incomuns, 6 nos Raros/Épicos,
+  7 nos Lendários, 8 nos Míticos/Secret). Com a barra cheia, o próximo golpe é o **Assinatura** da espécie, com o nome
+  na tela sobre o pet. Não gasta energia e não ocupa as teclas 1-4 (a habilidade de classe continua igual).
+- **Os 39 pets do Mundo 1** têm Assinatura (33 entradas por família; as variantes da mesma família dividem o ataque).
+  Exemplos: *Mordida de Folha Cortante* (raposinha), *Pulo Florido* (coelho), *Pio Hipnótico* (corujinha), *Nuvem de
+  Esporos* (cogumelo), *Pisão Rachado* (golem), *Galhada Enraizante* (cervo), *Esferas de Polinização* (wyvern),
+  *Uivo da Matilha* (lobo), *Onda de Choque Vibracional* (gorila de musgo), *Vendaval Esmeralda* (wisp),
+  *Chuva de Meteoros de Esmeralda* (cão espectral), *Despertar das Raízes Ancestrais* (cervo ancião),
+  *Coração da Floresta* (ent), *Eclipse do Santuário* (Sylvanox).
+- **Mecânicas (todas no servidor):** formas de alvo único, cone, círculo, área no alvo, linha, ricochete, vários alvos e
+  tornado que anda; golpes em pulsos; atordoar, prender, lentidão (agora também nos inimigos comuns), empurrar, puxar,
+  marca, quebra de defesa e sangramento; cura, escudo, força e velocidade para a equipe, provocar e faro de baús.
+  Em **bosses**, atordoar/prender vira lentidão de 40% e eles não são empurrados.
+- **Força crescente por raridade** (conferida em teste): Comuns ≈ 1,3× um golpe; Míticos com área grande e vários
+  pulsos, mas com Fúria maior.
+- **Não implementado da proposta:** os pets novos *Urso de Casca* e *Coruja Antiga* (exigem modelo, ovo e balanceamento
+  próprios); as zonas e os inimigos novos das fases 3 a 5.
 
 ### Ilhas ampliadas: anel de mata para exploração
 
@@ -506,9 +529,9 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Sintaxe de todos os arquivos | `luau-compile --null` em cada `.luau` | ok |
 | Variáveis indefinidas / código suspeito | `python3 tools/lint.py luau-analyze` | 0 avisos |
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
-| Lógica pura | `python3 tools/run_tests.py luau` | **58 testes passando** |
+| Lógica pura | `python3 tools/run_tests.py luau` | **62 testes passando** |
 | Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", ≤ 18.000 triângulos) + bosses anatômicos nos dois modos (todas as juntas do boss antigo, mesma altura de raiz, pés no chão, peças de energia com cor, ≤ 20.000 / 3.400 triângulos) | `python3 tools/run_tests.py luau --smoke` | **3866 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **155 cenários passando** (inclui o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **163 cenários passando** (inclui os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -569,7 +592,7 @@ travamento) foi exercitada.
 
 ## 7. Roteiro para conferir no Studio
 
-1. **Play**: o Output deve mostrar `mundos construídos`, `servidor pronto` e `[Testes] Testes: 58 passaram`.
+1. **Play**: o Output deve mostrar `mundos construídos`, `servidor pronto` e `[Testes] Testes: 62 passaram`.
 2. Ande até o **Ovo do Bosque** (E) → painel com as chances → *Chocar 1* → animação → o pet segue você.
 3. Clique num **arbusto** → os pets mineram (moedas sobem e o número dourado aparece).
 4. Vá até os **Thornlings** (lado −Z da ilha) → eles devem perseguir, atacar com aviso, voltar se você fugir.
@@ -634,6 +657,8 @@ travamento) foi exercitada.
   - "100x melhor" não é medida: o salto real é de ~250 peças primitivas por boss para superfícies contínuas com
     relevo, cor por vértice e milhares de faces. Modelos esculpidos à mão e texturizados (3D Importer) ainda
     seriam o próximo nível.
+- **Ataques Assinatura — o que ainda precisa do Studio:** os efeitos visuais foram executados no simulador (todos os
+  estilos rodam e limpam as peças), mas não vistos na tela; o equilíbrio de dano em partidas reais.
 - **Árvore-Santuário — o que ainda precisa do Studio:** subir a rampa, a escada e os galhos com o personagem real
   (o simulador confere geometria, inclinação, altura livre e o elevador, mas não a física do Humanoid), a sombra da copa
   e o desempenho das ~4.800 peças a mais.

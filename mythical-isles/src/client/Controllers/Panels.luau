@@ -14,6 +14,7 @@ local Worlds = require(Shared.Config.Worlds)
 local Quests = require(Shared.Config.Quests)
 local Combat = require(Shared.Config.Combat)
 local Abilities = require(Shared.Config.Abilities)
+local Signatures = require(Shared.Config.Signatures)
 local Enemies = require(Shared.Config.Enemies)
 local Bosses = require(Shared.Config.Bosses)
 local LuckConfig = require(Shared.Config.Luck)
@@ -145,13 +146,19 @@ local function petDetail(parent, uid)
 		Text = string.format("%s · %s · Nv %d/%d · XP %d/%d\n%s", role.label, Combat.Tiers[pet.tier].label, pet.level, d and d.levelCap or 0, pet.xp or 0, d and d.xpNext or 0, stats), Parent = box })
 	UIKit.label({ Position = UDim2.fromOffset(0, 214), Size = UDim2.new(1, 0, 0, 34), TextSize = 12,
 		Text = string.format("<b>%s %s</b> (rank %d/%d, recarga %.1fs, custo %d): %s", ab.icon, ab.label, pet.abilityRank or 1, Abilities.MaxRank, d and d.cooldown or ab.cooldown, ab.cost, ab.desc), Parent = box })
+	local sig = Signatures.forSpecies(pet.species)
+	if sig then
+		UIKit.label({ Position = UDim2.fromOffset(0, 248), Size = UDim2.new(1, 0, 0, 30), TextSize = 12, TextColor3 = Color3.fromRGB(255, 220, 140),
+			Text = string.format("<b>✦ Assinatura: %s</b> (Fúria %d golpes): %s", sig.name, Signatures.furyMax(sp.rarity), sig.desc), Parent = box })
+	end
+	local below = sig and 30 or 0
 	local perkText = ""
 	if sp.perk then
 		perkText = sp.perk.kind == "luck" and string.format("Passiva: +%d%% sorte (%s) na equipe", math.floor(sp.perk.bonus * 100 + 0.5), LuckConfig.CategoryLabels[sp.perk.category] or "tudo")
 			or string.format("Passiva: +%d%% moedas", math.floor(sp.perk.bonus * 100 + 0.5))
 	end
-	UIKit.label({ Position = UDim2.fromOffset(0, 248), Size = UDim2.new(1, 0, 0, 18), TextSize = 12, TextColor3 = T.luck, Text = perkText, Parent = box })
-	local actions = new("Frame", { Position = UDim2.fromOffset(0, 270), Size = UDim2.new(1, 0, 1, -270), BackgroundTransparency = 1, Parent = box })
+	UIKit.label({ Position = UDim2.fromOffset(0, 248 + below), Size = UDim2.new(1, 0, 0, 18), TextSize = 12, TextColor3 = T.luck, Text = perkText, Parent = box })
+	local actions = new("Frame", { Position = UDim2.fromOffset(0, 270 + below), Size = UDim2.new(1, 0, 1, -270 - below), BackgroundTransparency = 1, Parent = box })
 	local grid = new("UIGridLayout", { CellSize = UDim2.new(0.5, -4, 0, 30), CellPadding = UDim2.fromOffset(6, 6), Parent = actions })
 	local inTeam = table.find(p.team, uid) ~= nil
 	UIKit.button({ Text = inTeam and "Remover da equipe" or "Colocar na equipe", TextSize = 13, BackgroundColor3 = inTeam and T.red or T.green, Parent = actions }, function()

@@ -203,14 +203,35 @@ function CombatService.damageEntity(e, amount: number, src, crit: boolean?)
 	return dealt
 end
 
-local function petDamage(st, e, mult: number)
+local function petDamage(st, e, mult: number, critBonus: number?)
 	local now = os.clock()
 	local bonus = 1 + Entities.markBonus(e, now)
 	local _, _, sets = S.PetService.synergy(st.player)
 	if sets[e.world] then
 		bonus *= 1 + Combat.WorldSet.damage
 	end
-	return CombatRules.damage(st.stats.atk, mult, e.def, rand, { crit = st.stats.crit, defReduction = Entities.defReduction(e, now), bonus = bonus })
+	-- força extra de um Assinatura de equipe (Uivo da Matilha, Chuva de Frutinhas...)
+	if st.sigAtkUntil and now < st.sigAtkUntil then
+		bonus *= 1 + (st.sigAtkBonus or 0)
+	end
+	return CombatRules.damage(st.stats.atk, mult, e.def, rand, { crit = st.stats.crit + (critBonus or 0), defReduction = Entities.defReduction(e, now), bonus = bonus })
+end
+CombatService.petDamage = petDamage
+
+-- Corrida mais rápida do dono por `duration` s (Vento Veloz e Assinaturas de vento).
+function CombatService.boostWalk(player: Player, amount: number, duration: number)
+	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	if hum and not hasteRestore[player] then
+		hasteRestore[player] = hum.WalkSpeed
+		hum.WalkSpeed += amount
+		task.delay(duration, function()
+			local h = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+			if h and hasteRestore[player] then
+				h.WalkSpeed = hasteRestore[player]
+			end
+			hasteRestore[player] = nil
+		end)
+	end
 end
 
 -------------------------------------------------------------------------------
@@ -494,18 +515,7 @@ function CombatService.useAbility(player: Player, slot: number)
 		for _, ally in ipairs(team) do
 			ally.hasteUntil = now + a.duration
 		end
-		local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-		if hum and not hasteRestore[player] then
-			hasteRestore[player] = hum.WalkSpeed
-			hum.WalkSpeed += a.walkSpeed
-			task.delay(a.duration, function()
-				local h = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-				if h and hasteRestore[player] then
-					h.WalkSpeed = hasteRestore[player]
-				end
-				hasteRestore[player] = nil
-			end)
-		end
+		CombatService.boostWalk(player, a.walkSpeed, a.duration)
 		CombatService.fx("haste", { at = pos, radius = a.range, color = Color3.fromRGB(120, 255, 230) })
 		S.BossService.recordSupport(player, st.maxHp * 0.3)
 	elseif id == "treasure_sense" then
@@ -591,12 +601,19 @@ local function petTick(dt: number)
 						local d = distanceTo(e, st.root.Position)
 						if d <= st.stats.range + (e.radius or 2) + 2.5 and now - st.lastAttackAt >= 1 / aspd then
 							st.lastAttackAt = now
-							setAction(st.model, "Attack")
-							local dmg, crit = petDamage(st, e, 1)
-							if st.stats.range > 12 then
-								CombatService.fx("bolt", { from = st.root.Position, to = e.root.Position, color = Color3.fromRGB(200, 220, 255), small = true })
+							-- Fúria cheia: este golpe vira o ataque Assinatura da espécie (SignatureService)
+							local cast = S.SignatureService ~= nil and S.SignatureService.tryCast(player, st, e)
+							if not cast then
+								setAction(st.model, "Attack")
+								local dmg, crit = petDamage(st, e, 1)
+								if st.stats.range > 12 then
+									CombatService.fx("bolt", { from = st.root.Position, to = e.root.Position, color = Color3.fromRGB(200, 220, 255), small = true })
+								end
+								CombatService.damageEntity(e, dmg, { player = player, pet = st, kind = "pet" }, crit)
+								if S.SignatureService then
+									S.SignatureService.addFury(st, 1)
+								end
 							end
-							CombatService.damageEntity(e, dmg, { player = player, pet = st, kind = "pet" }, crit)
 						end
 					end
 				else

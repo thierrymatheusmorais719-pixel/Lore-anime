@@ -1161,6 +1161,191 @@ SIM.removePlayer(p2)
 SIM.run(1)
 check("perfil é salvo no DataStore ao sair", store.writes > writes0)
 
+-- ATAQUES ASSINATURA no servidor: formas, controle, efeitos na equipe e Fúria em combate real ---------
+;(function()
+	local SigS = require(__proxy("Server/Services/SignatureService"))
+	local Signatures = require(__proxy("Shared/Config/Signatures"))
+	local beforeSig = #SIM.errors
+	local ps = SIM.addPlayer("Sig", 606)
+	SIM.run(1)
+	local dS = S.DataService.get(ps)
+	-- lugar vazio do Verdant Haven (longe das zonas onde os pets dos outros jogadores de teste lutam)
+	local vc = Worlds.Info.verdant.center
+	local P = vc + Vector3.new(math.cos(math.rad(250)) * 100, 3, math.sin(math.rad(250)) * 100)
+	-- inimigos do Verdant Haven agrupados num ponto conhecido (longe da área segura)
+	local foes = {}
+	-- Thornlings vivos (o território deles passa a ser P: inimigo fora do território volta para casa
+	-- invulnerável). Chamado antes de cada lote: inimigos mortos nos testes anteriores são trocados.
+	local function gather()
+		table.clear(foes)
+		for _, e in ipairs(S.EnemyService.activeList()) do
+			if e.world == "verdant" and e.alive and e.id == "thornling" and #foes < 5 then
+				table.insert(foes, e)
+			end
+		end
+		for _, e in ipairs(foes) do
+			e.leashCenter = P
+			e.home = Vector3.new(P.X, e.home.Y, P.Z)
+			e.invulnerable = false
+		end
+	end
+	gather()
+	-- freeze: segura o inimigo parado (nos testes de vários pulsos ele não sai andando da área)
+	local function place(e, offset: Vector3, freeze: boolean?)
+		e.model:PivotTo(CFrame.new(P + offset + Vector3.new(0, e.root.Position.Y - e.model:GetPivot().Position.Y, 0)))
+		e.hp = e.maxHp
+		e.stunnedUntil, e.slowUntil, e.slowAmount = freeze and os.clock() + 20 or 0, 0, 0
+		table.clear(e.marks)
+		table.clear(e.defMods)
+	end
+	local function team(species)
+		dS.team = {}
+		for _, sp in ipairs(species) do
+			table.insert(dS.team, InventoryLogic.addPet(dS, sp, nil, os.time(), "teste").uid)
+		end
+		S.PetService.spawnTeam(ps)
+		SIM.run(0.5)
+		-- devolve os estados NA ORDEM pedida (procura pela espécie)
+		local t = {}
+		for i, sp in ipairs(species) do
+			for _, st in ipairs(S.PetService.team(ps)) do
+				if st.species == sp then
+					t[i] = st
+				end
+			end
+			t[i].model:PivotTo(CFrame.new(P + Vector3.new(-10, 0, (i - 2.5) * 3)))
+		end
+		SIM.teleport(ps, P + Vector3.new(-14, 0, 0))
+		SIM.run(0.2)
+		return t
+	end
+	local okAll, why = #foes >= 4, (#foes .. " inimigos")
+	local function expect(cond, msg)
+		if not cond and okAll then
+			okAll, why = false, msg
+		end
+	end
+	-- lote 1: alvo único com atordoar/marca, área com lentidão em pulsos, cone, linha
+	local t1 = team({ "owlet_1", "cap_1", "golemling_1", "grovestag_1" })
+	local now = os.clock()
+	place(foes[1], Vector3.new(0, 0, 0))
+	local r = SigS.cast(ps, t1[1], foes[1])
+	expect(r and r.hits == 1 and foes[1].stunnedUntil > os.clock() and #foes[1].marks == 1 and foes[1].hp < foes[1].maxHp, "Pio Hipnótico")
+	place(foes[1], Vector3.new(0, 0, 0), true)
+	place(foes[2], Vector3.new(3, 0, 2), true)
+	place(foes[3], Vector3.new(30, 0, 30), true)
+	r = SigS.cast(ps, t1[2], foes[1])
+	SIM.run(2.6)
+	expect(r and r.targets[foes[1]] and r.targets[foes[2]] and not r.targets[foes[3]] and r.hits >= 7 and foes[2].slowUntil > os.clock(), "Nuvem de Esporos: " .. tostring(r and r.hits))
+	-- cone: o pet olha para foes[1]; foes[3] fica atrás do pet
+	gather()
+	place(foes[1], Vector3.new(0, 0, 0))
+	place(foes[2], Vector3.new(2, 0, -2))
+	t1[3].model:PivotTo(CFrame.new(P + Vector3.new(-8, 0, 0)))
+	place(foes[3], Vector3.new(-16, 0, 0))
+	SIM.run(0.1)
+	r = SigS.cast(ps, t1[3], foes[1])
+	expect(r and r.targets[foes[1]] and r.targets[foes[2]] and not r.targets[foes[3]] and foes[2].stunnedUntil > os.clock(), "Pisão Rachado (cone)")
+	-- linha: foes[1] e foes[2] na linha; foes[3] fora
+	gather()
+	place(foes[1], Vector3.new(0, 0, 0))
+	place(foes[2], Vector3.new(8, 0, 0.5))
+	place(foes[3], Vector3.new(4, 0, 14))
+	t1[4].model:PivotTo(CFrame.new(P + Vector3.new(-8, 0, 0)))
+	SIM.run(0.1)
+	r = SigS.cast(ps, t1[4], foes[1])
+	expect(r and r.targets[foes[1]] and r.targets[foes[2]] and not r.targets[foes[3]] and foes[2].stunnedUntil > os.clock(), "Galhada Enraizante (linha)")
+	-- lote 2: ricochete, vários alvos, equipe (cura + força), escudo
+	gather()
+	local t2 = team({ "scamper_1", "bloomwyvern_1", "berrygoat_1", "beetle_1" })
+	place(foes[1], Vector3.new(0, 0, 0))
+	place(foes[2], Vector3.new(6, 0, 0))
+	place(foes[3], Vector3.new(0, 0, 8))
+	r = SigS.cast(ps, t2[1], foes[1])
+	local chained = 0
+	for _ in pairs(r and r.targets or {}) do
+		chained += 1
+	end
+	expect(chained == 2, "Bolota Certeira: " .. chained .. " alvos")
+	r = SigS.cast(ps, t2[2], foes[1])
+	local multi = 0
+	for _ in pairs(r and r.targets or {}) do
+		multi += 1
+	end
+	expect(multi >= 3, "Esferas de Polinização: " .. multi .. " alvos")
+	for i, st in ipairs(t2) do
+		st.hp = st.maxHp * 0.5
+		st.model:PivotTo(CFrame.new(P + Vector3.new(-10, 0, (i - 2.5) * 3))) -- equipe junta (os pets se espalham lutando)
+	end
+	SIM.run(0.05)
+	r = SigS.cast(ps, t2[3], nil)
+	expect(r ~= nil and t2[1].hp > t2[1].maxHp * 0.5 and (t2[1].sigAtkUntil or 0) > os.clock(), "Chuva de Frutinhas (cura + força)")
+	r = SigS.cast(ps, t2[4], nil)
+	expect(r ~= nil and t2[2].shield > 0 and t2[2].shieldUntil > os.clock(), "Jardim Blindado (escudo)")
+	-- lote 3: investida, ondas que crescem e empurram, tornado que puxa
+	gather()
+	local t3 = team({ "kit_1", "mossape_1", "verdigris_wisp", "sylvanox" })
+	place(foes[1], Vector3.new(0, 0, 0))
+	t3[1].model:PivotTo(CFrame.new(P + Vector3.new(-12, 0, 0)))
+	SIM.run(0.1)
+	SigS.cast(ps, t3[1], foes[1])
+	expect((t3[1].root.Position - foes[1].root.Position).Magnitude < 8, "Mordida (investida)")
+	place(foes[1], Vector3.new(0, 0, 0), true)
+	place(foes[2], Vector3.new(0, 0, 11), true)
+	t3[2].model:PivotTo(CFrame.new(P + Vector3.new(-2, 0, 0)))
+	SIM.run(0.1)
+	local start = foes[1].root.Position
+	r = SigS.cast(ps, t3[2], foes[1])
+	-- empurrão medido logo após a primeira onda (depois o inimigo volta a andar e o pet o persegue)
+	local moved = ((foes[1].root.Position - start) * Vector3.new(1, 0, 1)).Magnitude
+	SIM.run(1)
+	expect(r and r.hits >= 3 and moved > 3, string.format("Onda de Choque Vibracional (3 ondas que empurram): %d golpes, empurrou %.1f", r and r.hits or 0, moved))
+	gather()
+	place(foes[1], Vector3.new(0, 0, 0), true)
+	place(foes[2], Vector3.new(0, 0, 5), true)
+	t3[3].model:PivotTo(CFrame.new(P + Vector3.new(-14, 0, 0)))
+	SIM.run(0.1)
+	r = SigS.cast(ps, t3[3], foes[1])
+	SIM.run(5.2)
+	-- o tornado nasce no pet e anda até o alvo: acerta nos pulsos finais, várias vezes
+	expect(r and r.hits >= 4 and r.targets[foes[1]] and r.targets[foes[2]], "Vendaval Esmeralda: " .. tostring(r and r.hits))
+	-- Fúria em combate real: com a barra cheia o próximo golpe do pet é o Assinatura (e a barra zera)
+	place(foes[1], Vector3.new(0, 0, 0))
+	local hero = t3[4]
+	local _, max = SigS.defFor(hero)
+	hero.fury = max
+	hero.model:PivotTo(CFrame.new(P + Vector3.new(-4, 0, 0)))
+	S.CombatService.setFocus(ps, foes[1].model)
+	SIM.clearMessages(ps)
+	local cast = false
+	for _ = 1, 40 do
+		SIM.run(0.1)
+		for _, m in ipairs(SIM.messages(ps, "AbilityFx")) do
+			if m.kind == "signature" and m.name == Signatures.Info.sylvanox.name then
+				cast = true
+			end
+		end
+		if cast then
+			break
+		end
+		foes[1].hp = foes[1].maxHp
+	end
+	SIM.run(0.3)
+	expect(cast and (hero.fury or 0) < max and hero.model:GetAttribute("FuryMax") == max, "Fúria: Assinatura em combate")
+	-- ataques básicos enchem a Fúria
+	t3[1].fury = 0
+	t3[1].model:PivotTo(CFrame.new(P + Vector3.new(-3, 0, 2)))
+	for _ = 1, 30 do
+		SIM.run(0.1)
+		foes[1].hp = foes[1].maxHp
+	end
+	expect((t3[1].fury or 0) > 0 and t3[1].model:GetAttribute("Fury") == t3[1].fury, "Fúria não enche com ataques básicos: " .. tostring(t3[1].fury))
+	check("ataques Assinatura: alvo/área/cone/linha/ricochete/vários alvos/tornado, controle, cura, escudo e força; a Fúria cheia solta o ataque em combate",
+		okAll and #SIM.errors == beforeSig, why .. " " .. tostring(SIM.errors[beforeSig + 1]))
+	SIM.removePlayer(ps)
+	SIM.run(0.5)
+end)()
+
 
 -- CLIENTE: roda os controladores reais ligados ao servidor simulado -----------------
 do
@@ -1443,7 +1628,7 @@ do
 			if st then
 				st.knockedUntil = os.clock() + 3
 			end
-			frames(6)
+			frames(20) -- o servidor sincroniza os atributos dos pets a cada 0,25 s
 			local faded = false
 			for _, d in ipairs(sample:GetDescendants()) do
 				if d:IsA("MeshPart") and (d.LocalTransparencyModifier or 0) > 0.3 then
@@ -1982,6 +2167,36 @@ do
 		SIM.run(1)
 	end
 	sanctuaryChecks()
+	-- ataques Assinatura: todo estilo de efeito existe no cliente, roda e limpa as peças (inclui os longos: totem, tornado)
+	;(function()
+		local Signatures = require(__proxy("Shared/Config/Signatures"))
+		local beforeSig = #SIM.errors
+		local here = lp.Character.PrimaryPart.Position
+		local petModel = workspace.Pets:FindFirstChildWhichIsA("Model", true)
+		local missing, okSig, errSig = {}, true, nil
+		for key, def in pairs(Signatures.Info) do
+			if not Fx.signatureStyles[def.vfx] then
+				table.insert(missing, key .. "=" .. def.vfx)
+			end
+			local pl = { kind = "signature", style = def.vfx, name = def.name, from = here, to = here + Vector3.new(14, 0, 0), at = here, radius = def.radius or 8, length = def.length,
+				width = def.width, angle = def.angle, range = def.range, n = def.hits or 1, interval = def.interval or 0, color = def.color, color2 = def.color2, model = petModel,
+				points = { here + Vector3.new(10, 0, 0), here + Vector3.new(0, 0, 10) }, grow = def.grow, anchor = def.anchor and here or nil }
+			local ok2, e2 = pcall(Fx.play, pl)
+			if not ok2 then
+				okSig, errSig = false, key .. ": " .. tostring(e2)
+			end
+			frames(3)
+		end
+		frames(720)
+		local leftover = 0
+		for _, d in ipairs(workspace.CurrentCamera:FindFirstChild("LocalFx"):GetChildren()) do
+			if d:IsA("BasePart") and d.Transparency < 1 then
+				leftover += 1
+			end
+		end
+		check("ataques Assinatura: todos os estilos de efeito existem, rodam no cliente e as peças somem",
+			#missing == 0 and okSig and #SIM.errors == beforeSig and leftover == 0, errSig or SIM.errors[beforeSig + 1] or (#missing > 0 and table.concat(missing, ",")) or ("sobraram " .. leftover))
+	end)()
 	SIM.localPlayer = nil
 end
 

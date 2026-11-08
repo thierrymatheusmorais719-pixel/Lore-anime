@@ -1,0 +1,84 @@
+-- Testes dos ataques Assinatura (Config/Signatures).
+local Shared = script.Parent.Parent
+local Signatures = require(Shared.Config.Signatures)
+local Pets = require(Shared.Config.Pets)
+local Rarities = require(Shared.Config.Rarities)
+
+local SHAPES = {
+	single = {}, cone = { "range", "angle" }, circle = { "radius" }, area = { "radius" }, line = { "length", "width" },
+	chain = { "chain", "bounce" }, multi = { "targets", "range" }, tornado = { "radius" }, team = {},
+}
+
+-- dano "por alvo" de um Assinatura (golpes × poder), para conferir a escada de raridades
+local function perTarget(s)
+	return (s.power or 0) * (s.hits or 1)
+end
+
+return function(t)
+	t.test("todo pet do Verdant Haven tem ataque Assinatura", function()
+		local n = 0
+		for id, sp in pairs(Pets.Species) do
+			if sp.world == "verdant" then
+				n += 1
+				t.ok(Signatures.forSpecies(id) ~= nil, "sem Assinatura: " .. id)
+			end
+		end
+		t.ok(n >= 39, "esperava todos os pets do mundo 1, achei " .. n)
+	end)
+
+	t.test("Assinaturas têm forma, campos e números válidos", function()
+		for key, s in pairs(Signatures.Info) do
+			local need = SHAPES[s.shape]
+			t.ok(need ~= nil, key .. ": forma desconhecida " .. tostring(s.shape))
+			for _, f in ipairs(need or {}) do
+				t.ok(type(s[f]) == "number" and s[f] > 0, key .. ": falta " .. f)
+			end
+			t.ok(type(s.name) == "string" and #s.name > 3 and type(s.desc) == "string" and type(s.vfx) == "string", key .. ": nome/descrição/efeito")
+			t.ok(s.color ~= nil, key .. ": cor")
+			if s.shape ~= "team" then
+				t.ok((s.power or 0) > 0, key .. ": sem dano")
+			else
+				t.ok(s.heal or s.shield or s.atkBuff or s.haste, key .. ": ataque de equipe sem efeito")
+			end
+			if (s.hits or 1) > 1 then
+				t.ok((s.interval or 0) > 0 and (s.hits - 1) * s.interval <= 8, key .. ": pulsos")
+			end
+			for _, f in ipairs({ "stun", "root" }) do
+				t.ok(s[f] == nil or (s[f] > 0 and s[f] <= 2.5), key .. ": " .. f .. " longo demais")
+			end
+			if s.slow then
+				t.ok(s.slow.amount > 0 and s.slow.amount <= 0.5, key .. ": lentidão")
+			end
+			if s.heal then
+				t.ok(s.heal > 0 and s.heal <= 0.25, key .. ": cura")
+			end
+		end
+	end)
+
+	t.test("Fúria por raridade e força crescente (Comum < Raro < Lendário < Mítico, em média)", function()
+		for r in pairs(Rarities.Info) do
+			t.ok(Signatures.furyMax(r) >= 5 and Signatures.furyMax(r) <= 8, "fúria " .. r)
+		end
+		local sum, cnt = {}, {}
+		for id, sp in pairs(Pets.Species) do
+			local s = sp.world == "verdant" and Signatures.forSpecies(id)
+			if s and s.shape ~= "team" then
+				local tier = (sp.rarity == "Common" or sp.rarity == "Uncommon") and 1 or (sp.rarity == "Rare" or sp.rarity == "Epic") and 2
+					or (sp.rarity == "Legendary") and 3 or 4
+				sum[tier] = (sum[tier] or 0) + perTarget(s)
+				cnt[tier] = (cnt[tier] or 0) + 1
+			end
+		end
+		local avg = {}
+		for k = 1, 4 do
+			avg[k] = sum[k] / cnt[k]
+		end
+		t.ok(avg[1] < avg[3] and avg[2] < avg[4] and avg[1] < avg[4], string.format("médias %.2f %.2f %.2f %.2f", avg[1], avg[2], avg[3], avg[4]))
+	end)
+
+	t.test("forSpecies acha a família pelo id da variante", function()
+		t.ok(Signatures.forSpecies("kit_1") == Signatures.Info.kit)
+		t.ok(Signatures.forSpecies("verdigris_wisp") == Signatures.Info.verdigris_wisp)
+		t.ok(Signatures.forSpecies("nao_existe_9") == nil)
+	end)
+end

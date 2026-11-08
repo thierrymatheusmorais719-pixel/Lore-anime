@@ -57,7 +57,10 @@ local function buildSlot(parent, i)
 	local lvlText = UIKit.label({ Size = UDim2.fromScale(1, 1), Text = "Nv 1", Font = T.title, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Center,
 		TextStrokeColor3 = UIKit.darken(T.yellow, 0.6), TextStrokeTransparency = 0, Parent = lvl })
 	local _, hpFill, hpText = UIKit.bar(f, { Position = UDim2.fromOffset(8, 27), Size = UDim2.new(1, -16, 0, 14), color = T.good, textSize = 11 })
-	local _, enFill = UIKit.bar(f, { Position = UDim2.fromOffset(8, 44), Size = UDim2.new(1, -16, 0, 7), color = Color3.fromRGB(90, 170, 255), radius = 4 })
+	local enBack, enFill = UIKit.bar(f, { Position = UDim2.fromOffset(8, 44), Size = UDim2.new(1, -16, 0, 7), color = Color3.fromRGB(90, 170, 255), radius = 4 })
+	-- Fúria (ataque Assinatura): divide a linha com a energia quando a espécie tem Assinatura
+	local furyBack, furyFill = UIKit.bar(f, { Name = "Fury", Position = UDim2.new(0.5, 2, 0, 44), Size = UDim2.new(0.5, -10, 0, 7), color = Color3.fromRGB(255, 196, 80), radius = 4 })
+	furyBack.Visible = false
 	local button = UIKit.button({ Position = UDim2.fromOffset(8, 55), Size = UDim2.new(1, -16, 0, 46), Text = "", Parent = f }, function()
 		CombatHUD.useAbility(i)
 	end)
@@ -75,7 +78,8 @@ local function buildSlot(parent, i)
 	local knocked = UIKit.label({ Size = UDim2.fromScale(1, 1), Text = "💫 NOCAUTE", TextColor3 = T.bad, Font = T.title, TextSize = 20, TextXAlignment = Enum.TextXAlignment.Center,
 		BackgroundTransparency = 0.3, BackgroundColor3 = Color3.new(0, 0, 0), Visible = false, ZIndex = 9, Parent = f })
 	UIKit.corner(knocked, 12)
-	return { frame = f, stroke = stroke, name = name, lvl = lvlText, hpFill = hpFill, hpText = hpText, enFill = enFill, button = button, icon = icon, label = label,
+	return { frame = f, stroke = stroke, name = name, lvl = lvlText, hpFill = hpFill, hpText = hpText, enFill = enFill, enBack = enBack, furyBack = furyBack, furyFill = furyFill,
+		button = button, icon = icon, label = label,
 		sub = sub, cd = cd, cdText = cdText, knocked = knocked, ready = true, ability = nil }
 end
 
@@ -151,6 +155,20 @@ local function update()
 				UIKit.setBar(s.hpFill, hp / maxHp)
 				s.hpText.Text = string.format("%s/%s", UIKit.fmt(hp), UIKit.fmt(maxHp))
 				UIKit.setBar(s.enFill, en / maxEn)
+				local furyMax = m:GetAttribute("FuryMax")
+				local hasFury = typeof(furyMax) == "number" and furyMax > 0
+				if hasFury ~= s.furyBack.Visible then
+					s.furyBack.Visible = hasFury
+					s.enBack.Size = hasFury and UDim2.new(0.5, -10, 0, 7) or UDim2.new(1, -16, 0, 7)
+				end
+				if hasFury then
+					local fury = m:GetAttribute("Fury") or 0
+					UIKit.setBar(s.furyFill, fury / furyMax)
+					if fury >= furyMax and not s.furyFull then
+						UIKit.pop(s.furyBack, 0.15) -- Assinatura pronta: sai no próximo golpe
+					end
+					s.furyFull = fury >= furyMax
+				end
 				local ready = m:GetAttribute("AbilityReadyAt") or 0
 				local derived = State.derived and State.derived.petStats and State.derived.petStats[uid]
 				local total = derived and derived.cooldown or a.cooldown
