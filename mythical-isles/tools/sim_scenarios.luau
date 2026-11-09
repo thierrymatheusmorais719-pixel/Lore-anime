@@ -1796,6 +1796,83 @@ do
 			frames(6)
 			check("pets de malha: pet nocauteado deita e fica translúcido; volta ao normal", faded)
 		end
+		-- ANIMAÇÕES NOVAS: comportamento ocioso da anatomia, sono com "Zzz", tranco ao levar dano e festa de nível
+		;(function()
+			local Animator = require(__proxy("Client/Controllers/Animator"))
+			local CM = require(__proxy("Client/Controllers/CreatureMotion"))
+			local entry = sample and Animator._tracked[sample]
+			if not entry then
+				check("animações novas: pet de malha rastreado pelo Animator", false)
+				return
+			end
+			frames(30) -- termina o nocaute/ataque
+			local acts = CM.Acts[entry.gait] or CM.Acts.quad
+			local function snapshot()
+				local t = {}
+				for _, j in ipairs(entry.mjoints) do
+					t[j.motor] = j.motor.Transform
+				end
+				return t
+			end
+			local function diff(a, b)
+				local n = 0
+				for m, cf in pairs(a) do
+					local o = b[m]
+					if o and ((cf.Position - o.Position).Magnitude > 0.01 or (cf.LookVector - o.LookVector).Magnitude > 0.08 or (cf.UpVector - o.UpVector).Magnitude > 0.08) then
+						n += 1
+					end
+				end
+				return n
+			end
+			local allOk, names = true, {}
+			for _, a in ipairs(acts) do
+				CM.forceAct(entry, "rest_ref") -- nenhum: só zera o comportamento
+				entry.act = nil
+				frames(25)
+				local ref = snapshot()
+				CM.forceAct(entry, a[1])
+				frames(math.floor(a[2] * 0.45 * 60))
+				local changed = diff(snapshot(), ref)
+				local ok = entry.lastAction == a[1] and changed >= 2
+				if not ok then
+					allOk = false
+					table.insert(names, string.format("%s(%s,%d)", a[1], tostring(entry.lastAction), changed))
+				end
+				frames(math.floor(a[2] * 0.6 * 60))
+			end
+			check("animações novas: cada comportamento ocioso da anatomia (" .. tostring(entry.gait) .. ") muda a pose do pet", allOk, table.concat(names, " "))
+			-- sono: depois de muito tempo parado deita e aparece o "Zzz"; ao se mexer, acorda
+			CM.forceAct(entry, "sleep")
+			frames(90)
+			local canSleep = not entry.flies and entry.gait ~= "float" and entry.gait ~= "bounce"
+			local snore = sample:FindFirstChild("Snore")
+			check("animações novas: pet parado por muito tempo dorme com 'Zzz' (voadores e flutuantes não)",
+				(canSleep and snore ~= nil and entry.lastAction == "sleep") or (not canSleep and snore == nil), tostring(entry.gait))
+			entry.forceSleep, entry.idleFor = nil, 0
+			frames(150)
+			check("animações novas: ao voltar a se mexer o pet acorda e o 'Zzz' some", sample:FindFirstChild("Snore") == nil)
+			-- tranco ao levar dano (atributo HitAt real do servidor)
+			local st
+			for _, xst in ipairs(S.PetService.team(lp)) do
+				if xst.model == server then
+					st = xst
+				end
+			end
+			entry.hurtAt = nil
+			if st then
+				S.CombatService.hitPet(st, 1, 0.01, nil)
+			end
+			frames(6)
+			check("animações novas: o pet dá um tranco ao levar dano", entry.hurtAt ~= nil)
+			-- subiu de nível (XP real pelo PetService): festinha no cliente
+			entry.partyAt = nil
+			if st then
+				S.PetService.grantXp(lp, { [st.uid] = 1e6 })
+			end
+			frames(10)
+			check("animações novas: subir de nível faz a festinha do pet", entry.partyAt ~= nil and server:GetAttribute("LevelUpAt") ~= nil)
+			check("animações novas: nenhum erro no cliente", #SIM.errors == before, SIM.errors[before + 1])
+		end)()
 		check("pets de malha: nenhum erro no cliente", #SIM.errors == before, SIM.errors[before + 1])
 		-- sem a API de malhas (opção desligada no jogo): aviso NA TELA com o passo a passo e o erro real
 		local avail, lastErr, polyErr = PetMesh.available, PetMesh.lastError, PetMesh.polyError

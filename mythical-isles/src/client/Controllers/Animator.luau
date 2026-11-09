@@ -359,4 +359,5 @@ function Animator.init()
 end
 
 Animator.track = track
+Animator._tracked = tracked -- (testes)
 return Animator

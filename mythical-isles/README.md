@@ -8,7 +8,7 @@ vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
 > Luau, contra o dump público da API do Roblox, com 65 testes de lógica, 3866 verificações dos modelos 3D e
-> **200 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> **206 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -264,6 +264,29 @@ Se nenhum dos dois modos funcionar, o boss antigo continua visível.
 polida, cristal/neon), as paletas e a tipografia, os componentes (moldura rúnica, botões, barras "recipiente",
 slots), o HUD, o diálogo com NPCs, o inventário de pets, a loja e os ovos, o menu de mundos e as animações,
 com propriedades do Roblox Studio.
+
+### Animações novas dos pets
+
+Além de andar, correr, pular, atacar, comemorar e desmaiar, os pets agora têm vida própria
+(`client/Controllers/CreatureMotion.luau`; quadros em `docs/preview/anim_*.jpg`):
+- **Parados**, a cada 4–10 s fazem algo da anatomia deles:
+  | Anatomia | Comportamentos |
+  |---|---|
+  | Quadrúpedes (raposa, gato, lobo, cervo...) | sentar, espreguiçar, coçar a orelha com a pata de trás, chacoalhar, bocejar, farejar o chão, chamar para brincar |
+  | Saltadores (coelho, esquilo, sapo) | ficar de pé nas patas de trás, lavar o rosto, bocejar, farejar, chacoalhar |
+  | Aves | arrumar as penas, abrir as asas, bicar o chão, chacoalhar |
+  | Bípedes (golem, ent, cogumelo, panda, macaco) | acenar, espreguiçar com os braços para cima, bocejar, dançar |
+  | Serpentes | erguer a cabeça, pôr a língua, balançar |
+  | Insetos / slimes e espíritos | limpar as antenas, tremer / girar, se achatar |
+- **Sono:** depois de ~28 s parado, deita (barriga no chão, patas dobradas, olhos fechados, cauda enrolada) com
+  "z Z z" em cima da cabeça; acorda ao se mexer. Aves que voam, slimes e espíritos não dormem.
+- **Tranco** ao levar dano (recua, sacode a cabeça, orelhas para trás), **festinha** ao subir de nível
+  (pulinho girando; o servidor marca `LevelUpAt` no pet) e **pose da Assinatura** (empina e ruge, braços para o
+  alto, asas abertas).
+- **Sem afundar no chão:** depois de montar a pose, o controlador calcula o ponto mais baixo do corpo (cada parte
+  como um elipsoide, cinemática direta pelas juntas) e levanta o pet o necessário; deitado, a barriga encosta no chão.
+- Prévia sem o Studio: `python3 tools/run_tests.py luau --animexport` roda o `CreatureMotion` real e exporta os
+  quadros para `tools/preview/pets3d.html`.
 
 ### Ataques e poderes próprios dos bosses
 
@@ -633,7 +656,7 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **65 testes passando** |
 | Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", ≤ 18.000 triângulos) + bosses anatômicos nos dois modos (todas as juntas do boss antigo, mesma altura de raiz, pés no chão, peças de energia com cor, ≤ 20.000 / 3.400 triângulos) | `python3 tools/run_tests.py luau --smoke` | **3866 verificações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **200 cenários passando** (inclui as mecânicas próprias dos 5 bosses numa luta real: prender, lentidão, leque, espelho, raio em cadeia, áreas que ficam, carga estática, veneno, vinhas, Florescer com brotos, drenagem e Fome do Vazio; o visual v3 dos pets e bosses: contorno de desenho, sem textura de grama, olhos com brilho no modo de peças e sombreamento pela altura; a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **206 cenários passando** (inclui as animações novas dos pets: cada comportamento ocioso muda a pose, sono com "Zzz" e acordar, tranco ao levar dano e festa ao subir de nível; as mecânicas próprias dos 5 bosses numa luta real: prender, lentidão, leque, espelho, raio em cadeia, áreas que ficam, carga estática, veneno, vinhas, Florescer com brotos, drenagem e Fome do Vazio; o visual v3 dos pets e bosses: contorno de desenho, sem textura de grama, olhos com brilho no modo de peças e sombreamento pela altura; a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -761,6 +784,9 @@ travamento) foi exercitada.
     seriam o próximo nível.
 - **Ataques Assinatura — o que ainda precisa do Studio:** os efeitos visuais foram executados no simulador (todos os
   estilos rodam e limpam as peças), mas não vistos na tela; o equilíbrio de dano em partidas reais.
+- **Animações novas — o que ainda precisa do Studio:** são procedurais (juntas `Motor6D.Transform`), vistas só nas
+  prévias e no simulador. Confira no jogo o ritmo dos comportamentos e se alguma pose atravessa partes do próprio corpo
+  em espécies que não estão nas imagens (as prévias cobrem raposa, gato, coelho, coruja, macaco, serpente e cogumelo).
 - **Visual v3 — o que ainda precisa do Studio:** as imagens de antes/depois são da geometria real renderizada fora do
   Roblox; o contorno da prévia é uma aproximação do `Highlight` (no jogo ele só contorna a silhueta externa). Os pets
   continuam low-poly no modo de peças: o salto grande de qualidade ainda é ligar o EditableMesh (malhas suaves).

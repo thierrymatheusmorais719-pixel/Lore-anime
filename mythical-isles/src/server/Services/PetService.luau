@@ -543,6 +543,12 @@ function PetService.grantXp(player: Player, uids: { [string]: number })
 			local ups = PetStats.addXp(pet, xp)
 			if ups > 0 then
 				leveled = true
+				-- o cliente faz a festinha de nível no pet (CreatureMotion)
+				for _, st in ipairs(teams[player] or {}) do
+					if st.uid == uid and st.model then
+						st.model:SetAttribute("LevelUpAt", workspace:GetServerTimeNow())
+					end
+				end
 				S.Push:FireClient(player, "Toast", { text = string.format("%s subiu para o nível %d!", Pets.Species[pet.species].name, pet.level), kind = "level" })
 			end
 		end
