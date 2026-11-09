@@ -84,6 +84,10 @@ local function posedJson(bp, motors, id: string)
 				if shade then
 					local cy = (g.verts[tri[1]].Y + g.verts[tri[2]].Y + g.verts[tri[3]].Y) / 3 + p.pivot.Y
 					r, gg, bb = Facets.toonRGB(r, gg, bb, (cy - yLo) / (yHi - yLo))
+						do
+							local L = Facets.faceLight(g.verts[tri[1]], g.verts[tri[2]], g.verts[tri[3]], Facets.geomCenter(g))
+							r, gg, bb = math.clamp(r * L, 0, 1), math.clamp(gg * L, 0, 1), math.clamp(bb * L, 0, 1)
+						end
 				end
 				local col = string.format("%d,%d,%d", math.floor(r * 255 + 0.5), math.floor(gg * 255 + 0.5), math.floor(bb * 255 + 0.5))
 				for q = 1, 3 do

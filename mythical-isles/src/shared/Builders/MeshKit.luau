@@ -92,12 +92,24 @@ end
 -- MeshKit.low = true: resolução baixa (estilo low-poly) para o modo sem EditableMesh, em que cada
 -- triângulo vira peças do Roblox. Olhos (opts.detail) perdem menos detalhe.
 MeshKit.low = false
+-- MeshKit.mid = true (junto com low): "Alta qualidade" do modo de peças, usada nos pets do próprio jogador no
+-- computador: mais lados e anéis que o low, e os detalhes (bochechas, sobrancelhas, músculos) ficam.
+MeshKit.mid = false
+MeshKit.focus = false -- (só com mid) a geometria sendo feita agora é cabeça/tronco
 
 function MeshKit.loft(keys, opts): Geom
 	opts = opts or {}
 	local seg = opts.seg or 12
 	local steps = opts.steps or 4
-	if MeshKit.low then
+	if MeshKit.low and MeshKit.mid then
+		-- mais lados (contorno redondo) com os mesmos anéis do leve; tampas com 1 anel (pontas arredondadas).
+		-- MeshKit.focus (cabeça e tronco, o que mais aparece) ganha também mais anéis.
+		local focus = MeshKit.focus
+		seg = math.max(opts.detail and 10 or 6, math.floor(seg * ((opts.detail or focus) and 0.75 or 0.5) + 0.5))
+		steps = (opts.detail or focus) and math.min(steps, 2) or 1
+		opts = table.clone(opts)
+		opts.capRings = (opts.detail or focus) and math.min(opts.capRings or 2, 1) or 0
+	elseif MeshKit.low then
 		if opts.detail then
 			seg = math.max(8, math.floor(seg * 0.7 + 0.5))
 			opts = table.clone(opts)

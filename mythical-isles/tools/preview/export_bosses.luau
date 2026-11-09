@@ -31,6 +31,10 @@ for _, id in ipairs(BossAnatomy.Ids) do
 						if p.material ~= "Neon" and p.transparency < 0.3 and p.material ~= "ForceField" then
 							local cy = (g.verts[tri[1]].Y + g.verts[tri[2]].Y + g.verts[tri[3]].Y) / 3 + p.pivot.Y
 							r, gg, bb = Facets.toonRGB(r, gg, bb, (cy - yLo) / (yHi - yLo))
+						do
+							local L = Facets.faceLight(g.verts[tri[1]], g.verts[tri[2]], g.verts[tri[3]], Facets.geomCenter(g))
+							r, gg, bb = math.clamp(r * L, 0, 1), math.clamp(gg * L, 0, 1), math.clamp(bb * L, 0, 1)
+						end
 						end
 						local cs = col255({ R = r, G = gg, B = bb })
 						for q = 1, 3 do

@@ -11,9 +11,11 @@ local MutationVisuals = require(Shared.Builders.MutationVisuals)
 local Accessories = require(Shared.Builders.Accessories)
 local State = require(script.Parent.State)
 local Status = require(script.Parent.Status)
+local UIKit = require(script.Parent.UIKit)
 local CreatureMotion = require(script.Parent.CreatureMotion)
 
 local PetVisuals = {}
+PetVisuals.highQuality = true -- "Alta qualidade" dos pets do jogador (Opções pode desligar)
 
 local active: { [Model]: { mesh: Model, root: BasePart, server: BasePart, offset: CFrame } } = {}
 local claimed: { [Model]: boolean } = {}
@@ -55,7 +57,11 @@ local function attach(model: Model)
 	task.spawn(function()
 		local species = model:GetAttribute("Species")
 		local scale = model:GetAttribute("Scale") or 1
-		local t = PetMesh.await(species, scale, 40)
+		-- "Alta qualidade" (mais faces e detalhes) nos pets do próprio jogador, no computador; os dos outros
+		-- jogadores e o celular ficam no modo leve. (Só muda algo no modo de peças: as malhas já são suaves.)
+		local own = model:GetAttribute("Owner") == game:GetService("Players").LocalPlayer.UserId
+		local quality = (own and PetVisuals.highQuality and not UIKit.isMobile()) and "high" or nil
+		local t = PetMesh.await(species, scale, 40, quality)
 		local server = model.PrimaryPart
 		if not t or not model.Parent or not server then
 			reportIfUnavailable()
@@ -146,6 +152,20 @@ function PetVisuals.init()
 	State.on("BossDefeated", function()
 		CreatureMotion.celebrate(game:GetService("Players").LocalPlayer.UserId, 4)
 	end)
+end
+
+-- Troca a qualidade dos pets do jogador na hora (Opções): desmonta o visual dos próprios pets e monta de novo.
+function PetVisuals.setHighQuality(on: boolean)
+	PetVisuals.highQuality = on
+	local me = game:GetService("Players").LocalPlayer.UserId
+	for model, a in pairs(active) do
+		if model:GetAttribute("Owner") == me then
+			a.mesh:Destroy()
+			active[model] = nil
+			claimed[model] = nil
+			task.defer(attach, model)
+		end
+	end
 end
 
 PetVisuals.active = active

@@ -881,6 +881,13 @@ local function settingsPanel()
 	toggle(1, "Anúncios globais de descobertas", "announcements", p.settings.announcements and "ligado" or "desligado", not p.settings.announcements)
 	toggle(2, "Números de dano", "damageNumbers", p.settings.damageNumbers ~= false and "ligado" or "desligado", p.settings.damageNumbers == false)
 	toggle(3, "Qualidade de efeitos", "vfx", p.settings.vfx == "Low" and "Baixa" or "Alta", p.settings.vfx == "Low" and "High" or "Low")
+	-- qualidade do modelo dos SEUS pets no modo de peças (sem EditableMesh): só neste aparelho
+	local PetVisuals = require(script.Parent.PetVisuals)
+	UIKit.button({ LayoutOrder = 3, Size = UDim2.new(1, -8, 0, 38), TextSize = 14, Parent = list,
+		Text = "Qualidade dos seus pets: " .. (PetVisuals.highQuality and "Alta (mais detalhes)" or "Leve (mais rápido)") }, function()
+		PetVisuals.setHighQuality(not PetVisuals.highQuality)
+		Panels.open("Settings")
+	end)
 	UIKit.label({ LayoutOrder = 4, Size = UDim2.new(1, 0, 0, 70), TextSize = 12, TextColor3 = T.muted,
 		Text = "Controles: clique/toque num inimigo para mirar e atacar · F ataque · 1-4 habilidades dos pets · Tab/Q próximo alvo · clique num recurso para os pets minerarem · E nas estações e portais." ..
 			(State.memoryMode and "\n<font color=\"#FF6464\">Modo memória: progresso não está sendo salvo.</font>" or ""), Parent = list })

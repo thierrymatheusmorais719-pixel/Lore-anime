@@ -214,6 +214,8 @@ function PetMesh.assemble(bp, poly: boolean, opts)
 			}
 			-- peças que brilham ou são translúcidas ficam com a cor pura
 			local shade = not neon and p.transparency < 0.3 and p.material ~= "ForceField"
+			local gmn, gmx = MeshKit.bounds(p.geom)
+			local gcenter = (gmn + gmx) / 2
 			local g = p.geom
 			for i, t in ipairs(g.tris) do
 				if not g.keep or g.keep[i] then
@@ -222,6 +224,8 @@ function PetMesh.assemble(bp, poly: boolean, opts)
 					local r, gg, bb = (ca.R + cb.R + cc.R) / 3, (ca.G + cb.G + cc.G) / 3, (ca.B + cb.B + cc.B) / 3
 					if shade then
 						r, gg, bb = Facets.toonRGB(r, gg, bb, ((a.Y + b.Y + c.Y) / 3 + p.pivot.Y - yLo) / (yHi - yLo))
+						local L = Facets.faceLight(a, b, c, gcenter)
+						r, gg, bb = math.clamp(r * L, 0, 1), math.clamp(gg * L, 0, 1), math.clamp(bb * L, 0, 1)
 					end
 					props.color = Color3.new(r, gg, bb)
 					local n = triangle(a + p.pivot, b + p.pivot, c + p.pivot, th, props, inst)
@@ -279,23 +283,29 @@ end
 -- da parte do corpo; os ossos têm as mesmas juntas (Motor6D) e a mesma animação do modo de malhas.
 -------------------------------------------------------------------------------
 
-function PetMesh.buildTemplatePoly(speciesId: string, scale: number)
+-- quality "high": "Alta qualidade" (mais faces na cabeça e no tronco, bochechas, sobrancelhas, músculos e
+-- pálpebras); usada nos pets do próprio jogador no computador. Sem quality: modo leve.
+function PetMesh.buildTemplatePoly(speciesId: string, scale: number, quality: string?)
 	local sp = Pets.Species[speciesId]
 	if not sp then
 		return nil
 	end
-	local bp = PetAnatomy.blueprint(speciesId, sp, scale, { low = true })
+	local bp = PetAnatomy.blueprint(speciesId, sp, scale, { low = true, mid = quality == "high" })
 	local model, facets = PetMesh.assemble(bp, true)
 	petAttributes(model, bp, speciesId)
 	model:SetAttribute("PolyPet", true)
 	model:SetAttribute("Facets", facets)
+	model:SetAttribute("Quality", quality == "high" and "high" or "light")
 	return { model = model, bp = bp, poly = true, facets = facets }
 end
 
 -- Molde pronto (ou nil). Se ainda não existe, começa a construir em segundo plano.
-function PetMesh.request(speciesId: string, scale: number?)
+function PetMesh.request(speciesId: string, scale: number?, quality: string?)
+	if PetMesh.available == true then
+		quality = nil -- com EditableMesh as malhas já são suaves: a "Alta qualidade" é do modo de peças
+	end
 	local s = scale or 1
-	local k = key(speciesId, s)
+	local k = key(speciesId, s) .. (quality == "high" and "#hq" or "")
 	local t = templates[k]
 	if t ~= nil then
 		return t or nil
@@ -324,7 +334,7 @@ function PetMesh.request(speciesId: string, scale: number?)
 		end
 		if not res then
 			-- sem EditableMesh: mesma anatomia em baixa resolução, feita de peças
-			local ok2, r2 = pcall(PetMesh.buildTemplatePoly, speciesId, s)
+			local ok2, r2 = pcall(PetMesh.buildTemplatePoly, speciesId, s, quality)
 			if ok2 and r2 then
 				res = r2
 			else
@@ -339,14 +349,14 @@ function PetMesh.request(speciesId: string, scale: number?)
 end
 
 -- Espera o molde (até `timeout` s). Devolve { model, bp } ou nil.
-function PetMesh.await(speciesId: string, scale: number?, timeout: number?)
+function PetMesh.await(speciesId: string, scale: number?, timeout: number?, quality: string?)
 	local limit = os.clock() + (timeout or 20)
 	while os.clock() < limit do
-		local t = PetMesh.request(speciesId, scale)
+		local t = PetMesh.request(speciesId, scale, quality)
 		if t then
 			return t
 		end
-		if templates[key(speciesId, scale or 1)] == false then
+		if templates[key(speciesId, scale or 1) .. ((quality == "high" and PetMesh.available ~= true) and "#hq" or "")] == false then
 			return nil
 		end
 		task.wait(0.1)

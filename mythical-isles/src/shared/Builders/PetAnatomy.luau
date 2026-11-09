@@ -212,6 +212,11 @@ end
 -------------------------------------------------------------------------------
 
 -- Olho integrado ao rosto: lente em domo com íris, pupila (redonda ou em fenda), contorno escuro e brilho.
+-- Detalhes que só somem no modo de peças LEVE (na "Alta qualidade" do modo de peças eles ficam).
+local function lowDetail(): boolean
+	return MeshKit.low and not MeshKit.mid
+end
+
 local function eyeGeom(P, c: Vector3, n: Vector3, r: number, o)
 	o = o or {}
 	n = n.Unit
@@ -284,6 +289,10 @@ local function eyeGeom(P, c: Vector3, n: Vector3, r: number, o)
 		end
 		table.insert(layers, lens(c + upv * R * 0.32 - right * R * 0.22, R * 0.2, R * 0.17, 4, WHITE, 5))
 		table.insert(layers, lens(c - upv * R * 0.28 + right * R * 0.3, R * 0.09, R * 0.08, 4, WHITE, 4))
+		-- bochecha rosada (pets fofos): oval logo abaixo do olho, colada na cabeça como o olho
+		if P.blush and not glow and surf then
+			table.insert(layers, lens(c - upv * R * 1.3, R * 0.62, R * 0.34, 1, P.body:Lerp(WHITE, 0.35):Lerp(rgb(255, 140, 165), 0.72), 8))
+		end
 		local ok = {}
 		for _, g in ipairs(layers) do
 			if g then
@@ -338,7 +347,7 @@ local function earGeom(P, kind: string, size: number, side: number)
 			{ seg = 10, steps = 3, up = fwd, capStart = 0, capEnd = wBase * 0.15, pow = pow, color = furFn(P, { shade = false, tip = tipCol, tipFrom = 0.7, pattern = false }) })
 		local inner = loft({ { p = V(0, 0.02 * s, -thick * 0.55), w = wBase * 0.6, h = thick * 0.35 }, { p = tip * 0.5 + V(0, 0, -thick * 0.5), w = wBase * 0.5, h = thick * 0.3 },
 			{ p = tip * 0.85 + V(0, 0, -thick * 0.4), w = wBase * 0.1, h = thick * 0.2 } }, { seg = 8, steps = 3, up = fwd, capStart = 0, capEnd = 0.01, color = solid(P.inner) })
-		if MeshKit.low then
+		if lowDetail() then
 			return outer
 		end
 		return merge({ outer, inner })
@@ -459,7 +468,7 @@ local function mammalHead(P, H)
 	end })
 	local list = { head }
 	-- bochechas (volume nas laterais, tufos se `ruff`); no modo de peças ficam de fora
-	for _, side in ipairs(MeshKit.low and {} or { -1, 1 }) do
+	for _, side in ipairs(lowDetail() and {} or { -1, 1 }) do
 		local cz = -L * 0.12
 		table.insert(list, loft({ { p = V(side * w * 0.45, -h * 0.25, cz + L * 0.15), w = w * 0.38, h = h * 0.42, jag = H.ruff and 0.25 or 0 },
 			{ p = V(side * w * (H.ruff and 0.9 or 0.62), -h * 0.38, cz - L * 0.12), w = w * 0.3, h = h * 0.34, jag = H.ruff and 0.3 or 0 } },
@@ -494,6 +503,7 @@ local function mammalHead(P, H)
 		-- sobrancelha logo acima do olho (não cobre o olho)
 		local b0 = c + V(-side * r * 0.9, r * 1.55, r * 0.6)
 		local b1 = c + V(side * r * 0.75, r * 1.25, -r * 0.1)
+		-- (no modo de peças o olho é maior e fica por cima: sobrancelha só nas malhas suaves)
 		if not MeshKit.low then
 			table.insert(list, loft({ { p = b0, w = r * 0.62, h = r * 0.34 }, { p = b1, w = r * 0.45, h = r * 0.26 } }, { seg = 8, steps = 2, capStart = r * 0.3, capEnd = r * 0.25, color = browCol }))
 		end
@@ -504,6 +514,16 @@ local function mammalHead(P, H)
 		head = merge(list), face = merge(face), jaw = jaw, jawPivot = jawPivot, eyes = eyes,
 		earAt = V(w * 0.55, h * 0.62, L * 0.12), hornAt = V(w * 0.4, h * 0.75, -L * 0.02), topY = h * 0.95,
 	}
+end
+do
+	-- na "Alta qualidade" do modo de peças a cabeça ganha mais faces (é o que mais se olha)
+	local build = mammalHead
+	mammalHead = function(...)
+		MeshKit.focus = MeshKit.mid
+		local r = build(...)
+		MeshKit.focus = false
+		return r
+	end
 end
 PetAnatomy.mammalHead = mammalHead
 
@@ -958,11 +978,21 @@ local function avianHead(P, o)
 	end
 	return { head = merge({ head, table.unpack(extra) }), face = merge(face), jaw = jaw, jawPivot = jawPivot, eyes = eyes, earAt = V(0.2, 0.2, 0.05) * s, hornAt = V(0.14, 0.24, 0) * s, topY = 0.3 * s }
 end
+do
+	-- na "Alta qualidade" do modo de peças a cabeça ganha mais faces (é o que mais se olha)
+	local build = avianHead
+	avianHead = function(...)
+		MeshKit.focus = MeshKit.mid
+		local r = build(...)
+		MeshKit.focus = false
+		return r
+	end
+end
 PetAnatomy.avianHead = avianHead
 
 local function addLids(bp, P, hp: Vector3, eyes, color: Color3?, parent: string?)
-	if MeshKit.low then
-		return -- modo de peças: sem piscar
+	if lowDetail() then
+		return -- modo de peças leve: sem piscar
 	end
 	for i, e in ipairs(eyes) do
 		local g, blink = lidGeom(P, e.c, e.n, e.r, color)
@@ -992,16 +1022,18 @@ local function quadruped(bp, P, Q, m)
 		end
 		return torsoKeys[1].p.Y + torsoKeys[1].h
 	end
+	MeshKit.focus = MeshKit.mid -- tronco com mais faces na "Alta qualidade"
 	local parts = { loft(torsoKeys, { seg = 18, steps = 4, pow = 2.15, capStart = cw * 0.45, capEnd = hw * 0.55, color = fur }) }
+	MeshKit.focus = false
 	-- músculos do ombro e da coxa: volumes que se fundem ao tronco (cor do flanco, sem a barriga)
 	local flank = furFn(P, { shade = false })
-	for _, side in ipairs(MeshKit.low and {} or { -1, 1 }) do
+	for _, side in ipairs(lowDetail() and {} or { -1, 1 }) do
 		table.insert(parts, loft({ { p = V(side * cw * 0.5, ch * 0.4, -L * 0.27), w = cw * 0.3, h = cw * 0.24 }, { p = V(side * cw * 0.6, -ch * 0.3, -L * 0.31), w = cw * 0.32, h = cw * 0.28 } },
 			{ seg = 10, steps = 2, up = FWD, capEnd = cw * 0.1, color = flank }))
 		table.insert(parts, loft({ { p = V(side * hw * 0.45, hh * 0.5, L * 0.23), w = hw * 0.36, h = hw * 0.42 }, { p = V(side * hw * 0.6, -hh * 0.28, L * 0.29), w = hw * 0.38, h = hw * 0.44 } },
 			{ seg = 10, steps = 2, up = FWD, capEnd = hw * 0.1, color = flank }))
 	end
-	if not MeshKit.low and (Q.ruff or (P.tier >= 3 and Q.furry ~= false and mat == "Fabric")) then
+	if not lowDetail() and (Q.ruff or (P.tier >= 3 and Q.furry ~= false and mat == "Fabric")) then
 		-- peitoral de pelo (Raro+ e lobos): tufos na frente do peito
 		table.insert(parts, loft({ { p = V(0, ch * 0.1, -L * 0.42), w = cw * 0.7, h = ch * 0.55, jag = 0.22 }, { p = V(0, -ch * 0.35, -L * 0.5), w = cw * 0.55, h = ch * 0.4, jag = 0.28 } },
 			{ seg = 14, steps = 2, color = furFn(P, { base = P.belly:Lerp(P.body, 0.25), shade = false }) }))
@@ -1292,12 +1324,12 @@ local function birdLeg(P, side: number, len: number)
 		loft({ { p = V(0, 0.08, 0), w = 0.13, h = 0.15 }, { p = V(0, -len * 0.35, 0.03), w = 0.1, h = 0.11 } }, { seg = 10, steps = 2, up = FWD, color = solid(P.belly) }),
 		loft({ { p = V(0, -len * 0.3, 0.03), w = 0.035, h = 0.035 }, { p = V(0, -len + 0.03, -0.02), w = 0.03, h = 0.03 } }, { seg = 7, steps = 1, up = FWD, color = solid(legCol) }),
 	}
-	for k = -1, MeshKit.low and 1 or 2 do
+	for k = -1, lowDetail() and 1 or 2 do
 		local dir = k == 2 and V(0, 0, 1) or V(k * 0.45, 0, -1).Unit
 		local a = V(0, -len + 0.03, -0.02)
 		local b = a + dir * 0.17 + V(0, -0.02, 0)
 		table.insert(list, loft({ { p = a, w = 0.022 }, { p = b, w = 0.018 } }, { seg = 6, steps = 1, color = solid(legCol) }))
-		if not MeshKit.low then
+		if not lowDetail() then
 			table.insert(list, loft({ { p = b, w = 0.016 }, { p = b + dir * 0.06 + V(0, -0.03, 0), w = 0.003 } }, { seg = 5, steps = 1, color = solid(P.claw) }))
 		end
 	end
@@ -2040,7 +2072,7 @@ function PetAnatomy.decorate(bp, P, tier: number)
 	if tier >= 4 then
 		-- marcas brilhantes em "V" ao longo do dorso
 		local marks = {}
-		for i = MeshKit.low and -1 or -2, MeshKit.low and 1 or 2 do
+		for i = lowDetail() and -1 or -2, lowDetail() and 1 or 2 do
 			local z = tTop.Z + i * tD * 0.32
 			local y = tTop.Y - math.abs(i) * 0.04 - 0.01
 			marks[#marks + 1] = loft({ { p = V(-0.16, y - 0.05, z + 0.08), w = 0.025, h = 0.025 }, { p = V(0, y + 0.01, z - 0.05), w = 0.03, h = 0.03 }, { p = V(0.16, y - 0.05, z + 0.08), w = 0.025, h = 0.025 } },
@@ -2132,8 +2164,9 @@ local buildBlueprint
 function PetAnatomy.blueprint(speciesId: string, species, scaleMul: number?, opts)
 	if opts and opts.low then
 		MeshKit.low = true
+		MeshKit.mid = opts.mid == true
 		local ok, res = pcall(buildBlueprint, speciesId, species, scaleMul)
-		MeshKit.low = false
+		MeshKit.low, MeshKit.mid, MeshKit.focus = false, false, false
 		if not ok then
 			error(res, 0)
 		end
@@ -2154,6 +2187,10 @@ buildBlueprint = function(speciesId: string, species, scaleMul: number?)
 		P.spots, P.spotColor = true, P.belly:Lerp(WHITE, 0.5)
 	end
 	local kind, preset = PetAnatomy.classify(speciesId, species)
+	-- pets "fofos" ganham bochechas rosadas (os imponentes, como lobo, leão e cervo, não)
+	local CUTE = { fox = true, feline = true, pup = true, lagomorph = true, rodent = true, squirrel = true, mustelid = true, leafpanda = true,
+		shroom = true, slime = true, avian = true, amphibian = true, canine = true, bushgoat = true, caprine = true }
+	P.blush = CUTE[preset or kind] == true
 	local bp = newBP(preset or kind)
 	bp.kind = kind
 	if kind == "quad" or kind == "dragon" then

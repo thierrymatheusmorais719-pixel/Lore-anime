@@ -1999,6 +1999,53 @@ do
 		check("sem 'Allow Mesh / Image APIs': os pets da equipe viram os low-poly de peças, animados e sem caixa de erro",
 			polySwapped > 0 and polySwapped == total and PetMesh.mode == "poly" and movedPoly and #SIM.errors == errsBefore,
 			string.format("%d/%d low-poly, modo=%s, animado=%s, erro=%s", polySwapped, total, tostring(PetMesh.mode), tostring(movedPoly), tostring(SIM.errors[errsBefore + 1])))
+		-- visual v4: no computador, os pets do próprio jogador usam a "Alta qualidade" do modo de peças
+		;(function()
+			local hqOk = polyMesh ~= nil and polyMesh:GetAttribute("Quality") == "high"
+			local wedges = polyMesh and (polyMesh:GetAttribute("Facets") or 0) or 0
+			check("visual v4: pet do jogador no modo de peças usa a Alta qualidade (mais faces, dentro do teto)", hqOk and wedges > 1500 and wedges <= 6800,
+				string.format("qualidade %s, %d cunhas", tostring(polyMesh and polyMesh:GetAttribute("Quality")), wedges))
+			-- luz assada: face virada para a luz (em cima, na frente) fica mais clara que a de baixo; faces
+			-- vizinhas variam um pouco de tom (visual lapidado), sempre igual na mesma face
+			local Facets = require(__proxy("Shared/Builders/Facets"))
+			local ctr = Vector3.new(0, 0, 0)
+			local top = Facets.faceLight(Vector3.new(-1, 1, -1), Vector3.new(1, 1, -1), Vector3.new(0, 1, 1), ctr)
+			local bottom = Facets.faceLight(Vector3.new(-1, -1, -1), Vector3.new(0, -1, 1), Vector3.new(1, -1, -1), ctr)
+			local again = Facets.faceLight(Vector3.new(-1, 1, -1), Vector3.new(1, 1, -1), Vector3.new(0, 1, 1), ctr)
+			local other = Facets.faceLight(Vector3.new(-1.3, 1, -0.7), Vector3.new(0.7, 1, -1.2), Vector3.new(0.2, 1, 1.1), ctr)
+			check("visual v4: luz assada por face (de cima mais clara que de baixo, tom estável e variado por face)",
+				top > bottom + 0.15 and top == again and other ~= top, string.format("cima %.2f, baixo %.2f", top, bottom))
+			-- Opções: trocar para Leve remonta os pets do jogador com menos faces, e voltar para Alta
+			local PetVisuals = require(__proxy("Client/Controllers/PetVisuals"))
+			local function myMeshes()
+				local list = {}
+				for m, a in pairs(PetVisuals.active) do
+					if m.Parent and m:GetAttribute("Owner") == lp.UserId then
+						table.insert(list, a.mesh)
+					end
+				end
+				return list
+			end
+			PetVisuals.setHighQuality(false)
+			frames(60)
+			local light = 0
+			for _, m in ipairs(myMeshes()) do
+				if m:GetAttribute("Quality") == "light" then
+					light += 1
+				end
+			end
+			PetVisuals.setHighQuality(true)
+			frames(60)
+			local high = 0
+			for _, m in ipairs(myMeshes()) do
+				if m:GetAttribute("Quality") == "high" then
+					high += 1
+				end
+			end
+			check("visual v4: a opção 'Qualidade dos seus pets' troca na hora entre Leve e Alta", light >= 1 and high >= 1 and high == #myMeshes(),
+				string.format("leve %d, alta %d de %d", light, high, #myMeshes()))
+			polyMesh = myMeshes()[1] or polyMesh
+		end)()
 		-- visual v3: contorno de desenho nos pets do jogador, nada de textura de grama, olhos em camadas e
 		-- sombreamento pela altura (faces de baixo mais escuras que as de cima)
 		;(function()

@@ -8,7 +8,7 @@ vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
 > Luau, contra o dump público da API do Roblox, com 65 testes de lógica, 3866 verificações dos modelos 3D e
-> **206 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> **209 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -264,6 +264,21 @@ Se nenhum dos dois modos funcionar, o boss antigo continua visível.
 polida, cristal/neon), as paletas e a tipografia, os componentes (moldura rúnica, botões, barras "recipiente",
 slots), o HUD, o diálogo com NPCs, o inventário de pets, a loja e os ovos, o menu de mundos e as animações,
 com propriedades do Roblox Studio.
+
+### Visual v4 dos pets (modo de peças)
+
+Antes/depois em `docs/preview/v4_pets_antes.jpg`, `v4_pets_depois.jpg` e `v4_lobo_panda.jpg`:
+- **"Alta qualidade" para os SEUS pets no computador:** mais lados e anéis na cabeça e no tronco (contorno redondo
+  em vez de facetado), e voltam os detalhes que o modo leve tirava: parte interna rosada das orelhas, bochechas,
+  músculos de ombro e coxa, juba/ruff e pálpebras que piscam. Média de ~1.760 triângulos por pet (máx. 3.147 =
+  ~6.300 peças); o modo leve tem ~830. Pets de outros jogadores e o celular continuam no leve. Em
+  **Opções → "Qualidade dos seus pets"** dá para trocar Alta/Leve na hora (só neste aparelho).
+- **Luz assada por face:** cada face clareia o quanto olha para a luz principal (de cima e da frente) e ganha uma
+  pequena variação de tom estável, o visual "lapidado" do low-poly bem feito (`Facets.faceLight`). Vale para os
+  pets (leve e alto) e os bosses do modo de peças.
+- **Bochechas rosadas** nos pets fofos (raposas, gatos, filhotes, coelhos, roedores, pandas, cogumelos, slimes,
+  aves, cabras), coladas na cabeça como os olhos. Os imponentes (lobo, leão, cervo, dragões) não têm.
+- Com "Allow Mesh / Image APIs" ligado nada disso muda: as malhas suaves continuam sendo o modo de maior qualidade.
 
 ### Animações novas dos pets
 
@@ -675,7 +690,7 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Lógica pura | `python3 tools/run_tests.py luau` | **65 testes passando** |
 | Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", ≤ 18.000 triângulos) + bosses anatômicos nos dois modos (todas as juntas do boss antigo, mesma altura de raiz, pés no chão, peças de energia com cor, ≤ 20.000 / 3.400 triângulos) | `python3 tools/run_tests.py luau --smoke` | **3866 verificações, 0 falhas** |
 | Animações dos pets nas 192 espécies | `python3 tools/run_tests.py luau --animcheck` | **1.950 animações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **206 cenários passando** (inclui as animações novas dos pets: cada comportamento ocioso muda a pose, sono com "Zzz" e acordar, tranco ao levar dano e festa ao subir de nível; as mecânicas próprias dos 5 bosses numa luta real: prender, lentidão, leque, espelho, raio em cadeia, áreas que ficam, carga estática, veneno, vinhas, Florescer com brotos, drenagem e Fome do Vazio; o visual v3 dos pets e bosses: contorno de desenho, sem textura de grama, olhos com brilho no modo de peças e sombreamento pela altura; a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **209 cenários passando** (inclui o visual v4: Alta qualidade nos pets do jogador, luz assada por face e a troca Leve/Alta nas Opções; as animações novas dos pets: cada comportamento ocioso muda a pose, sono com "Zzz" e acordar, tranco ao levar dano e festa ao subir de nível; as mecânicas próprias dos 5 bosses numa luta real: prender, lentidão, leque, espelho, raio em cadeia, áreas que ficam, carga estática, veneno, vinhas, Florescer com brotos, drenagem e Fome do Vazio; o visual v3 dos pets e bosses: contorno de desenho, sem textura de grama, olhos com brilho no modo de peças e sombreamento pela altura; a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -803,6 +818,9 @@ travamento) foi exercitada.
     seriam o próximo nível.
 - **Ataques Assinatura — o que ainda precisa do Studio:** os efeitos visuais foram executados no simulador (todos os
   estilos rodam e limpam as peças), mas não vistos na tela; o equilíbrio de dano em partidas reais.
+- **Visual v4 — o que ainda precisa do Studio:** desempenho da Alta qualidade (até ~6.300 peças por pet, 4 pets) em
+  computadores fracos; se pesar, use "Leve" nas Opções. A luz assada soma à iluminação real do Roblox: confira se
+  algum pet ficou escuro demais à noite.
 - **Animações novas — o que ainda precisa do Studio:** são procedurais (juntas `Motor6D.Transform`), vistas só nas
   prévias e no simulador. Confira no jogo o ritmo dos comportamentos e se alguma pose atravessa partes do próprio corpo
   (o `--animcheck` confere chão, pose e valores nas 192 espécies, mas não detecta uma parte do corpo atravessando outra).

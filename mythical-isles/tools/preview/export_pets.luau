@@ -55,7 +55,8 @@ for _, id in ipairs({ "kit_1", "leafcat_1", "verdantwolf_1", "astral_lion", "gro
 	"glassserpent_1", "drakeling_1", "sylvanox", "mossape_1", "cap_1", "beetle_1" }) do
 	local sp = Pets.Species[id]
 	if sp then
-		local bp = PetAnatomy.blueprint(id, sp, 1, { low = true })
+	  for _, hq in ipairs({ false, true }) do
+		local bp = PetAnatomy.blueprint(id, sp, 1, { low = true, mid = hq })
 		local parts = {}
 		local yLo, yHi = Facets.heightRange(bp)
 		for _, p in ipairs(bp.parts) do
@@ -70,6 +71,10 @@ for _, id in ipairs({ "kit_1", "leafcat_1", "verdantwolf_1", "astral_lion", "gro
 					if shade then
 						local cy = (g.verts[tri[1]].Y + g.verts[tri[2]].Y + g.verts[tri[3]].Y) / 3 + p.pivot.Y
 						r, gg, bb = Facets.toonRGB(r, gg, bb, (cy - yLo) / (yHi - yLo))
+						do
+							local L = Facets.faceLight(g.verts[tri[1]], g.verts[tri[2]], g.verts[tri[3]], Facets.geomCenter(g))
+							r, gg, bb = math.clamp(r * L, 0, 1), math.clamp(gg * L, 0, 1), math.clamp(bb * L, 0, 1)
+						end
 					end
 					local col = string.format("%d,%d,%d", math.floor(r * 255 + 0.5), math.floor(gg * 255 + 0.5), math.floor(bb * 255 + 0.5))
 					for q = 1, 3 do
@@ -86,7 +91,8 @@ for _, id in ipairs({ "kit_1", "leafcat_1", "verdantwolf_1", "astral_lion", "gro
 					num(p.transparency), table.concat(v, ","), table.concat(c, ","), table.concat(t, ","))
 			end
 		end
-		print(string.format('PETMESH %s__low {"id":"%s","anatomy":"%s","gait":"%s","rarity":"%s","hover":%s,"tris":%d,"parts":[%s]}', id, id, bp.anatomy, bp.gait, sp.rarity, num(bp.hover),
-			PetAnatomy.triangles(bp, true), table.concat(parts, ",")))
+		print(string.format('PETMESH %s__%s {"id":"%s","anatomy":"%s","gait":"%s","rarity":"%s","hover":%s,"tris":%d,"parts":[%s]}', id, hq and "hq" or "low", id, bp.anatomy, bp.gait,
+			sp.rarity, num(bp.hover), PetAnatomy.triangles(bp, true), table.concat(parts, ",")))
+	  end
 	end
 end

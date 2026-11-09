@@ -238,6 +238,30 @@ for id, sp in pairs(Pets.Species) do
 	end
 end
 print(string.format("Modo de peças: média %.0f triângulos por pet, máx. %d (%s)", lowStats.total / math.max(1, meshStats.species), lowStats.max, lowStats.maxId))
+-- "Alta qualidade" do modo de peças (pets do próprio jogador no computador): mais faces, com teto
+local hqStats = { total = 0, max = 0, maxId = "", n = 0 }
+for id, sp in pairs(Pets.Species) do
+	checks += 1
+	local ok, bp = pcall(PetAnatomy.blueprint, id, sp, 1, { low = true, mid = true })
+	if not ok then
+		fail("alta qualidade " .. id .. ": " .. tostring(bp))
+	else
+		local n = PetAnatomy.triangles(bp, true)
+		if n > 3400 then
+			fail(string.format("alta qualidade %s: %d triângulos (orçamento 3400 = ~6800 cunhas)", id, n))
+		end
+		local nLow = PetAnatomy.triangles(PetAnatomy.blueprint(id, sp, 1, { low = true }), true)
+		if n <= nLow then
+			fail(string.format("alta qualidade %s não tem mais faces que o leve (%d <= %d)", id, n, nLow))
+		end
+		hqStats.total += n
+		hqStats.n += 1
+		if n > hqStats.max then
+			hqStats.max, hqStats.maxId = n, id
+		end
+	end
+end
+print(string.format("Alta qualidade: média %.0f triângulos por pet, máx. %d (%s)", hqStats.total / math.max(1, hqStats.n), hqStats.max, hqStats.maxId))
 local anatList = {}
 for k, n in pairs(meshStats.anat) do
 	table.insert(anatList, k .. "=" .. n)
