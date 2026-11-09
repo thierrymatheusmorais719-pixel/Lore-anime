@@ -205,6 +205,42 @@ for id, sp in pairs(Pets.Species) do
 		if #bp.parts < 6 or dims[3] / math.max(dims[1], 1e-3) < 1.3 then
 			fail(string.format("malha %s: silhueta de bolinha (%d partes, proporção %.2f)", id, #bp.parts, dims[3] / math.max(dims[1], 1e-3)))
 		end
+		-- proporção fofa (chibi) dos quadrúpedes: comparada com a mesma espécie nas proporções antigas,
+		-- a cabeça tem de crescer em relação ao tronco (dose cheia ≥ +30%, dose leve ≥ +10%)
+		if bp.chibi then
+			local function ratio(b)
+				local head, torso
+				for _, p in ipairs(b.parts) do
+					if p.name == "Head" then
+						head = p
+					elseif p.name == "Torso" then
+						torso = p
+					end
+				end
+				local function extent(part, axis: string): number
+					local lo, hi = math.huge, -math.huge
+					for _, v in ipairs(part.geom.verts) do
+						lo, hi = math.min(lo, v[axis]), math.max(hi, v[axis])
+					end
+					return hi - lo
+				end
+				return extent(head, "X") / math.max(extent(torso, "Z"), 1e-3)
+			end
+			PetAnatomy.noChibi = true
+			local okOld, old = pcall(PetAnatomy.blueprint, id, sp, 1)
+			PetAnatomy.noChibi = false
+			if okOld then
+				local gain = ratio(bp) / ratio(old)
+				local need = bp.chibi == "full" and 1.3 or 1.1
+				if gain < need then
+					fail(string.format("malha %s: proporção fofa fraca (%s: cabeça/tronco ×%.2f < ×%.2f)", id, bp.chibi, gain, need))
+				end
+				meshStats.chibi = (meshStats.chibi or 0) + 1
+				meshStats.minGain = math.min(meshStats.minGain or math.huge, gain)
+			else
+				fail("malha " .. id .. " (sem chibi): " .. tostring(old))
+			end
+		end
 		-- os pés tocam o chão (a altura da raiz bate com o ponto mais baixo da malha)
 		if not bp.flies and math.abs(y0 + bp.hover) > 0.25 * bp.scale then
 			fail(string.format("malha %s: pés fora do chão (base %.2f, altura da raiz %.2f)", id, y0, bp.hover))
@@ -267,6 +303,7 @@ for k, n in pairs(meshStats.anat) do
 	table.insert(anatList, k .. "=" .. n)
 end
 table.sort(anatList)
+print(string.format("Proporção fofa: %d quadrúpedes conferidos, menor ganho de cabeça/tronco ×%.2f", meshStats.chibi or 0, meshStats.minGain or 0))
 print(string.format("Malhas: %d espécies, %d anatomias, média %.0f triângulos e %.0f partes por pet, máx. %d (%s)", meshStats.species, #anatList,
 	meshStats.tris / math.max(1, meshStats.species), meshStats.parts / math.max(1, meshStats.species), meshStats.maxTris, meshStats.maxId))
 print("  anatomias: " .. table.concat(anatList, ", "))

@@ -1051,7 +1051,7 @@ local function quadruped(bp, P, Q, m)
 	local hp = nb + nEnd
 	local Hd
 	if m.beak then
-		Hd = avianHead(P, { size = 1.3, beak = "hook", crest = true })
+		Hd = avianHead(P, { size = 1.3 * (Q.chibiHead or 1), beak = "hook", crest = true }) -- grifo: cabeça de ave, também maior
 	else
 		Hd = mammalHead(P, Q.head)
 	end
@@ -1314,6 +1314,60 @@ local function tune(Q, m, preset: string)
 end
 PetAnatomy.tune = tune
 
+-- Proporções "fofas" (chibi): cabeça e olhos maiores, focinho curto, pernas e corpo mais curtos e redondos.
+-- Os filhotes/bichinhos ganham o efeito todo; os imponentes (lobo, leão, cervo, dragão...) ganham uma dose menor
+-- para não perderem a pose.
+local CHIBI_FULL = { fox = true, feline = true, pup = true, lagomorph = true, rodent = true, squirrel = true, mustelid = true, canine = true,
+	caprine = true, amphibian = true, lynx = true }
+PetAnatomy.Chibi = { head = 1.45, len = 0.78, eyes = 1.3, snout = 0.6, legs = 0.72, body = 0.8, round = 1.12, neck = 0.78, lift = 14, front = 0.16 }
+PetAnatomy.ChibiSoft = { head = 1.22, len = 0.9, eyes = 1.2, snout = 0.85, legs = 0.85, body = 0.95, round = 1.06, neck = 0.88, lift = 6, front = 0.08 }
+local MAJESTIC = { wolf = true, lion = true, cervid = true, heavy = true, ursine = true, dragon = true, reptile = true, chelonian = true }
+local function chibify(Q, preset: string, tier: number?)
+	local soft = MAJESTIC[preset] and not CHIBI_FULL[preset] and (tier or 1) >= 4
+	local k = soft and PetAnatomy.ChibiSoft or PetAnatomy.Chibi
+	Q = copy(Q)
+	Q.chibi = soft and "soft" or "full"
+	Q.chibiHead = 1 + (k.head - 1) * 0.6
+	local h = Q.head
+	local s = k.head
+	-- cabeça redonda: cresce mais na largura/altura do que no comprimento
+	for _, key in ipairs({ "w", "h", "mW", "mH", "stop", "eyeX", "eyeY" }) do
+		if h[key] then
+			h[key] *= s
+		end
+	end
+	h.len *= s * k.len
+	h.eyeZ *= s * k.len
+	h.eyeR *= s * k.eyes
+	h.mLen *= k.snout -- focinho curtinho
+	h.round = true
+	if Q.ears and Q.ears.size then
+		Q.ears.size *= 1 + (s - 1) * 0.45 -- orelhas crescem menos que a cabeça (senão ficam enormes)
+	end
+	-- olhos um pouco mais para a frente: olhar de filhote
+	h.eyeFwd = math.min((h.eyeFwd or 0.5) + k.front, 0.85)
+	Q.legLen *= k.legs
+	Q.legT *= 1 + (1 - k.legs) * 0.5 -- perninhas curtas e um pouco mais grossas
+	if preset ~= "amphibian" then -- o sapo já é baixinho e largo: encurtar o corpo vira uma bola
+		Q.L *= k.body
+	end
+	Q.cw *= k.round
+	Q.ww *= k.round
+	Q.hw *= k.round
+	Q.ch *= 1 + (k.round - 1) * 0.6
+	Q.wh *= 1 + (k.round - 1) * 0.6
+	Q.hh *= 1 + (k.round - 1) * 0.6
+	Q.neckLen *= k.neck
+	Q.neckAng = math.min(Q.neckAng + k.lift, 72) -- pescoço mais em pé: cabeça por cima dos ombros
+	Q.neckW *= 1 + (s - 1) * 0.5 -- pescoço acompanha a cabeça maior
+	if Q.tail and Q.tail.len then
+		Q.tail.len *= 0.92
+		Q.tail.t = (Q.tail.t or 0.1) * 1.08
+	end
+	return Q
+end
+PetAnatomy.chibify = chibify
+
 -------------------------------------------------------------------------------
 -- AVES (pássaros, corujas, gaviões, pintinhos, serafins), MORCEGO e MARIPOSA
 -------------------------------------------------------------------------------
@@ -1358,8 +1412,9 @@ local function avian(bp, P, m, speciesId: string)
 		return c
 	end })
 	addPart(bp, "Torso", nil, "Body", V(0, 0, 0), body, { material = "Fabric" })
-	local hp = V(0, 0.5 * k, -0.52)
-	local Hd = avianHead(P, { size = owl and 1.25 or (chick and 1.2 or 1), owl = owl, beak = hawk and "hook" or (chick and "short" or "cone"), crest = m.crest or hawk, tufts = owl and m.ears == "tufted" })
+	local hp = V(0, 0.5 * k + 0.05, -0.5)
+	local cute = hawk and 1.1 or 1.28 -- proporção fofa: cabeça grande
+	local Hd = avianHead(P, { size = (owl and 1.25 or (chick and 1.2 or 1)) * cute, owl = owl, beak = hawk and "hook" or (chick and "short" or "cone"), crest = m.crest or hawk, tufts = owl and m.ears == "tufted" })
 	addPart(bp, "Head", "Torso", "Neck", hp, Hd.head, { material = "Fabric" })
 	addPart(bp, "Face", "Head", nil, hp, Hd.face, { material = "SmoothPlastic", role = "Eye", reflectance = 0.15 })
 	addPart(bp, "Jaw", "Head", "Jaw", hp + Hd.jawPivot, Hd.jaw, { material = "SmoothPlastic", role = "Detail" })
@@ -1386,7 +1441,7 @@ local function avian(bp, P, m, speciesId: string)
 		end))
 	end
 	addPart(bp, "Tail", "Torso", "Tail", V(0, 0.15, 0.66), merge(fan), { material = "Fabric", role = "Accent" })
-	local legLen = owl and 0.6 or 0.68
+	local legLen = (owl and 0.6 or 0.68) * (hawk and 0.95 or 0.85)
 	for _, side in ipairs({ -1, 1 }) do
 		addPart(bp, side < 0 and "LegL" or "LegR", "Torso", side < 0 and "LegL" or "LegR", V(side * 0.2, -0.36 * k, 0.04), birdLeg(P, side, legLen), { material = "SmoothPlastic", role = "Detail" })
 	end
@@ -2218,6 +2273,10 @@ buildBlueprint = function(speciesId: string, species, scaleMul: number?)
 		if preset == "griffin" then
 			m = table.clone(m)
 			m.beak = true
+		end
+		if not PetAnatomy.noChibi then -- (noChibi: só para os testes compararem com as proporções antigas)
+			Q = chibify(Q, kind == "dragon" and "dragon" or preset, tier)
+			bp.chibi = Q.chibi
 		end
 		quadruped(bp, P, Q, m)
 		bp.gait = GAIT[preset] or "quad"
