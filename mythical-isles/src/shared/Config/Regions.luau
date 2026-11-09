@@ -35,6 +35,45 @@ Regions.Sounds = {
 -- Perfis de luz por região (sobrepõem o perfil do mundo em WorldClient).
 -- Só chaves presentes mudam; valores moderados (sem exagero de Bloom).
 Regions.Info = {
+	-- MUNDO 1 — Terras Baixas do Verdant Haven (Services/VerdantLowlands)
+	-- minDist: região em anel (só conta da distância minDist para fora); below: só debaixo da terra
+	-- (y abaixo de centro + below), para as cavernas e a cripta não aparecerem para quem anda por cima.
+	verdant_lowlands = {
+		world = "verdant", name = "Terras Baixas", subtitle = "Verdant Haven", theta = 0, dist = 0, radius = 660, minDist = 352, priority = 1,
+		sound = "valley", profile = { haze = 1.1, rays = 0.1 },
+	},
+	eldermoor = {
+		world = "verdant", name = "Ruínas de Eldermoor", subtitle = "Templo Esquecido", theta = 215, dist = 505, radius = 58, priority = 3,
+		sound = "valley", profile = { density = 0.28, haze = 1.4, sat = -0.08, tint = Color3.fromRGB(240, 236, 222) },
+	},
+	eldermoor_crypt = {
+		world = "verdant", name = "Cripta de Eldermoor", subtitle = "Sob o Templo", theta = 215, dist = 519, radius = 14, below = -28, priority = 6,
+		sound = "caverns", profile = { density = 0.5, haze = 0.5, exposure = -0.4, bright = 1.1, tint = Color3.fromRGB(255, 226, 196), fog = Color3.fromRGB(70, 56, 44),
+			decay = Color3.fromRGB(40, 30, 24) },
+	},
+	fallen_watchtower = {
+		world = "verdant", name = "Torre de Vigia Caída", subtitle = "Ruínas", theta = 35, dist = 525, radius = 26, priority = 3,
+		sound = "valley", profile = { rays = 0.14 },
+	},
+	rune_circle = {
+		world = "verdant", name = "Círculo das Runas", subtitle = "Pedras Antigas", theta = 270, dist = 548, radius = 30, priority = 3,
+		sound = "valley", profile = { sat = 0.1, tint = Color3.fromRGB(232, 255, 232) },
+	},
+	misty_swamp = {
+		world = "verdant", name = "Pântano Brumoso", subtitle = "Terras Baixas", theta = 322, dist = 478, radius = 54, priority = 3,
+		sound = "lake", profile = { density = 0.45, haze = 2.4, glare = 0.0, rays = 0.0, exposure = -0.15, sat = -0.12, tint = Color3.fromRGB(220, 236, 220),
+			fog = Color3.fromRGB(150, 175, 150), decay = Color3.fromRGB(70, 90, 70) },
+	},
+	emerald_caves = {
+		world = "verdant", name = "Cavernas Esmeralda", subtitle = "Subterrâneo", theta = 72, dist = 485, radius = 90, below = -30, priority = 6,
+		sound = "caverns", profile = { density = 0.55, haze = 0.5, offset = 0.0, rays = 0.0, exposure = -0.4, bright = 1.1, tint = Color3.fromRGB(214, 255, 228), sat = 0.15,
+			fog = Color3.fromRGB(40, 110, 80), decay = Color3.fromRGB(20, 60, 40) },
+	},
+	crystal_river = {
+		world = "verdant", name = "Rio Cristalino", subtitle = "Terras Baixas", theta = 141, dist = 470, radius = 40, priority = 2,
+		sound = "lake", profile = { sat = 0.08 },
+	},
+
 	-- MUNDO 3 — Skybound Kingdom (ilha principal + ilhas satélites flutuando em volta)
 	cloud_harbor = {
 		world = "sky", name = "Cloud Harbor", subtitle = "Porto das Nuvens", theta = 0, dist = 0, radius = 130, priority = 1,
@@ -114,6 +153,9 @@ end
 -- caverna, rio, lagoas). { theta, dist, r }
 Regions.Reserved = {
 	verdant = { -- bosque da árvore de blocos (árvore de destaque + família)
+		-- topo das rampas para as Terras Baixas (sem árvore nem colina na passagem)
+		{ theta = 10, dist = 330, r = 16 }, { theta = 195, dist = 330, r = 16 }, { theta = 245, dist = 330, r = 16 }, { theta = 300, dist = 330, r = 16 },
+		{ theta = 10, dist = 308, r = 10 }, { theta = 195, dist = 308, r = 10 }, { theta = 245, dist = 308, r = 10 }, { theta = 300, dist = 308, r = 10 },
 		{ theta = 38, dist = 120, r = 30 }, { theta = 24, dist = 152, r = 14 }, { theta = 52, dist = 185, r = 14 },
 		{ theta = 34, dist = 196, r = 14 }, { theta = 20, dist = 132, r = 12 }, { theta = 40, dist = 80, r = 12 }, { theta = 66, dist = 216, r = 12 },
 		-- (a Árvore-Santuário registra os pés das raízes, a escadaria e o elevador ao ser construída)
@@ -160,7 +202,11 @@ function Regions.at(worldId: string?, pos: Vector3): string?
 	for id, r in pairs(Regions.Info) do
 		if r.world == worldId then
 			local d = ((pos - polar(worldId, r.theta, r.dist)) * Vector3.new(1, 0, 1)).Magnitude
-			if d <= r.radius and r.priority > bestPri then
+			local inside = d <= r.radius and d >= (r.minDist or 0)
+			if inside and r.below then
+				inside = pos.Y < Worlds.Info[worldId].center.Y + r.below
+			end
+			if inside and r.priority > bestPri then
 				best, bestPri = id, r.priority
 			end
 		end

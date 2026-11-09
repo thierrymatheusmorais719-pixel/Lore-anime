@@ -16,6 +16,10 @@ local Worlds = require(__proxy("Shared/Config/Worlds"))
 for _, id in ipairs(Worlds.Order) do
 	local w = Worlds.Info[id]
 	table.insert(SIM.groundPlanes, { center = w.center, radius = w.radius, y = w.center.Y })
+	if w.lowlands then
+		-- terras baixas em volta do planalto (o raio que acerta primeiro é o do planalto, inserido antes)
+		table.insert(SIM.groundPlanes, { center = w.center, radius = w.lowlands.radius, y = w.center.Y - w.lowlands.drop })
+	end
 end
 
 -- servidor real
@@ -800,9 +804,10 @@ local function ringChecks()
 		local nParts, nLights, nEmit = 0, 0, 0
 		local treeModel = wf and wf:FindFirstChild("SanctuaryTree")
 		local beaconSite = wf and wf:FindFirstChild("CrystalHollow") and wf.CrystalHollow:FindFirstChild("AncientBeaconSite")
+		local lowlands = wf and wf:FindFirstChild("Lowlands")
 		for _, d in ipairs(wf and wf:GetDescendants() or {}) do
-			if (treeModel and d:IsDescendantOf(treeModel)) or (beaconSite and d:IsDescendantOf(beaconSite)) then
-				continue -- a Árvore-Santuário e o Farol Ancestral têm orçamento próprio (cenários deles)
+			if (treeModel and d:IsDescendantOf(treeModel)) or (beaconSite and d:IsDescendantOf(beaconSite)) or (lowlands and d:IsDescendantOf(lowlands)) then
+				continue -- a Árvore-Santuário, o Farol Ancestral e as Terras Baixas têm orçamento próprio (cenários deles)
 			end
 			if d:IsA("BasePart") then
 				nParts += 1
@@ -2587,6 +2592,135 @@ do
 	SIM.localPlayer = nil
 end
 
+-- TERRAS BAIXAS do Verdant Haven: mapa maior, ruínas, cripta, torre, runas, pântano e cavernas ----------
+;(function()
+	local before = #SIM.errors
+	local WS = require(__proxy("Server/Services/WorldService"))
+	local VL = require(__proxy("Server/Services/VerdantLowlands"))
+	local RS2 = require(__proxy("Server/Services/RegionService"))
+	local Regions = require(__proxy("Shared/Config/Regions"))
+	local w = Worlds.Info.verdant
+	local low = WS.Lowlands
+	check("Terras Baixas construídas (mundo 1 com raio " .. tostring(w.lowlands and w.lowlands.radius) .. ", antes 345)", low ~= nil and w.lowlands.radius >= 600,
+		tostring(low))
+	if not low then
+		return
+	end
+	-- área: anel das terras baixas ~2,4× a área do planalto (total ~3,4×)
+	local areaGain = (w.lowlands.radius ^ 2 - w.radius ^ 2) / w.radius ^ 2
+	local nParts, nLights = 0, 0
+	for _, d in ipairs(low.folder:GetDescendants()) do
+		if d:IsA("BasePart") then
+			nParts += 1
+		elseif d:IsA("PointLight") then
+			nLights += 1
+		end
+	end
+	print(string.format("  Terras Baixas: +%.1fx de área, %d peças, %d luzes, %d árvores", areaGain, nParts, nLights, low.trees or 0))
+	check("Terras Baixas: área nova ≥ 2× o planalto, bosques e orçamento (peças ≤ 9000, luzes ≤ 60)", areaGain >= 2 and (low.trees or 0) >= 40 and nParts <= 9000 and nLights <= 60,
+		string.format("%.1fx, %d árvores, %d peças, %d luzes", areaGain, low.trees or 0, nParts, nLights))
+	-- lugares e baús
+	local want = { "verdant_low_eldermoor", "verdant_low_crypt", "verdant_low_tower", "verdant_low_runes", "verdant_low_swamp", "verdant_low_cave" }
+	local reg = WS.Regions.verdant
+	local missing = {}
+	for _, id in ipairs(want) do
+		if not (reg and reg.chests[id]) then
+			table.insert(missing, id)
+		end
+	end
+	check("Terras Baixas: 6 baús (templo, cripta, torre, runas, pântano, caverna) registrados", #missing == 0, table.concat(missing, ","))
+	-- abrir de verdade: o jogador vai até cada baú e abre
+	local px = SIM.addPlayer("Explora", 808)
+	SIM.run(1)
+	local opened = 0
+	for _, id in ipairs(want) do
+		local ch = reg.chests[id]
+		if ch then
+			SIM.teleport(px, ch.pos + Vector3.new(3, 3, 0))
+			SIM.run(0.4)
+			local r = RS2.claim(px, "verdant", id)
+			if r and r.ok then
+				opened += 1
+			end
+			SIM.run(1.2)
+		end
+	end
+	check("Terras Baixas: cada baú abre com recompensa (sistema dos baús-santuário)", opened == #want, opened .. "/" .. #want)
+	-- escavações no estado final do Terrain: salões da caverna, túnel e cripta vazios (Air)
+	local function matAt(p)
+		local mat = "Air"
+		for _, f in ipairs(SIM.terrainFills) do
+			local inside
+			if f.kind == "ball" then
+				inside = (p - f.cf.p).Magnitude <= f.r
+			else
+				local l = f.cf:Inverse() * p
+				if f.kind == "cyl" then
+					inside = math.abs(l.Y) <= f.h / 2 and math.sqrt(l.X * l.X + l.Z * l.Z) <= f.r
+				else
+					inside = math.abs(l.X) <= f.size.X / 2 and math.abs(l.Y) <= f.size.Y / 2 and math.abs(l.Z) <= f.size.Z / 2
+				end
+			end
+			if inside then
+				mat = f.m
+			end
+		end
+		return mat
+	end
+	local hollow, why = true, ""
+	for i, hp in ipairs(low.cave.halls) do
+		-- o salão é oco E tem teto de terra por cima (entre o topo do salão e o chão das terras baixas)
+		local roof = hp + Vector3.new(0, VL.Cave.halls[i].r + 2.5, 0)
+		if matAt(hp) ~= "Air" or matAt(roof) == "Air" or roof.Y > -w.lowlands.drop then
+			hollow, why = false, string.format("salão %d: %s / teto %s", i, matAt(hp), matAt(roof))
+		end
+	end
+	local tunnelMid = low.cave.entrance:Lerp(low.cave.halls[1], 0.5)
+	check("Cavernas Esmeralda: salões escavados debaixo da terra (com teto), túnel de entrada aberto e cripta oca",
+		hollow and matAt(tunnelMid) == "Air" and matAt(low.cave.crypt) == "Air", why .. " túnel " .. tostring(matAt(tunnelMid)))
+	-- rampas: passagem aberta do planalto até as terras baixas
+	local rampsOk = true
+	for _, th in ipairs(VL.Places.ramps) do
+		local a = VL.polar(th, w.radius - 6, 0)
+		local b = VL.polar(th, w.radius + 74, -w.lowlands.drop)
+		local mid = (a + b) / 2
+		if matAt(mid + Vector3.new(0, 2.5, 0)) ~= "Air" or matAt(mid - Vector3.new(0, 1, 0)) == "Air" then
+			rampsOk = false
+		end
+	end
+	check("Terras Baixas: 4 rampas de terra do planalto até lá embaixo (chão firme, passagem livre)", rampsOk)
+	-- nomes na tela: cada lugar, a caverna só debaixo da terra, o planalto continua sem nome de região
+	local cave = low.cave.halls[2]
+	local surfaceAbove = Vector3.new(cave.X, -w.lowlands.drop + 3, cave.Z)
+	local eld = VL.polar(215, 505, -w.lowlands.drop + 3)
+	check("Terras Baixas: regiões com nome (caverna só no subsolo; ruínas; terras baixas em anel)",
+		Regions.at("verdant", cave) == "emerald_caves" and Regions.at("verdant", surfaceAbove) ~= "emerald_caves" and Regions.at("verdant", eld) == "eldermoor"
+			and Regions.at("verdant", VL.polar(0, 450, -21)) == "verdant_lowlands" and Regions.at("verdant", Vector3.new(0, 3, 14)) ~= "verdant_lowlands",
+		tostring(Regions.at("verdant", cave)) .. " / " .. tostring(Regions.at("verdant", surfaceAbove)))
+	-- quem está dentro da caverna continua no mundo 1 e NÃO é "resgatado" como se tivesse caído da ilha
+	SIM.teleport(px, cave + Vector3.new(0, -8, 0))
+	SIM.run(1.5)
+	local root = px.Character.PrimaryPart
+	check("Cavernas Esmeralda: dentro da caverna conta como Verdant Haven e não teleporta para a praça",
+		WS.worldAt(root.Position) == "verdant" and root.Position.Y < -40, string.format("y=%.0f mundo=%s", root.Position.Y, tostring(WS.worldAt(root.Position))))
+	-- muro invisível na borda NOVA (não mais na borda do planalto)
+	local far, near = 0, 0
+	for _, b in ipairs(workspace.World.verdant:GetChildren()) do
+		if b.Name == "Boundary" then
+			local d = ((b.Position - w.center) * Vector3.new(1, 0, 1)).Magnitude
+			if d > w.lowlands.radius - 5 then
+				far += 1
+			elseif d < w.radius + 10 then
+				near += 1
+			end
+		end
+	end
+	check("Terras Baixas: o muro invisível foi para a borda nova (nada bloqueia a descida do planalto)", far >= 60 and near == 0, far .. " na borda nova, " .. near .. " na antiga")
+	SIM.removePlayer(px)
+	SIM.run(0.5)
+	check("Terras Baixas: nenhum erro no servidor", #SIM.errors == before, SIM.errors[before + 1])
+end)()
+
 -- queda e respawn
 do
 	local pf = SIM.addPlayer("Davi", 404)
@@ -2795,10 +2929,23 @@ SIM.run(3)
 	check("bosses: poderes mostram o efeito no cliente (aura) e marcam o modelo", (fxKinds.bossPower or 0) >= 5 and b.model:GetAttribute("Power") == "drain")
 
 	S.CombatService.fx = origFx
-	-- sai da arena (o boss para de atacar) e espera as áreas que ainda estavam no chão acabarem
+	-- sai da arena (o boss para de atacar) e espera as áreas que ainda estavam no chão acabarem.
+	-- Jogadores de cenários anteriores parados numa arena também saem (senão o boss continua lutando).
 	SIM.teleport(pm, Worlds.Info.verdant.center + Vector3.new(0, 4, 20))
+	for _, bb in ipairs(S.BossService.list()) do
+		for _, other in ipairs(S.BossService.participants(bb)) do
+			SIM.teleport(other, Worlds.Info[bb.world].center + Vector3.new(0, 4, 24))
+		end
+	end
 	SIM.run(7)
-	check("bosses: áreas de poder somem sozinhas e nenhum erro no servidor", zones() == 0 and #SIM.errors == before, string.format("zonas %d, erro %s", zones(), tostring(SIM.errors[before + 1])))
+	local zoneInfo = {}
+	for _, z in ipairs(workspace.Telegraphs:GetChildren()) do
+		if z.Name == "BossZone" then
+			table.insert(zoneInfo, string.format("%s %.1fs", tostring(z:GetAttribute("Label")), workspace:GetServerTimeNow() - (z:GetAttribute("Start") or 0)))
+		end
+	end
+	check("bosses: áreas de poder somem sozinhas e nenhum erro no servidor", zones() == 0 and #SIM.errors == before,
+		string.format("zonas %d (%s), erro %s", zones(), table.concat(zoneInfo, ","), tostring(SIM.errors[before + 1])))
 end)()
 
 check("nenhum erro de execução no servidor durante os cenários", #SIM.errors == 0, SIM.errors[1])

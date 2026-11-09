@@ -17,6 +17,11 @@ Worlds.Info = {
 		radius = 345,
 		core = 230,
 		ceiling = 340, -- a Árvore-Santuário sobe até ~310 studs: o jogador lá em cima continua no Verdant Haven
+		-- Terras Baixas (Services/VerdantLowlands): a ilha original vira um planalto e ganha um anel de terras
+		-- 24 studs abaixo até o raio 640 (rampas, rio, ruínas, torre, círculo de runas, pântano e cavernas)
+		lowlands = { radius = 640, drop = 24 },
+		extent = 680,
+		fallDepth = 100, -- as cavernas ficam até ~62 studs abaixo do planalto: só abaixo de 100 conta como queda
 		unlockCost = 0,
 		statMult = 1.0,
 		ground = "Grass",

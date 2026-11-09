@@ -8,6 +8,7 @@ local Make = require(Shared.Util.Make)
 local Regions = require(Shared.Config.Regions)
 local CrystalKit = require(script.Parent.CrystalKit)
 local BlockTree = require(script.Parent.BlockTree)
+local VerdantLowlands = require(script.Parent.VerdantLowlands)
 
 local WorldBuilder = {}
 
@@ -73,6 +74,10 @@ local function terrainFill(w, worldId: string)
 	local cliff = Enum.Material[w.cliff]
 	Terrain:SetMaterialColor(ground, w.palette.ground)
 	Terrain:SetMaterialColor(cliff, CLIFF_COLORS[w.cliff] or rgb(100, 100, 100))
+	if w.lowlands then
+		-- terras baixas em volta (antes do chão do planalto, que fica por cima)
+		VerdantLowlands.terrain(Terrain, w, ground, cliff)
+	end
 	Terrain:FillCylinder(CF(c - V(0, 6, 0)), 12, r, ground)
 	-- parte de baixo da ilha flutuante: camadas que afinam para baixo, TODAS abaixo do chão
 	-- (antes era uma esfera grande cujo topo saía acima da grama e cobria a ilha)
@@ -160,8 +165,9 @@ end
 -- Muro invisível na borda para ninguém cair da ilha.
 function WorldBuilder.boundary(worldId: string, parent: Instance)
 	local w = Worlds.Info[worldId]
-	local n = 40
+	local n = w.lowlands and 72 or 40
 	local openings = Regions.Openings[worldId] or {}
+	local R = w.lowlands and w.lowlands.radius or w.radius -- com terras baixas, o muro vai para a borda nova
 	for i = 1, n do
 		local a = (i - 0.5) / n * math.pi * 2
 		local deg = math.deg(a)
@@ -175,9 +181,10 @@ function WorldBuilder.boundary(worldId: string, parent: Instance)
 		if open then
 			continue
 		end
-		local pos = w.center + V(math.cos(a) * (w.radius + 1), 15, math.sin(a) * (w.radius + 1))
+		local base = w.lowlands and -w.lowlands.drop or 0
+		local pos = w.center + V(math.cos(a) * (R + 1), 15 + base, math.sin(a) * (R + 1))
 		part({
-			Name = "Boundary", Size = V(2, 40, 2 * math.pi * (w.radius + 1) / n + 1), CFrame = CF(pos) * ANG(0, -a, 0),
+			Name = "Boundary", Size = V(2, 40, 2 * math.pi * (R + 1) / n + 1), CFrame = CF(pos) * ANG(0, -a, 0),
 			Transparency = 1, CanQuery = false, Parent = parent,
 		})
 	end
@@ -574,6 +581,7 @@ WorldBuilder.oakTree = oakTree
 local function pineTree(parent, pos: Vector3, s: number, rng: Random, bark: Color3, leaf: Color3)
 	return branchTree(parent, pos, s, rng, bark, leaf, nil, { name = "Pine", trunk = 8.5, branches = 3, rise = 1.9, spread = 0.65, leader = 7.5, cluster = 2.7, hang = 1 })
 end
+WorldBuilder.pineTree = pineTree
 
 -- Grupo de rochas: blocos inclinados de tamanhos diferentes, meio enterrados, com musgo opcional.
 local function rockCluster(parent, pos: Vector3, s: number, rng: Random, color: Color3, material: Enum.Material, moss: Color3?)
@@ -667,6 +675,10 @@ local function bush(parent, pos: Vector3, s: number, rng: Random, leaf: Color3)
 	end
 end
 
+WorldBuilder.bush = function(...)
+	return bush(...)
+end
+
 -- Samambaia: frondes triangulares compridas em roseta, arqueadas para fora.
 local function fern(parent, pos: Vector3, s: number, rng: Random, leaf: Color3)
 	local spin = rng:NextNumber(0, 6.28)
@@ -679,6 +691,9 @@ local function fern(parent, pos: Vector3, s: number, rng: Random, leaf: Color3)
 	end
 end
 
+WorldBuilder.fern = function(...)
+	return fern(...)
+end
 function WorldBuilder.decor(worldId: string, parent: Instance)
 	local w = Worlds.Info[worldId]
 	local c = w.center
@@ -938,7 +953,8 @@ function WorldBuilder.verdantLandmark(parent: Instance, terrainOk: boolean)
 		local dir = ((edge - w.center) * V(1, 0, 1)).Unit
 		part({ Name = "Stream", Size = V(6, 0.4, 22), CFrame = CF(edge - dir * 10 + V(0, 0.15, 0), edge + V(0, 0.15, 0)), Color = rgb(60, 205, 210),
 			Material = Enum.Material.Glass, Transparency = 0.25, CanCollide = false, Parent = folder })
-		waterfall(folder, edge + dir * 1.5 + V(0, 0.2, 0), 140, 6, dir)
+		-- com as terras baixas, cai 24 studs no Rio Cristalino (VerdantLowlands) em vez de cair da ilha
+		waterfall(folder, edge + dir * 1.5 + V(0, 0.2, 0), w.lowlands and w.lowlands.drop or 140, 6, dir)
 	end
 	-- flores roxas e árvores-bonsai ao redor do lago
 	local rng = Random.new(4242)

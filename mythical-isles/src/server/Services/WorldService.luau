@@ -13,6 +13,7 @@ local WorldBuilder = require(script.Parent.WorldBuilder)
 local CrystalHollow = require(script.Parent.CrystalHollow)
 local SkyKingdom = require(script.Parent.SkyKingdom)
 local SanctuaryTree = require(script.Parent.SanctuaryTree)
+local VerdantLowlands = require(script.Parent.VerdantLowlands)
 
 local WorldService = {}
 
@@ -65,6 +66,25 @@ function WorldService.build()
 		local folder = Make("Folder", { Name = id, Parent = root })
 		local terrainOk = WorldBuilder.terrain(id, folder)
 		if id == "verdant" then
+			-- Terras Baixas em volta do planalto: rampas, rio, ruínas, torre, runas, pântano e cavernas
+			if w.lowlands then
+				local okLow, low = pcall(VerdantLowlands.build, folder, terrainOk, WorldBuilder)
+				if okLow then
+					WorldService.Lowlands = low
+					local reg = WorldService.Regions[id] or { gates = {}, chests = {}, npcs = {}, walkPoints = {} }
+					reg.walkPoints = reg.walkPoints or {}
+					for cid, ch in pairs(low.chests) do
+						reg.chests[cid] = ch
+					end
+					for label, q in pairs(low.walkPoints) do
+						reg.walkPoints[label] = q
+					end
+					WorldService.Regions[id] = reg
+				else
+					local rs = game:GetService("ReplicatedStorage")
+					rs:SetAttribute("ServerErrors", ((rs:GetAttribute("ServerErrors") or "") .. "\n\nTerras Baixas: " .. tostring(low)))
+				end
+			end
 			WorldBuilder.verdantLandmark(folder, terrainOk)
 			WorldBuilder.blockGrove(folder)
 			-- Árvore-Santuário gigante no lugar da Árvore Ancestral (sobre o lago turquesa)
@@ -314,7 +334,7 @@ function WorldService.start()
 					-- proteção contra queda: abaixo da ilha atual, volta para a praça dela
 					local wid = p:GetAttribute("World") or Worlds.Order[1]
 					local cur = Worlds.Info[wid] or Worlds.Info[Worlds.Order[1]]
-					if hrp.Position.Y < cur.center.Y - 45 then
+					if hrp.Position.Y < cur.center.Y - (cur.fallDepth or 45) then
 						char:PivotTo((WorldService.Layout[wid] or WorldService.Layout[Worlds.Order[1]]).spawnCF)
 						hrp.AssemblyLinearVelocity = Vector3.zero
 					end

@@ -414,6 +414,32 @@ de mundos (`client/Controllers/UIKit.luau`, `HUD.luau`, `Panels.luau`):
 - **Região com nome** ("Farol Ancestral — Ruínas do Farol") e o baú **Relicário do Farol**.
 - **Peso:** ≈ 2.200 peças (contado à parte do orçamento do mundo).
 
+### Mundo 1 maior: Terras Baixas, ruínas e cavernas subterrâneas
+
+O Verdant Haven ganhou um anel de **terras baixas** em volta do planalto: o mundo foi de raio 345 para **640 studs**
+(**≈ 2,4× a área jogável**). O planalto antigo continua igual, agora no alto de um paredão de 24 studs.
+- **Como descer:** 4 rampas de terra largas (θ 10°, 195°, 245° e 300°) e o rio, que vira uma cachoeira de 140 studs
+  na foz. Uma trilha em anel liga tudo lá embaixo, com 2 pontes de pedra sobre o rio.
+- **Lugares novos (cada um com nome na tela ao chegar e um baú com recompensa):**
+
+  | Lugar | Onde | O que tem |
+  |---|---|---|
+  | **Ruínas de Eldermoor** | θ 215° | muralhas quebradas, portão, colunata e templo com altar (baú) |
+  | **Cripta de Eldermoor** | sob o templo | escada que desce para uma sala escavada no terreno, com tochas (baú) |
+  | **Torre de Vigia Caída** | θ 35° | torre de 5 andares em ruína, escada em espiral de 40 degraus, baú no topo |
+  | **Círculo das Runas** | θ 270° | pedras em pé com runas que brilham, altar no centro (baú) |
+  | **Pântano Brumoso** | θ 322° | poças, árvores mortas, cogumelos-luz, passarela de tábuas e névoa própria (baú) |
+  | **Cavernas Esmeralda** | θ 72°, subsolo | túnel que desce, 3 salões escavados com teto, lago subterrâneo, cristais, cogumelos, estalactites, tochas e saída por outro túnel (baú) |
+  | **Rio Cristalino** | θ 141° | o rio do planalto continua até a foz, com a cachoeira |
+
+- **Mata:** 46 bosques (árvores de blocos, carvalhos, arbustos e pedras), 14 moitas floridas, morros e campos —
+  212 árvores no total, fora da trilha.
+- **Peso:** ≈ 5.100 peças e 27 luzes (contadas à parte do orçamento do planalto). O terreno (rampas, rio, cavernas,
+  cripta) é feito com `Terrain` (preenchimentos e escavação com `Air`).
+- **Ajustes:** o muro invisível foi para a borda nova; a proteção de queda só manda para a praça abaixo de 100 studs
+  (as cavernas ficam a ~50 studs de profundidade); as regiões aceitam anel (`minDist`) e "só no subsolo" (`below`).
+- Ainda não há inimigos nas Terras Baixas: os campos de inimigos continuam no planalto.
+
 ### Poder próprio de TODOS os pets (192 espécies)
 
 Todo pet agora tem o seu poder (ataque Assinatura, solto quando a Fúria enche) — lista completa em `docs/PODERES.md`:
@@ -701,9 +727,9 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Variáveis indefinidas / código suspeito | `python3 tools/lint.py luau-analyze` | 0 avisos |
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **66 testes passando** |
-| Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", ≤ 18.000 triângulos) + bosses anatômicos nos dois modos (todas as juntas do boss antigo, mesma altura de raiz, pés no chão, peças de energia com cor, ≤ 20.000 / 3.400 triângulos) | `python3 tools/run_tests.py luau --smoke` | **3866 verificações, 0 falhas** |
+| Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", ≤ 18.000 triângulos) + bosses anatômicos nos dois modos (todas as juntas do boss antigo, mesma altura de raiz, pés no chão, peças de energia com cor, ≤ 20.000 / 3.400 triângulos) | `python3 tools/run_tests.py luau --smoke` | **4058 verificações, 0 falhas** |
 | Animações dos pets nas 192 espécies | `python3 tools/run_tests.py luau --animcheck` | **1.950 animações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **210 cenários passando** (inclui o poder dos pets dos Mundos 2 a 5 em combate e o tempero das variantes; o visual v4: Alta qualidade nos pets do jogador, luz assada por face e a troca Leve/Alta nas Opções; as animações novas dos pets: cada comportamento ocioso muda a pose, sono com "Zzz" e acordar, tranco ao levar dano e festa ao subir de nível; as mecânicas próprias dos 5 bosses numa luta real: prender, lentidão, leque, espelho, raio em cadeia, áreas que ficam, carga estática, veneno, vinhas, Florescer com brotos, drenagem e Fome do Vazio; o visual v3 dos pets e bosses: contorno de desenho, sem textura de grama, olhos com brilho no modo de peças e sombreamento pela altura; a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **220 cenários passando** (inclui o Mundo 1 maior: Terras Baixas com área ≥ 2× o planalto, os 6 baús novos abrindo, salões de caverna ocos com teto, túnel e cripta abertos, as 4 rampas, as regiões novas, a caverna não conta como queda e o muro na borda nova; o poder dos pets dos Mundos 2 a 5 em combate e o tempero das variantes; o visual v4: Alta qualidade nos pets do jogador, luz assada por face e a troca Leve/Alta nas Opções; as animações novas dos pets: cada comportamento ocioso muda a pose, sono com "Zzz" e acordar, tranco ao levar dano e festa ao subir de nível; as mecânicas próprias dos 5 bosses numa luta real: prender, lentidão, leque, espelho, raio em cadeia, áreas que ficam, carga estática, veneno, vinhas, Florescer com brotos, drenagem e Fome do Vazio; o visual v3 dos pets e bosses: contorno de desenho, sem textura de grama, olhos com brilho no modo de peças e sombreamento pela altura; a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -829,6 +855,10 @@ travamento) foi exercitada.
   - "100x melhor" não é medida: o salto real é de ~250 peças primitivas por boss para superfícies contínuas com
     relevo, cor por vértice e milhares de faces. Modelos esculpidos à mão e texturizados (3D Importer) ainda
     seriam o próximo nível.
+- **Terras Baixas e cavernas — o que ainda precisa do Studio:** o terreno foi conferido no simulador (amostras de
+  material em pontos-chave) e nas prévias, que aproximam o `Terrain` (o modo de corte mostra os salões). No Studio,
+  confira se as rampas sobem sem o personagem escorregar, se a escavação das cavernas ficou com a forma esperada
+  (o `Terrain` arredonda em células de 4 studs) e o desempenho com o mundo maior.
 - **Ataques Assinatura — o que ainda precisa do Studio:** os efeitos visuais foram executados no simulador (todos os
   estilos rodam e limpam as peças), mas não vistos na tela; o equilíbrio de dano em partidas reais.
 - **Visual v4 — o que ainda precisa do Studio:** desempenho da Alta qualidade (até ~6.300 peças por pet, 4 pets) em

@@ -252,7 +252,7 @@ if (ground === 'terrain') {
     const mat = new THREE.MeshStandardMaterial({ color: col, roughness: water ? .08 : .95, metalness: water ? .1 : 0, transparent: water, opacity: water ? .82 : 1 });
     let mesh;
     if (f.k === 'cyl') {
-      if (water) { mesh = new THREE.Mesh(new THREE.CylinderGeometry(f.r, f.r, .3, 64), mat); mesh.position.set(f.p[0], 0.12, f.p[2]); }
+      if (water) { mesh = new THREE.Mesh(new THREE.CylinderGeometry(f.r, f.r, .3, 64), mat); mesh.position.set(f.p[0], f.p[1] + f.h / 2 + 0.12, f.p[2]); }
       else { mesh = new THREE.Mesh(new THREE.CylinderGeometry(f.r, f.r * (f.p[1] < -15 ? .9 : 1), f.h, 72), mat); mesh.position.set(...f.p); }
     } else if (f.k === 'ball') { mesh = new THREE.Mesh(new THREE.SphereGeometry(f.r, 40, 24), mat); mesh.position.set(...f.p); }
     else if (f.k === 'block') {

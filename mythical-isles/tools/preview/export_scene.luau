@@ -3,6 +3,9 @@ local Worlds = require(__proxy("Shared/Config/Worlds"))
 for _, id in ipairs(Worlds.Order) do
 	local w = Worlds.Info[id]
 	table.insert(SIM.groundPlanes, { center = w.center, radius = w.radius, y = w.center.Y })
+	if w.lowlands then
+		table.insert(SIM.groundPlanes, { center = w.center, radius = w.lowlands.radius, y = w.center.Y - w.lowlands.drop })
+	end
 end
 __modules["Server/Main"](__proxy("Server/Main"))
 SIM.run(0.5)
@@ -73,7 +76,7 @@ local char = p.Character
 print(string.format("PLAYER %s %s %s", num(char.PrimaryPart.Position.X), num(char.PrimaryPart.Position.Y), num(char.PrimaryPart.Position.Z)))
 local verdant = Worlds.Info.verdant
 local function inVerdant(part)
-	return ((part.Position - verdant.center) * Vector3.new(1, 0, 1)).Magnitude < verdant.radius + 30 and part.Position.Y > -120 and part.Position.Y < 360
+	return ((part.Position - verdant.center) * Vector3.new(1, 0, 1)).Magnitude < (verdant.extent or verdant.radius + 30) and part.Position.Y > -120 and part.Position.Y < 360
 end
 dump("island", { workspace:FindFirstChild("World"):FindFirstChild("verdant"), workspace:FindFirstChild("Enemies"), workspace:FindFirstChild("Bosses"),
 	workspace:FindFirstChild("Resources"), workspace:FindFirstChild("Pets") }, inVerdant)
@@ -83,7 +86,7 @@ do
 	local out = {}
 	for _, f in ipairs(SIM.terrainFills) do
 		local pp = f.cf.p
-		if ((pp - verdant.center) * Vector3.new(1, 0, 1)).Magnitude < verdant.radius + 40 and math.abs(pp.Y) < 150 then
+		if ((pp - verdant.center) * Vector3.new(1, 0, 1)).Magnitude < (verdant.extent or verdant.radius + 40) and math.abs(pp.Y) < 150 then
 			local col = SIM.terrainColors[f.m]
 			local sz = f.size or Vector3.new(0, 0, 0)
 			local r = f.cf.r
