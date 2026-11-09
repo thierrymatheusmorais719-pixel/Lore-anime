@@ -278,6 +278,20 @@ Além de andar, correr, pular, atacar, comemorar e desmaiar, os pets agora têm 
   | Bípedes (golem, ent, cogumelo, panda, macaco) | acenar, espreguiçar com os braços para cima, bocejar, dançar |
   | Serpentes | erguer a cabeça, pôr a língua, balançar |
   | Insetos / slimes e espíritos | limpar as antenas, tremer / girar, se achatar |
+- **Próprios de cada anatomia** (somados aos de cima, valem para TODAS as 192 espécies):
+  | Anatomia | Comportamentos próprios |
+  |---|---|
+  | Lobos e cães | uivar sentado, correr atrás do rabo |
+  | Raposas, filhotes, furões | bote (agacha, rebola e pula), correr atrás do rabo, ficar de pé |
+  | Felinos, linces, leões | lamber a pata, bote; leões e grifos rugem |
+  | Cervos, cabras | pastar (cabeça no chão mastigando), sacudir a cabeça |
+  | Pesados e mamutes | bater a pata no chão; o mamute ergue a tromba e barra |
+  | Tartarugas | se esconder (recolhe cabeça e patas) |
+  | Roedores, coelhos, esquilos, sapos | ficar de pé, lavar o rosto, bater a pata, coaxar, língua |
+  | Dragões que voam | pirueta no ar, rugido, abrir as asas, virar a cabeça (no lugar dos de chão) |
+  | Corujas, morcegos, mariposas | virar a cabeça, pirueta, bater as asas rápido |
+  | Golens, ents, cogumelos, pandas | pose de força, pisada, balançar, girar; o panda rola de lado |
+  | Serpentes, slimes, espíritos | enrolar-se com a língua de fora, pular de alegria, pirueta |
 - **Sono:** depois de ~28 s parado, deita (barriga no chão, patas dobradas, olhos fechados, cauda enrolada) com
   "z Z z" em cima da cabeça; acorda ao se mexer. Aves que voam, slimes e espíritos não dormem.
 - **Tranco** ao levar dano (recua, sacode a cabeça, orelhas para trás), **festinha** ao subir de nível
@@ -287,6 +301,10 @@ Além de andar, correr, pular, atacar, comemorar e desmaiar, os pets agora têm 
   como um elipsoide, cinemática direta pelas juntas) e levanta o pet o necessário; deitado, a barriga encosta no chão.
 - Prévia sem o Studio: `python3 tools/run_tests.py luau --animexport` roda o `CreatureMotion` real e exporta os
   quadros para `tools/preview/pets3d.html`.
+- **Verificação em todas as espécies:** `python3 tools/run_tests.py luau --animcheck` monta o esqueleto de cada uma
+  das 192 espécies e roda cada comportamento dela, o sono, a festa de nível e a Assinatura (1.950 animações): a pose
+  tem que mudar, nenhuma junta pode receber valor inválido, nada pode afundar no chão e quem dorme encosta a barriga
+  no chão com o "Zzz".
 
 ### Ataques e poderes próprios dos bosses
 
@@ -656,6 +674,7 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
 | Lógica pura | `python3 tools/run_tests.py luau` | **65 testes passando** |
 | Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", ≤ 18.000 triângulos) + bosses anatômicos nos dois modos (todas as juntas do boss antigo, mesma altura de raiz, pés no chão, peças de energia com cor, ≤ 20.000 / 3.400 triângulos) | `python3 tools/run_tests.py luau --smoke` | **3866 verificações, 0 falhas** |
+| Animações dos pets nas 192 espécies | `python3 tools/run_tests.py luau --animcheck` | **1.950 animações, 0 falhas** |
 | Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **206 cenários passando** (inclui as animações novas dos pets: cada comportamento ocioso muda a pose, sono com "Zzz" e acordar, tranco ao levar dano e festa ao subir de nível; as mecânicas próprias dos 5 bosses numa luta real: prender, lentidão, leque, espelho, raio em cadeia, áreas que ficam, carga estática, veneno, vinhas, Florescer com brotos, drenagem e Fome do Vazio; o visual v3 dos pets e bosses: contorno de desenho, sem textura de grama, olhos com brilho no modo de peças e sombreamento pela altura; a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
@@ -786,7 +805,7 @@ travamento) foi exercitada.
   estilos rodam e limpam as peças), mas não vistos na tela; o equilíbrio de dano em partidas reais.
 - **Animações novas — o que ainda precisa do Studio:** são procedurais (juntas `Motor6D.Transform`), vistas só nas
   prévias e no simulador. Confira no jogo o ritmo dos comportamentos e se alguma pose atravessa partes do próprio corpo
-  em espécies que não estão nas imagens (as prévias cobrem raposa, gato, coelho, coruja, macaco, serpente e cogumelo).
+  (o `--animcheck` confere chão, pose e valores nas 192 espécies, mas não detecta uma parte do corpo atravessando outra).
 - **Visual v3 — o que ainda precisa do Studio:** as imagens de antes/depois são da geometria real renderizada fora do
   Roblox; o contorno da prévia é uma aproximação do `Highlight` (no jogo ele só contorna a silhueta externa). Os pets
   continuam low-poly no modo de peças: o salto grande de qualidade ainda é ligar o EditableMesh (malhas suaves).

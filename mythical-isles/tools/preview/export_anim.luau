@@ -14,7 +14,9 @@ local function num(x)
 	return string.format("%.3f", x)
 end
 
-local SPECIES = { "kit_1", "leafcat_1", "hop_1", "owlet_1", "mossape_1", "glassserpent_1", "cap_1" }
+-- uma espécie de cada anatomia principal (os comportamentos dependem do jeito de andar + anatomia)
+local SPECIES = { "kit_1", "leafcat_1", "hop_1", "owlet_1", "mossape_1", "glassserpent_1", "cap_1", "verdantwolf_1", "grovestag_1", "turfmammoth_1",
+	"drakeling_1", "beetle_1", "astral_lion" }
 local FRAMES = 4
 
 -- monta o "modelo" com as juntas, como o PetMesh.assemble (sem as cunhas: a malha vem da planta)
@@ -109,7 +111,7 @@ for _, sid in ipairs(SPECIES) do
 	if sp then
 		local bp = PetAnatomy.blueprint(sid, sp, 1, { low = true })
 		local list = { "rest" }
-		for _, a in ipairs(CreatureMotion.Acts[bp.gait] or CreatureMotion.Acts.quad) do
+		for _, a in ipairs(CreatureMotion.actsFor(bp.gait, bp.anatomy, bp.flies == true)) do
 			table.insert(list, a[1])
 		end
 		for _, extra in ipairs({ "sleep", "levelup", "signature" }) do

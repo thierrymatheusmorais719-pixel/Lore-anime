@@ -181,7 +181,43 @@ local ACTS = {
 	float = { { "spin", 1.8 }, { "squish", 1.6 } },
 	bounce = { { "spin", 1.8 }, { "squish", 1.6 } },
 }
+-- Comportamentos PRÓPRIOS de cada anatomia (somados aos do jeito de andar). Quadrúpedes que voam (dragões)
+-- trocam os de chão pelos de voo.
+local ANATOMY_ACTS = {
+	wolf = { { "howl", 3.0 } }, canine = { { "howl", 3.0 }, { "tailchase", 2.4 } }, pup = { { "tailchase", 2.4 }, { "pounce", 1.6 } },
+	fox = { { "pounce", 1.6 }, { "tailchase", 2.4 } },
+	feline = { { "lickpaw", 2.6 }, { "pounce", 1.6 } }, lynx = { { "lickpaw", 2.6 }, { "pounce", 1.6 } }, lion = { { "roar", 2.2 }, { "lickpaw", 2.6 } },
+	griffin = { { "roar", 2.2 }, { "wingstretch", 2.2 } },
+	cervid = { { "graze", 3.2 }, { "headtoss", 1.6 } }, caprine = { { "graze", 3.2 }, { "headtoss", 1.6 } }, bushgoat = { { "graze", 3.2 }, { "headtoss", 1.6 } },
+	heavy = { { "stomp", 1.8 }, { "graze", 3.2 } }, mammoth = { { "trumpet", 2.4 }, { "stomp", 1.8 } }, chelonian = { { "hide", 3.0 } },
+	rodent = { { "beg", 3.2 }, { "groom", 2.6 } }, mustelid = { { "beg", 3.2 }, { "tailchase", 2.4 } }, reptile = { { "tongue", 1.6 } },
+	lagomorph = { { "thump", 1.6 } }, squirrel = { { "groom", 2.6 } }, amphibian = { { "croak", 2.0 }, { "tongue", 1.6 } },
+	avian = { { "headturn", 2.4 } }, bat = { { "barrelroll", 1.6 } }, moth = { { "flutter", 1.8 } },
+	golem = { { "flex", 2.4 }, { "stomp", 1.8 } }, treant = { { "sway", 3.0 }, { "flex", 2.4 } }, shroom = { { "spin", 1.8 } },
+	leafpanda = { { "rollover", 2.6 }, { "flex", 2.4 } }, biped = { { "flex", 2.4 } },
+	slime = { { "jumpjoy", 1.6 } }, floater = { { "barrelroll", 1.6 } }, serpent = { { "coilup", 2.6 } }, insect = { { "flutter", 1.8 } },
+}
+local FLYING_QUAD = { { "barrelroll", 1.6 }, { "roar", 2.2 }, { "wingstretch", 2.2 }, { "headturn", 2.4 } }
 CreatureMotion.Acts = ACTS
+CreatureMotion.AnatomyActs = ANATOMY_ACTS
+
+-- Lista de comportamentos de um pet (jeito de andar + anatomia).
+function CreatureMotion.actsFor(gait: string, anatomy: string, flies: boolean): { any }
+	local base = (flies and gait == "quad") and FLYING_QUAD or (ACTS[gait] or ACTS.quad)
+	local list = table.clone(base)
+	for _, a in ipairs(ANATOMY_ACTS[anatomy] or {}) do
+		local dup = false
+		for _, b in ipairs(list) do
+			if b[1] == a[1] then
+				dup = true
+			end
+		end
+		if not dup then
+			table.insert(list, a)
+		end
+	end
+	return list
+end
 CreatureMotion.SleepAfter = 28 -- s parado até dormir
 
 -- entra/sai suave (0.3 s) dentro da duração do comportamento
@@ -207,10 +243,12 @@ function CreatureMotion.forceAct(entry, name: string, clock: number?)
 		return
 	end
 	local dur = 2
-	for _, list in pairs(ACTS) do
-		for _, a in ipairs(list) do
-			if a[1] == name then
-				dur = a[2]
+	for _, list in ipairs({ ACTS, ANATOMY_ACTS, { FLYING_QUAD } }) do
+		for _, l in pairs(list) do
+			for _, a in ipairs(l) do
+				if a[1] == name then
+					dur = a[2]
+				end
 			end
 		end
 	end
@@ -238,7 +276,8 @@ local function idleBehaviour(entry, idle: boolean, dt: number, clock: number)
 		entry.nextActAt = entry.idleFor + 4 + math.random() * 6
 	end
 	if not act and entry.idleFor >= (entry.nextActAt or 4) then
-		local list = ACTS[entry.gait] or ACTS.quad
+		local list = entry.acts or CreatureMotion.actsFor(entry.gait, entry.anatomy, entry.flies)
+		entry.acts = list
 		local pick = list[math.random(1, #list)]
 		if entry.lastAct == pick[1] and #list > 1 then
 			pick = list[(table.find(list, pick) or 1) % #list + 1]
@@ -414,13 +453,153 @@ local function extraPose(entry, act: string?, e: number, u: number, sleep: numbe
 		elseif act == "wiggle" then
 			add("bodyRoll", math.sin(u * 18) * 0.12 * e)
 			add("bodyY", -0.05 * e)
+			add("legF", math.sin(u * 18) * 0.3 * e)
+			add("ear", math.sin(u * 24) * 0.5 * e)
 		elseif act == "spin" then
 			add("bodyYaw", math.pi * 2 * math.clamp((u - 0.2) / 1.4, 0, 1) * (e > 0 and 1 or 0))
 			add("bodyY", math.sin(math.clamp(u / 1.6, 0, 1) * math.pi) * 0.4)
+			add("ear", 0.5 * e) -- folhas/orelhas abertas pelo giro
 		elseif act == "squish" then
 			local q = math.sin(u * 7) * e
 			add("bodyY", -math.abs(q) * 0.15)
 			add("bodyPitch", q * 0.12)
+			add("ear", -math.abs(q) * 0.6)
+		-- próprios das anatomias -------------------------------------------------------------------
+		elseif act == "howl" then
+			-- senta e uiva para o alto, focinho para cima, boca abrindo e fechando devagar
+			add("bodyPitch", 0.35 * e)
+			add("bodyY", -0.1 * e)
+			add("legB", 0.9 * e)
+			add("kneeB", -1.4 * e)
+			add("neck", 0.95 * e)
+			add("head", 0.3 * e)
+			add("jaw", (0.35 + math.sin(u * 3) * 0.15) * e)
+			add("ear", -0.3 * e)
+			add("tailLift", -0.3 * e)
+		elseif act == "tailchase" then
+			-- corre atrás do rabo: gira no lugar com a cabeça virada para trás
+			add("bodyYaw", u * 7 * (e > 0.05 and 1 or 0) % (math.pi * 2))
+			add("neckYaw", 0.9 * e)
+			add("headYaw", 0.4 * e)
+			add("wag", 1.5 * e)
+			add("bodyY", math.abs(math.sin(u * 14)) * 0.04 * e)
+		elseif act == "pounce" then
+			-- agacha, rebola e dá o bote para a frente
+			local k = math.clamp((u - 0.9) / 0.4, 0, 1)
+			local crouch = (1 - k) * e
+			add("bodyPitch", (-0.25 * crouch) + 0.3 * math.sin(k * math.pi) * e)
+			add("bodyY", -0.12 * crouch + math.sin(k * math.pi) * 0.25 * e)
+			add("bodyRoll", math.sin(u * 16) * 0.05 * crouch)
+			add("legF", (0.5 * crouch) + 0.8 * math.sin(k * math.pi) * e)
+			add("legB", -0.5 * math.sin(k * math.pi) * e)
+			add("ear", 0.25 * e)
+			add("tailLift", 0.3 * e)
+		elseif act == "lickpaw" then
+			-- senta, levanta a pata da frente e lambe
+			add("bodyPitch", 0.3 * e)
+			add("bodyY", -0.08 * e)
+			add("legB", 0.9 * e)
+			add("kneeB", -1.4 * e)
+			P.pawR = (P.pawR or 0) + 1.1 * e
+			add("neck", -0.35 * e)
+			add("neckYaw", -0.3 * e)
+			add("jaw", math.max(0, math.sin(u * 10)) * 0.2 * e)
+			add("lid", 0.5 * e)
+		elseif act == "roar" then
+			add("bodyPitch", 0.2 * e)
+			add("legF", -0.15 * e)
+			add("neck", 0.45 * e)
+			add("jaw", 0.85 * e * math.min(1, u * 3))
+			add("headRoll", math.sin(u * 30) * 0.05 * e)
+			add("wing", 0.9 * e)
+			add("tailLift", 0.5 * e)
+			add("ear", -0.4 * e)
+		elseif act == "graze" then
+			-- abaixa a cabeça até o chão e mastiga
+			add("neck", -1.6 * e)
+			add("head", -0.45 * e)
+			add("bodyPitch", -0.1 * e)
+			add("legF", 0.18 * e)
+			add("jaw", math.max(0, math.sin(u * 8)) * 0.18 * e)
+			add("ear", 0.15 * math.sin(u * 2) * e)
+			add("wag", 0.3 * e)
+		elseif act == "headtoss" then
+			add("neck", math.sin(u * 7) * 0.45 * e)
+			add("headRoll", math.sin(u * 7 + 1) * 0.35 * e)
+			add("ear", math.sin(u * 14) * 0.4 * e)
+		elseif act == "stomp" then
+			-- levanta a pata da frente e pisa forte
+			local k = math.sin(math.clamp(u / 1.2, 0, 1) * math.pi)
+			P.pawR = (P.pawR or 0) + 1.0 * k * e
+			add("bodyPitch", 0.12 * k * e)
+			add("bodyRoll", -0.06 * k * e)
+			add("arm", -1.0 * k * e)
+			add("neck", 0.2 * k * e)
+		elseif act == "trumpet" then
+			-- mamute ergue a tromba e barra
+			add("trunk", -0.75 * e)
+			add("neck", 0.45 * e)
+			add("bodyPitch", 0.15 * e)
+			add("legF", -0.2 * e)
+			add("jaw", 0.4 * e)
+			add("ear", 0.5 * e)
+		elseif act == "hide" then
+			-- tartaruga recolhe cabeça e patas
+			add("neck", -0.9 * e)
+			add("head", -0.4 * e)
+			add("bodyY", -0.1 * e)
+			add("legF", 0.6 * e)
+			add("kneeF", -0.8 * e)
+			add("legB", -0.6 * e)
+			add("kneeB", 0.8 * e)
+			add("lid", e)
+		elseif act == "thump" then
+			-- coelho bate a pata de trás no chão
+			add("bodyPitch", 0.12 * e)
+			add("legB", math.max(0, math.sin(u * 12)) * 0.5 * e)
+			add("ear", 0.35 * e)
+		elseif act == "croak" then
+			-- sapo infla e coaxa
+			local c = math.max(0, math.sin(u * 6)) * e
+			add("bodyY", c * 0.05)
+			add("jaw", c * 0.3)
+			add("bodyPitch", 0.1 * c)
+		elseif act == "headturn" then
+			-- coruja gira a cabeça para os lados
+			add("headYaw", math.sin(u * 2.6) * 1.3 * e)
+			add("neckYaw", math.sin(u * 2.6) * 0.3 * e)
+			add("headRoll", math.sin(u * 5.2) * 0.25 * e)
+		elseif act == "barrelroll" then
+			-- pirueta no ar (voadores e flutuantes)
+			add("bodyRoll", math.pi * 2 * math.clamp((u - 0.2) / 1.2, 0, 1) * (e > 0.05 and 1 or 0))
+			add("bodyY", math.sin(math.clamp(u / 1.6, 0, 1) * math.pi) * 0.3)
+			add("wing", 0.5 * e)
+		elseif act == "flutter" then
+			add("wing", math.sin(u * 30) * 0.6 * e)
+			add("bodyY", math.abs(math.sin(u * 15)) * 0.06 * e)
+		elseif act == "flex" then
+			-- bípede faz pose de força com os dois braços
+			add("arm", -1.6 * e)
+			add("elbow", -1.6 * e)
+			P.armZ = (P.armZ or 0) + 0.9 * e
+			add("bodyPitch", 0.08 * e)
+			add("neck", 0.2 * e)
+			add("headRoll", math.sin(u * 4) * 0.1 * e)
+		elseif act == "rollover" then
+			-- panda tomba de lado e rola de volta
+			add("bodyRoll", math.sin(math.clamp(u / 2.4, 0, 1) * math.pi) * 1.3 * e)
+			add("bodyY", -0.1 * e)
+			add("arm", -1.2 * e)
+			add("leg2", 0.6 * e)
+		elseif act == "jumpjoy" then
+			local k = math.abs(math.sin(u * 5)) * e
+			add("bodyY", k * 0.5)
+			add("bodyYaw", u * 3 * (e > 0.05 and 1 or 0) % (math.pi * 2))
+			add("ear", (0.3 + k * 0.5))
+		elseif act == "coilup" then
+			add("rise", 0.7 * e)
+			add("coil", math.sin(u * 4) * 0.8 * e)
+			add("jaw", math.max(0, math.sin(u * 20)) * 0.25 * e)
 		end
 	end
 	if sleep > 0 and gait == "slither" then
@@ -470,6 +649,7 @@ local function extraPose(entry, act: string?, e: number, u: number, sleep: numbe
 		add("wag", 1.5 * math.min(1, party * 3))
 		add("arm", -2.4 * math.min(1, party * 3))
 		add("wing", 0.9 * math.min(1, party * 3))
+		add("ear", 0.45 * math.min(1, party * 3))
 	end
 	if sig > 0 then
 		-- Assinatura: empina e ruge (quadrúpedes), braços ao alto (bípedes), asas abertas (aves)
@@ -702,6 +882,9 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 			if X.scratch and j.hind and j.side > 0 then
 				extra += (1.9 + math.sin(tt * 22) * 0.35) * X.scratch
 			end
+			if X.pawR and j.front and j.side > 0 then
+				extra += X.pawR
+			end
 			if gait == "insect" then
 				cf = A(j.front and x("legF") or 0, swing * (j.side), math.max(0, math.cos(p)) * 0.3 * walk * j.side)
 			else
@@ -720,6 +903,9 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 			local extra = j.front and x("kneeF") or x("kneeB")
 			if X.scratch and j.hind and j.side > 0 then
 				extra += -1.7 * X.scratch
+			end
+			if X.pawR and j.front and j.side > 0 then
+				extra += -1.3 * X.pawR
 			end
 			cf = A(bend + tuck + strike + down * (j.front and -1.2 or 1.0) + extra, 0, 0)
 		elseif k == "footq" then
@@ -773,7 +959,7 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 			local rise = j.idx == 1 and -x("rise") * 0.55 or 0
 			cf = A(math.sin(tt * 1.8 - j.idx * 0.7) * 0.03 + rise, math.sin(ph * 1.4 - j.idx * 0.95) * amp + x("coil") * (j.idx <= 3 and 0.3 or 0), 0)
 		elseif k == "trunk" then
-			cf = A(math.sin(tt * 1.4 - j.idx * 0.6) * 0.18 - attack * 0.5 + cele * -0.4, math.sin(tt * 0.9 - j.idx) * 0.15, 0)
+			cf = A(math.sin(tt * 1.4 - j.idx * 0.6) * 0.18 - attack * 0.5 + cele * -0.4 + x("trunk"), math.sin(tt * 0.9 - j.idx) * 0.15, 0)
 		elseif k == "orbit" then
 			cf = A(0, (tt * (j.name == "Orbit2" and -0.9 or 1.3)) % (math.pi * 2), 0)
 		end

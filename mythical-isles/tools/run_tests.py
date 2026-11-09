@@ -9,6 +9,7 @@ Uso:  python3 tools/run_tests.py [caminho/para/luau] [--smoke | --sim]
   --smoke  também executa os construtores 3D (Builders) sobre um mock da API do Roblox
            (tools/roblox_mock.luau) e verifica juntas, peças e mutações (tools/smoke_builders.luau)
   --petexport  exporta a geometria das malhas dos pets (PetAnatomy) para a prévia (tools/preview)
+  --animcheck  roda as animações dos pets (CreatureMotion) nas 192 espécies e verifica pose, chão e sono
   --animexport exporta quadros da animação real dos pets (CreatureMotion) para tools/preview/pets3d.html
   --uiexport   exporta a árvore de GUI do cliente (HUD/painéis) com layout calculado para tools/preview/ui.html
   --bossexport exporta a geometria dos bosses (BossAnatomy) para a prévia (tools/preview)
@@ -69,6 +70,8 @@ def main():
         return run_sim(args[0] if args else "luau")
     if "--export" in sys.argv:
         return run_sim(args[0] if args else "luau", os.path.join("preview", "export_scene.luau"))
+    if "--animcheck" in sys.argv:
+        return run_sim(args[0] if args else "luau", "anim_check.luau")
     if "--animexport" in sys.argv:
         return run_sim(args[0] if args else "luau", os.path.join("preview", "export_anim.luau"))
     if "--uiexport" in sys.argv:
