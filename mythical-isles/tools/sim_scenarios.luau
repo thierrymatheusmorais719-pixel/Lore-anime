@@ -1402,6 +1402,57 @@ check("perfil é salvo no DataStore ao sair", store.writes > writes0)
 	expect((t3[1].fury or 0) > 0 and t3[1].model:GetAttribute("Fury") == t3[1].fury, "Fúria não enche com ataques básicos: " .. tostring(t3[1].fury))
 	check("ataques Assinatura: alvo/área/cone/linha/ricochete/vários alvos/tornado, controle, cura, escudo e força; a Fúria cheia solta o ataque em combate",
 		okAll and #SIM.errors == beforeSig, why .. " " .. tostring(SIM.errors[beforeSig + 1]))
+	-- PODER DE TODOS OS PETS: pets dos Mundos 2 a 5 usam o próprio poder, e uma variante aplica o tempero dela
+	;(function()
+		local okW, whyW = true, ""
+		local function exp(cond, msg)
+			if not cond and okW then
+				okW, whyW = false, msg
+			end
+		end
+		local t4 = team({ "crystalfox_2", "thunder_ram", "aurorafox_1", "whisper_shade" })
+		gather() -- depois de montar a equipe (os pets da equipe anterior podem ter derrubado os de antes)
+		-- variante 2 da raposa de cristal: tempero Gelo (lentidão) — a base não deixa lento
+		local fox = Signatures.forSpecies("crystalfox_2")
+		exp(fox.twist == "Gelo" and fox.slow ~= nil and Signatures.Info.crystalfox.slow == nil, "tempero da variante: " .. tostring(fox.twist))
+		place(foes[1], Vector3.new(0, 0, 0), true)
+		foes[1].slowUntil = 0
+		t4[1].model:PivotTo(CFrame.new(P + Vector3.new(-8, 0, 0)))
+		SIM.run(0.1)
+		local r4 = SigS.cast(ps, t4[1], foes[1])
+		SIM.run(0.6)
+		exp(r4 and r4.hits >= 1 and (foes[1].slowUntil or 0) > os.clock(), "Leque de Caudas Cristalinas · Gelo: " .. tostring(r4 and r4.hits))
+		-- carneiro do trovão: linha com atordoar
+		gather()
+		place(foes[1], Vector3.new(0, 0, 0), false)
+		t4[2].model:PivotTo(CFrame.new(P + Vector3.new(-10, 0, 0)))
+		SIM.run(0.1)
+		r4 = SigS.cast(ps, t4[2], foes[1])
+		exp(r4 and r4.hits >= 1 and (foes[1].stunnedUntil or 0) > os.clock(), "Marrada Trovejante (atordoa)")
+		-- raposa da aurora: poder de equipe (cura)
+		t4[4].hp = t4[4].maxHp * 0.5
+		t4[3].model:PivotTo(CFrame.new(P + Vector3.new(-12, 0, 2)))
+		t4[4].model:PivotTo(CFrame.new(P + Vector3.new(-12, 0, -2)))
+		SIM.run(0.1)
+		local before = t4[4].hp
+		SigS.cast(ps, t4[3], foes[1])
+		exp(t4[4].hp > before, "Aurora Curativa (cura a equipe)")
+		-- sombra sussurrante (Secret): vários alvos de uma vez
+		gather()
+		place(foes[1], Vector3.new(0, 0, 0), true)
+		place(foes[2], Vector3.new(0, 0, 6), true)
+		place(foes[3], Vector3.new(4, 0, -5), true)
+		t4[4].model:PivotTo(CFrame.new(P + Vector3.new(-12, 0, 0)))
+		SIM.run(0.1)
+		r4 = SigS.cast(ps, t4[4], foes[1])
+		local n = 0
+		for _ in pairs(r4 and r4.targets or {}) do
+			n += 1
+		end
+		exp(n >= 3, "Sussurro do Vazio: " .. n .. " alvos")
+		check("poder de TODOS os pets: Mundos 2-5 usam o próprio poder no servidor e a variante aplica o tempero", okW and #SIM.errors == beforeSig,
+			whyW .. " " .. tostring(SIM.errors[beforeSig + 1]))
+	end)()
 	SIM.removePlayer(ps)
 	SIM.run(0.5)
 end)()

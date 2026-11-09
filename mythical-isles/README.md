@@ -7,8 +7,8 @@ salvamento. Tudo em **Luau**, organizado para **Rojo**. Mapa, criaturas, bosses,
 vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`).
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
-> Luau, contra o dump público da API do Roblox, com 65 testes de lógica, 3866 verificações dos modelos 3D e
-> **209 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> Luau, contra o dump público da API do Roblox, com 66 testes de lógica, 3866 verificações dos modelos 3D e
+> **210 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -47,7 +47,7 @@ nenhum dos dois modos funcionar.
 Access to API Services*. Sem isso o jogo roda em **modo memória** e avisa na tela e no Output que nada será
 salvo.
 
-Ao dar Play no Studio, o servidor imprime `[Testes] Testes: 65 passaram…` (os testes de lógica rodam
+Ao dar Play no Studio, o servidor imprime `[Testes] Testes: 66 passaram…` (os testes de lógica rodam
 automaticamente no Studio) e o menu **Opções** ganha a seção **Testes (somente no Studio)**, com comandos
 para moedas, itens, mundos, nível máximo, evento de sorte, avançar fase do boss, tesouro e Estrela Errante.
 Esses comandos são recusados em servidores publicados (`RunService:IsStudio()`).
@@ -414,6 +414,19 @@ de mundos (`client/Controllers/UIKit.luau`, `HUD.luau`, `Panels.luau`):
 - **Região com nome** ("Farol Ancestral — Ruínas do Farol") e o baú **Relicário do Farol**.
 - **Peso:** ≈ 2.200 peças (contado à parte do orçamento do mundo).
 
+### Poder próprio de TODOS os pets (192 espécies)
+
+Todo pet agora tem o seu poder (ataque Assinatura, solto quando a Fúria enche) — lista completa em `docs/PODERES.md`:
+- **49 Assinaturas novas** para as famílias dos Mundos 2 a 5 (cristal, céu, floresta sombria e astral), com efeitos
+  novos no cliente: espinhos de cristal, raios do céu, sombra, feixe de arco-íris, geada e nova de luz.
+- **Temperos das variantes:** a 1ª variante de cada família usa a Assinatura pura; cada outra variante ganha um efeito
+  extra diferente (Gelo, Veneno, Faísca, Flor, Escudo, Ventania, Marca, Pressa, Força, Trovão, Raiz ou Brilho) e
+  nome próprio ("Leque de Caudas Cristalinas · Gelo"). Poderes de equipe só recebem temperos de equipe. Resultado:
+  192 poderes com nomes diferentes, nenhum repetido.
+- Testes: todo pet tem poder, nomes únicos, temperos diferentes dentro da família, todos os números dentro dos limites
+  (atordoar ≤ 2,5 s, cura ≤ 25%...), força crescente por raridade; no simulador, pets dos Mundos 2 a 5 usam o poder
+  no servidor e a variante aplica o tempero.
+
 ### Ataques Assinatura (um ataque próprio por pet do Verdant Haven)
 
 `shared/Config/Signatures.luau` (catálogo), `server/Services/SignatureService.luau` (execução e validação),
@@ -687,10 +700,10 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Sintaxe de todos os arquivos | `luau-compile --null` em cada `.luau` | ok |
 | Variáveis indefinidas / código suspeito | `python3 tools/lint.py luau-analyze` | 0 avisos |
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
-| Lógica pura | `python3 tools/run_tests.py luau` | **65 testes passando** |
+| Lógica pura | `python3 tools/run_tests.py luau` | **66 testes passando** |
 | Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", ≤ 18.000 triângulos) + bosses anatômicos nos dois modos (todas as juntas do boss antigo, mesma altura de raiz, pés no chão, peças de energia com cor, ≤ 20.000 / 3.400 triângulos) | `python3 tools/run_tests.py luau --smoke` | **3866 verificações, 0 falhas** |
 | Animações dos pets nas 192 espécies | `python3 tools/run_tests.py luau --animcheck` | **1.950 animações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **209 cenários passando** (inclui o visual v4: Alta qualidade nos pets do jogador, luz assada por face e a troca Leve/Alta nas Opções; as animações novas dos pets: cada comportamento ocioso muda a pose, sono com "Zzz" e acordar, tranco ao levar dano e festa ao subir de nível; as mecânicas próprias dos 5 bosses numa luta real: prender, lentidão, leque, espelho, raio em cadeia, áreas que ficam, carga estática, veneno, vinhas, Florescer com brotos, drenagem e Fome do Vazio; o visual v3 dos pets e bosses: contorno de desenho, sem textura de grama, olhos com brilho no modo de peças e sombreamento pela altura; a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **210 cenários passando** (inclui o poder dos pets dos Mundos 2 a 5 em combate e o tempero das variantes; o visual v4: Alta qualidade nos pets do jogador, luz assada por face e a troca Leve/Alta nas Opções; as animações novas dos pets: cada comportamento ocioso muda a pose, sono com "Zzz" e acordar, tranco ao levar dano e festa ao subir de nível; as mecânicas próprias dos 5 bosses numa luta real: prender, lentidão, leque, espelho, raio em cadeia, áreas que ficam, carga estática, veneno, vinhas, Florescer com brotos, drenagem e Fome do Vazio; o visual v3 dos pets e bosses: contorno de desenho, sem textura de grama, olhos com brilho no modo de peças e sombreamento pela altura; a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -751,7 +764,7 @@ travamento) foi exercitada.
 
 ## 7. Roteiro para conferir no Studio
 
-1. **Play**: o Output deve mostrar `mundos construídos`, `servidor pronto` e `[Testes] Testes: 65 passaram`.
+1. **Play**: o Output deve mostrar `mundos construídos`, `servidor pronto` e `[Testes] Testes: 66 passaram`.
 2. Ande até o **Ovo do Bosque** (E) → painel com as chances → *Chocar 1* → animação → o pet segue você.
 3. Clique num **arbusto** → os pets mineram (moedas sobem e o número dourado aparece).
 4. Vá até os **Thornlings** (lado −Z da ilha) → eles devem perseguir, atacar com aviso, voltar se você fugir.

@@ -850,6 +850,103 @@ SIG.eclipse = function(p, c)
 	end
 end
 
+-- Estilos dos Mundos 2 a 5 (cristal, céu, floresta sombria, astral) ---------------------------------
+
+-- espinhos de cristal que brotam do chão (Glass), em volta de um ponto
+local function crystalSpikes(at: Vector3, radius: number, color: Color3, count: number, height: number, life: number)
+	count = scaled(count)
+	for i = 1, count do
+		local a = i / count * math.pi * 2 + math.random() * 0.4
+		local d = radius * (0.25 + math.random() * 0.75)
+		local base = at + V3(math.cos(a) * d, -0.4, math.sin(a) * d)
+		local sp = part({ Size = V3(0.8, 0.2, 0.8), CFrame = CFrame.new(base), Color = color:Lerp(WHITE, 0.25), Material = Enum.Material.Glass, Transparency = 0.15 }, life)
+		if sp then
+			local h = height * (0.5 + math.random() * 0.7)
+			tween(sp, 0.18, { Size = V3(0.8, h, 0.8), CFrame = CFrame.new(base) * CFrame.Angles(0, a, math.rad((math.random() * 2 - 1) * 22)) * CFrame.new(0, h / 2, 0) })
+			task.delay(life - 0.3, function()
+				if sp.Parent then
+					tween(sp, 0.25, { Transparency = 1 })
+				end
+			end)
+		end
+	end
+	sparks(at + V3(0, 1, 0), color, 12, 16)
+end
+
+SIG.shards = function(p, c)
+	local at = p.at or p.to
+	for k = 0, (p.n or 1) - 1 do
+		task.delay(k * (p.interval or 0.3), function()
+			crystalSpikes(at, p.radius or 6, c, 10, 3.2, 1.4)
+			shockRing(at, p.radius or 6, c, 0.35)
+		end)
+	end
+	flash(at + V3(0, 2, 0), c, 16, 2.5, 0.35)
+end
+SIG.thunder = function(p, c)
+	local targets = p.points and #p.points > 0 and p.points or { p.to or p.at }
+	for k = 0, (p.n or 1) - 1 do
+		task.delay(k * (p.interval or 0.2), function()
+			for _, q in ipairs(targets) do
+				lightning(q + V3(math.random() * 4 - 2, 34, math.random() * 4 - 2), q, c, 0.6)
+				shockRing(q, 4, c, 0.25)
+			end
+		end)
+	end
+	shake(targets[1], 0.5, 0.2)
+end
+SIG.shadow = function(p, c)
+	local at = p.to or p.at
+	dust(at, Color3.fromRGB(30, 20, 45), 12, 3.2, 10)
+	for k = 0, (p.n or 1) - 1 do
+		task.delay(k * (p.interval or 0.2), function()
+			impact(at, c, 0.9)
+			sparks(at + V3(0, 1, 0), c, 8, 12)
+		end)
+	end
+	flash(at + V3(0, 2, 0), Color3.fromRGB(120, 60, 200), 12, 1.5, 0.4)
+end
+SIG.prismbeam = function(p, c)
+	local from = p.from
+	local dir = flatDir(p.from, p.to or p.at)
+	local len = p.length or 20
+	local hues = { Color3.fromRGB(255, 120, 150), Color3.fromRGB(255, 220, 120), Color3.fromRGB(140, 255, 180), Color3.fromRGB(140, 200, 255), Color3.fromRGB(200, 150, 255) }
+	for i, h in ipairs(hues) do
+		local off = (i - 3) * 0.35
+		local side = V3(-dir.Z, 0, dir.X) * off
+		local beam = part({ Size = V3(0.35, 0.35, 0.2), CFrame = CFrame.lookAt(from + V3(0, 1.4, 0) + side, from + V3(0, 1.4, 0) + side + dir), Color = h, Transparency = 0.1 }, 0.6)
+		if beam then
+			tween(beam, 0.14, { Size = V3(0.35, 0.35, len), CFrame = CFrame.lookAt(from + V3(0, 1.4, 0) + side, from + V3(0, 1.4, 0) + side + dir) * CFrame.new(0, 0, -len / 2) })
+			task.delay(0.3, function()
+				if beam.Parent then
+					tween(beam, 0.25, { Transparency = 1 })
+				end
+			end)
+		end
+	end
+	task.delay(0.15, function()
+		flash(from + dir * len + V3(0, 1.5, 0), c, 14, 2.5, 0.3)
+		sparks(from + dir * len, c, 10, 16)
+	end)
+end
+SIG.frost = function(p, c)
+	local at = p.at or p.to
+	crystalSpikes(at, p.radius or 7, Color3.fromRGB(200, 240, 255), 8, 2, 1.8)
+	shockRing(at, p.radius or 7, Color3.fromRGB(220, 245, 255), 0.6)
+	dust(at, Color3.fromRGB(230, 245, 255), 8, 2.5, 6)
+end
+SIG.nova = function(p, c)
+	local at = p.at or p.from
+	local r = p.radius or 12
+	for k = 0, (p.n or 1) - 1 do
+		task.delay(k * (p.interval or 0.35), function()
+			shockRing(at, r * (0.5 + 0.5 * (k + 1) / (p.n or 1)), c, 0.45)
+			flash(at + V3(0, 2, 0), c, r * 1.4, 3, 0.35)
+			sparks(at + V3(0, 1.5, 0), WHITE:Lerp(c, 0.5), 14, 20)
+		end)
+	end
+end
+
 local function signatureFx(p)
 	local c = p.color or Color3.new(1, 1, 1)
 	sigName(p.model, p.name or "", c)

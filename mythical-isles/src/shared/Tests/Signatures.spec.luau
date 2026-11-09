@@ -15,19 +15,44 @@ local function perTarget(s)
 end
 
 return function(t)
-	t.test("todo pet do Verdant Haven tem ataque Assinatura", function()
-		local n = 0
-		for id, sp in pairs(Pets.Species) do
-			if sp.world == "verdant" then
-				n += 1
-				t.ok(Signatures.forSpecies(id) ~= nil, "sem Assinatura: " .. id)
+	t.test("TODO pet (as 192 espécies) tem seu poder, e nenhum repete o de outro", function()
+		local n, names = 0, {}
+		for id in pairs(Pets.Species) do
+			n += 1
+			local s = Signatures.forSpecies(id)
+			t.ok(s ~= nil, "sem poder: " .. id)
+			if s then
+				t.ok(names[s.name] == nil, "poder repetido: " .. s.name .. " (" .. id .. " e " .. tostring(names[s.name]) .. ")")
+				names[s.name] = id
 			end
 		end
-		t.ok(n >= 39, "esperava todos os pets do mundo 1, achei " .. n)
+		t.ok(n >= 192, "esperava 192 espécies, achei " .. n)
 	end)
 
-	t.test("Assinaturas têm forma, campos e números válidos", function()
-		for key, s in pairs(Signatures.Info) do
+	t.test("variantes da mesma família ganham temperos diferentes", function()
+		local byFam = {}
+		for id in pairs(Pets.Species) do
+			local fam = id:match("^(.-)_%d+$")
+			if fam and Signatures.Info[fam] then
+				local s = Signatures.forSpecies(id)
+				byFam[fam] = byFam[fam] or {}
+				local tag = s.twist or "pura"
+				t.ok(byFam[fam][tag] == nil, fam .. ": tempero repetido " .. tag)
+				byFam[fam][tag] = true
+				if s.twist then
+					t.ok(s ~= Signatures.Info[fam] and s.name:find(" · ", 1, true) ~= nil, fam .. ": variante sem nome próprio")
+				end
+			end
+		end
+		t.ok(byFam.crystalfox ~= nil, "família de 12 variantes testada")
+	end)
+
+	t.test("Assinaturas têm forma, campos e números válidos (todas as espécies, com tempero)", function()
+		local all = {}
+		for id in pairs(Pets.Species) do
+			all[id] = Signatures.forSpecies(id)
+		end
+		for key, s in pairs(all) do
 			local need = SHAPES[s.shape]
 			t.ok(need ~= nil, key .. ": forma desconhecida " .. tostring(s.shape))
 			for _, f in ipairs(need or {}) do
@@ -61,7 +86,7 @@ return function(t)
 		end
 		local sum, cnt = {}, {}
 		for id, sp in pairs(Pets.Species) do
-			local s = sp.world == "verdant" and Signatures.forSpecies(id)
+			local s = Signatures.forSpecies(id)
 			if s and s.shape ~= "team" then
 				local tier = (sp.rarity == "Common" or sp.rarity == "Uncommon") and 1 or (sp.rarity == "Rare" or sp.rarity == "Epic") and 2
 					or (sp.rarity == "Legendary") and 3 or 4
