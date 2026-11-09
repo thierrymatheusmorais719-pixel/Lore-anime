@@ -68,3 +68,34 @@ for _, id in ipairs(BossAnatomy.Ids) do
 			num(bp.hover), tris, table.concat(parts, ",")))
 	end
 end
+
+-- modo de peças como no jogo: elipsoides lisos (Builders/Smooth), saída boss_<id>__smooth
+local Smooth = require(__proxy("Builders/Smooth"))
+for _, id in ipairs(BossAnatomy.Ids) do
+	local bp = BossAnatomy.blueprint(id, { low = true })
+	local byPart, total = Smooth.forBlueprint(bp, "high")
+	local parts = {}
+	for _, p in ipairs(bp.parts) do
+		local v, c, t = {}, {}, {}
+		local k = 0
+		for _, b in ipairs(byPart[p.name] or {}) do
+			local verts, tris = Smooth.ellipsoidMesh(b)
+			local col = string.format("%d,%d,%d", math.floor(b.color.R * 255 + 0.5), math.floor(b.color.G * 255 + 0.5), math.floor(b.color.B * 255 + 0.5))
+			for _, w in ipairs(verts) do
+				v[#v + 1] = num(w.X) .. "," .. num(w.Y + bp.hover) .. "," .. num(w.Z)
+				c[#c + 1] = col
+			end
+			for _, tr in ipairs(tris) do
+				t[#t + 1] = string.format("%d,%d,%d", k + tr[1] - 1, k + tr[2] - 1, k + tr[3] - 1)
+			end
+			k += #verts
+		end
+		if k > 0 then
+			parts[#parts + 1] = string.format('{"n":"%s","m":"%s","tr":%s,"v":[%s],"c":[%s],"t":[%s]}', p.name, (p.material == "Fabric" or p.material == "Grass") and "SmoothPlastic" or p.material,
+				num(p.transparency), table.concat(v, ","), table.concat(c, ","), table.concat(t, ","))
+		end
+	end
+	print(string.format("RESUMO %s (lisos): %d elipsoides", id, total))
+	print(string.format('PETMESH boss_%s__smooth {"id":"%s","anatomy":"boss","gait":"boss","rarity":"Boss","hover":%s,"tris":%d,"parts":[%s]}', id, id, num(bp.hover), total,
+		table.concat(parts, ",")))
+end

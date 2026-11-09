@@ -427,5 +427,22 @@ Panels.open("Pets")
 snapshot("pets")
 Panels.open("Map")
 snapshot("map")
+-- missões com a mineração de cristais (cristais e contratos do dia no perfil real do servidor)
+do
+	local DS = require(__proxy("Server/Services/DataService"))
+	local d = DS.get(lp)
+	if d then
+		d.items.emerald_crystal = 14
+		d.items.sapphire_crystal = 3
+		d.mining.mined = 31
+		d.mining.contracts = { day = math.floor(os.time() / 86400), ids = { "mc_emerald_s", "mc_emerald_l", "mc_heart" }, done = {} }
+		d.quests.daily.ids = { "d_mine", "d_mine_emerald", "d_contract" }
+		d.quests.daily.progress = { d_mine = 14, d_mine_emerald = 12 }
+		DS.pushState(lp)
+		frames(10)
+	end
+	Panels.open("Quests")
+	snapshot("quests")
+end
 Panels.close()
 frames(10)

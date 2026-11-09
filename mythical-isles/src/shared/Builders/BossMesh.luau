@@ -1,5 +1,5 @@
 -- Moldes dos bosses novos (BossAnatomy), no CLIENTE: malhas lisas (EditableMesh) quando o Roblox libera,
--- senão a mesma anatomia em resolução menor feita de peças (WedgeParts). Usa a mesma decisão de modo dos
+-- senão a mesma anatomia feita de peças lisas (elipsoides, Builders/Smooth). Usa a mesma decisão de modo dos
 -- pets (PetMesh.available): se o EditableMesh já falhou para um pet, vai direto para o modo de peças.
 -- Se os dois modos falharem, devolve nil e o boss antigo (do servidor) continua visível.
 
@@ -8,18 +8,19 @@ local BossAnatomy = require(script.Parent.BossAnatomy)
 
 local BossMesh = {}
 
-local templates = {} -- [bossId] = { model, bp, poly, facets } | false (falhou)
+local templates = {} -- [bossId] = { model, bp, poly, blobs } | false (falhou)
 local pending = {}
 BossMesh.lastError = nil
 
 local function build(id: string, poly: boolean)
 	local bp = BossAnatomy.blueprint(id, { low = poly })
-	-- no modo de peças são milhares de cunhas: cria em lotes, um frame por lote, sem travar o jogo
-	local model, facets = PetMesh.assemble(bp, poly, { name = "BossVisual", yieldEvery = poly and 300 or nil })
+	-- no modo de peças são centenas de elipsoides: cria em lotes, um frame por lote, sem travar o jogo
+	local model, blobs = PetMesh.assemble(bp, poly, { name = "BossVisual", yieldEvery = poly and 120 or nil, quality = poly and "high" or nil })
 	model:SetAttribute("BossVisual", id)
 	model:SetAttribute("PolyBoss", poly)
-	model:SetAttribute("Facets", facets)
-	return { model = model, bp = bp, poly = poly, facets = facets }
+	model:SetAttribute("SmoothBoss", poly)
+	model:SetAttribute("Blobs", blobs)
+	return { model = model, bp = bp, poly = poly, blobs = blobs }
 end
 
 -- Molde pronto (ou nil). Se ainda não existe, começa a construir em segundo plano.

@@ -2,7 +2,8 @@
 -- determinadas pelo número do dia UTC).
 --
 -- goal.type: hatch | defeat_enemy | defeat_boss | earn_coins | break_resource | open_treasure |
---            discover_mutation | evolve | unlock_world | upgrade_ability | use_ability
+--            discover_mutation | evolve | unlock_world | upgrade_ability | use_ability |
+--            mine_crystal (target = id do cristal) | mining_contract
 -- goal.target: id específico (opcional; nil = qualquer)
 -- reward: { coins, essence, astral, items = { id = n }, luck = { bonus, duration, category } }
 
@@ -56,6 +57,12 @@ Quests.DailyPool = {
 		reward = { essence = 150, luck = { bonus = 0.5, duration = 900, category = "Treasure" } } },
 	{ id = "d_skill", label = "Treino Tático", desc = "Use 30 habilidades em combate.", goal = { type = "use_ability", count = 30 },
 		reward = { essence = 100, items = { skill_tome = 1 } } },
+	{ id = "d_mine", label = "Minerador", desc = "Minere 20 cristais (qualquer tipo).", goal = { type = "mine_crystal", count = 20 },
+		reward = { coins = 700, items = { evolution_dust = 1 } } },
+	{ id = "d_mine_emerald", label = "Veio Verde", desc = "Minere 12 Cristais Esmeralda nas Cavernas Esmeralda.", goal = { type = "mine_crystal", target = "emerald_crystal", count = 12 },
+		reward = { coins = 500, luck = { bonus = 0.3, duration = 900, category = "Drop" } } },
+	{ id = "d_contract", label = "Encomendas", desc = "Entregue 2 contratos de mineração.", goal = { type = "mining_contract", count = 2 },
+		reward = { essence = 180, items = { luck_potion_1 = 1 } } },
 }
 Quests.DailyCount = 3
 

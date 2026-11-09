@@ -255,49 +255,60 @@ for id, sp in pairs(Pets.Species) do
 		end
 	end
 end
--- modo de peças (sem EditableMesh): mesma anatomia em baixa resolução; cada triângulo vira 2 cunhas
-local lowStats = { total = 0, max = 0, maxId = "" }
+-- modo de peças (sem EditableMesh): a anatomia vira ELIPSOIDES lisos (Builders/Smooth), sem cunhas.
+-- Leve (pets dos outros, celular) e Alta (pets do jogador no computador): orçamento, tamanhos válidos e
+-- cobertura (cada parte com malha visível ganha pelo menos um elipsoide).
+local Smooth = require(__proxy("Builders/Smooth"))
+local smoothStats = { light = 0, high = 0, maxL = 0, maxH = 0, maxId = "", n = 0 }
 for id, sp in pairs(Pets.Species) do
 	checks += 1
-	local ok, bp = pcall(PetAnatomy.blueprint, id, sp, 1, { low = true })
+	local ok, err = pcall(function()
+		local counts = {}
+		for _, q in ipairs({ "light", "high" }) do
+			local bp = PetAnatomy.blueprint(id, sp, 1, { low = true, mid = q == "high" })
+			local byPart, total = Smooth.forBlueprint(bp, q == "high" and "high" or nil)
+			counts[q] = total
+			for _, p in ipairs(bp.parts) do
+				local list = byPart[p.name] or {}
+				if MeshKit.keptCount(p.geom) > 0 and #list == 0 then
+					fail(string.format("pets lisos %s (%s): parte %s sem elipsoide", id, q, p.name))
+				end
+				for _, b in ipairs(list) do
+					local sz, pos = b.size, b.cf.Position
+					if sz.X ~= sz.X or sz.Y ~= sz.Y or sz.Z ~= sz.Z or pos.X ~= pos.X or pos.Y ~= pos.Y or pos.Z ~= pos.Z or sz.X <= 0 or sz.Y <= 0 or sz.Z <= 0 then
+						fail(string.format("pets lisos %s: elipsoide inválido em %s", id, p.name))
+						break
+					end
+					if math.max(sz.X, sz.Y, sz.Z) > 30 * (bp.scale or 1) then
+						fail(string.format("pets lisos %s: elipsoide gigante em %s (%.1f)", id, p.name, math.max(sz.X, sz.Y, sz.Z)))
+						break
+					end
+				end
+			end
+		end
+		if counts.light > 450 then
+			fail(string.format("pets lisos %s: %d elipsoides no Leve (orçamento 450)", id, counts.light))
+		end
+		if counts.high > 600 then
+			fail(string.format("pets lisos %s: %d elipsoides na Alta (orçamento 600)", id, counts.high))
+		end
+		if counts.high < counts.light then
+			fail(string.format("pets lisos %s: Alta com menos elipsoides que o Leve (%d < %d)", id, counts.high, counts.light))
+		end
+		smoothStats.light += counts.light
+		smoothStats.high += counts.high
+		smoothStats.n += 1
+		smoothStats.maxL = math.max(smoothStats.maxL, counts.light)
+		if counts.high > smoothStats.maxH then
+			smoothStats.maxH, smoothStats.maxId = counts.high, id
+		end
+	end)
 	if not ok then
-		fail("modo de peças " .. id .. ": " .. tostring(bp))
-	else
-		local n = PetAnatomy.triangles(bp, true)
-		if n > 1600 then
-			fail(string.format("modo de peças %s: %d triângulos (orçamento 1600 = ~3200 cunhas)", id, n))
-		end
-		lowStats.total += n
-		if n > lowStats.max then
-			lowStats.max, lowStats.maxId = n, id
-		end
+		fail("pets lisos " .. id .. ": " .. tostring(err))
 	end
 end
-print(string.format("Modo de peças: média %.0f triângulos por pet, máx. %d (%s)", lowStats.total / math.max(1, meshStats.species), lowStats.max, lowStats.maxId))
--- "Alta qualidade" do modo de peças (pets do próprio jogador no computador): mais faces, com teto
-local hqStats = { total = 0, max = 0, maxId = "", n = 0 }
-for id, sp in pairs(Pets.Species) do
-	checks += 1
-	local ok, bp = pcall(PetAnatomy.blueprint, id, sp, 1, { low = true, mid = true })
-	if not ok then
-		fail("alta qualidade " .. id .. ": " .. tostring(bp))
-	else
-		local n = PetAnatomy.triangles(bp, true)
-		if n > 3400 then
-			fail(string.format("alta qualidade %s: %d triângulos (orçamento 3400 = ~6800 cunhas)", id, n))
-		end
-		local nLow = PetAnatomy.triangles(PetAnatomy.blueprint(id, sp, 1, { low = true }), true)
-		if n <= nLow then
-			fail(string.format("alta qualidade %s não tem mais faces que o leve (%d <= %d)", id, n, nLow))
-		end
-		hqStats.total += n
-		hqStats.n += 1
-		if n > hqStats.max then
-			hqStats.max, hqStats.maxId = n, id
-		end
-	end
-end
-print(string.format("Alta qualidade: média %.0f triângulos por pet, máx. %d (%s)", hqStats.total / math.max(1, hqStats.n), hqStats.max, hqStats.maxId))
+print(string.format("Pets lisos (modo de peças): média %.0f elipsoides no Leve (máx. %d) e %.0f na Alta (máx. %d, %s)", smoothStats.light / math.max(1, smoothStats.n),
+	smoothStats.maxL, smoothStats.high / math.max(1, smoothStats.n), smoothStats.maxH, smoothStats.maxId))
 local anatList = {}
 for k, n in pairs(meshStats.anat) do
 	table.insert(anatList, k .. "=" .. n)
@@ -393,10 +404,23 @@ for id in pairs(Bosses.Info) do
 			fail(string.format("%s: %d peças de energia (antigo tinha %d)", label, energy, oldEnergy))
 		end
 		local n = PetAnatomy.triangles(bp, low)
-		if (low and n > 3400) or (not low and n > 20000) then
-			fail(string.format("%s: %d triângulos (orçamento %d)", label, n, low and 3400 or 20000))
+		if not low and n > 20000 then
+			fail(string.format("%s: %d triângulos (orçamento 20000)", label, n))
 		end
-		print(string.format("  boss novo %-15s %-7s %2d partes, %5d triângulos, %.0f studs de altura", id, low and "peças" or "malha", #bp.parts, n, y1 - y0))
+		if low then
+			-- modo de peças: elipsoides lisos (como o BossMesh monta), com teto
+			local byPart, blobs = Smooth.forBlueprint(bp, "high")
+			for _, p in ipairs(bp.parts) do
+				if MeshKit.keptCount(p.geom) > 0 and #(byPart[p.name] or {}) == 0 then
+					fail(string.format("%s: parte %s sem elipsoide", label, p.name))
+				end
+			end
+			if blobs > 1200 then
+				fail(string.format("%s: %d elipsoides (orçamento 1200)", label, blobs))
+			end
+			n = blobs
+		end
+		print(string.format("  boss novo %-15s %-7s %2d partes, %5d %s, %.0f studs de altura", id, low and "peças" or "malha", #bp.parts, n, low and "elipsoides" or "triângulos", y1 - y0))
 	end
 end
 local _ = MeshKit

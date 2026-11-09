@@ -7,8 +7,8 @@ salvamento. Tudo em **Luau**, organizado para **Rojo**. Mapa, criaturas, bosses,
 vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`).
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
-> Luau, contra o dump público da API do Roblox, com 66 testes de lógica, 3866 verificações dos modelos 3D e
-> **210 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
+> Luau, contra o dump público da API do Roblox, com 73 testes de lógica, 3866 verificações dos modelos 3D e
+> **226 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
 > roteiro da seção 7.
@@ -414,6 +414,41 @@ de mundos (`client/Controllers/UIKit.luau`, `HUD.luau`, `Panels.luau`):
 - **Região com nome** ("Farol Ancestral — Ruínas do Farol") e o baú **Relicário do Farol**.
 - **Peso:** ≈ 2.200 peças (contado à parte do orçamento do mundo).
 
+### Mineração de cristais (missões e contratos)
+
+Os jogadores mineram **veios de cristal** com a picareta, segurando o botão **Minerar** (ProximityPrompt) perto do veio.
+- **Onde:** 6 Veios Esmeralda nos 3 salões das **Cavernas Esmeralda** (subsolo das Terras Baixas do Mundo 1); Veios
+  Safira e Ametista no Crystal Hollow; Tempestade no Skybound, Sombrio no Whispering Wilds e Estelar no Astral
+  (em volta dos campos de recursos). Cada veio mostra quantos golpes faltam e volta depois de 25–50 s.
+- **Golpes conferidos no servidor:** distância até o veio e intervalo mínimo pela picareta (segurar o botão mais
+  rápido não adianta). Pets da equipe por perto ajudam (+1 de força a cada 2 pets). Quem bateu no veio ganha os
+  cristais quando ele quebra; o **Coração Prismático** é raro (3%, aumenta com a sorte de Drop, até 15%).
+- **Cristais são itens** (aba Itens → "Cristais minerados") e servem para:
+  - **Contratos de mineração:** 3 entregas por dia (iguais para todos, só dos mundos já abertos), em Missões →
+    Mineração; entregar debita os cristais e paga moedas, essência, itens ou sorte. Cada contrato vale uma vez por dia.
+  - **Missões diárias novas:** "Minerador" (20 cristais), "Veio Verde" (12 Esmeraldas) e "Encomendas" (2 contratos).
+  - **Picaretas:** 6 níveis (Madeira → Estelar), mais força, menos tempo por golpe e cristais extras; a melhoria
+    custa moedas e cristais.
+- Arquivos: `Config/Mining.luau`, `Logic/MiningLogic.luau` (regras puras, com testes), `Services/MiningService.luau`,
+  `Controllers/MiningClient.luau` e a seção "Mineração de Cristais" no painel de Missões.
+
+### Modelos lisos: fim do formato triangular (modo de peças)
+
+Sem o EditableMesh, os pets e os bosses eram feitos de **cunhas triangulares** (cada triângulo = 2 WedgeParts), o que
+dava o visual facetado. Agora cada parte do corpo vira uma fileira de **elipsoides lisos** (Part + SpecialMesh de
+esfera esticada) soldados aos mesmos ossos animados (`Builders/Smooth.luau`):
+- o conversor acha os eixos de cada pedaço (PCA), fatia ao longo do eixo maior e põe uma "conta" por fatia,
+  acompanhando a curva e o afinar (pernas, pescoço, rabo); larguras suavizadas entre vizinhas;
+- barriga, peito e focinho claros ganham um segundo elipsoide por baixo; olhos e bochechas viram cúpulas coladas na
+  cabeça (com o brilho branco); anéis (auréolas, coroas) mantêm o furo e a juba vira tufos em volta do pescoço;
+- bem mais leve: em média **125 peças por pet** no Leve e 175 na Alta (antes até ~3.200 / 6.800 cunhas); bosses com
+  540–920 peças (antes 5.000–6.200);
+- mesmas juntas, animações, contorno e opção Leve/Alta. Com o EditableMesh ligado nada muda (malhas lisas).
+- Testes: o smoke confere as 192 espécies nas duas qualidades (orçamento, tamanhos válidos, toda parte com
+  elipsoide) e os 5 bosses; o simulador confere que nenhuma cunha sobra, que cada elipsoide está soldado ao osso e que
+  a animação continua.
+- O cenário (Árvore-Santuário, cristais do Farol) continua facetado de propósito: são rochas e cristais.
+
 ### Pets mais fofos (proporções "chibi")
 
 Todos os quadrúpedes (raposas, gatos, lobos, leões, cervos, coelhos, roedores, furões, dragões, grifos, sapos...)
@@ -742,10 +777,10 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Sintaxe de todos os arquivos | `luau-compile --null` em cada `.luau` | ok |
 | Variáveis indefinidas / código suspeito | `python3 tools/lint.py luau-analyze` | 0 avisos |
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
-| Lógica pura | `python3 tools/run_tests.py luau` | **66 testes passando** |
-| Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", proporção fofa dos 127 quadrúpedes comparada com a antiga, ≤ 18.000 triângulos) + bosses anatômicos nos dois modos (todas as juntas do boss antigo, mesma altura de raiz, pés no chão, peças de energia com cor, ≤ 20.000 / 3.400 triângulos) | `python3 tools/run_tests.py luau --smoke` | **4058 verificações, 0 falhas** |
+| Lógica pura | `python3 tools/run_tests.py luau` | **73 testes passando** |
+| Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", proporção fofa dos 127 quadrúpedes comparada com a antiga, ≤ 18.000 triângulos) + bosses anatômicos nos dois modos (todas as juntas do boss antigo, mesma altura de raiz, pés no chão, peças de energia com cor, ≤ 20.000 / 3.400 triângulos) | `python3 tools/run_tests.py luau --smoke` | **3866 verificações, 0 falhas** |
 | Animações dos pets nas 192 espécies | `python3 tools/run_tests.py luau --animcheck` | **1.950 animações, 0 falhas** |
-| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **220 cenários passando** (inclui o Mundo 1 maior: Terras Baixas com área ≥ 2× o planalto, os 6 baús novos abrindo, salões de caverna ocos com teto, túnel e cripta abertos, as 4 rampas, as regiões novas, a caverna não conta como queda e o muro na borda nova; o poder dos pets dos Mundos 2 a 5 em combate e o tempero das variantes; o visual v4: Alta qualidade nos pets do jogador, luz assada por face e a troca Leve/Alta nas Opções; as animações novas dos pets: cada comportamento ocioso muda a pose, sono com "Zzz" e acordar, tranco ao levar dano e festa ao subir de nível; as mecânicas próprias dos 5 bosses numa luta real: prender, lentidão, leque, espelho, raio em cadeia, áreas que ficam, carga estática, veneno, vinhas, Florescer com brotos, drenagem e Fome do Vazio; o visual v3 dos pets e bosses: contorno de desenho, sem textura de grama, olhos com brilho no modo de peças e sombreamento pela altura; a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
+| Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **226 cenários passando** (inclui a mineração de cristais: veios nas cavernas e nos outros mundos, golpe longe ou rápido demais recusado, quebra dando cristais e progresso nas diárias, veio voltando, contratos e picareta; os modelos lisos sem cunhas; o Mundo 1 maior: Terras Baixas com área ≥ 2× o planalto, os 6 baús novos abrindo, salões de caverna ocos com teto, túnel e cripta abertos, as 4 rampas, as regiões novas, a caverna não conta como queda e o muro na borda nova; o poder dos pets dos Mundos 2 a 5 em combate e o tempero das variantes; o visual v4: Alta qualidade nos pets do jogador, luz assada por face e a troca Leve/Alta nas Opções; as animações novas dos pets: cada comportamento ocioso muda a pose, sono com "Zzz" e acordar, tranco ao levar dano e festa ao subir de nível; as mecânicas próprias dos 5 bosses numa luta real: prender, lentidão, leque, espelho, raio em cadeia, áreas que ficam, carga estática, veneno, vinhas, Florescer com brotos, drenagem e Fome do Vazio; o visual v3 dos pets e bosses: contorno de desenho, sem textura de grama, olhos com brilho no modo de peças e sombreamento pela altura; a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |
 | Geração do lugar | `rojo build` | `build/MythicalIsles.rbxl` |
 
 O **simulador** (`tools/roblox_mock.luau`, `tools/sim_runtime.luau`) executa o `Main.server` e o
@@ -871,6 +906,13 @@ travamento) foi exercitada.
   - "100x melhor" não é medida: o salto real é de ~250 peças primitivas por boss para superfícies contínuas com
     relevo, cor por vértice e milhares de faces. Modelos esculpidos à mão e texturizados (3D Importer) ainda
     seriam o próximo nível.
+- **Modelos lisos — o que ainda precisa do Studio:** vistos só nas prévias. Elipsoides dão um visual de "bichinho de
+  massinha": as orelhas pontudas ficam arredondadas e o Prism Titan (armadura de blocos e cristais) fica mais
+  arredondado que antes. Confira o desempenho e o visual com a iluminação do Roblox.
+- **Mineração — o que ainda precisa do Studio:** o ProximityPrompt e o tempo de segurar foram testados no simulador
+  (o servidor confere distância e intervalo), não na tela. Os veios dos Mundos 2 a 5 ficam em volta dos campos de
+  recursos e foram posicionados por raycast; confira se algum ficou num lugar estranho. Não há animação de
+  picareta na mão do avatar (o golpe mostra o brilho no veio e os pets atacando).
 - **Pets fofos — o que ainda precisa do Studio:** as proporções foram vistas só nas prévias. Confira no jogo se
   algum pet ficou com a cabeça grande demais para a câmera do inventário/retrato e se alguma pose de animação
   encosta a cabeça maior no corpo (o `--animcheck` não detecta uma parte atravessando outra).

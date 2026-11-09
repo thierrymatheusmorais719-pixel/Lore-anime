@@ -15,6 +15,7 @@ local Items = require(Shared.Config.Items)
 local Eggs = require(Shared.Config.Eggs)
 local Worlds = require(Shared.Config.Worlds)
 local Quests = require(Shared.Config.Quests)
+local Mining = require(Shared.Config.Mining)
 local Combat = require(Shared.Config.Combat)
 local Abilities = require(Shared.Config.Abilities)
 local Signatures = require(Shared.Config.Signatures)
@@ -421,14 +422,14 @@ end
 -- ITENS
 -------------------------------------------------------------------------------
 
-local KIND_LABEL = { potion = "Poções", egg = "Ovos especiais", catalyst = "Catalisadores", material = "Materiais", cosmetic = "Acessórios", collectible = "Colecionáveis" }
+local KIND_LABEL = { potion = "Poções", egg = "Ovos especiais", catalyst = "Catalisadores", crystal = "Cristais minerados", material = "Materiais", cosmetic = "Acessórios", collectible = "Colecionáveis" }
 
 local function itemsPanel()
 	local p = State.profile
 	local list = UIKit.scroll({ Size = UDim2.fromScale(1, 1), Parent = content })
 	UIKit.list(list, Enum.FillDirection.Vertical, 6)
 	local order = 0
-	for _, kind in ipairs({ "potion", "egg", "catalyst", "material", "cosmetic", "collectible" }) do
+	for _, kind in ipairs({ "potion", "egg", "catalyst", "crystal", "material", "cosmetic", "collectible" }) do
 		local rows = {}
 		for id, n in pairs(p.items) do
 			local info = Items.Info[id]
@@ -454,6 +455,8 @@ local function itemsPanel()
 					desc = " — aplica " .. r.info.mutation .. " a um pet sem mutação (painel Pets)"
 				elseif kind == "egg" then
 					desc = " — choque de graça em qualquer estação de ovos"
+				elseif kind == "crystal" then
+					desc = " — para contratos de mineração e picaretas (Missões → Mineração)"
 				end
 				UIKit.label({ Position = UDim2.fromOffset(36, 0), Size = UDim2.new(1, -180, 1, 0), TextSize = 13, Text = string.format("<b>%s</b> x%d%s", r.info.label, r.n, desc), Parent = row })
 				if kind == "potion" then
@@ -696,6 +699,60 @@ local function questsPanel()
 				Text = claimed and "Resgatada" or done and "Resgatar" or "Em andamento", BackgroundColor3 = (done and not claimed) and T.green or T.gray, Parent = row }, function()
 				if done and not claimed then
 					toastResult(State.request("ClaimDaily", { id = id }))
+				end
+			end)
+		end
+	end
+	-- MINERAÇÃO DE CRISTAIS: picareta, cristais e contratos do dia (entregas)
+	local m = p.mining or { pickaxe = 1, contracts = { ids = {}, done = {} } }
+	local lvl = math.clamp(m.pickaxe or 1, 1, #Mining.Pickaxes)
+	local pk = Mining.Pickaxes[lvl]
+	UIKit.label({ LayoutOrder = 200, Size = UDim2.new(1, 0, 0, 22), Text = "⛏ Mineração de Cristais", Font = T.title, TextSize = 18, TextColor3 = T.gold, Parent = list })
+	UIKit.label({ LayoutOrder = 201, Size = UDim2.new(1, -8, 0, 34), TextSize = 12, TextColor3 = T.muted,
+		Text = "Segure <b>Minerar</b> perto de um veio de cristal: Cavernas Esmeralda (Terras Baixas do Verdant Haven) e em volta dos campos de recursos dos outros mundos. Pets da equipe por perto ajudam.",
+		Parent = list })
+	local pkRow = UIKit.frame({ LayoutOrder = 202, Size = UDim2.new(1, -8, 0, 46), BackgroundColor3 = T.bg2, Parent = list })
+	local nextP = Mining.Pickaxes[lvl + 1]
+	UIKit.label({ Position = UDim2.fromOffset(8, 0), Size = UDim2.new(1, -170, 1, 0), TextSize = 12,
+		Text = string.format("<b>%s</b> (nível %d) — força %d, %.2fs por golpe%s\n<font color=\"#AAB0CD\">%s</font>", pk.label, lvl, pk.power, pk.hold,
+			pk.bonus > 0 and string.format(", +%d cristal por veio", pk.bonus) or "", nextP and ("Próxima: " .. nextP.label .. " — " .. costText(nextP.cost)) or "Nível máximo"),
+		Parent = pkRow })
+	UIKit.button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -4, 0.5, 0), Size = UDim2.fromOffset(150, 30), TextSize = 12,
+		Text = nextP and "Melhorar picareta" or "Máximo", BackgroundColor3 = nextP and T.orange or T.gray, Parent = pkRow }, function()
+		if nextP then
+			toastResult(State.request("UpgradePickaxe"))
+		end
+	end)
+	local have = {}
+	for _, id in ipairs(Mining.CrystalOrder) do
+		local n = p.items[id] or 0
+		if n > 0 then
+			table.insert(have, string.format('<font color="#%s">%s</font> x%d', Mining.Crystals[id].color:ToHex(), Mining.Crystals[id].label, n))
+		end
+	end
+	UIKit.label({ LayoutOrder = 203, Size = UDim2.new(1, -8, 0, 22), TextSize = 12,
+		Text = "Seus cristais: " .. (#have > 0 and table.concat(have, " · ") or "nenhum ainda") .. string.format("  (total minerado: %d)", m.mined or 0), Parent = list })
+	UIKit.label({ LayoutOrder = 204, Size = UDim2.new(1, 0, 0, 22), Text = "Contratos de mineração (renovam à 00:00 UTC)", Font = T.title, TextSize = 16, TextColor3 = T.gold, Parent = list })
+	local cs = m.contracts or { ids = {}, done = {} }
+	for i, id in ipairs(cs.ids or {}) do
+		local ct = Mining.findContract(id)
+		if ct then
+			local need, ready = {}, true
+			for item, n in pairs(ct.need) do
+				local got = p.items[item] or 0
+				if got < n then
+					ready = false
+				end
+				table.insert(need, string.format("%s %d/%d", Items.label(item), math.min(got, n), n))
+			end
+			local done = cs.done and cs.done[id]
+			local row = UIKit.frame({ LayoutOrder = 204 + i, Size = UDim2.new(1, -8, 0, 60), BackgroundColor3 = T.bg2, Parent = list })
+			UIKit.label({ Position = UDim2.fromOffset(8, 0), Size = UDim2.new(1, -150, 1, 0), TextSize = 12,
+				Text = string.format("<b>%s</b> — %s\nEntregar: %s\n<font color=\"#AAB0CD\">%s</font>", ct.label, ct.desc, table.concat(need, ", "), rewardText(ct.reward)), Parent = row })
+			UIKit.button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -4, 0.5, 0), Size = UDim2.fromOffset(130, 28), TextSize = 12,
+				Text = done and "Entregue" or ready and "Entregar" or "Faltam cristais", BackgroundColor3 = (ready and not done) and T.green or T.gray, Parent = row }, function()
+				if ready and not done then
+					toastResult(State.request("DeliverContract", { id = id }))
 				end
 			end)
 		end

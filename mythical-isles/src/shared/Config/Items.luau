@@ -1,7 +1,7 @@
 -- Itens de inventário. Moedas (coins), Essência (essence) e Fragmentos Astrais (astral) são
 -- recursos separados no perfil; aqui ficam os itens contáveis.
 --
--- kind: material | potion | egg | cosmetic | collectible | catalyst
+-- kind: material | crystal | potion | egg | cosmetic | collectible | catalyst
 
 local Items = {}
 
@@ -25,6 +25,15 @@ Items.Info = {
 	moon_petal = { kind = "material", label = "Pétala Lunar", color = Color3.fromRGB(200, 180, 255) },
 	bloom_heart = { kind = "material", label = "Coração Florescente", color = Color3.fromRGB(255, 120, 160) },
 	void_essence = { kind = "material", label = "Essência do Vazio", color = Color3.fromRGB(110, 60, 200) },
+
+	-- Cristais minerados (Config/Mining): contratos de mineração, missões e picaretas
+	emerald_crystal = { kind = "crystal", label = "Cristal Esmeralda", color = Color3.fromRGB(80, 230, 140) },
+	sapphire_crystal = { kind = "crystal", label = "Cristal Safira", color = Color3.fromRGB(90, 160, 255) },
+	amethyst_crystal = { kind = "crystal", label = "Cristal Ametista", color = Color3.fromRGB(185, 120, 255) },
+	storm_crystal = { kind = "crystal", label = "Cristal Tempestade", color = Color3.fromRGB(255, 230, 110) },
+	shadow_crystal = { kind = "crystal", label = "Cristal Sombrio", color = Color3.fromRGB(120, 90, 170) },
+	star_crystal = { kind = "crystal", label = "Cristal Estelar", color = Color3.fromRGB(255, 240, 200) },
+	prism_heart = { kind = "crystal", label = "Coração Prismático", color = Color3.fromRGB(255, 150, 230) },
 
 	-- Poções (efeitos em Config/Luck.Potions)
 	luck_potion_1 = { kind = "potion", label = "Poção da Sorte I", color = Color3.fromRGB(120, 255, 140) },

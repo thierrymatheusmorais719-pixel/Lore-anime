@@ -104,6 +104,16 @@ handlers.ClaimCollection = function(player, p)
 	end
 	return S.QuestService.claimCollection(player, p.id)
 end
+-- mineração: entregar contrato e melhorar a picareta (custos e cristais conferidos no servidor)
+handlers.DeliverContract = function(player, p)
+	if type(p) ~= "table" or not str(p.id) then
+		return { ok = false }
+	end
+	return S.MiningService.deliver(player, p.id)
+end
+handlers.UpgradePickaxe = function(player)
+	return S.MiningService.upgrade(player)
+end
 handlers.UnlockWorld = function(player, p)
 	if type(p) ~= "table" or not str(p.world) then
 		return { ok = false }

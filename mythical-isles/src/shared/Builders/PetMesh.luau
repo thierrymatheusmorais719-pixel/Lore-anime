@@ -11,7 +11,7 @@
 local AssetService = game:GetService("AssetService")
 
 local MeshKit = require(script.Parent.MeshKit)
-local Facets = require(script.Parent.Facets)
+local Smooth = require(script.Parent.Smooth)
 local PetAnatomy = require(script.Parent.PetAnatomy)
 local CreatureBuilder = require(script.Parent.CreatureBuilder)
 local MutationVisuals = require(script.Parent.MutationVisuals)
@@ -22,8 +22,8 @@ local PetMesh = {}
 
 PetMesh.available = nil -- EditableMesh funciona? nil = ainda não testado
 PetMesh.lastError = nil
--- "mesh" = malhas lisas (EditableMesh); "poly" = mesma anatomia em baixa resolução feita de peças
--- (cada triângulo = 2 WedgeParts), usada quando o Roblox não libera o EditableMesh
+-- "mesh" = malhas lisas (EditableMesh); "poly" = mesma anatomia feita de peças LISAS (elipsoides: Part com
+-- SpecialMesh de esfera, Builders/Smooth), usada quando o Roblox não libera o EditableMesh
 PetMesh.mode = nil
 PetMesh.polyError = nil
 
@@ -125,13 +125,6 @@ PetMesh.HELP = "Os pets 3D novos (malhas anatômicas) estão DESLIGADOS e os pet
 -- texturas de tecido e de grama ficam ruidosas em faces pequenas (e a de grama parecia capim no pet)
 local POLY_MATERIAL = { Fabric = Enum.Material.SmoothPlastic, Grass = Enum.Material.SmoothPlastic }
 
--- Triângulo com duas cunhas soldadas ao osso (Builders/Facets). Devolve quantas peças criou.
-local function triangle(a: Vector3, b: Vector3, c: Vector3, th: number, props, parent: BasePart): number
-	return Facets.triangle(a, b, c, th, props, parent)
-end
-
-PetMesh._triangle = triangle -- (testes)
-
 local function avgColor(g): Color3
 	local r, gg, b, n = 0, 0, 0, 0
 	for _, c in ipairs(g.colors) do
@@ -154,10 +147,11 @@ end
 
 --[[ Monta um Model a partir de uma planta (pets e bosses usam o mesmo formato).
 	poly = false: uma MeshPart por parte do corpo (EditableMesh, cor por vértice).
-	poly = true: cada parte vira um "osso" invisível com as faces da malha em WedgeParts soldadas.
+	poly = true: cada parte vira um "osso" invisível com elipsoides lisos soldados (Builders/Smooth: Part +
+	SpecialMesh de esfera; nada de faces triangulares). opts.quality = "high": mais elipsoides.
 	Juntas Motor6D nos pivôs (eixos alinhados) com os nomes da planta. Peças Neon ficam com a cor
 	média na própria peça (o brilho do Neon usa a cor da peça). opts.yieldEvery: no modo de peças,
-	espera um frame a cada N peças criadas (bosses têm milhares). Devolve (model, facetas). ]]
+	espera um frame a cada N peças criadas. Devolve (model, número de elipsoides). ]]
 function PetMesh.assemble(bp, poly: boolean, opts)
 	opts = opts or {}
 	local model = Instance.new("Model")
@@ -170,12 +164,8 @@ function PetMesh.assemble(bp, poly: boolean, opts)
 	root.CFrame = CFrame.new()
 	root.Parent = model
 	model.PrimaryPart = root
-	local made, facets, sinceYield = {}, 0, 0
-	local th = 0.05 * (bp.scale or 1)
-	local yLo, yHi = 0, 1
-	if poly then
-		yLo, yHi = Facets.heightRange(bp)
-	end
+	local made, blobCount, sinceYield = {}, 0, 0
+	local blobs = poly and Smooth.forBlueprint(bp, opts.quality) or nil
 	for _, p in ipairs(bp.parts) do
 		local neon = p.material == "Neon"
 		local avg = avgColor(p.geom)
@@ -208,33 +198,37 @@ function PetMesh.assemble(bp, poly: boolean, opts)
 		inst.Parent = model
 		made[p.name] = inst
 		if poly then
-			local props = {
-				material = POLY_MATERIAL[p.material] or MATERIALS[p.material] or Enum.Material.SmoothPlastic, transparency = p.transparency, reflectance = p.reflectance,
-				shadow = p.transparency < 0.5 and p.material ~= "Neon" and p.material ~= "ForceField", role = p.role,
-			}
-			-- peças que brilham ou são translúcidas ficam com a cor pura
-			local shade = not neon and p.transparency < 0.3 and p.material ~= "ForceField"
-			local gmn, gmx = MeshKit.bounds(p.geom)
-			local gcenter = (gmn + gmx) / 2
-			local g = p.geom
-			for i, t in ipairs(g.tris) do
-				if not g.keep or g.keep[i] then
-					local a, b, c = g.verts[t[1]], g.verts[t[2]], g.verts[t[3]]
-					local ca, cb, cc = g.colors[t[1]], g.colors[t[2]], g.colors[t[3]]
-					local r, gg, bb = (ca.R + cb.R + cc.R) / 3, (ca.G + cb.G + cc.G) / 3, (ca.B + cb.B + cc.B) / 3
-					if shade then
-						r, gg, bb = Facets.toonRGB(r, gg, bb, ((a.Y + b.Y + c.Y) / 3 + p.pivot.Y - yLo) / (yHi - yLo))
-						local L = Facets.faceLight(a, b, c, gcenter)
-						r, gg, bb = math.clamp(r * L, 0, 1), math.clamp(gg * L, 0, 1), math.clamp(bb * L, 0, 1)
-					end
-					props.color = Color3.new(r, gg, bb)
-					local n = triangle(a + p.pivot, b + p.pivot, c + p.pivot, th, props, inst)
-					facets += n
-					sinceYield += n
-					if opts.yieldEvery and sinceYield >= opts.yieldEvery then
-						sinceYield = 0
-						task.wait()
-					end
+			local material = POLY_MATERIAL[p.material] or MATERIALS[p.material] or Enum.Material.SmoothPlastic
+			local shadow = p.transparency < 0.5 and p.material ~= "Neon" and p.material ~= "ForceField"
+			for _, b in ipairs((blobs :: any)[p.name] or {}) do
+				local e = Instance.new("Part")
+				e.Name = "Blob"
+				e.Size = b.size
+				e.CFrame = b.cf
+				e.Color = b.color
+				e.Material = material
+				e.Transparency = p.transparency
+				e.Reflectance = p.reflectance or 0
+				e.CastShadow = shadow
+				e.TopSurface, e.BottomSurface = Enum.SurfaceType.Smooth, Enum.SurfaceType.Smooth
+				e.CanCollide, e.CanQuery, e.CanTouch, e.Massless, e.Anchored = false, false, false, true, false
+				if p.role then
+					e:SetAttribute("Role", p.role)
+				end
+				-- a forma vem da malha especial de esfera, esticada no tamanho da peça (elipsoide)
+				local sm = Instance.new("SpecialMesh")
+				sm.MeshType = Enum.MeshType.Sphere
+				sm.Parent = e
+				local weld = Instance.new("WeldConstraint")
+				weld.Part0 = inst
+				weld.Part1 = e
+				weld.Parent = e
+				e.Parent = inst
+				blobCount += 1
+				sinceYield += 1
+				if opts.yieldEvery and sinceYield >= opts.yieldEvery then
+					sinceYield = 0
+					task.wait()
 				end
 			end
 		end
@@ -250,7 +244,7 @@ function PetMesh.assemble(bp, poly: boolean, opts)
 		m6.C1 = part.CFrame:Inverse() * CFrame.new(p.pivot)
 		m6.Parent = part
 	end
-	return model, facets
+	return model, blobCount
 end
 
 local function petAttributes(model: Model, bp, speciesId: string)
@@ -279,8 +273,8 @@ function PetMesh.buildTemplate(speciesId: string, scale: number)
 end
 
 -------------------------------------------------------------------------------
--- Modo de peças (sem EditableMesh): cada triângulo da malha low-poly vira 2 WedgeParts presas ao "osso"
--- da parte do corpo; os ossos têm as mesmas juntas (Motor6D) e a mesma animação do modo de malhas.
+-- Modo de peças (sem EditableMesh): cada parte do corpo vira elipsoides lisos presos ao "osso" da parte;
+-- os ossos têm as mesmas juntas (Motor6D) e a mesma animação do modo de malhas.
 -------------------------------------------------------------------------------
 
 -- quality "high": "Alta qualidade" (mais faces na cabeça e no tronco, bochechas, sobrancelhas, músculos e
@@ -291,12 +285,13 @@ function PetMesh.buildTemplatePoly(speciesId: string, scale: number, quality: st
 		return nil
 	end
 	local bp = PetAnatomy.blueprint(speciesId, sp, scale, { low = true, mid = quality == "high" })
-	local model, facets = PetMesh.assemble(bp, true)
+	local model, blobs = PetMesh.assemble(bp, true, { quality = quality })
 	petAttributes(model, bp, speciesId)
 	model:SetAttribute("PolyPet", true)
-	model:SetAttribute("Facets", facets)
+	model:SetAttribute("SmoothPet", true)
+	model:SetAttribute("Blobs", blobs)
 	model:SetAttribute("Quality", quality == "high" and "high" or "light")
-	return { model = model, bp = bp, poly = true, facets = facets }
+	return { model = model, bp = bp, poly = true, blobs = blobs }
 end
 
 -- Molde pronto (ou nil). Se ainda não existe, começa a construir em segundo plano.

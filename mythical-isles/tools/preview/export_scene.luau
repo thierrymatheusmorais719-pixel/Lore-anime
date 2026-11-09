@@ -79,7 +79,7 @@ local function inVerdant(part)
 	return ((part.Position - verdant.center) * Vector3.new(1, 0, 1)).Magnitude < (verdant.extent or verdant.radius + 30) and part.Position.Y > -120 and part.Position.Y < 360
 end
 dump("island", { workspace:FindFirstChild("World"):FindFirstChild("verdant"), workspace:FindFirstChild("Enemies"), workspace:FindFirstChild("Bosses"),
-	workspace:FindFirstChild("Resources"), workspace:FindFirstChild("Pets") }, inVerdant)
+	workspace:FindFirstChild("Resources"), workspace:FindFirstChild("Pets"), workspace:FindFirstChild("CrystalVeins") }, inVerdant)
 
 -- terreno (preenchimentos registrados pelo simulador) da ilha 1
 do
@@ -105,7 +105,7 @@ do
 		return ((part.Position - crystal.center) * Vector3.new(1, 0, 1)).Magnitude < crystal.radius + 40 and part.Position.Y > -180 and part.Position.Y < 420
 	end
 	dump("crystal", { workspace:FindFirstChild("World"):FindFirstChild("crystal"), workspace:FindFirstChild("Enemies"), workspace:FindFirstChild("Bosses"),
-		workspace:FindFirstChild("Resources") }, inCrystal)
+		workspace:FindFirstChild("Resources"), workspace:FindFirstChild("CrystalVeins") }, inCrystal)
 	local out = {}
 	for _, f in ipairs(SIM.terrainFills) do
 		local pp = f.cf.p

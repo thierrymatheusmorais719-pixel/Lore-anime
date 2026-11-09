@@ -1952,47 +1952,62 @@ do
 		PetMesh.available, PetMesh.lastError, PetMesh.polyError = avail, lastErr, polyErr
 		check("pets de malha: se nem malhas nem peças funcionarem, aparece na tela como ligar ('Allow Mesh / Image APIs') e o erro do Roblox", shown)
 		-- MODO DE PEÇAS (sem EditableMesh): cada triângulo vira 2 cunhas que cobrem exatamente o triângulo
-		local function wedgeCorners(w)
-			local h, l = w.Size.Y / 2, w.Size.Z / 2
-			return { w.CFrame * Vector3.new(0, -h, -l), w.CFrame * Vector3.new(0, -h, l), w.CFrame * Vector3.new(0, h, l) }
-		end
-		local function area(a, b, c)
-			return (b - a):Cross(c - a).Magnitude / 2
-		end
-		local holder = Instance.new("Part")
-		local ta, tb, tc = Vector3.new(0, 0, 0), Vector3.new(3, 0.5, 1), Vector3.new(1, 2.5, -0.5)
-		local n = PetMesh._triangle(ta, tb, tc, 0.05, { color = Color3.new(1, 1, 1), material = Enum.Material.SmoothPlastic, transparency = 0, reflectance = 0, shadow = true, role = "Body" }, holder)
-		local sum, inside = 0, true
-		local nrm = (tb - ta):Cross(tc - ta)
-		local total = area(ta, tb, tc)
-		for _, w in ipairs(holder:GetChildren()) do
-			if w.ClassName == "WedgePart" then
-				local c3 = wedgeCorners(w)
-				sum += area(c3[1], c3[2], c3[3])
-				for _, q in ipairs(c3) do
-					-- dentro do triângulo (coordenadas baricêntricas >= 0)
-					local a1 = (tb - ta):Cross(q - ta):Dot(nrm)
-					local a2 = (tc - tb):Cross(q - tb):Dot(nrm)
-					local a3 = (ta - tc):Cross(q - tc):Dot(nrm)
-					if a1 < -1e-3 or a2 < -1e-3 or a3 < -1e-3 then
-						inside = false
-					end
+		-- modelos LISOS (Builders/Smooth): um tubo de raio 1 e comprimento 8 vira contas que cobrem a superfície
+		;(function()
+			local Smooth = require(__proxy("Shared/Builders/Smooth"))
+			local MeshKit = require(__proxy("Shared/Builders/MeshKit"))
+			local tube = MeshKit.loft({ { p = Vector3.new(0, 0, -4), w = 1, h = 1 }, { p = Vector3.new(0, 0, 0), w = 1, h = 1 }, { p = Vector3.new(0, 0, 4), w = 1, h = 1 } },
+				{ seg = 12, steps = 3, capStart = 0.6, capEnd = 0.6, color = function()
+					return Color3.new(0.8, 0.5, 0.3)
+				end })
+			local bl = Smooth.blobs(tube, Vector3.new(0, 0, 0), { density = 1.15 })
+			-- cada vértice da superfície fica perto da casca de alguma conta (valor implícito do elipsoide ~1)
+			local worst = 0
+			for _, v in ipairs(tube.verts) do
+				local best = math.huge
+				for _, b in ipairs(bl) do
+					local q = b.cf:Inverse() * v
+					local f = math.sqrt((q.X / (b.size.X / 2)) ^ 2 + (q.Y / (b.size.Y / 2)) ^ 2 + (q.Z / (b.size.Z / 2)) ^ 2)
+					best = math.min(best, f)
+				end
+				worst = math.max(worst, best)
+			end
+			-- um anel (auréola) não pode virar uma bola tampando o furo
+			local ringKeys = {}
+			for k = 0, 24 do
+				local a = k / 24 * math.pi * 2
+				table.insert(ringKeys, { p = Vector3.new(math.cos(a) * 3, 0, math.sin(a) * 3), w = 0.3, h = 0.3 })
+			end
+			local ring = MeshKit.loft(ringKeys, { seg = 8, steps = 1, color = function()
+				return Color3.new(1, 0.9, 0.4)
+			end })
+			local rb = Smooth.blobs(ring, Vector3.new(0, 0, 0), {})
+			local hole = true
+			for _, b in ipairs(rb) do
+				if b.cf.Position.Magnitude < 1.5 then
+					hole = false
 				end
 			end
-		end
-		check("modo de peças: 2 cunhas cobrem exatamente cada triângulo (mesma área, cantos dentro do triângulo)", n == 2 and math.abs(sum - total) < 1e-3 and inside,
-			string.format("cunhas=%d área %.4f/%.4f dentro=%s", n, sum, total, tostring(inside)))
-		local okPoly, maxFacets, broken = true, 0, ""
+			check("modelos lisos: um tubo vira contas que cobrem a superfície e um anel continua com o furo",
+				#bl >= 3 and #bl <= 12 and worst < 1.25 and #rb >= 6 and hole, string.format("%d contas no tubo (pior %.2f), %d no anel, furo=%s", #bl, worst, #rb, tostring(hole)))
+		end)()
+		local okPoly, maxBlobs, broken = true, 0, ""
 		for _, sid in ipairs({ "kit_1", "verdantwolf_1", "owlet_1", "glassserpent_1", "ent_1", "sylvanox" }) do
 			local okB, res = pcall(PetMesh.buildTemplatePoly, sid, 1)
 			if not okB or not res then
 				okPoly, broken = false, sid .. ": " .. tostring(res)
 			else
-				maxFacets = math.max(maxFacets, res.facets)
-				local motors, bones = 0, 0
+				maxBlobs = math.max(maxBlobs, res.blobs)
+				local motors, bones, wedges, spheres, welded = 0, 0, 0, 0, 0
 				for _, d in ipairs(res.model:GetDescendants()) do
 					if d.ClassName == "Motor6D" and d.Name ~= "Fixed" then
 						motors += 1
+					elseif d.ClassName == "WedgePart" or d.ClassName == "CornerWedgePart" then
+						wedges += 1
+					elseif d.ClassName == "SpecialMesh" and d.MeshType == Enum.MeshType.Sphere then
+						spheres += 1
+					elseif d.ClassName == "WeldConstraint" and d.Part1 and d.Part1.Name == "Blob" and d.Part0 == d.Part1.Parent then
+						welded += 1
 					end
 				end
 				for _, d in ipairs(res.model:GetChildren()) do
@@ -2000,13 +2015,13 @@ do
 						bones += 1
 					end
 				end
-				if res.facets < 150 or motors < 3 or bones < 6 or res.model:GetAttribute("PolyPet") ~= true then
-					okPoly, broken = false, string.format("%s: %d cunhas, %d juntas, %d ossos", sid, res.facets, motors, bones)
+				if res.blobs < 30 or wedges > 0 or spheres ~= res.blobs or welded ~= res.blobs or motors < 3 or bones < 6 or res.model:GetAttribute("PolyPet") ~= true then
+					okPoly, broken = false, string.format("%s: %d elipsoides (%d esferas, %d soldados), %d cunhas, %d juntas, %d ossos", sid, res.blobs, spheres, welded, wedges, motors, bones)
 				end
 			end
 		end
-		check("modo de peças: pets low-poly montados com esqueleto e juntas animáveis (sem precisar de EditableMesh)", okPoly and maxFacets <= 3200,
-			broken ~= "" and broken or ("máx. " .. maxFacets .. " cunhas"))
+		check("modo de peças: pets LISOS (elipsoides soldados aos ossos, nenhuma cunha triangular) com esqueleto e juntas animáveis", okPoly and maxBlobs <= 600,
+			broken ~= "" and broken or ("máx. " .. maxBlobs .. " elipsoides"))
 		-- caminho real de quem não pode ligar a opção: o Roblox recusa o EditableMesh (como no Studio do autor)
 		-- e o jogo troca sozinho os pets pelos low-poly, sem caixa de erro
 		local asset = game:GetService("AssetService")
@@ -2058,19 +2073,11 @@ do
 		-- visual v4: no computador, os pets do próprio jogador usam a "Alta qualidade" do modo de peças
 		;(function()
 			local hqOk = polyMesh ~= nil and polyMesh:GetAttribute("Quality") == "high"
-			local wedges = polyMesh and (polyMesh:GetAttribute("Facets") or 0) or 0
-			check("visual v4: pet do jogador no modo de peças usa a Alta qualidade (mais faces, dentro do teto)", hqOk and wedges > 1500 and wedges <= 6800,
-				string.format("qualidade %s, %d cunhas", tostring(polyMesh and polyMesh:GetAttribute("Quality")), wedges))
-			-- luz assada: face virada para a luz (em cima, na frente) fica mais clara que a de baixo; faces
-			-- vizinhas variam um pouco de tom (visual lapidado), sempre igual na mesma face
-			local Facets = require(__proxy("Shared/Builders/Facets"))
-			local ctr = Vector3.new(0, 0, 0)
-			local top = Facets.faceLight(Vector3.new(-1, 1, -1), Vector3.new(1, 1, -1), Vector3.new(0, 1, 1), ctr)
-			local bottom = Facets.faceLight(Vector3.new(-1, -1, -1), Vector3.new(0, -1, 1), Vector3.new(1, -1, -1), ctr)
-			local again = Facets.faceLight(Vector3.new(-1, 1, -1), Vector3.new(1, 1, -1), Vector3.new(0, 1, 1), ctr)
-			local other = Facets.faceLight(Vector3.new(-1.3, 1, -0.7), Vector3.new(0.7, 1, -1.2), Vector3.new(0.2, 1, 1.1), ctr)
-			check("visual v4: luz assada por face (de cima mais clara que de baixo, tom estável e variado por face)",
-				top > bottom + 0.15 and top == again and other ~= top, string.format("cima %.2f, baixo %.2f", top, bottom))
+			local blobs = polyMesh and (polyMesh:GetAttribute("Blobs") or 0) or 0
+			local lightT = PetMesh.buildTemplatePoly(polyMesh and polyMesh:GetAttribute("Species") or "kit_1", 1)
+			check("pets lisos: pet do jogador no modo de peças usa a Alta qualidade (mais elipsoides que o Leve, dentro do teto)",
+				hqOk and lightT ~= nil and blobs > lightT.blobs and blobs <= 600,
+				string.format("qualidade %s, %d elipsoides (leve %s)", tostring(polyMesh and polyMesh:GetAttribute("Quality")), blobs, tostring(lightT and lightT.blobs)))
 			-- Opções: trocar para Leve remonta os pets do jogador com menos faces, e voltar para Alta
 			local PetVisuals = require(__proxy("Client/Controllers/PetVisuals"))
 			local function myMeshes()
@@ -2112,6 +2119,8 @@ do
 			local whites = 0
 			for _, d in ipairs(polyMesh and polyMesh:GetDescendants() or {}) do
 				if d.ClassName == "WedgePart" then
+					grass += 1000 -- (não pode sobrar cunha triangular nos pets)
+				elseif d.Name == "Blob" then
 					if d.Material == Enum.Material.Grass then
 						grass += 1
 					end
@@ -2132,8 +2141,8 @@ do
 			end
 			check("visual dos pets: contorno de desenho (Highlight só com a linha) nos pets do jogador",
 				hl ~= nil and hl.ClassName == "Highlight" and hl.FillTransparency == 1 and hl.OutlineTransparency < 0.5, hl and "ok" or "sem contorno")
-			check("visual dos pets: nenhuma face com textura de grama", polyMesh ~= nil and grass == 0, grass .. " cunhas de grama")
-			check("visual dos pets: olhos com brilho branco no modo de peças", whites >= 4, whites .. " cunhas brancas no rosto")
+			check("visual dos pets: nenhuma peça com textura de grama nem cunha triangular", polyMesh ~= nil and grass == 0, grass .. " peças com problema")
+			check("visual dos pets: olhos com brilho branco no modo de peças", whites >= 2, whites .. " brilhos brancos no rosto")
 			-- a mesma cor fica mais escura embaixo (oclusão pela altura) e um pouco mais saturada
 			local Facets = require(__proxy("Shared/Builders/Facets"))
 			local rl, gl, bl = Facets.toonRGB(0.6, 0.4, 0.3, 0)
@@ -2289,12 +2298,14 @@ do
 			return e
 		end
 		local function scan(vis)
-			local r = { meshParts = 0, wedges = 0, hidden = true, motors = {}, lights = {}, oldLights = 0 }
+			local r = { meshParts = 0, wedges = 0, blobs = 0, hidden = true, motors = {}, lights = {}, oldLights = 0 }
 			for _, d in ipairs(vis:GetDescendants()) do
 				if d.ClassName == "MeshPart" then
 					r.meshParts += 1
 				elseif d.ClassName == "WedgePart" then
 					r.wedges += 1
+				elseif d.Name == "Blob" then
+					r.blobs += 1
 				elseif d.ClassName == "Motor6D" then
 					r.motors[d.Name] = d
 				elseif d.ClassName == "PointLight" and d.Parent:GetAttribute("EnergyFx") then
@@ -2380,9 +2391,9 @@ do
 			frames(20)
 			movedPoly = rp.motors.Body.Transform ~= t0
 		end
-		check("sem 'Allow Mesh / Image APIs': o boss vira o low-poly de peças (cunhas), escondendo o antigo, animado e sem erro",
-			rp ~= nil and pv:GetAttribute("PolyBoss") == true and rp.wedges > 1500 and rp.wedges <= 7000 and rp.hidden and movedPoly and #SIM.errors == beforeP,
-			rp and string.format("%d cunhas, animado=%s, erro=%s", rp.wedges, tostring(movedPoly), tostring(SIM.errors[beforeP + 1])) or "sem visual")
+		check("sem 'Allow Mesh / Image APIs': o boss vira o modelo LISO de peças (elipsoides, nenhuma cunha), escondendo o antigo, animado e sem erro",
+			rp ~= nil and pv:GetAttribute("PolyBoss") == true and rp.blobs > 300 and rp.blobs <= 1200 and rp.wedges == 0 and rp.hidden and movedPoly and #SIM.errors == beforeP,
+			rp and string.format("%d elipsoides, %d cunhas, animado=%s, erro=%s", rp.blobs, rp.wedges, tostring(movedPoly), tostring(SIM.errors[beforeP + 1])) or "sem visual")
 		asset.CreateEditableMesh = origCreate
 		PetMesh._reset()
 		BossMesh._reset()
@@ -2946,6 +2957,105 @@ SIM.run(3)
 	end
 	check("bosses: áreas de poder somem sozinhas e nenhum erro no servidor", zones() == 0 and #SIM.errors == before,
 		string.format("zonas %d (%s), erro %s", zones(), table.concat(zoneInfo, ","), tostring(SIM.errors[before + 1])))
+end)()
+
+-- MINERAÇÃO DE CRISTAIS: veios, golpes validados, cristais, missões, contratos e picareta -------------
+;(function()
+	local before = #SIM.errors
+	local MS = require(__proxy("Server/Services/MiningService"))
+	local Mining = require(__proxy("Shared/Config/Mining"))
+	local MiningLogic = require(__proxy("Shared/Logic/MiningLogic"))
+	local VL = require(__proxy("Server/Services/VerdantLowlands"))
+	local WS = require(__proxy("Server/Services/WorldService"))
+	local byWorld, caveVeins, prompts = {}, 0, 0
+	local halls = WS.Lowlands and WS.Lowlands.cave and WS.Lowlands.cave.halls or {}
+	for _, v in ipairs(MS.veins) do
+		byWorld[v.world] = (byWorld[v.world] or 0) + 1
+		if v.model and v.model:FindFirstChild("VeinCore") and v.model.VeinCore:FindFirstChild("MinePrompt") then
+			prompts += 1
+		end
+		if v.world == "verdant" then
+			for i, hp in ipairs(halls) do
+				local flat = ((v.pos - hp) * Vector3.new(1, 0, 1)).Magnitude
+				if flat < VL.Cave.halls[i].r and v.pos.Y < -30 then
+					caveVeins += 1
+					break
+				end
+			end
+		end
+	end
+	check("mineração: veios de cristal nos salões das Cavernas Esmeralda (subsolo) e nos outros 4 mundos, todos com o prompt Minerar",
+		caveVeins == 6 and (byWorld.crystal or 0) >= 3 and (byWorld.sky or 0) >= 1 and (byWorld.wilds or 0) >= 1 and (byWorld.astral or 0) >= 1 and prompts == #MS.veins,
+		string.format("caverna %d, cristal %d, céu %d, mata %d, astral %d, prompts %d/%d", caveVeins, byWorld.crystal or 0, byWorld.sky or 0, byWorld.wilds or 0,
+			byWorld.astral or 0, prompts, #MS.veins))
+	local pm = SIM.addPlayer("Mineira", 909)
+	SIM.run(1)
+	local d = S.DataService.get(pm)
+	local day = math.floor(os.time() / 86400)
+	d.quests.daily.day = day
+	d.quests.daily.ids = { "d_mine", "d_mine_emerald", "d_contract" }
+	d.quests.daily.progress = {}
+	d.quests.daily.claimed = {}
+	local vein
+	for _, v in ipairs(MS.veins) do
+		if v.world == "verdant" and v.alive then
+			vein = v
+			break
+		end
+	end
+	-- longe do veio: golpe recusado
+	SIM.teleport(pm, vein.pos + Vector3.new(40, 3, 0))
+	SIM.run(1.2)
+	local far = MS.strike(pm, vein)
+	-- perto: golpe aceito; outro no mesmo instante é recusado (o tempo de segurar é conferido no servidor)
+	SIM.teleport(pm, vein.pos + Vector3.new(3, 3, 0))
+	SIM.run(1.2)
+	local hp0 = vein.hp
+	local r1 = MS.strike(pm, vein)
+	local r2 = MS.strike(pm, vein)
+	check("mineração: golpe só vale perto do veio e respeitando o tempo da picareta (rajadas recusadas)",
+		far.ok == false and r1.ok == true and r2.ok == false and vein.hp < hp0, string.format("longe=%s, golpe=%s, rajada=%s", tostring(far.ok), tostring(r1.ok), tostring(r2.ok)))
+	-- pelo prompt de verdade, até quebrar
+	local strikes = 1
+	for _ = 1, 40 do
+		if not vein.alive then
+			break
+		end
+		SIM.run(1.05)
+		vein.prompt.Triggered:Fire(pm)
+		strikes += 1
+	end
+	SIM.run(0.5)
+	local got = d.items.emerald_crystal or 0
+	local dp = d.quests.daily.progress
+	check("mineração: segurar Minerar quebra o veio e dá Cristais Esmeralda (itens), contando nas missões diárias",
+		not vein.alive and got >= Mining.Veins.emerald.yield[1] and (dp.d_mine or 0) >= got and (dp.d_mine_emerald or 0) >= got and d.mining.mined >= got and d.mining.veins == 1,
+		string.format("quebrou=%s em %d golpes, %d cristais, missões %s/%s, minerado %d", tostring(not vein.alive), strikes, got, tostring(dp.d_mine), tostring(dp.d_mine_emerald), d.mining.mined))
+	SIM.run(Mining.Veins.emerald.respawn + 1)
+	check("mineração: o veio volta depois do tempo de recarga", vein.alive and vein.model ~= nil and vein.model.Parent ~= nil and vein.hp == Mining.Veins.emerald.hp)
+	-- contrato de mineração: entrega os cristais e recebe a recompensa; não dá para entregar duas vezes
+	d.mining.contracts = { day = day, ids = { "mc_emerald_s", "mc_sapphire" }, done = {} }
+	d.items.emerald_crystal = 10
+	local coins0 = d.coins
+	local c1 = req(pm, "DeliverContract", { id = "mc_emerald_s" })
+	local c2 = req(pm, "DeliverContract", { id = "mc_emerald_s" })
+	local c3 = req(pm, "DeliverContract", { id = "mc_sapphire" }) -- sem safiras
+	local c4 = req(pm, "DeliverContract", { id = "mc_star" }) -- não é contrato de hoje
+	check("contratos de mineração: entrega debita os cristais e paga; repetida, sem cristais ou fora do dia é recusada",
+		c1.ok == true and c2.ok == false and c3.ok == false and c4.ok == false and d.items.emerald_crystal == 2 and d.coins >= coins0 + 900 and (d.quests.daily.progress.d_contract or 0) == 1,
+		string.format("entregas %s/%s/%s/%s, esmeraldas %s, moedas +%d", tostring(c1.ok), tostring(c2.ok), tostring(c3.ok), tostring(c4.ok), tostring(d.items.emerald_crystal), d.coins - coins0))
+	-- picareta: sem cristais não melhora; com o custo, sobe de nível e golpeia mais rápido e forte
+	d.items.emerald_crystal = nil
+	d.coins = 5000
+	local u1 = req(pm, "UpgradePickaxe")
+	d.items.emerald_crystal = 12
+	local u2 = req(pm, "UpgradePickaxe")
+	check("picareta: melhoria cobra moedas e cristais e aumenta força e velocidade",
+		u1.ok == false and u2.ok == true and d.mining.pickaxe == 2 and pm:GetAttribute("Pickaxe") == 2 and d.coins == 5000 - 600 and (d.items.emerald_crystal or 0) == 0
+			and MiningLogic.minInterval(2) < MiningLogic.minInterval(1) and MiningLogic.strikePower(2, 0) > MiningLogic.strikePower(1, 0),
+		string.format("sem custo=%s, com custo=%s, nível %s", tostring(u1.ok), tostring(u2.ok), tostring(d.mining.pickaxe)))
+	check("mineração: nenhum erro no servidor", #SIM.errors == before, SIM.errors[before + 1])
+	SIM.removePlayer(pm)
 end)()
 
 check("nenhum erro de execução no servidor durante os cenários", #SIM.errors == 0, SIM.errors[1])
