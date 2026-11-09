@@ -294,6 +294,10 @@ Antes/depois em `docs/preview/pets_fix_antes.jpg` e `pets_fix_depois.jpg`:
 - **Mamute de capim:** as 36 placas finas da pelagem viravam lâminas verdes gigantes; agora é uma manta de capim no
   dorso com franja de tufos, e o corpo aparece.
 - **Flores nas costas** encostadas no corpo (antes ficavam um pouco acima).
+- **Olhos atravessando a cabeça:** no modo de peças os olhos eram discos planos, e a cabeça é curva: a borda do
+  disco entrava na cabeça de um lado e saía do outro. Agora cada vértice do olho (globo, íris, pupila e brilhos) é
+  projetado na superfície real da cabeça e levantado um pouco por camada, como um adesivo que acompanha a curva
+  (`docs/preview/pets_olhos.jpg`).
 
 ### Visual v3 dos pets e bosses (modo de peças, sem EditableMesh)
 

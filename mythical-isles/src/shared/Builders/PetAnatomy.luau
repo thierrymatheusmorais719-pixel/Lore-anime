@@ -225,20 +225,47 @@ local function eyeGeom(P, c: Vector3, n: Vector3, r: number, o)
 	local glow = o.glow or P.glowEyes
 	if MeshKit.low then
 		-- Modo de peças: cada triângulo tem UMA cor (a média dos vértices), então o degradê de íris/pupila
-		-- some num borrão escuro. Aqui o olho é feito em camadas de cor sólida, uma na frente da outra:
-		-- globo, íris, pupila e dois brilhos. Um pouco maior, para ler bem de longe.
-		-- a cabeça de baixa resolução tem faces retas que cobrem a parte de cima do olho: o olho sai um
-		-- pouco para fora da superfície e fica maior (estilo anime)
-		local R = r * 1.3
-		c = c + n * r * 0.32
+		-- some num borrão escuro. Aqui o olho é feito em camadas de cor sólida (globo, íris, pupila e dois
+		-- brilhos), como um ADESIVO: cada vértice é projetado na superfície real da cabeça (`o.surface`) e
+		-- levantado um pouco por camada. Discos planos atravessavam a cabeça curva (a borda entrava de um
+		-- lado e saía do outro); assim o olho acompanha a curva e nunca fura a cabeça.
+		local surf = o.surface
+		local R = r * (surf and 1.15 or 1.3)
+		if not surf then
+			c = c + n * r * 0.32 -- sem a malha da cabeça (olhos em posição fixa): disco um pouco para fora
+		end
 		local tall = o.tall or 1
-		-- discos planos em leque (como um decalque de olho de anime), cada camada um pouco à frente da
-		-- anterior. Só a face da frente: no modo de peças cada triângulo já vira cunhas com espessura.
-		local function lens(center: Vector3, w: number, h: number, _depth: number, col: Color3, segs: number)
-			local verts, colors, tris = { center + n * math.min(w, h) * 0.04 }, { col }, {}
+		local step = math.max(0.012, r * 0.14) -- altura de cada camada acima da anterior
+		local function onSurface(q: Vector3, lift: number): Vector3?
+			if not surf then
+				return q + n * lift
+			end
+			local origin = q + n * r * 3
+			local t = rayGeom(surf, origin, -n)
+			if t and t < r * 7 then
+				return origin - n * t + n * lift
+			end
+			return nil
+		end
+		local function lens(center: Vector3, w: number, h: number, layer: number, col: Color3, segs: number)
+			local lift = step * layer
+			local mid = onSurface(center, lift + step * 0.25)
+			if not mid then
+				return nil
+			end
+			local verts, colors, tris = { mid }, { col }, {}
 			for k = 0, segs - 1 do
 				local a = k / segs * math.pi * 2
-				table.insert(verts, center + right * math.cos(a) * w + upv * math.sin(a) * h)
+				local off = right * math.cos(a) * w + upv * math.sin(a) * h
+				-- na borda da silhueta o raio pode passar fora da cabeça: encolhe o ponto até cair nela
+				local q
+				for _, f in ipairs({ 1, 0.85, 0.7, 0.55, 0.4 }) do
+					q = onSurface(center + off * f, lift)
+					if q then
+						break
+					end
+				end
+				table.insert(verts, q or mid)
 				table.insert(colors, col)
 			end
 			for k = 1, segs do
@@ -246,20 +273,24 @@ local function eyeGeom(P, c: Vector3, n: Vector3, r: number, o)
 			end
 			return { verts = verts, colors = colors, tris = tris, flat = true }
 		end
-		local layers = { lens(c, R, R * tall, R * 0.6, o.sclera or iris:Lerp(BLACK, 0.72), 10) }
+		local layers = { lens(c, R, R * tall, 1, o.sclera or iris:Lerp(BLACK, 0.72), 10) }
 		local irisCol = glow and iris:Lerp(WHITE, 0.3) or iris:Lerp(WHITE, 0.1)
-		table.insert(layers, lens(c + n * R * 0.1, R * 0.8, R * 0.8 * tall, R * 0.12, irisCol, 10))
-		local pc = c + n * R * 0.17
+		table.insert(layers, lens(c, R * 0.8, R * 0.8 * tall, 2, irisCol, 10))
 		local pupilCol = glow and iris:Lerp(BLACK, 0.55) or rgb(10, 8, 12)
 		if o.slit then
-			table.insert(layers, lens(pc, R * 0.17, R * 0.64 * tall, R * 0.08, pupilCol, 6))
+			table.insert(layers, lens(c, R * 0.17, R * 0.64 * tall, 3, pupilCol, 6))
 		else
-			table.insert(layers, lens(pc, R * 0.42, R * 0.42 * tall, R * 0.08, pupilCol, 8))
+			table.insert(layers, lens(c, R * 0.42, R * 0.42 * tall, 3, pupilCol, 8))
 		end
-		local sc = c + n * R * 0.24
-		table.insert(layers, lens(sc + upv * R * 0.32 - right * R * 0.22, R * 0.2, R * 0.17, R * 0.08, WHITE, 5))
-		table.insert(layers, lens(sc - upv * R * 0.28 + right * R * 0.3, R * 0.09, R * 0.08, R * 0.06, WHITE, 4))
-		return merge(layers)
+		table.insert(layers, lens(c + upv * R * 0.32 - right * R * 0.22, R * 0.2, R * 0.17, 4, WHITE, 5))
+		table.insert(layers, lens(c - upv * R * 0.28 + right * R * 0.3, R * 0.09, R * 0.08, 4, WHITE, 4))
+		local ok = {}
+		for _, g in ipairs(layers) do
+			if g then
+				table.insert(ok, g)
+			end
+		end
+		return merge(ok)
 	end
 	local eye = loft({ { p = c - n * r * 0.5, w = r, h = r * (o.tall or 1) }, { p = c, w = r, h = r * (o.tall or 1) } }, {
 		seg = 14, steps = 1, up = upv, capStart = 0, capEnd = r * 0.34, capRings = 4, detail = true,
@@ -466,7 +497,7 @@ local function mammalHead(P, H)
 		if not MeshKit.low then
 			table.insert(list, loft({ { p = b0, w = r * 0.62, h = r * 0.34 }, { p = b1, w = r * 0.45, h = r * 0.26 } }, { seg = 8, steps = 2, capStart = r * 0.3, capEnd = r * 0.25, color = browCol }))
 		end
-		table.insert(face, eyeGeom(P, c, n, H.eyeR, { slit = H.slit, tall = H.eyeTall }))
+		table.insert(face, eyeGeom(P, c, n, H.eyeR, { slit = H.slit, tall = H.eyeTall, surface = skull }))
 		table.insert(eyes, { c = c, n = n.Unit, r = H.eyeR })
 	end
 	return {
@@ -913,7 +944,7 @@ local function avianHead(P, o)
 		local n = V(side * (1 - fwd), 0.1, -fwd * 1.1)
 		local target = V(side * (owl and 0.13 or 0.17), 0.07, owl and -0.24 or -0.16) * s
 		local c = seatOnMesh(head, target, n, r) or seatEye(keys, target, n, r)
-		table.insert(face, eyeGeom(P, c, n, r, { sclera = owl and rgb(250, 210, 80) or nil }))
+		table.insert(face, eyeGeom(P, c, n, r, { sclera = owl and rgb(250, 210, 80) or nil, surface = head }))
 		table.insert(eyes, { c = c, n = n.Unit, r = r })
 	end
 	local extra = {}
@@ -1510,7 +1541,7 @@ local function faceOn(P, center: Vector3, sx: number, r: number, o)
 	for _, side in ipairs({ -1, 1 }) do
 		local c = center + V(side * sx, 0, 0)
 		local n = V(side * (o.side or 0.25), 0.05, -1)
-		table.insert(list, eyeGeom(P, c, n, r, { glow = o.glow, sclera = o.sclera }))
+		table.insert(list, eyeGeom(P, c, n, r, { glow = o.glow, sclera = o.sclera, surface = o.surface }))
 		table.insert(eyes, { c = c, n = n.Unit, r = r })
 	end
 	if o.mouth ~= false then
@@ -1533,7 +1564,7 @@ local function slime(bp, P, m)
 		{ material = m.glassy and "Glass" or "SmoothPlastic", transparency = 0.3, reflectance = 0.1 })
 	addPart(bp, "Core", "Torso", nil, V(0, 0, 0), loft({ { p = V(0, -0.6, 0.05), w = 0.55 }, { p = V(0, -0.05, 0.05), w = 0.45 }, { p = V(0, 0.25, 0.05), w = 0.2 } },
 		{ seg = 12, steps = 2, up = FWD, color = solid(P.belly) }), { material = "Neon", role = "Glow", transparency = 0.45 })
-	local face, eyes = faceOn(P, V(0, -0.18, -0.92), 0.3, 0.16, { side = 0.3 })
+	local face, eyes = faceOn(P, V(0, -0.18, -0.92), 0.3, 0.16, { side = 0.3, surface = body })
 	addPart(bp, "Face", "Torso", nil, V(0, 0, 0), face, { material = "SmoothPlastic", role = "Eye", reflectance = 0.15 })
 	bp._eyes = eyes
 	if m.top == "sprout" then
@@ -1557,7 +1588,7 @@ local function shroom(bp, P, m)
 	local stem = loft({ { p = V(0, -0.62, 0), w = 0.6, h = 0.58 }, { p = V(0, -0.15, 0), w = 0.54, h = 0.52 }, { p = V(0, 0.38, 0), w = 0.44, h = 0.42 } },
 		{ seg = 16, steps = 3, up = FWD, capStart = 0.15, capEnd = 0, color = solid(P.belly) })
 	addPart(bp, "Torso", nil, "Body", V(0, 0, 0), stem, { material = "SmoothPlastic", role = "Belly" })
-	local face, eyes = faceOn(P, V(0, -0.05, -0.5), 0.2, 0.11, {})
+	local face, eyes = faceOn(P, V(0, -0.05, -0.5), 0.2, 0.11, { surface = stem })
 	addPart(bp, "Face", "Torso", nil, V(0, 0, 0), face, { material = "SmoothPlastic", role = "Eye", reflectance = 0.12 })
 	bp._eyes = eyes
 	local cap = loft({ { p = V(0, 0, 0), w = 1.55, h = 1.45 }, { p = V(0, 0.18, 0), w = 1.42, h = 1.34 }, { p = V(0, 0.45, 0), w = 0.95, h = 0.9 }, { p = V(0, 0.64, 0), w = 0.35, h = 0.33 } },
@@ -1712,7 +1743,7 @@ local function floater(bp, P, m, speciesId: string)
 	addPart(bp, "Torso", nil, "Body", V(0, 0, 0), body, { material = mat, transparency = (cloud or geode) and 0.05 or 0.12 })
 	addPart(bp, "Core", "Torso", nil, V(0, 0, 0), loft({ { p = V(0, 0, -0.1), w = 0.32 }, { p = V(0, -0.1, 0.25), w = 0.22 } }, { seg = 10, steps = 1, color = solid(P.belly) }),
 		{ material = "Neon", role = "Glow", transparency = 0.4 })
-	local face, eyes = faceOn(P, V(0, 0.1, -0.88), 0.22, 0.12, { glow = shade or m.glowEyes, side = 0.35, mouth = not shade })
+	local face, eyes = faceOn(P, V(0, 0.1, -0.88), 0.22, 0.12, { glow = shade or m.glowEyes, side = 0.35, mouth = not shade, surface = body })
 	addPart(bp, "Face", "Torso", nil, V(0, 0, 0), face, { material = "SmoothPlastic", role = "Eye", reflectance = 0.12 })
 	bp._eyes = eyes
 	-- cauda de fumaça/vento em cadeia (ondula)
