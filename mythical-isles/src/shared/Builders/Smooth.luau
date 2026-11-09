@@ -278,19 +278,47 @@ function Smooth.blobs(g, offset: Vector3?, opts): { Blob }
 			local ee3 = nrm
 			local ee1 = e1
 			local ee2 = ee3:Cross(ee1).Unit
-			table.insert(out, blob(mid, ee1, ee2, ee3, L1 / 2, L2 / 2, math.max(half * 0.3, minHalf), avg(cols), minHalf))
+			table.insert(out, blob(mid, ee1, ee2, ee3, L1 / 2, L2 / 2, math.max(half * 0.2, minHalf), avg(cols), minHalf)) -- fininho: olho "pintado" e brilhante
 		else
 			local cross = math.max(L2, L3, 1e-3)
+			-- poucas formas GRANDES por pedaço (estilo Palworld: superfície contínua, sem "gomos"):
+			-- 1 elipsoide se o pedaço é atarracado; 2 a 4 bem sobrepostos se é comprido (pernas, rabo)
 			local n = 1
-			if L1 > cross * 1.3 then
-				n = math.clamp(math.ceil(L1 / cross * density), 2, maxBeads)
+			local ratio = L1 / cross
+			if ratio > 1.35 then
+				n = math.clamp(math.floor(ratio * 0.5 * density + 0.5), 2, maxBeads)
+			end
+			-- achatado e comprido (orelha, folha, pétala): UMA folha alongada e mais fina que a base (silhueta
+			-- de orelha pontuda; várias contas viravam "bolinhas empilhadas")
+			-- pedaço que AFINA muito (focinho saindo do crânio, rabo): 3 formas acompanham o afinar
+			if n == 2 then
+				local th = {}
+				for k = 1, 3 do
+					th[k] = { a = math.huge, b = -math.huge, c = math.huge, d = -math.huge }
+				end
+				for i = 1, #pts do
+					local k = math.clamp(math.floor((t1[i] - lo1) / math.max(L1, 1e-6) * 3) + 1, 1, 3)
+					local q = th[k]
+					q.a, q.b = math.min(q.a, t2[i]), math.max(q.b, t2[i])
+					q.c, q.d = math.min(q.c, t3[i]), math.max(q.d, t3[i])
+				end
+				-- largura de cada terço (a maior das duas medidas transversais)
+				local a = math.max(th[1].b - th[1].a, th[1].d - th[1].c)
+				local b = math.max(th[3].b - th[3].a, th[3].d - th[3].c)
+				if a > 0 and b > 0 and math.max(a, b) / math.min(a, b) > 1.3 then
+					n = math.min(3, maxBeads + 1)
+				end
+			end
+			local flatPiece = L3 < math.max(L2, 1e-3) * 0.45 and L1 > L2 * 1.15
+			if flatPiece then
+				n = 1
 			end
 			local s = L1 / n
 			-- 1) medidas de cada conta (centro e largura locais)
 			local beads = {}
 			for k = 0, n - 1 do
 				local tc = lo1 + (k + 0.5) * s
-				local w = n == 1 and math.huge or s * 0.6
+				local w = n == 1 and math.huge or s * 0.35
 				local a2lo, a2hi, a3lo, a3hi = math.huge, -math.huge, math.huge, -math.huge
 				local wc, idx = {}, {}
 				for i = 1, #pts do
@@ -307,9 +335,12 @@ function Smooth.blobs(g, offset: Vector3?, opts): { Blob }
 						h1 = L1 / 2
 					else
 						-- contas se sobrepõem (sem "gomos" fundos); nas pontas não passam do fim do pedaço
-						h1 = math.min(s * 1.25, (tc - lo1) + s * 0.3, (hi1 - tc) + s * 0.3)
+						h1 = math.min(s * 1.1, (tc - lo1) + s * 0.15, (hi1 - tc) + s * 0.15)
 					end
 					local grow = (n == 1 and 1 or 1.04) * (puff or 1)
+					if flatPiece then
+						grow *= 0.72 -- folha: mais fina que a largura da base
+					end
 					table.insert(beads, { tc = tc, h1 = h1, h2 = (a2hi - a2lo) / 2 * grow, h3 = (a3hi - a3lo) / 2 * grow, m2 = (a2lo + a2hi) / 2, m3 = (a3lo + a3hi) / 2,
 						wc = wc, idx = idx })
 				end
@@ -349,7 +380,7 @@ function Smooth.blobs(g, offset: Vector3?, opts): { Blob }
 					end
 					if #low >= 3 and #high >= 3 then
 						local cl, ch = avg(low), avg(high)
-						if dist(cl, ch) > 0.16 then
+						if dist(cl, ch) > 0.22 then
 							color = ch
 							addBelly = { color = cl, down = down, vert = vert, hv = hv }
 						end
@@ -402,6 +433,63 @@ function Smooth.blobs(g, offset: Vector3?, opts): { Blob }
 	return out
 end
 
+-- Distância ao longo do raio (origem o, direção unitária d) até sair do elipsoide b; nil se não cruza.
+local function exitDistance(b: Blob, o: Vector3, d: Vector3): number?
+	local inv = b.cf:Inverse()
+	local lo = inv * o
+	local ld = inv.Rotation * d
+	local hx, hy, hz = b.size.X / 2, b.size.Y / 2, b.size.Z / 2
+	local ox, oy, oz = lo.X / hx, lo.Y / hy, lo.Z / hz
+	local dx, dy, dz = ld.X / hx, ld.Y / hy, ld.Z / hz
+	local A = dx * dx + dy * dy + dz * dz
+	local B = 2 * (ox * dx + oy * dy + oz * dz)
+	local C = ox * ox + oy * oy + oz * oz - 1
+	local disc = B * B - 4 * A * C
+	if disc < 0 or A < 1e-12 then
+		return nil
+	end
+	return (-B + math.sqrt(disc)) / (2 * A)
+end
+Smooth._exitDistance = exitDistance
+
+-- Olhos por cima da cabeça LISA: a cabeça de elipsoides é um pouco mais cheia que a malha original onde o
+-- adesivo do olho foi colado; cada olho (globo, íris, pupila, brilhos: o mesmo deslocamento para manter as
+-- camadas) é empurrado ao longo da própria normal até a superfície da cabeça.
+local function liftEyes(eyes: { Blob }, head: { Blob }, lift: number)
+	local groups = {}
+	for _, b in ipairs(eyes) do
+		local placed = false
+		for _, g in ipairs(groups) do
+			local a = g[1]
+			if (b.cf.Position - a.cf.Position).Magnitude < math.max(a.size.X, a.size.Y) * 0.55 then
+				table.insert(g, b)
+				placed = true
+				break
+			end
+		end
+		if not placed then
+			table.insert(groups, { b })
+		end
+	end
+	for _, g in ipairs(groups) do
+		local a = g[1]
+		local n = -a.cf.LookVector -- (ZVector)
+		local far = 0
+		for _, h in ipairs(head) do
+			local t = exitDistance(h, a.cf.Position - n * a.size.Z * 2, n)
+			if t then
+				far = math.max(far, t - a.size.Z * 2)
+			end
+		end
+		if far > 0 then
+			local shift = n * (far + lift)
+			for _, b in ipairs(g) do
+				b.cf = b.cf + shift
+			end
+		end
+	end
+end
+
 -- Elipsoides de cada parte de uma planta (PetAnatomy/BossAnatomy), em coordenadas do modelo na pose de
 -- montagem. Peças de olho (role "Eye") viram cúpulas por cima da peça-mãe (a cabeça).
 -- Devolve { [nome da parte] = { Blob } } e o total de elipsoides.
@@ -421,8 +509,8 @@ function Smooth.forBlueprint(bp, quality: string?)
 	local res, total = {}, 0
 	for _, p in ipairs(bp.parts) do
 		local list = Smooth.blobs(p.geom, p.pivot, {
-			density = high and 1.6 or 1.15,
-			maxBeads = high and 14 or 10,
+			density = high and 1.25 or 1,
+			maxBeads = high and 4 or 3,
 			decal = p.role == "Eye",
 			radial = RADIAL[p.name] == true,
 			ref = (p.parent and centers[p.parent]) or centers[p.name],
@@ -438,6 +526,11 @@ function Smooth.forBlueprint(bp, quality: string?)
 		end
 		res[p.name] = list
 		total += #list
+	end
+	for _, p in ipairs(bp.parts) do
+		if p.role == "Eye" and p.parent and res[p.parent] then
+			liftEyes(res[p.name], res[p.parent], 0.006 * (bp.scale or 1))
+		end
 	end
 	return res, total
 end

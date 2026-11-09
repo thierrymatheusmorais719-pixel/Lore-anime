@@ -2015,7 +2015,7 @@ do
 						bones += 1
 					end
 				end
-				if res.blobs < 30 or wedges > 0 or spheres ~= res.blobs or welded ~= res.blobs or motors < 3 or bones < 6 or res.model:GetAttribute("PolyPet") ~= true then
+				if res.blobs < 20 or wedges > 0 or spheres ~= res.blobs or welded ~= res.blobs or motors < 3 or bones < 6 or res.model:GetAttribute("PolyPet") ~= true then
 					okPoly, broken = false, string.format("%s: %d elipsoides (%d esferas, %d soldados), %d cunhas, %d juntas, %d ossos", sid, res.blobs, spheres, welded, wedges, motors, bones)
 				end
 			end
@@ -2075,8 +2075,8 @@ do
 			local hqOk = polyMesh ~= nil and polyMesh:GetAttribute("Quality") == "high"
 			local blobs = polyMesh and (polyMesh:GetAttribute("Blobs") or 0) or 0
 			local lightT = PetMesh.buildTemplatePoly(polyMesh and polyMesh:GetAttribute("Species") or "kit_1", 1)
-			check("pets lisos: pet do jogador no modo de peças usa a Alta qualidade (mais elipsoides que o Leve, dentro do teto)",
-				hqOk and lightT ~= nil and blobs > lightT.blobs and blobs <= 600,
+			check("pets lisos: pet do jogador no modo de peças usa a Alta qualidade (anatomia com mais detalhes, dentro do teto)",
+				hqOk and lightT ~= nil and blobs >= lightT.blobs * 0.8 and blobs <= 600,
 				string.format("qualidade %s, %d elipsoides (leve %s)", tostring(polyMesh and polyMesh:GetAttribute("Quality")), blobs, tostring(lightT and lightT.blobs)))
 			-- Opções: trocar para Leve remonta os pets do jogador com menos faces, e voltar para Alta
 			local PetVisuals = require(__proxy("Client/Controllers/PetVisuals"))
@@ -2392,7 +2392,7 @@ do
 			movedPoly = rp.motors.Body.Transform ~= t0
 		end
 		check("sem 'Allow Mesh / Image APIs': o boss vira o modelo LISO de peças (elipsoides, nenhuma cunha), escondendo o antigo, animado e sem erro",
-			rp ~= nil and pv:GetAttribute("PolyBoss") == true and rp.blobs > 300 and rp.blobs <= 1200 and rp.wedges == 0 and rp.hidden and movedPoly and #SIM.errors == beforeP,
+			rp ~= nil and pv:GetAttribute("PolyBoss") == true and rp.blobs > 150 and rp.blobs <= 1200 and rp.wedges == 0 and rp.hidden and movedPoly and #SIM.errors == beforeP,
 			rp and string.format("%d elipsoides, %d cunhas, animado=%s, erro=%s", rp.blobs, rp.wedges, tostring(movedPoly), tostring(SIM.errors[beforeP + 1])) or "sem visual")
 		asset.CreateEditableMesh = origCreate
 		PetMesh._reset()

@@ -441,8 +441,12 @@ esfera esticada) soldados aos mesmos ossos animados (`Builders/Smooth.luau`):
   acompanhando a curva e o afinar (pernas, pescoço, rabo); larguras suavizadas entre vizinhas;
 - barriga, peito e focinho claros ganham um segundo elipsoide por baixo; olhos e bochechas viram cúpulas coladas na
   cabeça (com o brilho branco); anéis (auréolas, coroas) mantêm o furo e a juba vira tufos em volta do pescoço;
-- bem mais leve: em média **125 peças por pet** no Leve e 175 na Alta (antes até ~3.200 / 6.800 cunhas); bosses com
-  540–920 peças (antes 5.000–6.200);
+- **estilo Palworld:** poucas formas GRANDES e bem sobrepostas por parte do corpo (1 elipsoide se a parte é
+  atarracada, 2–3 se é comprida ou afina, como focinho e rabo), então a superfície fica contínua, sem "gomos";
+  orelhas e folhas viram uma folha fina alongada (com o rosa por dentro); olhos ovais grandes, pupila grande e
+  dois brilhos brancos, "pintados" rente à cabeça e empurrados até a superfície da cabeça lisa (não afundam);
+- bem mais leve: em média **84 peças por pet** no Leve e 98 na Alta (antes até ~3.200 / 6.800 cunhas); bosses com
+  280–380 peças (antes 5.000–6.200);
 - mesmas juntas, animações, contorno e opção Leve/Alta. Com o EditableMesh ligado nada muda (malhas lisas).
 - Testes: o smoke confere as 192 espécies nas duas qualidades (orçamento, tamanhos válidos, toda parte com
   elipsoide) e os 5 bosses; o simulador confere que nenhuma cunha sobra, que cada elipsoide está soldado ao osso e que

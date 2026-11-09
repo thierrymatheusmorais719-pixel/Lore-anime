@@ -239,7 +239,7 @@ local function eyeGeom(P, c: Vector3, n: Vector3, r: number, o)
 		if not surf then
 			c = c + n * r * 0.32 -- sem a malha da cabeça (olhos em posição fixa): disco um pouco para fora
 		end
-		local tall = o.tall or 1
+		local tall = (o.tall or 1) * 1.15 -- olho oval, mais alto que largo (estilo dos pets lisos)
 		local step = math.max(0.012, r * 0.14) -- altura de cada camada acima da anterior
 		local function onSurface(q: Vector3, lift: number): Vector3?
 			if not surf then
@@ -282,13 +282,15 @@ local function eyeGeom(P, c: Vector3, n: Vector3, r: number, o)
 		local irisCol = glow and iris:Lerp(WHITE, 0.3) or iris:Lerp(WHITE, 0.1)
 		table.insert(layers, lens(c, R * 0.8, R * 0.8 * tall, 2, irisCol, 10))
 		local pupilCol = glow and iris:Lerp(BLACK, 0.55) or rgb(10, 8, 12)
+		-- pupila grande (olhar fofo); nos felinos/répteis, oval vertical larga em vez do risco fino
 		if o.slit then
-			table.insert(layers, lens(c, R * 0.17, R * 0.64 * tall, 3, pupilCol, 6))
+			table.insert(layers, lens(c, R * 0.3, R * 0.62 * tall, 3, pupilCol, 8))
 		else
-			table.insert(layers, lens(c, R * 0.42, R * 0.42 * tall, 3, pupilCol, 8))
+			table.insert(layers, lens(c, R * 0.5, R * 0.52 * tall, 3, pupilCol, 10))
 		end
-		table.insert(layers, lens(c + upv * R * 0.32 - right * R * 0.22, R * 0.2, R * 0.17, 4, WHITE, 5))
-		table.insert(layers, lens(c - upv * R * 0.28 + right * R * 0.3, R * 0.09, R * 0.08, 4, WHITE, 4))
+		-- brilhos grandes (o "olho molhado" dos pets de anime)
+		table.insert(layers, lens(c + upv * R * 0.34 - right * R * 0.24, R * 0.3, R * 0.26, 4, WHITE, 8))
+		table.insert(layers, lens(c - upv * R * 0.3 + right * R * 0.3, R * 0.14, R * 0.12, 4, WHITE, 6))
 		-- bochecha rosada (pets fofos): oval logo abaixo do olho, colada na cabeça como o olho
 		if P.blush and not glow and surf then
 			table.insert(layers, lens(c - upv * R * 1.3, R * 0.62, R * 0.34, 1, P.body:Lerp(WHITE, 0.35):Lerp(rgb(255, 140, 165), 0.72), 8))
@@ -1319,8 +1321,8 @@ PetAnatomy.tune = tune
 -- para não perderem a pose.
 local CHIBI_FULL = { fox = true, feline = true, pup = true, lagomorph = true, rodent = true, squirrel = true, mustelid = true, canine = true,
 	caprine = true, amphibian = true, lynx = true }
-PetAnatomy.Chibi = { head = 1.45, len = 0.78, eyes = 1.3, snout = 0.6, legs = 0.72, body = 0.8, round = 1.12, neck = 0.78, lift = 14, front = 0.16 }
-PetAnatomy.ChibiSoft = { head = 1.22, len = 0.9, eyes = 1.2, snout = 0.85, legs = 0.85, body = 0.95, round = 1.06, neck = 0.88, lift = 6, front = 0.08 }
+PetAnatomy.Chibi = { head = 1.45, len = 0.78, eyes = 1.42, snout = 0.6, legs = 0.72, body = 0.8, round = 1.12, neck = 0.78, lift = 14, front = 0.16 }
+PetAnatomy.ChibiSoft = { head = 1.22, len = 0.9, eyes = 1.3, snout = 0.85, legs = 0.85, body = 0.95, round = 1.06, neck = 0.88, lift = 6, front = 0.08 }
 local MAJESTIC = { wolf = true, lion = true, cervid = true, heavy = true, ursine = true, dragon = true, reptile = true, chelonian = true }
 local function chibify(Q, preset: string, tier: number?)
 	local soft = MAJESTIC[preset] and not CHIBI_FULL[preset] and (tier or 1) >= 4
