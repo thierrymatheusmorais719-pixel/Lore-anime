@@ -5,6 +5,7 @@
 
 local PetMesh = require(script.Parent.PetMesh)
 local BossAnatomy = require(script.Parent.BossAnatomy)
+local PetRig = require(script.Parent.PetRig)
 
 local BossMesh = {}
 
@@ -23,6 +24,26 @@ local function build(id: string, poly: boolean)
 	return { model = model, bp = bp, poly = poly, blobs = blobs }
 end
 
+-- Boss feito no Blender e importado no Studio (ReplicatedStorage.PetRigs.boss_<id>): esqueleto invisível do
+-- jogo + a pele contínua importada (Builders/PetRig). As peças de energia continuam nos ossos (luzes do Fx).
+local function buildRig(id: string)
+	local src = PetRig.find("boss_" .. id)
+	if not src then
+		return nil
+	end
+	local bp = BossAnatomy.blueprint(id, { low = true })
+	local model = PetMesh.assemble(bp, true, { name = "BossVisual", skeletonOnly = true })
+	local linked, missing = PetRig.attach(model, src:Clone(), bp)
+	if linked == 0 then
+		error("o modelo importado do boss " .. id .. " não tem ossos com os nomes das partes (" .. table.concat(missing, ", ") .. ")")
+	end
+	model:SetAttribute("BossVisual", id)
+	model:SetAttribute("PolyBoss", false)
+	model:SetAttribute("Bones", linked)
+	return { model = model, bp = bp, poly = false, rig = true }
+end
+BossMesh._buildRig = buildRig
+
 -- Molde pronto (ou nil). Se ainda não existe, começa a construir em segundo plano.
 function BossMesh.request(id: string)
 	if not BossAnatomy.has(id) then
@@ -38,7 +59,15 @@ function BossMesh.request(id: string)
 	pending[id] = true
 	task.spawn(function()
 		local res
-		if PetMesh.available ~= false then
+		if PetRig.find("boss_" .. id) then
+			local okR, r = pcall(buildRig, id)
+			if okR and r then
+				res = r
+			else
+				warn("[BossMesh] modelo importado do boss " .. id .. " não pôde ser usado: " .. tostring(r))
+			end
+		end
+		if not res and PetMesh.available ~= false then
 			local ok, r = pcall(build, id, false)
 			if ok and r then
 				res = r

@@ -552,6 +552,7 @@ local function groves(parent, WB, rng: Random)
 	for _, key in ipairs({ "eldermoor", "watchtower", "runes", "swamp" }) do
 		table.insert(keep, { pos = polar(PL[key].theta, PL[key].dist), r = key == "eldermoor" and 56 or 40 })
 	end
+	table.insert(keep, { pos = polar(215, 430), r = 30 }) -- campo das Sentinelas das Ruínas (zona de inimigos)
 	table.insert(keep, { pos = polar(PL.caveIn.theta, PL.caveIn.dist), r = 18 })
 	table.insert(keep, { pos = polar(PL.caveOut.theta, PL.caveOut.dist), r = 16 })
 	local function blocked(theta: number, d: number): boolean

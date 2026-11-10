@@ -27,6 +27,19 @@ Enemies.Info = {
 		detect = 46, senseRadius = 12, leash = 80, maxChase = 16, count = 3, respawn = 45, xp = 55,
 		attack = { kind = "lunge", range = 18, cooldown = 3.2, windup = 0.8, mult = 1.4 },
 	},
+	-- Terras Baixas (zonas criadas pelo WorldService junto com as ruínas e o pântano)
+	bog_lurker = {
+		name = "Espreitador do Pântano", world = "verdant", level = 6, hp = 440, atk = 15, def = 9, pdmg = 12, speed = 14, mover = "ground",
+		detect = 40, senseRadius = 10, leash = 60, maxChase = 14, count = 6, respawn = 22, xp = 34, lowlands = true,
+		attack = { kind = "melee", range = 6, cooldown = 1.5, windup = 0.45, mult = 1.1 },
+		model = "thornling", tint = Color3.fromRGB(70, 150, 140),
+	},
+	ruin_sentinel = {
+		name = "Sentinela das Ruínas", world = "verdant", level = 9, hp = 1150, atk = 24, def = 24, pdmg = 18, speed = 10, mover = "ground",
+		detect = 42, senseRadius = 12, leash = 60, maxChase = 14, count = 4, respawn = 40, xp = 70, lowlands = true,
+		attack = { kind = "slam", range = 9, radius = 10, cooldown = 2.8, windup = 0.9, mult = 1.35 },
+		model = "wildroot_guardian", tint = Color3.fromRGB(150, 150, 165), recolor = 0.6,
+	},
 
 	-- CRYSTAL HOLLOW --------------------------------------------------------
 	shard_crawler = {

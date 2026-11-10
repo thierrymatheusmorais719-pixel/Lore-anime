@@ -339,7 +339,7 @@ def build(rig, out_dir, tex_size=1024, render=False, voxel=None):
         ob["bone"] = part_bone(by_name, p) or "Torso"
         thin = thickness(verts) < vox * 2.5 or is_open(ob) or local_thickness(ob) < vox * 2.5
         wing = p["n"].startswith("Wing")
-        is_body = (p["m"] in BODY_MATERIALS and p["m"] != "Metal" and float(p["tr"]) < 0.3 and p["role"] in ("Body", "Accent", "Detail")
+        is_body = (p["m"] in BODY_MATERIALS and p["m"] != "Metal" and float(p["tr"]) < 0.3 and p["role"] in ("Body", "Accent", "Detail", "Belly")
                    and not wing)
         ob["glow"] = p["m"] in ("Neon", "Glass", "ForceField") or p["role"] == "Glow"
         # peças de pouca resolução (chapéu de cogumelo, folhas): subdivide antes, senão as faces aparecem
@@ -353,7 +353,7 @@ def build(rig, out_dir, tex_size=1024, render=False, voxel=None):
             so = ob.modifiers.new("Solid", "SOLIDIFY")
             so.thickness = vox * 2.6
             so.offset = 0
-            so.use_even_offset = True
+            so.use_even_offset = False  # (o modo "even" estoura em cantos agudos e cria riscos compridos)
             apply_modifier(ob, so)
         (body_srcs if is_body else extras).append(ob)
 
@@ -400,9 +400,10 @@ def build(rig, out_dir, tex_size=1024, render=False, voxel=None):
     apply_modifier(body, sm)
     # orçamento do Roblox (MeshPart até ~20 mil triângulos): deixa ~12 mil
     tri = sum(len(pg.vertices) - 2 for pg in body.data.polygons)
-    if tri > 12000:
+    budget = 18000 if rig.get("rarity") == "Boss" else 12000
+    if tri > budget:
         dc = body.modifiers.new("Decimate", "DECIMATE")
-        dc.ratio = 12000 / tri
+        dc.ratio = budget / tri
         apply_modifier(body, dc)
     for pg in body.data.polygons:
         pg.use_smooth = True

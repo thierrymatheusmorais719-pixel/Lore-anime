@@ -26,10 +26,28 @@ if only then
 	ids = only
 end
 
+-- bosses: mesma planta (BossAnatomy), saem como "boss_<id>"
+local BossAnatomy = require(__proxy("Builders/BossAnatomy"))
+local BossIds = {}
+if not only then
+	for _, bid in ipairs(BossAnatomy.Ids) do
+		table.insert(ids, "boss_" .. bid)
+		BossIds["boss_" .. bid] = bid
+	end
+end
+
 for _, id in ipairs(ids) do
 	local sp = Pets.Species[id]
+	if BossIds[id] then
+		sp = { name = BossIds[id], rarity = "Boss", world = "bosses" }
+	end
 	if sp then
-		local ok, bp = pcall(PetAnatomy.blueprint, id, sp, 1)
+		local ok, bp
+		if BossIds[id] then
+			ok, bp = pcall(BossAnatomy.blueprint, BossIds[id], { low = false })
+		else
+			ok, bp = pcall(PetAnatomy.blueprint, id, sp, 1)
+		end
 		if not ok then
 			print("RIGERR " .. id .. " " .. tostring(bp))
 		else
@@ -67,7 +85,7 @@ for _, id in ipairs(ids) do
 					tostring(e.glow), tostring(e.slit), num(e.tall), e.sclera and ("[" .. c255(e.sclera) .. "]") or "null", tostring(e.part))
 			end
 			print(string.format('RIG %s {"id":"%s","name":"%s","rarity":"%s","world":"%s","anatomy":"%s","gait":"%s","hover":%s,"flies":%s,"parts":[%s],"eyes":[%s]}', id, id,
-				sp.name or id, sp.rarity, sp.world or "", bp.anatomy, bp.gait, num(bp.hover), tostring(bp.flies == true), table.concat(parts, ","), table.concat(eyes, ",")))
+				sp.name or id, sp.rarity, sp.world or "", tostring(bp.anatomy or "boss"), tostring(bp.gait or "boss"), num(bp.hover or 0), tostring(bp.flies == true), table.concat(parts, ","), table.concat(eyes, ",")))
 		end
 	end
 end

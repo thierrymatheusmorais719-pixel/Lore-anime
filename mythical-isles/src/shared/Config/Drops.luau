@@ -31,6 +31,21 @@ Drops.Tables = {
 		{ item = "skill_tome", chance = 0.06, min = 1, max = 1, luck = true, maxChance = 0.15 },
 		{ item = "bloom_relic_egg", chance = 0.008, min = 1, max = 1, luck = true, category = "SpecialEgg", maxChance = 0.03, notable = true },
 	},
+	bog_lurker = {
+		{ item = "essence", chance = 1, min = 6, max = 10 },
+		{ item = "coins", chance = 1, min = 50, max = 90 },
+		{ item = "verdant_sap", chance = 0.35, min = 1, max = 2 },
+		{ item = "emerald_crystal", chance = 0.2, min = 1, max = 1 },
+		{ item = "luck_potion_1", chance = 0.03, min = 1, max = 1, luck = true, maxChance = 0.1 },
+	},
+	ruin_sentinel = {
+		{ item = "essence", chance = 1, min = 12, max = 20 },
+		{ item = "coins", chance = 1, min = 110, max = 170 },
+		{ item = "elder_bark", chance = 0.35, min = 1, max = 2 },
+		{ item = "emerald_crystal", chance = 0.3, min = 1, max = 2 },
+		{ item = "skill_tome", chance = 0.07, min = 1, max = 1, luck = true, maxChance = 0.18 },
+		{ item = "ancient_catalyst", chance = 0.006, min = 1, max = 1, luck = true, maxChance = 0.025, notable = true },
+	},
 	elderroot = {
 		{ item = "essence", chance = 1, min = 120, max = 180 },
 		{ item = "coins", chance = 1, min = 800, max = 1200 },

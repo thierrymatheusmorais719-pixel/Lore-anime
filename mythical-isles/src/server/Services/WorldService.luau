@@ -173,6 +173,16 @@ function WorldService.build()
 			local z = L.enemyZones[i]
 			layout.enemyZones[enemyId] = { center = WorldBuilder.polar(w.center, z.theta, z.dist), radius = z.r }
 		end
+		-- inimigos das Terras Baixas: pântano e pátio das ruínas (no chão de baixo)
+		if id == "verdant" and w.lowlands and WorldService.Lowlands then
+			local y = w.center.Y - w.lowlands.drop
+			local function at(theta: number, dist: number): Vector3
+				local q = WorldBuilder.polar(w.center, theta, dist)
+				return Vector3.new(q.X, y, q.Z)
+			end
+			layout.enemyZones.bog_lurker = { center = at(322, 478), radius = 40 }
+			layout.enemyZones.ruin_sentinel = { center = at(215, 430), radius = 22 } -- campo na frente do portão das ruínas
+		end
 		for _, f in ipairs(L.resources) do
 			table.insert(layout.resourceFields, { center = WorldBuilder.polar(w.center, f.theta, f.dist), radius = f.r })
 		end

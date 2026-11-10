@@ -1239,6 +1239,12 @@ check("perfil é salvo no DataStore ao sair", store.writes > writes0)
 				table.insert(foes, e)
 			end
 		end
+		-- se faltarem Thornlings vivos neste instante, completa com outros inimigos de chão do mundo
+		for _, e in ipairs(S.EnemyService.activeList()) do
+			if #foes < 5 and e.world == "verdant" and e.alive and e.id ~= "thornling" and not table.find(foes, e) then
+				table.insert(foes, e)
+			end
+		end
 		for _, e in ipairs(foes) do
 			e.leashCenter = P
 			e.home = Vector3.new(P.X, e.home.Y, P.Z)
@@ -2959,6 +2965,26 @@ SIM.run(3)
 		string.format("zonas %d (%s), erro %s", zones(), table.concat(zoneInfo, ","), tostring(SIM.errors[before + 1])))
 end)()
 
+-- INIMIGOS DAS TERRAS BAIXAS: pântano e ruínas ---------------------------------------------------------------
+;(function()
+	local n = { bog_lurker = 0, ruin_sentinel = 0 }
+	local okY, ylo, yhi = true, math.huge, -math.huge
+	for _, e in ipairs(S.EnemyService.activeList()) do
+		if n[e.id] ~= nil and e.alive then
+			n[e.id] += 1
+			-- altura de nascimento (a casa do inimigo); a posição atual muda quando ele persegue alguém
+			ylo, yhi = math.min(ylo, e.home.Y), math.max(yhi, e.home.Y)
+			if math.abs(e.home.Y - (-24)) > 8 then
+				okY = false
+			end
+		end
+	end
+	local Drops = require(__proxy("Shared/Config/Drops"))
+	check("Terras Baixas: Espreitadores no pântano e Sentinelas nas ruínas, no chão de baixo e com tabela de drops",
+		n.bog_lurker >= 4 and n.ruin_sentinel >= 3 and okY and Drops.Tables.bog_lurker ~= nil and Drops.Tables.ruin_sentinel ~= nil,
+		string.format("%d espreitadores, %d sentinelas, altura %.1f a %.1f", n.bog_lurker, n.ruin_sentinel, ylo, yhi))
+end)()
+
 -- MODELOS DO BLENDER importados (ReplicatedStorage.PetRigs): a pele contínua segue o esqueleto animado ---------
 ;(function()
 	local before = #SIM.errors
@@ -3047,6 +3073,42 @@ end)()
 			(center - wantC).Magnitude < 1e-3 and rest and err < 1e-3 and #rig.bones == nBones,
 			string.format("centro %.3f, repouso=%s, erro da pose %.5f, ossos %d", (center - wantC).Magnitude, tostring(rest), err, #rig.bones))
 	end
+	-- boss: mesma ideia com PetRigs.boss_<id>
+	;(function()
+		local BossMesh = require(__proxy("Shared/Builders/BossMesh"))
+		local BossAnatomy = require(__proxy("Shared/Builders/BossAnatomy"))
+		local bbp = BossAnatomy.blueprint("elderroot", { low = true })
+		local blo, bhi = PetRig.expectedBounds(bbp)
+		local bf = Instance.new("Model")
+		bf.Name = "boss_elderroot"
+		local sp = Instance.new("MeshPart")
+		sp.Name = "Body"
+		sp.Size = bhi - blo
+		sp.CFrame = CFrame.new((blo + bhi) / 2)
+		sp.Parent = bf
+		local n = 0
+		for _, p in ipairs(bbp.parts) do
+			if p.joint then
+				local b = Instance.new("Bone")
+				b.Name = p.name
+				b.CFrame = sp.CFrame:Inverse() * CFrame.new(p.pivot)
+				b.Transform = CFrame.identity
+				b.Parent = sp
+				n += 1
+			end
+		end
+		bf.Parent = folder
+		local okB, tb = pcall(BossMesh._buildRig, "elderroot")
+		local stepped = false
+		if okB and tb then
+			local vis = tb.model:Clone()
+			local r = PetRig.collect(vis)
+			stepped = r ~= nil and #r.bones == n and pcall(PetRig.step, r)
+		end
+		check("modelo do Blender: boss com PetRigs.boss_elderroot usa a pele importada sobre o esqueleto do boss",
+			okB and tb ~= nil and tb.rig == true and tb.model:GetAttribute("Bones") == n and stepped, okB and (tostring(tb and tb.model:GetAttribute("Bones")) .. "/" .. n) or tostring(tb))
+		bf:Destroy()
+	end)()
 	-- sem o modelo importado, tudo volta ao modo de antes
 	fake:Destroy()
 	PetMesh._reset()

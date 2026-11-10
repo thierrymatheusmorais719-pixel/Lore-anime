@@ -11,6 +11,7 @@ local RunService = game:GetService("RunService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local BossMesh = require(Shared.Builders.BossMesh)
 local PetMesh = require(Shared.Builders.PetMesh)
+local PetRig = require(Shared.Builders.PetRig)
 local BossConfig = require(Shared.Config.Bosses)
 local Animator = require(script.Parent.Animator)
 local Fx = require(script.Parent.Fx)
@@ -77,6 +78,7 @@ local function attach(e): boolean
 		local root = vis.PrimaryPart :: BasePart
 		root.Anchored = true
 		e.vis, e.root, e.poly = vis, root, t.poly
+		e.rig = t.rig and PetRig.collect(vis) or nil -- pele do Blender seguindo o esqueleto
 	end
 	e.root.CFrame = sroot.CFrame
 	e.last = sroot.CFrame
@@ -145,6 +147,13 @@ function BossVisuals.init()
 		while true do
 			BossVisuals.update()
 			task.wait(0.5)
+		end
+	end)
+	RunService.RenderStepped:Connect(function()
+		for model, e in pairs(entries) do
+			if e.rig and e.vis and e.vis.Parent == model then
+				PetRig.step(e.rig)
+			end
 		end
 	end)
 	-- a raiz do visual acompanha a raiz do boss no servidor (antes da física, para as juntas seguirem)

@@ -45,4 +45,5 @@ O script, para cada pet:
   com um modelo falso de mesma estrutura). Se o Importador 3D criar os ossos com outros nomes ou outra
   hierarquia, me avise com uma foto do Explorer.
 - Mutações que recolorem o pet não tingem a textura do modelo importado (os efeitos de partículas continuam).
-- Os bosses ainda não passam por esse processo.
+- Os bosses usam o mesmo caminho: importe `boss_<id>.fbx` e coloque o Model em `PetRigs` com o nome `boss_<id>`
+  (ex.: `boss_elderroot`).

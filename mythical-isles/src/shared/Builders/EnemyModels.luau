@@ -411,6 +411,16 @@ function EnemyModels.build(id: string, cfg)
 	local builder = EnemyModels[cfg and cfg.model or id] or EnemyModels[id]
 	assert(builder, "sem modelo para " .. id)
 	local model, centerHeight, radius = builder(cfg and cfg.tint)
+	-- variante recolorida de um modelo existente (ex.: Sentinela das Ruínas = guardião em tom de pedra)
+	if cfg and cfg.recolor and cfg.tint then
+		for _, d in ipairs(model:GetDescendants()) do
+			if d:IsA("BasePart") and d.Material ~= Enum.Material.Neon then
+				local c = d.Color
+				local k = cfg.recolor
+				d.Color = Color3.new(c.R + (cfg.tint.R - c.R) * k, c.G + (cfg.tint.G - c.G) * k, c.B + (cfg.tint.B - c.B) * k)
+			end
+		end
+	end
 	model:SetAttribute("EnemyId", id)
 	return model, centerHeight, radius
 end
