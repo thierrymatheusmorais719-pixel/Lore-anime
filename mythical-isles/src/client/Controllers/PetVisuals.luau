@@ -4,6 +4,7 @@
 -- Se as malhas não puderem ser criadas, nada muda: o pet antigo continua visível e animado.
 
 local RunService = game:GetService("RunService")
+local PetRig = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared").Builders.PetRig)
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local PetMesh = require(Shared.Builders.PetMesh)
@@ -112,7 +113,7 @@ local function attach(model: Model)
 		model.DescendantAdded:Connect(function(d)
 			hideServerPart(d, mesh)
 		end)
-		active[model] = { mesh = mesh, root = mroot, server = server, offset = offset }
+		active[model] = { mesh = mesh, root = mroot, server = server, offset = offset, rig = t.rig and PetRig.collect(mesh) or nil }
 	end)
 end
 
@@ -145,6 +146,14 @@ function PetVisuals.init()
 			else
 				active[model] = nil
 				claimed[model] = nil
+			end
+		end
+	end)
+	-- pele do Blender: cada osso importado segue a parte de mesmo nome do esqueleto animado
+	RunService.RenderStepped:Connect(function()
+		for _, a in pairs(active) do
+			if a.rig then
+				PetRig.step(a.rig)
 			end
 		end
 	end)

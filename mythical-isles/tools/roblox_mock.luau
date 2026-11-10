@@ -464,7 +464,7 @@ end
 function Inst.SetAttribute(self, k, v)
 	assert(type(k) == "string", "SetAttribute: nome inválido")
 	local tv = type(v)
-	assert(v == nil or tv == "string" or tv == "number" or tv == "boolean" or (tv == "table" and (getmetatable(v) == V3 or getmetatable(v) == C3)),
+	assert(v == nil or tv == "string" or tv == "number" or tv == "boolean" or (tv == "table" and (getmetatable(v) == V3 or getmetatable(v) == C3 or getmetatable(v) == CFm)),
 		"SetAttribute: tipo não suportado para " .. k)
 	self._attrs[k] = v
 end

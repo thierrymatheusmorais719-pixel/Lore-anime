@@ -44,8 +44,20 @@ local function newBP(anatomy: string)
 end
 
 -- joint = nome do Motor6D (o Animator anima pelo nome); nil = preso fixo ao pai.
+-- olhos gerados (eyeGeom) esperando a peça de rosto que os recebe: guardados na planta (bp.eyeSpecs) em
+-- coordenadas do modelo, para quem precisar do olho "de verdade" (modelos feitos no Blender, testes)
+local pendingEyes = {}
 local function addPart(bp, name: string, parent: string?, joint: string?, pivot: Vector3, geom, opts)
 	opts = opts or {}
+	if opts.role == "Eye" and #pendingEyes > 0 then
+		bp.eyeSpecs = bp.eyeSpecs or {}
+		for _, e in ipairs(pendingEyes) do
+			e.c = e.c + pivot
+			e.part = name
+			table.insert(bp.eyeSpecs, e)
+		end
+		table.clear(pendingEyes)
+	end
 	local p = {
 		name = name, parent = parent, joint = joint, pivot = pivot, geom = geom, material = opts.material or "Fabric", role = opts.role or "Body",
 		transparency = opts.transparency or 0, reflectance = opts.reflectance or 0, attrs = opts.attrs,
@@ -220,6 +232,8 @@ end
 local function eyeGeom(P, c: Vector3, n: Vector3, r: number, o)
 	o = o or {}
 	n = n.Unit
+	table.insert(pendingEyes, { c = c, n = n, r = r, iris = o.iris or P.iris, glow = (o.glow or P.glowEyes) == true, slit = o.slit == true, tall = o.tall or 1,
+		sclera = o.sclera })
 	local right = n:Cross(V(0, 1, 0))
 	if right.Magnitude < 1e-3 then
 		right = V(1, 0, 0)
@@ -2213,6 +2227,10 @@ local function scaleBP(bp, u: number)
 	end
 	bp.hover *= u
 	bp.scale = u
+	for _, e in ipairs(bp.eyeSpecs or {}) do
+		e.c *= u
+		e.r *= u
+	end
 end
 
 local buildBlueprint
@@ -2233,6 +2251,7 @@ function PetAnatomy.blueprint(speciesId: string, species, scaleMul: number?, opt
 end
 
 buildBlueprint = function(speciesId: string, species, scaleMul: number?)
+	table.clear(pendingEyes)
 	local m = species.model or {}
 	local tier = PetAnatomy.RarityTier[species.rarity] or 1
 	local P = palette(m, tier)

@@ -12,6 +12,7 @@ local AssetService = game:GetService("AssetService")
 
 local MeshKit = require(script.Parent.MeshKit)
 local Smooth = require(script.Parent.Smooth)
+local PetRig = require(script.Parent.PetRig)
 local PetAnatomy = require(script.Parent.PetAnatomy)
 local CreatureBuilder = require(script.Parent.CreatureBuilder)
 local MutationVisuals = require(script.Parent.MutationVisuals)
@@ -165,7 +166,7 @@ function PetMesh.assemble(bp, poly: boolean, opts)
 	root.Parent = model
 	model.PrimaryPart = root
 	local made, blobCount, sinceYield = {}, 0, 0
-	local blobs = poly and Smooth.forBlueprint(bp, opts.quality) or nil
+	local blobs = (poly and not opts.skeletonOnly) and Smooth.forBlueprint(bp, opts.quality) or nil -- skeletonOnly: só os ossos (pele do Blender)
 	for _, p in ipairs(bp.parts) do
 		local neon = p.material == "Neon"
 		local avg = avgColor(p.geom)
@@ -197,7 +198,7 @@ function PetMesh.assemble(bp, poly: boolean, opts)
 		end
 		inst.Parent = model
 		made[p.name] = inst
-		if poly then
+		if poly and blobs then
 			local material = POLY_MATERIAL[p.material] or MATERIALS[p.material] or Enum.Material.SmoothPlastic
 			local shadow = p.transparency < 0.5 and p.material ~= "Neon" and p.material ~= "ForceField"
 			for _, b in ipairs((blobs :: any)[p.name] or {}) do
@@ -294,6 +295,25 @@ function PetMesh.buildTemplatePoly(speciesId: string, scale: number, quality: st
 	return { model = model, bp = bp, poly = true, blobs = blobs }
 end
 
+-- MODELO DO BLENDER (ReplicatedStorage.PetRigs.<id>, importado no Studio): esqueleto invisível do jogo +
+-- a pele lisa e contínua importada, que segue os ossos (Builders/PetRig). Funciona sem EditableMesh.
+function PetMesh.buildTemplateRig(speciesId: string, scale: number)
+	local sp = Pets.Species[speciesId]
+	local src = PetRig.find(speciesId)
+	if not sp or not src then
+		return nil
+	end
+	local bp = PetAnatomy.blueprint(speciesId, sp, scale, { low = true })
+	local model = PetMesh.assemble(bp, true, { skeletonOnly = true })
+	petAttributes(model, bp, speciesId)
+	local linked, missing = PetRig.attach(model, src:Clone(), bp)
+	if linked == 0 then
+		error("o modelo importado de " .. speciesId .. " não tem ossos com os nomes das partes (" .. table.concat(missing, ", ") .. ")")
+	end
+	model:SetAttribute("Bones", linked)
+	return { model = model, bp = bp, rig = true }
+end
+
 -- Molde pronto (ou nil). Se ainda não existe, começa a construir em segundo plano.
 function PetMesh.request(speciesId: string, scale: number?, quality: string?)
 	if PetMesh.available == true then
@@ -311,7 +331,16 @@ function PetMesh.request(speciesId: string, scale: number?, quality: string?)
 	pending[k] = true
 	task.spawn(function()
 		local res
-		if PetMesh.available ~= false then
+		-- 1º: modelo feito no Blender e importado no Studio, se existir para esta espécie
+		if PetRig.find(speciesId) then
+			local okR, r = pcall(PetMesh.buildTemplateRig, speciesId, s)
+			if okR and r then
+				res = r
+			else
+				warn("[PetMesh] modelo importado de " .. speciesId .. " não pôde ser usado: " .. tostring(r))
+			end
+		end
+		if not res and PetMesh.available ~= false then
 			local ok, r = pcall(PetMesh.buildTemplate, speciesId, s)
 			if ok and r then
 				res = r

@@ -2959,6 +2959,100 @@ SIM.run(3)
 		string.format("zonas %d (%s), erro %s", zones(), table.concat(zoneInfo, ","), tostring(SIM.errors[before + 1])))
 end)()
 
+-- MODELOS DO BLENDER importados (ReplicatedStorage.PetRigs): a pele contínua segue o esqueleto animado ---------
+;(function()
+	local before = #SIM.errors
+	local PetMesh = require(__proxy("Shared/Builders/PetMesh"))
+	local PetRig = require(__proxy("Shared/Builders/PetRig"))
+	local PetAnatomy = require(__proxy("Shared/Builders/PetAnatomy"))
+	local PetsCfg = require(__proxy("Shared/Config/Pets"))
+	local RS = game:GetService("ReplicatedStorage")
+	local folder = RS:FindFirstChild("PetRigs") or Instance.new("Folder")
+	folder.Name = "PetRigs"
+	folder.Parent = RS
+	-- "FBX importado": Model com uma MeshPart do tamanho do pet e um Bone por parte com junta (nomes iguais)
+	local bp = PetAnatomy.blueprint("kit_1", PetsCfg.Species.kit_1, 1, { low = true })
+	local lo, hi = PetRig.expectedBounds(bp)
+	local fake = Instance.new("Model")
+	fake.Name = "kit_1"
+	local skinPart = Instance.new("MeshPart")
+	skinPart.Name = "Body"
+	skinPart.Size = hi - lo
+	skinPart.CFrame = CFrame.new((lo + hi) / 2 + Vector3.new(5, 0, 0)) -- fora do lugar: a montagem tem de alinhar
+	skinPart.Parent = fake
+	local bones, worldOf = {}, {}
+	for _, p in ipairs(bp.parts) do
+		if p.joint then
+			local b = Instance.new("Bone")
+			b.Name = p.name
+			local parentBone
+			local q = p.parent and bp.byName[p.parent]
+			while q and not q.joint do
+				q = q.parent and bp.byName[q.parent]
+			end
+			parentBone = q and bones[q.name]
+			local world = CFrame.new(p.pivot + Vector3.new(5, 0, 0))
+			if parentBone then
+				b.CFrame = worldOf[parentBone]:Inverse() * world
+				b.Parent = parentBone
+			else
+				b.CFrame = skinPart.CFrame:Inverse() * world
+				b.Parent = skinPart
+			end
+			b.Transform = CFrame.identity
+			bones[p.name] = b
+			worldOf[b] = world
+		end
+	end
+	fake.Parent = folder
+	PetMesh._reset()
+	local okT, t = pcall(PetMesh.buildTemplateRig, "kit_1", 1)
+	local nBones = 0
+	for _ in pairs(bones) do
+		nBones += 1
+	end
+	check("modelo do Blender: com PetRigs.kit_1 o pet monta o esqueleto do jogo + a pele importada, ossos ligados pelo nome",
+		okT and t ~= nil and t.rig == true and t.model:GetAttribute("Bones") == nBones and t.model:FindFirstChild("Skin") ~= nil,
+		okT and string.format("%s ossos ligados de %d", tostring(t and t.model:GetAttribute("Bones")), nBones) or tostring(t))
+	if okT and t then
+		local mesh = t.model:Clone()
+		local rig = PetRig.collect(mesh)
+		local skin = mesh:FindFirstChild("Skin")
+		local body = skin and skin:FindFirstChild("Body")
+		local center = body and body.CFrame.Position or Vector3.zero
+		local wantC = (lo + hi) / 2
+		PetRig.step(rig)
+		local rest = true
+		for _, e in ipairs(rig.bones) do
+			local tr = e.bone.Transform
+			if tr.Position.Magnitude > 1e-3 or tr.LookVector:Dot(Vector3.new(0, 0, -1)) < 0.9999 then
+				rest = false
+			end
+		end
+		-- gira a cabeça do esqueleto: o osso Head da pele tem de ir exatamente para a nova pose
+		local head = mesh:FindFirstChild("Head")
+		head.CFrame = head.CFrame * CFrame.Angles(0, math.rad(35), math.rad(10))
+		PetRig.step(rig)
+		local hb
+		for _, e in ipairs(rig.bones) do
+			if e.bone.Name == "Head" then
+				hb = e.bone
+			end
+		end
+		local got = rig.desired[hb.Parent] or PetRig._restWorld(hb.Parent)
+		got = (hb.Parent:IsA("BasePart") and hb.Parent.CFrame or got) * hb.CFrame * hb.Transform
+		local want = head.CFrame * hb:GetAttribute("BindOffset")
+		local err = (got.Position - want.Position).Magnitude + (1 - got.LookVector:Dot(want.LookVector))
+		check("modelo do Blender: a pele é alinhada à caixa do pet, fica parada em repouso e o osso segue a pose da parte",
+			(center - wantC).Magnitude < 1e-3 and rest and err < 1e-3 and #rig.bones == nBones,
+			string.format("centro %.3f, repouso=%s, erro da pose %.5f, ossos %d", (center - wantC).Magnitude, tostring(rest), err, #rig.bones))
+	end
+	-- sem o modelo importado, tudo volta ao modo de antes
+	fake:Destroy()
+	PetMesh._reset()
+	check("modelo do Blender: nenhum erro", #SIM.errors == before, SIM.errors[before + 1])
+end)()
+
 -- MINERAÇÃO DE CRISTAIS: veios, golpes validados, cristais, missões, contratos e picareta -------------
 ;(function()
 	local before = #SIM.errors
