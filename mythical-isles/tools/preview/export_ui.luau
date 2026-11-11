@@ -423,6 +423,13 @@ Push:FireClient(lp, "Toast", { text = "Missão concluída: <b>Primeiro Companhei
 Push:FireClient(lp, "Drop", { source = "Thornling", items = { { item = "coins", amount = 120 }, { item = "verdant_sap", amount = 2 }, { item = "pet:Bloomfox", amount = 1, notable = true } } })
 Push:FireClient(lp, "Announce", { player = "Bia", text = "Celestial Lumifox", rarity = "Celestial", remote = true })
 snapshot("hud_fx")
+-- cut-in de anime de um poder do seu pet
+do
+	local FxM = require(__proxy("Client/Controllers/Fx"))
+	FxM._cutIn("Fúria da Floresta", "Bloomfox", Color3.fromRGB(110, 210, 90))
+	snapshot("cutin") -- (o snapshot já espera 20 quadros: a faixa está parada no meio)
+	frames(60)
+end
 -- cinemática de entrada de boss (barras, nome e título)
 do
 	local Push2 = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes"):FindFirstChild("Push")

@@ -20,7 +20,7 @@ local player = Players.LocalPlayer
 local folder: Folder
 local debrisFolder: Folder -- fragmentos com física (peças dentro da Camera não são simuladas)
 local activeParts = 0
-local MAX_PARTS = 160
+local MAX_PARTS = 220 -- (a encenação dos poderes usa ~20 peças por lançamento)
 local numberPool = {}
 local NUMBER_POOL = 36
 
@@ -947,14 +947,235 @@ SIG.nova = function(p, c)
 	end
 end
 
+-------------------------------------------------------------------------------
+-- ENCENAÇÃO DOS PODERES (vale para todos os estilos): preparação, cut-in de anime, pulso na tela e rastro.
+-------------------------------------------------------------------------------
+
+-- Círculo de runas que gira no chão sob quem lança (aro duplo + raios), e some.
+local function castCircle(at: Vector3, radius: number, color: Color3, life: number)
+	local base = CFrame.new(at - V3(0, 1.6, 0))
+	local outer = part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.08, radius * 2, radius * 2), CFrame = base * CFrame.Angles(0, 0, math.rad(90)),
+		Color = color, Transparency = 0.35 }, life)
+	local inner = part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.1, radius * 1.3, radius * 1.3), CFrame = base * CFrame.Angles(0, 0, math.rad(90)),
+		Color = WHITE:Lerp(color, 0.5), Transparency = 0.55 }, life)
+	local hole = part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.12, radius * 1.85, radius * 1.85), CFrame = base * CFrame.Angles(0, 0, math.rad(90)),
+		Color = Color3.new(0, 0, 0), Transparency = 0.82 }, life)
+	local spokes = {}
+	for k = 0, 5 do
+		local sp = part({ Size = Vector3.new(radius * 1.7, 0.1, 0.12), CFrame = base * CFrame.Angles(0, k * math.pi / 6, 0), Color = color, Transparency = 0.45 }, life)
+		if sp then
+			table.insert(spokes, sp)
+		end
+	end
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if t > life then
+			conn:Disconnect()
+			return
+		end
+		local fade = math.clamp((t - life * 0.6) / (life * 0.4), 0, 1)
+		for k, sp in ipairs(spokes) do
+			sp.CFrame = base * CFrame.Angles(0, k * math.pi / 6 + t * 2.4, 0)
+			sp.Transparency = 0.45 + 0.55 * fade
+		end
+		if outer then
+			outer.Transparency = 0.35 + 0.65 * fade
+		end
+		if inner then
+			inner.CFrame = base * CFrame.Angles(0, -t * 3, math.rad(90))
+			inner.Transparency = 0.55 + 0.45 * fade
+		end
+		if hole then
+			hole.Transparency = 0.82 + 0.18 * fade
+		end
+	end)
+end
+
+-- Energia convergindo para quem lança (fagulhas que vêm de fora para dentro).
+local function gather(at: Vector3, color: Color3, radius: number, time: number)
+	for k = 1, scaled(10) do
+		local a = k / 10 * math.pi * 2 + math.random() * 0.5
+		local from = at + V3(math.cos(a) * radius, math.random() * radius * 0.6, math.sin(a) * radius)
+		local p = part({ Size = Vector3.new(0.16, 0.16, 0.9), CFrame = CFrame.lookAt(from, at), Color = WHITE:Lerp(color, 0.5) }, time + 0.05)
+		if p then
+			tween(p, time, { CFrame = CFrame.lookAt(at, at + (at - from)), Size = Vector3.new(0.05, 0.05, 0.3) }, Enum.EasingStyle.Quint)
+		end
+	end
+	flash(at, color, 10, 1.5, time)
+end
+
+-- Pilar de luz + brasas no ponto do golpe (o poder "deixa marca" por um instante).
+local function afterglow(at: Vector3, color: Color3, radius: number)
+	local h = 10 + radius
+	local pillar = part({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(h, radius * 0.6, radius * 0.6), CFrame = CFrame.new(at + V3(0, h / 2 - 1, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = WHITE:Lerp(color, 0.4), Transparency = 0.45 }, 0.75)
+	if pillar then
+		tween(pillar, 0.7, { Size = Vector3.new(h * 1.2, 0.05, 0.05), Transparency = 1 })
+	end
+	shockRing(at, radius * 1.4, color, 0.5)
+	embers(at, color, 14, radius)
+end
+
+-- CUT-IN DE ANIME (só os poderes dos SEUS pets): faixa diagonal colorida atravessando a tela com o nome do
+-- poder, linhas de velocidade e o nome do pet. Um de cada vez.
+local ACCENT_UP = { ["á"] = "Á", ["à"] = "À", ["â"] = "Â", ["ã"] = "Ã", ["é"] = "É", ["ê"] = "Ê", ["í"] = "Í", ["ó"] = "Ó", ["ô"] = "Ô", ["õ"] = "Õ",
+	["ú"] = "Ú", ["ç"] = "Ç" }
+-- maiúsculas que funcionam com acentos (string.upper só mexe em letras sem acento)
+local function upperPT(text: string): string
+	local out = string.upper(text)
+	for lo, up in pairs(ACCENT_UP) do
+		out = string.gsub(out, lo, up)
+	end
+	return out
+end
+Fx._upperPT = upperPT
+
+local cutInUntil = 0
+local function cutIn(power: string, petName: string, color: Color3)
+	if os.clock() < cutInUntil then
+		return
+	end
+	cutInUntil = os.clock() + 1.1
+	local pg = player:FindFirstChild("PlayerGui")
+	if not pg then
+		return
+	end
+	local g = Instance.new("ScreenGui")
+	g.Name = "SignatureCutIn"
+	g.IgnoreGuiInset = true
+	g.DisplayOrder = 40
+	g.ResetOnSpawn = false
+	g.Parent = pg
+	local band = Instance.new("Frame")
+	band.Name = "Band"
+	band.AnchorPoint = Vector2.new(0.5, 0.5)
+	band.Position = UDim2.fromScale(-0.6, 0.42)
+	band.Size = UDim2.fromScale(1.6, 0.16)
+	band.Rotation = -7
+	band.BackgroundColor3 = color
+	band.BorderSizePixel = 0
+	band.Parent = g
+	local grad = Instance.new("UIGradient")
+	grad.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.new(0, 0, 0):Lerp(color, 0.35)), ColorSequenceKeypoint.new(0.5, color),
+		ColorSequenceKeypoint.new(1, Color3.new(0, 0, 0):Lerp(color, 0.35)) })
+	grad.Parent = band
+	for _, y in ipairs({ 0, 1 }) do -- bordas brancas da faixa
+		local edge = Instance.new("Frame")
+		edge.Name = "Edge"
+		edge.BackgroundColor3 = WHITE
+		edge.BorderSizePixel = 0
+		edge.AnchorPoint = Vector2.new(0, y)
+		edge.Position = UDim2.fromScale(0, y)
+		edge.Size = UDim2.new(1, 0, 0, 5)
+		edge.Parent = band
+	end
+	for k = 1, 9 do -- linhas de velocidade
+		local ln = Instance.new("Frame")
+		ln.Name = "Speed"
+		ln.BackgroundColor3 = WHITE
+		ln.BackgroundTransparency = 0.35 + (k % 3) * 0.2
+		ln.BorderSizePixel = 0
+		ln.Size = UDim2.new(0.12 + (k % 4) * 0.05, 0, 0, 2 + k % 3)
+		ln.Position = UDim2.fromScale(1.1, (k - 0.5) / 9)
+		ln.Parent = band
+		tween(ln, 0.55 + (k % 3) * 0.12, { Position = UDim2.fromScale(-0.3, (k - 0.5) / 9) }, Enum.EasingStyle.Linear)
+	end
+	local title = Instance.new("TextLabel")
+	title.Name = "Power"
+	title.BackgroundTransparency = 1
+	title.AnchorPoint = Vector2.new(0.5, 0.5)
+	title.Position = UDim2.fromScale(0.5, 0.45)
+	title.Size = UDim2.fromScale(0.5, 0.62)
+	title.Font = Enum.Font.FredokaOne
+	title.TextScaled = true
+	title.Text = upperPT(power)
+	title.TextColor3 = WHITE
+	title.TextStrokeColor3 = Color3.new(0, 0, 0)
+	title.TextStrokeTransparency = 0
+	title.Parent = band
+	local sub = Instance.new("TextLabel")
+	sub.Name = "Pet"
+	sub.BackgroundTransparency = 1
+	sub.AnchorPoint = Vector2.new(0.5, 0)
+	sub.Position = UDim2.fromScale(0.5, 0.78)
+	sub.Size = UDim2.fromScale(0.3, 0.2)
+	sub.Font = Enum.Font.GothamBlack
+	sub.TextScaled = true
+	sub.Text = petName
+	sub.TextColor3 = WHITE:Lerp(color, 0.3)
+	sub.TextStrokeTransparency = 0.3
+	sub.Parent = band
+	-- entra rápido, segura, sai rápido para o outro lado
+	tween(band, 0.18, { Position = UDim2.fromScale(0.5, 0.42) }, Enum.EasingStyle.Back)
+	task.delay(0.75, function()
+		tween(band, 0.2, { Position = UDim2.fromScale(1.6, 0.42) }, Enum.EasingStyle.Quad)
+	end)
+	task.delay(1.0, function()
+		g:Destroy()
+	end)
+end
+
+-- Pulso na tela (só os seus pets): tinta na cor do poder + "soco" de zoom.
+local function screenPulse(color: Color3)
+	local Lighting = game:GetService("Lighting")
+	local cc = Lighting:FindFirstChild("SignaturePulse") :: ColorCorrectionEffect?
+	if not cc then
+		local n = Instance.new("ColorCorrectionEffect")
+		n.Name = "SignaturePulse"
+		n.Parent = Lighting
+		cc = n
+	end
+	local c = cc :: ColorCorrectionEffect
+	c.TintColor = WHITE:Lerp(color, 0.35)
+	c.Brightness = 0.08
+	c.Saturation = 0.25
+	tween(c, 0.45, { TintColor = WHITE, Brightness = 0, Saturation = 0 })
+	local cam = workspace.CurrentCamera
+	local fov = cam and tonumber(cam.FieldOfView)
+	if cam and fov and cam.CameraType ~= Enum.CameraType.Scriptable then
+		cam.FieldOfView = fov - 5
+		tween(cam, 0.35, { FieldOfView = fov }, Enum.EasingStyle.Back)
+	end
+end
+Fx._cutIn, Fx._screenPulse = cutIn, screenPulse -- (testes/prévias)
+
 local function signatureFx(p)
 	local c = p.color or Color3.new(1, 1, 1)
+	local origin = p.from or p.at
+	local mine = p.model ~= nil and p.model:GetAttribute("Owner") == player.UserId
 	sigName(p.model, p.name or "", c)
+	if typeof(origin) == "Vector3" then
+		castCircle(origin, 3.2, c, 0.9)
+		if not lowVfx() then
+			gather(origin + V3(0, 1, 0), c, 5, 0.2)
+		end
+	end
+	if mine then
+		local sp = p.model and Pets.Species[p.model:GetAttribute("Species") or ""]
+		cutIn(p.name or "", sp and sp.name or "", c)
+		if not lowVfx() then
+			screenPulse(c)
+		end
+	end
 	local fn = SIG[p.style]
-	if fn then
-		fn(p, c)
+	local function main()
+		if fn then
+			fn(p, c)
+		else
+			impact(p.to or p.at, c, 1)
+		end
+		local hit = p.to or p.at
+		if typeof(hit) == "Vector3" and not lowVfx() then
+			afterglow(hit, c, math.clamp((p.radius or 4) * 0.5, 2, 7))
+		end
+	end
+	-- o golpe sai depois da preparação (bem curta: o dano já foi aplicado no servidor)
+	if lowVfx() then
+		main()
 	else
-		impact(p.to or p.at, c, 1)
+		task.delay(0.18, main)
 	end
 end
 Fx.signatureStyles = SIG

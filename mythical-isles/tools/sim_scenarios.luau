@@ -2636,6 +2636,15 @@ do
 		local victory = Cin.isPlaying() and g:FindFirstChild("Title") ~= nil and g.Title.Text == "VITÓRIA!"
 		frames(150)
 		local clean = not Cin.isPlaying() and cam.CameraType == Enum.CameraType.Custom and g:FindFirstChild("BarTop") == nil
+		-- cut-in de anime dos poderes dos seus pets: aparece com o nome do poder e some sozinho
+		local FxM = require(__proxy("Client/Controllers/Fx"))
+		FxM._cutIn("Fúria da Floresta", "Bloomfox", Color3.fromRGB(120, 220, 110))
+		frames(4)
+		local ci = lp.PlayerGui:FindFirstChild("SignatureCutIn")
+		local ciOk = ci ~= nil and ci:FindFirstChild("Band") ~= nil and ci.Band:FindFirstChild("Power") ~= nil and ci.Band.Power.Text == "FÚRIA DA FLORESTA" and FxM._upperPT("ação é ótima") == "AÇÃO É ÓTIMA"
+		frames(40)
+		ciOk = ciOk and lp.PlayerGui:FindFirstChild("SignatureCutIn") == nil
+		check("poderes: cut-in de anime com o nome do poder aparece e some sozinho", ciOk)
 		check("cinemáticas dos bosses: entrada e vitória tomam a câmera, mostram o nome e devolvem tudo ao normal",
 			during and restored and victory and clean and #SIM.errors == before,
 			string.format("durante=%s volta=%s vitória=%s limpo=%s erro=%s", tostring(during), tostring(restored), tostring(victory), tostring(clean), tostring(SIM.errors[before + 1])))
