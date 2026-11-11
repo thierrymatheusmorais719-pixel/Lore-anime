@@ -92,3 +92,9 @@ vendor/three/           Three.js r160 (MIT) + addons usados
 | ![Após o golpe: círculo rúnico e destroços](docs/apos-golpe.png) | ![Plano final](docs/final.png) |
 
 *(Capturas geradas por renderização de software em um teste automatizado; numa GPU real a imagem é mais nítida e roda em tempo real.)*
+
+## Guia: luta Gojo vs Sukuna (Blender → Roblox)
+
+- [`docs/guia-gojo-vs-sukuna-blender-roblox.md`](docs/guia-gojo-vs-sukuna-blender-roblox.md): rigging R15, taijutsu, VFX (Roxo Vazio, Desmantelar/Clivar), câmeras de domínio e exportação.
+- `tools/blender/roblox_cutscene_export.py`: um FBX por rig e por clip, mais câmera e eventos em Luau.
+- `tools/roblox/CutscenePlayer.lua`: reproduz os dois rigs, a câmera e os eventos em sincronia no Roblox.
