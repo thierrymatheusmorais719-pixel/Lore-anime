@@ -15,6 +15,12 @@ Personagens **originais** (não são Gojo nem Sukuna):
 
 Para editar com Rojo: `rojo serve default.project.json`.
 
+## Itens do catálogo (roupa, calça, cabelo)
+Em `src/shared/Appearance.luau` (no Studio: ReplicatedStorage → Duelo → Appearance) cada lutador tem campos
+`shirt`, `pants`, `hair`, `accessories`, `face` e `skin`. Por padrão estão vazios e a cinemática usa os modelos
+de peças. Se você preencher um ID, o servidor monta um avatar R15 com esses itens e a cinemática usa esse avatar
+com as mesmas poses e golpes. Se algum item não carregar, aparece um aviso no Output e volta o modelo de peças.
+
 ## Estrutura
 | Arquivo | O que faz |
 |---|---|
@@ -23,6 +29,7 @@ Para editar com Rojo: `rojo serve default.project.json`.
 | `src/shared/Vfx.luau` | Efeitos: impactos, ondas de choque, raios, feixes, cortes de tinta, cúpulas, quadro de impacto |
 | `src/shared/Shot.luau` | Câmera: cortes, travellings, órbitas, seguir rosto, tremor |
 | `src/shared/Ui.luau` | Barras de cinema, legendas, nome das técnicas, linhas de velocidade, cartão final |
+| `src/shared/Appearance.luau` | IDs opcionais de itens do catálogo para cada lutador |
 | `src/shared/Timeline.luau` | **O roteiro**: tomada por tomada (edite aqui falas, tempos e golpes) |
 | `src/server/Main.server.luau` | Monta a cidade e o ponto de nascimento |
 | `src/client/Main.client.luau` | Toca a cinemática, esconde a interface padrão, replay |

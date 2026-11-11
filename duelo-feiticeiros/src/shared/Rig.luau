@@ -59,8 +59,59 @@ local function joint(name: string, p0: BasePart, p1: BasePart, at: CFrame, child
 	return m
 end
 
+-- Versão com avatar R15 (itens do catálogo, ver Appearance.luau): clona o modelo que o servidor montou e
+-- usa as juntas dele. Os nomes das juntas R15 (Root, Waist, Neck, LeftShoulder...) são os mesmos das poses.
+local POSED = { "Root", "Waist", "Neck", "LeftShoulder", "LeftElbow", "LeftWrist", "RightShoulder", "RightElbow", "RightWrist",
+	"LeftHip", "LeftKnee", "LeftAnkle", "RightHip", "RightKnee", "RightAnkle" }
+local function buildAvatar(key: string, template: Model, cf: CFrame)
+	local d = Rig.Fighters[key]
+	local model = template:Clone()
+	model.Name = d.name
+	model:SetAttribute("Avatar", true)
+	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
+	local hum = model:FindFirstChildOfClass("Humanoid")
+	local hipH = 3
+	if hum then
+		hipH = (hum.HipHeight or 2) + root.Size.Y / 2
+		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		hum.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+		local animator = hum:FindFirstChildOfClass("Animator")
+		if animator then
+			animator:Destroy() -- quem mexe nas juntas é a cinemática
+		end
+	end
+	local animate = model:FindFirstChild("Animate")
+	if animate then
+		animate:Destroy()
+	end
+	for _, p in ipairs(model:GetDescendants()) do
+		if p:IsA("BasePart") then
+			p.Anchored = false
+			p.CanCollide = false
+		end
+	end
+	root.Anchored = true
+	model.PrimaryPart = root
+	local joints = {}
+	for _, m in ipairs(model:GetDescendants()) do
+		if m:IsA("Motor6D") and table.find(POSED, m.Name) then
+			joints[m.Name] = m
+		end
+	end
+	root.CFrame = cf * CF(0, hipH, 0)
+	local rig = { key = key, def = d, model = model, root = root, joints = joints, hipH = hipH, cur = {}, target = {}, speed = 14, base = {}, avatar = true }
+	Rig.pose(rig, "idle", true)
+	return rig
+end
+
 -- Monta um personagem (def = Rig.Fighters[...]) em `cf` (de pé, pés no chão de `cf`).
+-- Se o servidor montou um avatar com itens do catálogo para ele, usa o avatar.
 function Rig.build(key: string, cf: CFrame)
+	local avatars = game:GetService("ReplicatedStorage"):FindFirstChild("DueloAvatars")
+	local template = avatars and avatars:FindFirstChild(key)
+	if template and template:IsA("Model") and template:FindFirstChild("HumanoidRootPart") then
+		return buildAvatar(key, template, cf)
+	end
 	local d = Rig.Fighters[key]
 	local model = Instance.new("Model")
 	model.Name = d.name

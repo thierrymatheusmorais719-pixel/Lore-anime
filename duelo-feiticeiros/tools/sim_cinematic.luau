@@ -114,5 +114,35 @@ if replay then
 	check("sem erros no replay/pular", #SIM.errors == 0, SIM.errors[1])
 end
 
+-- modo avatar (itens do catálogo): simula o modelo R15 que o servidor montaria e confere que a cinemática o usa
+do
+	local Rig = require(__proxy("Duelo/Rig"))
+	local RS = game:GetService("ReplicatedStorage")
+	local folder = Instance.new("Folder")
+	folder.Name = "DueloAvatars"
+	local fake = Rig.build("ren", CFrame.new()).model
+	fake.Name = "ren"
+	local hum = Instance.new("Humanoid")
+	hum.HipHeight = 2
+	hum.Parent = fake
+	fake.Parent = folder
+	folder.Parent = RS
+	SIM.task.spawn(function()
+		Timeline.play()
+	end)
+	frames(3)
+	local st = workspace:FindFirstChild("CinematicStage")
+	local renM = st and st:FindFirstChild("Ren Arashi")
+	check("modo avatar: Ren usa o avatar do catálogo", renM ~= nil and renM:GetAttribute("Avatar") == true)
+	local akM = st and st:FindFirstChild("Akane Sumi")
+	check("modo avatar: Akane sem IDs continua com o modelo de peças", akM ~= nil and akM:GetAttribute("Avatar") ~= true)
+	for _ = 1, 60 do
+		frames(1)
+		if not Timeline.isRunning() then break end
+	end
+	check("modo avatar: cinemática inteira sem erros", not Timeline.isRunning() and #SIM.errors == 0, SIM.errors[1])
+	folder:Destroy()
+end
+
 print(string.format("\n%d passaram, %d falharam", results.pass, results.fail))
 if results.fail > 0 then error("falhas") end

@@ -68,6 +68,12 @@ function Timeline.play(onEnd: (() -> ())?)
 	table.clear(Timeline.beats)
 	City.lighting()
 	local C = City.ArenaCenter
+	-- espera o servidor montar os avatares do catálogo (se houver), no máximo 10 s
+	local RS = game:GetService("ReplicatedStorage")
+	local waitUntil = os.clock() + 10
+	while not RS:GetAttribute("AvatarsReady") and os.clock() < waitUntil do
+		task.wait(0.1)
+	end
 	local stage = Instance.new("Folder")
 	stage.Name = "CinematicStage"
 	stage.Parent = workspace
