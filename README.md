@@ -98,3 +98,4 @@ vendor/three/           Three.js r160 (MIT) + addons usados
 - [`docs/guia-gojo-vs-sukuna-blender-roblox.md`](docs/guia-gojo-vs-sukuna-blender-roblox.md): rigging R15, taijutsu, VFX (Roxo Vazio, Desmantelar/Clivar), câmeras de domínio e exportação.
 - `tools/blender/roblox_cutscene_export.py`: um FBX por rig e por clip, mais câmera e eventos em Luau.
 - `tools/roblox/CutscenePlayer.lua`: reproduz os dois rigs, a câmera e os eventos em sincronia no Roblox.
+- [`demo-luta/`](demo-luta/LEIA-ME.md): dois lutadores originais (Akira e Kurozan) com rig R15 e uma luta de teste, já exportada (.blend, .glb, FBX por clip, dados de câmera).
