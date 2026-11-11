@@ -1,13 +1,12 @@
 -- APARÊNCIA dos lutadores com itens do catálogo do Roblox (opcional).
--- Deixe tudo em 0 / "" para usar os modelos feitos de peças (padrão). Se preencher algum ID, o servidor monta
--- um avatar R15 com esses itens (Players:CreateHumanoidModelFromDescription) e a cinemática usa esse avatar
--- no lugar do modelo de peças, com as mesmas poses e golpes.
+-- O servidor sempre monta os lutadores como avatares R15 do Roblox (Players:CreateHumanoidModelFromDescription)
+-- com as cores de cada personagem; os IDs abaixo (opcionais, vazios por padrão) acrescentam itens do catálogo.
 --   shirt / pants : ID da Camisa / Calça clássica (o número do link do catálogo)
 --   hair          : IDs de cabelo, separados por vírgula ("123,456")
 --   accessories   : outros acessórios (chapéu, rosto, costas...), separados por vírgula
 --   face          : ID de rosto (0 = padrão)
 --   skin          : cor da pele (nil = cor padrão do personagem)
--- Observação: só carregam itens públicos do catálogo; se algum falhar, a cinemática volta para o modelo de peças.
+-- Observação: só carregam itens públicos do catálogo; se o avatar falhar, a cinemática usa o R15 de peças.
 local Appearance = {}
 
 Appearance.Fighters = {

@@ -154,7 +154,17 @@ local function lookAt(pos, target)
 	return cf(pos.X, pos.Y, pos.Z, { right.X, u.X, back.X, right.Y, u.Y, back.Y, right.Z, u.Z, back.Z })
 end
 CFrame = {
-	new = function(a, b, c)
+	new = function(a, b, c, qx, qy, qz, qw)
+		if qw ~= nil then
+			-- quatérnio (x, y, z, w) -> matriz
+			local l = math.sqrt(qx * qx + qy * qy + qz * qz + qw * qw)
+			local x, y, z, w = qx / l, qy / l, qz / l, qw / l
+			return cf(a, b, c, {
+				1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w),
+				2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w),
+				2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y),
+			})
+		end
 		if a == nil then
 			return cf(0, 0, 0)
 		end

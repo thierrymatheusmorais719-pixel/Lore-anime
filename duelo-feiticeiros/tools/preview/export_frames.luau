@@ -85,6 +85,9 @@ local function num(x)
 end
 local function partJson(p, cf)
 	local shape = p.Shape and p.Shape.Name or "Block"
+	if p:FindFirstChildOfClass("SpecialMesh") then
+		shape = "Head" -- cabeça do R15 (cilindro arredondado)
+	end
 	local col = p.Color or Color3.new(0.6, 0.6, 0.6)
 	local r = cf.r
 	return string.format('{"s":"%s","z":[%s,%s,%s],"p":[%s,%s,%s],"r":[%s],"c":[%d,%d,%d],"m":"%s","t":%s}', shape, num(p.Size.X), num(p.Size.Y), num(p.Size.Z),
