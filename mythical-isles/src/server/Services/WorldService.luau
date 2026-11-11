@@ -155,6 +155,7 @@ function WorldService.build()
 		if nxt then
 			local pos = WorldBuilder.polar(w.center, L.portalNext.theta, L.portalNext.dist)
 			local _, prompt, text = WorldBuilder.portal(pos, (w.center - pos) * Vector3.new(1, 0, 1), Worlds.Info[nxt].palette.accent, "→ " .. Worlds.Info[nxt].name, folder)
+			layout.portalNext = pos
 			text.Text = string.format("→ %s (%d moedas)", Worlds.Info[nxt].name, Worlds.Info[nxt].unlockCost)
 			prompt.Triggered:Connect(function(player)
 				WorldService.portal(player, nxt)
@@ -182,6 +183,14 @@ function WorldService.build()
 			end
 			layout.enemyZones.bog_lurker = { center = at(322, 478), radius = 40 }
 			layout.enemyZones.ruin_sentinel = { center = at(215, 430), radius = 22 } -- campo na frente do portão das ruínas
+			-- Rastejadores no maior salão das Cavernas Esmeralda (piso escavado, bem abaixo da superfície)
+			local cave = WorldService.Lowlands.cave
+			local halls = VerdantLowlands.Cave.halls
+			if cave and cave.halls and cave.halls[2] and halls[2] then
+				local hp, h = cave.halls[2], halls[2]
+				local floorY = hp.Y - h.r * 0.78 + 1
+				layout.enemyZones.cave_crawler = { center = Vector3.new(hp.X, floorY, hp.Z), radius = h.r * 0.45, floorY = floorY }
+			end
 		end
 		for _, f in ipairs(L.resources) do
 			table.insert(layout.resourceFields, { center = WorldBuilder.polar(w.center, f.theta, f.dist), radius = f.r })

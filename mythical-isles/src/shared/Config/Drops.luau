@@ -38,6 +38,12 @@ Drops.Tables = {
 		{ item = "emerald_crystal", chance = 0.2, min = 1, max = 1 },
 		{ item = "luck_potion_1", chance = 0.03, min = 1, max = 1, luck = true, maxChance = 0.1 },
 	},
+	cave_crawler = {
+		{ item = "essence", chance = 1, min = 8, max = 12 },
+		{ item = "coins", chance = 1, min = 70, max = 110 },
+		{ item = "emerald_crystal", chance = 0.5, min = 1, max = 2 },
+		{ item = "prism_heart", chance = 0.004, min = 1, max = 1, luck = true, maxChance = 0.02, notable = true },
+	},
 	ruin_sentinel = {
 		{ item = "essence", chance = 1, min = 12, max = 20 },
 		{ item = "coins", chance = 1, min = 110, max = 170 },

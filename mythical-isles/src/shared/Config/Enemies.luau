@@ -34,6 +34,12 @@ Enemies.Info = {
 		attack = { kind = "melee", range = 6, cooldown = 1.5, windup = 0.45, mult = 1.1 },
 		model = "thornling", tint = Color3.fromRGB(70, 150, 140),
 	},
+	cave_crawler = {
+		name = "Rastejador Esmeralda", world = "verdant", level = 7, hp = 620, atk = 18, def = 12, pdmg = 13, speed = 15, mover = "ground",
+		detect = 22, senseRadius = 10, leash = 30, maxChase = 10, count = 5, respawn = 28, xp = 48, lowlands = true,
+		attack = { kind = "melee", range = 6, cooldown = 1.4, windup = 0.4, mult = 1.1 },
+		model = "shard_crawler", tint = Color3.fromRGB(80, 220, 140), recolor = 0.65,
+	},
 	ruin_sentinel = {
 		name = "Sentinela das Ruínas", world = "verdant", level = 9, hp = 1150, atk = 24, def = 24, pdmg = 18, speed = 10, mover = "ground",
 		detect = 42, senseRadius = 12, leash = 60, maxChase = 14, count = 4, respawn = 40, xp = 70, lowlands = true,

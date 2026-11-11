@@ -34,7 +34,7 @@ registry.Push = Net.get("Push")
 
 local ORDER = {
 	"DataService", "LuckService", "AnnounceService", "RewardService", "QuestService", "WorldService",
-	"PetService", "CombatService", "SignatureService", "EnemyService", "BossService", "ExplorationService", "MiningService", "EggService",
+	"PetService", "CombatService", "SignatureService", "EnemyService", "BossService", "ExplorationService", "MiningService", "GuideService", "EggService",
 	"RegionService", "SanctuaryService", "DevService", "RequestRouter",
 }
 

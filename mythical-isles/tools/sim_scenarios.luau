@@ -2965,12 +2965,58 @@ SIM.run(3)
 		string.format("zonas %d (%s), erro %s", zones(), table.concat(zoneInfo, ","), tostring(SIM.errors[before + 1])))
 end)()
 
+-- GUIA DO OBJETIVO: aponta o lugar da missão atual ------------------------------------------------------------
+;(function()
+	local before = #SIM.errors
+	local GS = require(__proxy("Server/Services/GuideService"))
+	local pg = SIM.addPlayer("Guia", 919)
+	SIM.run(1.5)
+	local d = S.DataService.get(pg)
+	local WS = require(__proxy("Server/Services/WorldService"))
+	local L = WS.Layout.verdant
+	-- história no 1º passo (chocar ovo): aponta uma estação de ovo do mundo
+	d.quests.storyIndex, d.quests.storyProgress = 1, 0
+	GS.update(pg)
+	local t1 = pg:GetAttribute("GuideTarget")
+	local nearEgg = false
+	for _, m in pairs(L.eggStations) do
+		local q = m.PrimaryPart and m.PrimaryPart.Position or m:GetPivot().Position
+		if typeof(t1) == "Vector3" and (q - t1).Magnitude < 1 then
+			nearEgg = true
+		end
+	end
+	-- história em "derrote Thornlings": aponta a zona deles
+	d.quests.storyIndex, d.quests.storyProgress = 3, 0
+	GS.update(pg)
+	local t2 = pg:GetAttribute("GuideTarget")
+	local zoneOk = typeof(t2) == "Vector3" and (t2 - L.enemyZones.thornling.center).Magnitude < 1
+	-- história em "evolua um pet" (sem lugar): passa para a expedição (Espreitadores no pântano)
+	d.quests.storyIndex, d.quests.storyProgress = 9, 0
+	GS.update(pg)
+	local t3 = pg:GetAttribute("GuideTarget")
+	local sideOk = typeof(t3) == "Vector3" and (t3 - L.enemyZones.bog_lurker.center).Magnitude < 1 and pg:GetAttribute("GuideLabel") == "A Descida"
+	-- boss de outro mundo: o guia diz qual mundo
+	d.quests.storyIndex, d.quests.storyProgress = 10, 0
+	GS.update(pg)
+	local w4 = pg:GetAttribute("GuideWorld")
+	check("guia do objetivo: aponta estação de ovo, zona do inimigo, a expedição quando a história não tem lugar e o mundo do boss",
+		nearEgg and zoneOk and sideOk and w4 == "crystal" and #SIM.errors == before,
+		string.format("ovo=%s zona=%s expedição=%s mundo do boss=%s", tostring(nearEgg), tostring(zoneOk), tostring(sideOk), tostring(w4)))
+	SIM.removePlayer(pg)
+end)()
+
 -- INIMIGOS DAS TERRAS BAIXAS: pântano e ruínas ---------------------------------------------------------------
 ;(function()
-	local n = { bog_lurker = 0, ruin_sentinel = 0 }
+	local n = { bog_lurker = 0, ruin_sentinel = 0, cave_crawler = 0 }
+	local caveOk = true
 	local okY, ylo, yhi = true, math.huge, -math.huge
 	for _, e in ipairs(S.EnemyService.activeList()) do
-		if n[e.id] ~= nil and e.alive then
+		if e.id == "cave_crawler" and e.alive then
+			n.cave_crawler += 1
+			if e.home.Y > -40 then
+				caveOk = false -- tem de nascer no piso da caverna, não na superfície
+			end
+		elseif n[e.id] ~= nil and e.alive then
 			n[e.id] += 1
 			-- altura de nascimento (a casa do inimigo); a posição atual muda quando ele persegue alguém
 			ylo, yhi = math.min(ylo, e.home.Y), math.max(yhi, e.home.Y)
@@ -2983,6 +3029,8 @@ end)()
 	check("Terras Baixas: Espreitadores no pântano e Sentinelas nas ruínas, no chão de baixo e com tabela de drops",
 		n.bog_lurker >= 4 and n.ruin_sentinel >= 3 and okY and Drops.Tables.bog_lurker ~= nil and Drops.Tables.ruin_sentinel ~= nil,
 		string.format("%d espreitadores, %d sentinelas, altura %.1f a %.1f", n.bog_lurker, n.ruin_sentinel, ylo, yhi))
+	check("Cavernas Esmeralda: Rastejadores nascem no piso do salão (subsolo), com drops de cristal",
+		n.cave_crawler >= 3 and caveOk and Drops.Tables.cave_crawler ~= nil, string.format("%d rastejadores, no subsolo=%s", n.cave_crawler, tostring(caveOk)))
 end)()
 
 -- MODELOS DO BLENDER importados (ReplicatedStorage.PetRigs): a pele contínua segue o esqueleto animado ---------

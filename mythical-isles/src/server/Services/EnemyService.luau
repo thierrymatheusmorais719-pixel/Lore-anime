@@ -81,7 +81,8 @@ function EnemyService.spawn(enemyId: string, pos: Vector3, worldId: string, opts
 	local cfg = Enemies.Info[enemyId]
 	local model, centerHeight, radius = EnemyModels.build(enemyId, cfg)
 	local root = model.PrimaryPart :: BasePart
-	local gy = groundAt(pos, pos.Y)
+	-- zonas subterrâneas (cavernas) dizem a altura do piso: o raio de cima acertaria o chão da superfície
+	local gy = (opts.zone and opts.zone.floorY) or groundAt(pos, pos.Y)
 	local hover = cfg.mover == "hover"
 	local y = gy + centerHeight + (hover and (cfg.hoverHeight or 6) or 0)
 	model:PivotTo(CFrame.new(Vector3.new(pos.X, y, pos.Z)) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0))
