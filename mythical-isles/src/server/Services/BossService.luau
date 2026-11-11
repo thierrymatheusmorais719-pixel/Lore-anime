@@ -339,7 +339,8 @@ local function tickBoss(b, now: number)
 			S.CombatService.setAction(b.model, "Intro")
 			setState(b, "Intro")
 			for _, p in ipairs(participants) do
-				S.Push:FireClient(p, "BossIntro", { name = b.cfg.name, title = b.cfg.title, color = b.cfg.color, players = #participants })
+				S.Push:FireClient(p, "BossIntro", { name = b.cfg.name, title = b.cfg.title, color = b.cfg.color, players = #participants,
+					at = e.root.Position, arena = b.arena.center, radius = e.radius or 6, time = Rules.introTime })
 			end
 		end
 		return
@@ -468,7 +469,7 @@ function BossService.onDefeated(b, killer: Player?)
 					xp[st.uid] = math.floor(b.cfg.level * 60 * (byPet[st.uid] and 1 or 0.4))
 				end
 				S.PetService.grantXp(player, xp)
-				S.Push:FireClient(player, "BossDefeated", { name = b.cfg.name, firstTime = isNew })
+				S.Push:FireClient(player, "BossDefeated", { name = b.cfg.name, firstTime = isNew, at = e.root.Position, color = b.cfg.color })
 				S.DataService.markDirty(player)
 			end
 		end

@@ -2606,6 +2606,40 @@ do
 		check("ataques Assinatura: todos os estilos de efeito existem, rodam no cliente e as peças somem",
 			#missing == 0 and okSig and #SIM.errors == beforeSig and leftover == 0, errSig or SIM.errors[beforeSig + 1] or (#missing > 0 and table.concat(missing, ",")) or ("sobraram " .. leftover))
 	end)()
+	-- CINEMÁTICAS dos bosses: entrada e vitória tomam a câmera, mostram o nome e devolvem a câmera no fim
+	;(function()
+		local before = #SIM.errors
+		local Cin = require(__proxy("Client/Controllers/Cinematics"))
+		local cam = workspace.CurrentCamera
+		cam.CameraType = Enum.CameraType.Custom
+		local at = Worlds.Info.verdant.center + Vector3.new(60, 8, 0)
+		local Push = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes"):FindFirstChild("Push")
+		Push.OnClientEvent:Fire("BossIntro", { name = "Elderroot", title = "Guardião da Floresta", color = Color3.fromRGB(120, 200, 90), players = 1, at = at,
+			radius = 6, time = 3 })
+		frames(20)
+		local g = lp.PlayerGui:FindFirstChild("Cinematic")
+		local function othersOn(): number
+			local n = 0
+			for _, sg in ipairs(lp.PlayerGui:GetChildren()) do
+				if sg:IsA("ScreenGui") and sg.Name ~= "Cinematic" and sg.Enabled ~= false then
+					n += 1
+				end
+			end
+			return n
+		end
+		local during = Cin.isPlaying() and cam.CameraType == Enum.CameraType.Scriptable and g ~= nil and g:FindFirstChild("Title") ~= nil
+			and g.Title.Text == "ELDERROOT" and othersOn() == 0
+		frames(150)
+		local restored = not Cin.isPlaying() and cam.CameraType == Enum.CameraType.Custom and othersOn() > 0
+		Push.OnClientEvent:Fire("BossDefeated", { name = "Elderroot", firstTime = true, at = at, color = Color3.fromRGB(120, 200, 90) })
+		frames(10)
+		local victory = Cin.isPlaying() and g:FindFirstChild("Title") ~= nil and g.Title.Text == "VITÓRIA!"
+		frames(150)
+		local clean = not Cin.isPlaying() and cam.CameraType == Enum.CameraType.Custom and g:FindFirstChild("BarTop") == nil
+		check("cinemáticas dos bosses: entrada e vitória tomam a câmera, mostram o nome e devolvem tudo ao normal",
+			during and restored and victory and clean and #SIM.errors == before,
+			string.format("durante=%s volta=%s vitória=%s limpo=%s erro=%s", tostring(during), tostring(restored), tostring(victory), tostring(clean), tostring(SIM.errors[before + 1])))
+	end)()
 	SIM.localPlayer = nil
 end
 

@@ -423,6 +423,15 @@ Push:FireClient(lp, "Toast", { text = "Missão concluída: <b>Primeiro Companhei
 Push:FireClient(lp, "Drop", { source = "Thornling", items = { { item = "coins", amount = 120 }, { item = "verdant_sap", amount = 2 }, { item = "pet:Bloomfox", amount = 1, notable = true } } })
 Push:FireClient(lp, "Announce", { player = "Bia", text = "Celestial Lumifox", rarity = "Celestial", remote = true })
 snapshot("hud_fx")
+-- cinemática de entrada de boss (barras, nome e título)
+do
+	local Push2 = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes"):FindFirstChild("Push")
+	Push2:FireClient(lp, "BossIntro", { name = "Elderroot", title = "Guardião da Floresta Ancestral", color = Color3.fromRGB(120, 220, 110), players = 1,
+		at = Vector3.new(60, 8, 0), radius = 6, time = 3 })
+	frames(45)
+	snapshot("cinematic")
+	frames(200)
+end
 Panels.open("Pets")
 snapshot("pets")
 Panels.open("Map")

@@ -328,11 +328,18 @@ function CombatHUD.init()
 	State.on("BossPower", function(p)
 		banner("✦ " .. p.label, p.boss .. (p.desc ~= "" and (": " .. p.desc) or ""), p.color)
 	end)
+	-- (a entrada do boss é uma cinemática: Controllers/Cinematics; aqui só o número de desafiantes)
 	State.on("BossIntro", function(p)
-		banner(p.name, p.title .. (p.players > 1 and string.format(" — %d desafiantes", p.players) or ""), p.color)
+		if p.players > 1 then
+			task.delay(3.4, function()
+				banner(p.name, string.format("%d desafiantes", p.players), p.color)
+			end)
+		end
 	end)
 	State.on("BossDefeated", function(p)
-		banner("VITÓRIA!", p.name .. " derrotado" .. (p.firstTime and " — registrado no bestiário!" or ""), T.gold)
+		task.delay(3.2, function() -- depois da cinemática de vitória
+			banner("VITÓRIA!", p.name .. " derrotado" .. (p.firstTime and " — registrado no bestiário!" or ""), T.gold)
+		end)
 	end)
 	local acc = 0
 	RunService.RenderStepped:Connect(function(dt)
