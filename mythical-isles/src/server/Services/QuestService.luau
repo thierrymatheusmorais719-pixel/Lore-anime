@@ -48,6 +48,19 @@ function QuestService.claimStory(player: Player)
 	return { ok = true }
 end
 
+function QuestService.claimSide(player: Player, lineId: string)
+	local data = S.DataService.get(player)
+	if not data or type(lineId) ~= "string" then
+		return { ok = false }
+	end
+	local reward, q = QuestLogic.claimSide(data, lineId)
+	if not reward then
+		return { ok = false, msg = "Missão ainda não concluída" }
+	end
+	S.RewardService.grantBundle(player, reward, "Expedição: " .. q.label, "side:" .. lineId .. ":" .. q.id)
+	return { ok = true }
+end
+
 function QuestService.claimDaily(player: Player, id: string)
 	local data = S.DataService.get(player)
 	if not data or type(id) ~= "string" then

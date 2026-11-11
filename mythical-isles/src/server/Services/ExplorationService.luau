@@ -102,7 +102,7 @@ local function spawnNode(node)
 	node.model = model
 	node.hp = node.cfg.hp
 	node.alive = true
-	node.contrib = {}
+	node.contrib = setmetatable({}, { __mode = "k" }) -- (jogador que saiu não fica preso)
 	nodeByModel[model] = node
 end
 

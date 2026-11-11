@@ -111,6 +111,30 @@ return function(t)
 		t.eq(y3.prism_heart, 1)
 	end)
 
+	t.test("linha de missões das Terras Baixas: progresso próprio, resgate em ordem e alvos que existem", function()
+		local QuestLogic = require(Shared.Logic.QuestLogic)
+		local Enemies = require(Shared.Config.Enemies)
+		local line = Quests.Side.lowlands
+		for _, q in ipairs(line.list) do
+			if q.goal.type == "defeat_enemy" then
+				t.ok(Enemies.Info[q.goal.target] ~= nil, "inimigo " .. tostring(q.goal.target))
+			end
+			for item in pairs(q.reward.items or {}) do
+				t.ok(Items.Info[item] ~= nil, "recompensa " .. item)
+			end
+		end
+		local d = DataSchema.reconcile({ quests = { storyIndex = 3, storyProgress = 1 } }) -- perfil antigo, sem "side"
+		t.ok(QuestLogic.claimSide(d, "lowlands") == nil, "não resgata sem concluir")
+		QuestLogic.onEvent(d, { type = "defeat_enemy", target = "thornling", world = "verdant", amount = 5 })
+		t.eq(QuestLogic.sideState(d, "lowlands").progress, 0)
+		local done = QuestLogic.onEvent(d, { type = "defeat_enemy", target = "bog_lurker", world = "verdant", amount = 5 })
+		t.eq(#done, 1)
+		local reward, q = QuestLogic.claimSide(d, "lowlands")
+		t.ok(reward ~= nil and q.id == "l1", "resgatou l1")
+		t.eq(QuestLogic.sideState(d, "lowlands").index, 2)
+		t.eq(d.quests.storyIndex, 3) -- a história não muda
+	end)
+
 	t.test("perfil antigo ganha a mineração sem perder nada", function()
 		local d = DataSchema.reconcile({ coins = 77, items = { emerald_crystal = 3 } })
 		t.eq(d.coins, 77)

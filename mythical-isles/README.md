@@ -7,7 +7,7 @@ salvamento. Tudo em **Luau**, organizado para **Rojo**. Mapa, criaturas, bosses,
 vêm dentro do próprio cliente Roblox: `rbxasset://textures/particles/sparkles_main.dds`, `smoke_main.dds` e `fire_main.dds`).
 
 > **Status honesto:** o código está completo e foi verificado com o compilador e o analisador oficiais do
-> Luau, contra o dump público da API do Roblox, com 73 testes de lógica, 3866 verificações dos modelos 3D e
+> Luau, contra o dump público da API do Roblox, com 74 testes de lógica, 3866 verificações dos modelos 3D e
 > **231 cenários executando o servidor e o cliente reais num simulador** (detalhes na seção 6).
 > **Ele ainda não foi aberto no Roblox Studio** (o ambiente onde foi escrito não tem Studio), então visual,
 > física, colisão, PathfindingService real, animações em tela e celular precisam ser conferidos aí. Use o
@@ -423,6 +423,16 @@ Importado no Studio para `ReplicatedStorage/PetRigs/<id>`, o modelo vira a pele 
 Os FBX (≈3 MB cada) não ficam no repositório. A importação no Studio não foi testada.
 Os **5 bosses** passam pelo mesmo processo (`PetRigs/boss_<id>`, ~18 mil triângulos, peças de energia separadas).
 
+### Expedição às Terras Baixas (linha de missões) e picareta na mão
+
+- Linha de 7 missões com progresso próprio (não mexe na história): derrotar Espreitadores, minerar, entregar
+  contrato, melhorar a picareta, derrotar Sentinelas, abrir baús das Terras Baixas e minerar 60 cristais.
+  Aparece em Missões, entre a história e as diárias.
+- Ao segurar "Minerar", uma picareta aparece na mão do avatar e balança (visual local, cor pelo nível).
+- Modelos do Blender: a mutação entra como um banho de cor no pet do jogador; ossos de pets longe da câmera
+  (> 180 studs) não são atualizados.
+- Limitadores de frequência e listas de contribuição com chaves fracas (jogador que saiu não fica na memória).
+
 ### Inimigos das Terras Baixas
 
 - **Espreitador do Pântano** (nível 6, 6 no Pântano Brumoso) e **Sentinela das Ruínas** (nível 9, 4 no campo em
@@ -795,7 +805,7 @@ dump público da API do Roblox (`API-Dump.json`, de MaximumADHD/Roblox-Client-Tr
 | Sintaxe de todos os arquivos | `luau-compile --null` em cada `.luau` | ok |
 | Variáveis indefinidas / código suspeito | `python3 tools/lint.py luau-analyze` | 0 avisos |
 | Propriedades, Enums e métodos contra a API real do Roblox | `python3 tools/api_check.py API-Dump.json` | 0 problemas (o verificador acusa erros plantados de propósito) |
-| Lógica pura | `python3 tools/run_tests.py luau` | **73 testes passando** |
+| Lógica pura | `python3 tools/run_tests.py luau` | **74 testes passando** |
 | Modelos 3D (192 pets × 6 mutações × 5 acessórios, 16 inimigos, 5 bosses ≤ 280 peças) + malhas anatômicas das 192 espécies (esqueleto completo por tipo, índices válidos, nenhum vértice NaN, pés no chão, nenhuma silhueta de "bolinha", proporção fofa dos 127 quadrúpedes comparada com a antiga, ≤ 18.000 triângulos) + bosses anatômicos nos dois modos (todas as juntas do boss antigo, mesma altura de raiz, pés no chão, peças de energia com cor, ≤ 20.000 / 3.400 triângulos) | `python3 tools/run_tests.py luau --smoke` | **3866 verificações, 0 falhas** |
 | Animações dos pets nas 192 espécies | `python3 tools/run_tests.py luau --animcheck` | **1.950 animações, 0 falhas** |
 | Servidor + cliente reais num simulador | `python3 tools/run_tests.py luau --sim` | **231 cenários passando** (inclui os modelos do Blender: pele importada alinhada, ossos ligados pelo nome e seguindo a pose; a mineração de cristais: veios nas cavernas e nos outros mundos, golpe longe ou rápido demais recusado, quebra dando cristais e progresso nas diárias, veio voltando, contratos e picareta; os modelos lisos sem cunhas; o Mundo 1 maior: Terras Baixas com área ≥ 2× o planalto, os 6 baús novos abrindo, salões de caverna ocos com teto, túnel e cripta abertos, as 4 rampas, as regiões novas, a caverna não conta como queda e o muro na borda nova; o poder dos pets dos Mundos 2 a 5 em combate e o tempero das variantes; o visual v4: Alta qualidade nos pets do jogador, luz assada por face e a troca Leve/Alta nas Opções; as animações novas dos pets: cada comportamento ocioso muda a pose, sono com "Zzz" e acordar, tranco ao levar dano e festa ao subir de nível; as mecânicas próprias dos 5 bosses numa luta real: prender, lentidão, leque, espelho, raio em cadeia, áreas que ficam, carga estática, veneno, vinhas, Florescer com brotos, drenagem e Fome do Vazio; o visual v3 dos pets e bosses: contorno de desenho, sem textura de grama, olhos com brilho no modo de peças e sombreamento pela altura; a interface nova: HUD com placa do mundo, contadores, hexágonos, vida do avatar, janela com desfoque, grade de pets e menu de mundos com correntes nos fechados; o Farol Ancestral do Mundo 2: torre, ruínas, ilhotas, região e baú; os ataques Assinatura: formas, controle, cura, escudo, força e a Fúria em combate real, e todos os efeitos no cliente; a Árvore-Santuário: escala, rampa, altura livre, elevador, baús e runas; o boss novo: troca do Prism Titan pelo de malhas com o antigo escondido, mesmas juntas, raiz acompanhando a do servidor, juntas animadas, energia carregando nas peças novas, sair/voltar da cena pela distância e o modo low-poly sem EditableMesh; inclui efeitos visuais, regiões dos Mundos 2 e 3, céu anime sem painéis, a árvore de galhos e cubos em todos os mundos, o bosque do Mundo 1, o anel de mata com os baús abrindo e os pets de malha: troca de todos os pets da equipe, modelo antigo escondido, juntas animadas, pose de ataque e desmaio) |

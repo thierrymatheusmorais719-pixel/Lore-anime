@@ -21,7 +21,7 @@ function DataSchema.default()
 		collectionClaimed = {},
 		buffs = {}, -- { id, source, label, category, bonus, expires }
 		login = { day = 0, streak = 0, claimedAt = 0 },
-		quests = { storyIndex = 1, storyProgress = 0, daily = { day = 0, ids = {}, progress = {}, claimed = {} } },
+		quests = { storyIndex = 1, storyProgress = 0, daily = { day = 0, ids = {}, progress = {}, claimed = {} }, side = {} },
 		stats = { hatched = 0, kills = 0, bossKills = 0, coinsEarned = 0, resources = 0, treasures = 0, abilities = 0, evolutions = 0 },
 		history = {}, -- descobertas importantes recentes
 		claimedEncounters = {}, -- [encounterId] = os.time()  (anti-recompensa duplicada de boss)

@@ -56,6 +56,18 @@ function QuestLogic.onEvent(data, event)
 			table.insert(completed, story)
 		end
 	end
+	-- linhas paralelas (Quests.Side): a missão atual de cada linha
+	for lineId, line in pairs(Quests.Side) do
+		local st = QuestLogic.sideState(data, lineId)
+		local q = line.list[st.index]
+		if q and QuestLogic.matches(q.goal, event) then
+			local before = st.progress
+			st.progress = math.min(q.goal.count, before + amount)
+			if before < q.goal.count and st.progress >= q.goal.count then
+				table.insert(completed, q)
+			end
+		end
+	end
 	local d = data.quests.daily
 	for _, id in ipairs(d.ids) do
 		local q = Quests.findDaily(id)
@@ -68,6 +80,33 @@ function QuestLogic.onEvent(data, event)
 		end
 	end
 	return completed
+end
+
+-- Estado de uma linha paralela (cria se o perfil ainda não tem).
+function QuestLogic.sideState(data, lineId: string)
+	data.quests.side = data.quests.side or {}
+	local st = data.quests.side[lineId]
+	if not st then
+		st = { index = 1, progress = 0 }
+		data.quests.side[lineId] = st
+	end
+	return st
+end
+
+-- Resgata a missão atual de uma linha paralela. Retorna (recompensa, missão) ou nil.
+function QuestLogic.claimSide(data, lineId: string)
+	local line = Quests.Side[lineId]
+	if not line then
+		return nil
+	end
+	local st = QuestLogic.sideState(data, lineId)
+	local q = line.list[st.index]
+	if not q or st.progress < q.goal.count then
+		return nil
+	end
+	st.index += 1
+	st.progress = 0
+	return q.reward, q
 end
 
 -- Resgata a missão da história atual. Retorna a recompensa ou nil.

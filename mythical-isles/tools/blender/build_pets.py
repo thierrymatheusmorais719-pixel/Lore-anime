@@ -304,7 +304,10 @@ def add_details(rig, by_name, srcs, size):
             ymax = max(v.y for v in vs)
             xc = (max(xs) + min(xs)) / 2
             rad = width * 0.2
-            col, _ = nearest_color(srcs, Vector((xc, ymax, zmin)))
+            # cor média da própria pata (a cor "mais próxima" pegava a das garras e os dedos saíam pretos)
+            cs = p["c"]
+            n3 = max(1, len(cs) // 3)
+            col = tuple(sum(srgb_to_linear(cs[i + j] / 255) for i in range(0, len(cs), 3)) / n3 for j in range(3))
             for j in (-1, 0, 1):
                 at = Vector((xc + j * width * 0.28, ymax - rad * 0.7, zmin + rad * 0.85))
                 new.append(bead("Toe_%s_%d" % (p["n"], j + 1), at, rad, col, part_bone(by_name, p) or "Torso"))

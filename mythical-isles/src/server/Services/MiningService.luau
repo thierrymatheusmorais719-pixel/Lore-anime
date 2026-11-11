@@ -80,7 +80,7 @@ end
 
 local function spawnVein(vein)
 	vein.hp = vein.cfg.hp
-	vein.contrib = {}
+	vein.contrib = setmetatable({}, { __mode = "k" }) -- (jogador que saiu não fica preso)
 	vein.alive = true
 	vein.model = buildVein(vein)
 	vein.model.Parent = folder
@@ -207,6 +207,7 @@ function MiningService.upgrade(player: Player)
 	end
 	S.DataService.markDirty(player)
 	player:SetAttribute("Pickaxe", lvl)
+	S.QuestService.event(player, { type = "upgrade_pickaxe" })
 	return { ok = true, msg = "Nova picareta: " .. Mining.Pickaxes[lvl].label }
 end
 

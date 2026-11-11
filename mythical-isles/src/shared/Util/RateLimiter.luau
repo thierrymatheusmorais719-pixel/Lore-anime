@@ -4,7 +4,7 @@ RateLimiter.__index = RateLimiter
 
 -- maxPerWindow pedidos por `window` segundos, com pelo menos `minInterval` entre eles.
 function RateLimiter.new(maxPerWindow: number, window: number, minInterval: number?)
-	return setmetatable({ max = maxPerWindow, window = window, minInterval = minInterval or 0, buckets = {} }, RateLimiter)
+	return setmetatable({ max = maxPerWindow, window = window, minInterval = minInterval or 0, buckets = setmetatable({}, { __mode = "k" }) }, RateLimiter) -- chaves fracas: jogador que saiu não fica preso aqui
 end
 
 function RateLimiter:allow(key: any, now: number?): boolean

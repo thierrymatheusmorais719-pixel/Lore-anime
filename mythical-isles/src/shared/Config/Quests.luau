@@ -3,7 +3,7 @@
 --
 -- goal.type: hatch | defeat_enemy | defeat_boss | earn_coins | break_resource | open_treasure |
 --            discover_mutation | evolve | unlock_world | upgrade_ability | use_ability |
---            mine_crystal (target = id do cristal) | mining_contract
+--            mine_crystal (target = id do cristal) | mining_contract | upgrade_pickaxe | open_shrine
 -- goal.target: id específico (opcional; nil = qualquer)
 -- reward: { coins, essence, astral, items = { id = n }, luck = { bonus, duration, category } }
 
@@ -43,6 +43,31 @@ Quests.Story = {
 	{ id = "s16", label = "Fim do Vazio", desc = "Derrote o Void Sovereign.", goal = { type = "defeat_boss", target = "void_sovereign", count = 1 },
 		reward = { astral = 100, items = { luck_potion_3 = 2 } } },
 }
+
+-- LINHAS PARALELAS (não mexem na história): cada linha é uma sequência com progresso próprio, salva em
+-- data.quests.side[<linha>] = { index, progress }. Guiam o jogador pelo conteúdo novo.
+Quests.Side = {
+	lowlands = {
+		label = "Expedição às Terras Baixas",
+		list = {
+			{ id = "l1", label = "A Descida", desc = "Desça uma rampa do planalto e derrote 5 Espreitadores do Pântano.",
+				goal = { type = "defeat_enemy", target = "bog_lurker", count = 5 }, reward = { coins = 600, essence = 40 } },
+			{ id = "l2", label = "Primeira Picareta", desc = "Minere 10 Cristais Esmeralda nas Cavernas Esmeralda.",
+				goal = { type = "mine_crystal", target = "emerald_crystal", count = 10 }, reward = { coins = 800, items = { luck_potion_1 = 1 } } },
+			{ id = "l3", label = "Encomenda Entregue", desc = "Entregue 1 contrato de mineração (Missões → Mineração).",
+				goal = { type = "mining_contract", count = 1 }, reward = { essence = 80, items = { evolution_dust = 2 } } },
+			{ id = "l4", label = "Ferramenta Melhor", desc = "Melhore a sua picareta.",
+				goal = { type = "upgrade_pickaxe", count = 1 }, reward = { coins = 1200, items = { emerald_crystal = 6 } } },
+			{ id = "l5", label = "Guardas de Pedra", desc = "Derrote 6 Sentinelas das Ruínas em Eldermoor.",
+				goal = { type = "defeat_enemy", target = "ruin_sentinel", count = 6 }, reward = { essence = 160, items = { skill_tome = 1 } } },
+			{ id = "l6", label = "Caçador de Relíquias", desc = "Abra 4 baús das Terras Baixas (templo, cripta, torre, runas, pântano ou caverna).",
+				goal = { type = "open_shrine", world = "verdant", count = 4 }, reward = { coins = 2500, items = { luck_potion_2 = 1 } } },
+			{ id = "l7", label = "Mestre Minerador", desc = "Minere 60 cristais de qualquer tipo.",
+				goal = { type = "mine_crystal", count = 60 }, reward = { essence = 300, items = { ascension_core = 1 } } },
+		},
+	},
+}
+Quests.SideOrder = { "lowlands" }
 
 Quests.DailyPool = {
 	{ id = "d_hatch", label = "Chocadeira", desc = "Choque 10 ovos.", goal = { type = "hatch", count = 10 },

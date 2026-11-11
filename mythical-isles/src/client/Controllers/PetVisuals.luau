@@ -8,6 +8,7 @@ local PetRig = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local PetMesh = require(Shared.Builders.PetMesh)
+local Mutations = require(Shared.Config.Mutations)
 local MutationVisuals = require(Shared.Builders.MutationVisuals)
 local Accessories = require(Shared.Builders.Accessories)
 local State = require(script.Parent.State)
@@ -104,6 +105,17 @@ local function attach(model: Model)
 		mesh.Name = "Visual"
 		if model:GetAttribute("Owner") == game:GetService("Players").LocalPlayer.UserId then
 			PetMesh.outline(mesh) -- traço de desenho nos pets do próprio jogador
+			-- modelo do Blender tem textura (as mutações não conseguem recolorir a malha): a cor da mutação
+			-- entra como um banho leve por cima (preenchimento do mesmo Highlight do contorno)
+			local mut = model:GetAttribute("Mutation")
+			local minfo = t.rig and mut and Mutations.Info[mut]
+			if minfo and minfo.color then
+				local hl = mesh:FindFirstChild("ToonOutline") :: Highlight?
+				if hl then
+					hl.FillColor = minfo.color
+					hl.FillTransparency = 0.62
+				end
+			end
 		end
 		model:SetAttribute("MeshVisual", true) -- atributo local: o Animator deixa o modelo antigo de lado
 		mesh.Parent = model
@@ -151,8 +163,11 @@ function PetVisuals.init()
 	end)
 	-- pele do Blender: cada osso importado segue a parte de mesmo nome do esqueleto animado
 	RunService.RenderStepped:Connect(function()
+		local cam = workspace.CurrentCamera
+		local eye = cam and cam.CFrame.Position
 		for _, a in pairs(active) do
-			if a.rig then
+			-- longe da câmera a pele fica na pose de descanso (economiza os ossos de dezenas de pets)
+			if a.rig and (not eye or (a.root.Position - eye).Magnitude < 180) then
 				PetRig.step(a.rig)
 			end
 		end

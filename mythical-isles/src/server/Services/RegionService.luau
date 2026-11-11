@@ -97,6 +97,7 @@ function RegionService.claim(player: Player, worldId: string, chestId: string)
 	local granted = S.RewardService.rollDrops(player, Drops.Shrine, chest.title, { worldIndex = Worlds.Info[worldId].index })
 	data.stats.treasures += 1
 	S.QuestService.event(player, { type = "open_treasure" })
+	S.QuestService.event(player, { type = "open_shrine", world = worldId, target = chestId })
 	S.CombatService.fx("burst", { at = chest.pos + Vector3.new(0, 3, 0), radius = 6, color = Color3.fromRGB(170, 140, 255) })
 	if first then
 		S.Push:FireClient(player, "Toast", { text = "✦ Local secreto descoberto: " .. chest.title, kind = "secret" })

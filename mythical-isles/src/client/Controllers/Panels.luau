@@ -685,6 +685,28 @@ local function questsPanel()
 			end)
 		end
 	end
+	-- linhas paralelas (expedições): a missão atual de cada linha, com o passo dentro da linha
+	for li, lineId in ipairs(Quests.SideOrder) do
+		local line = Quests.Side[lineId]
+		local st = (p.quests.side and p.quests.side[lineId]) or { index = 1, progress = 0 }
+		local q = line.list[st.index]
+		UIKit.label({ LayoutOrder = 40 + li * 3, Size = UDim2.new(1, 0, 0, 22), Font = T.title, TextSize = 18, TextColor3 = T.gold,
+			Text = string.format("%s (%d/%d)", line.label, math.min(st.index - 1, #line.list), #line.list), Parent = list })
+		if q then
+			local done = st.progress >= q.goal.count
+			local row = UIKit.frame({ LayoutOrder = 41 + li * 3, Size = UDim2.new(1, -8, 0, 42), BackgroundColor3 = T.teal, Parent = list })
+			UIKit.label({ Position = UDim2.fromOffset(8, 0), Size = UDim2.new(1, -150, 1, 0), TextSize = 12,
+				Text = string.format("<b>%s</b> — %s (%d/%d)\n<font color=\"#DDE6F5\">%s</font>", q.label, q.desc, st.progress, q.goal.count, rewardText(q.reward)), Parent = row })
+			UIKit.button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -4, 0.5, 0), Size = UDim2.fromOffset(130, 28), TextSize = 12,
+				Text = done and "Resgatar" or "Em andamento", BackgroundColor3 = done and T.green or T.gray, Parent = row }, function()
+				if done then
+					toastResult(State.request("ClaimSide", { line = lineId }))
+				end
+			end)
+		else
+			UIKit.label({ LayoutOrder = 41 + li * 3, Size = UDim2.new(1, -8, 0, 20), TextSize = 12, TextColor3 = T.muted, Text = "Linha concluída. Parabéns!", Parent = list })
+		end
+	end
 	UIKit.label({ LayoutOrder = 100, Size = UDim2.new(1, 0, 0, 22), Text = "Diárias (renovam à 00:00 UTC)", Font = T.title, TextSize = 18, TextColor3 = T.gold, Parent = list })
 	local d = p.quests.daily
 	for i, id in ipairs(d.ids or {}) do

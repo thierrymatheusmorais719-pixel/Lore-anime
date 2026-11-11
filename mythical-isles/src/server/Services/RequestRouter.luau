@@ -98,6 +98,12 @@ handlers.ClaimDaily = function(player, p)
 	end
 	return S.QuestService.claimDaily(player, p.id)
 end
+handlers.ClaimSide = function(player, p)
+	if type(p) ~= "table" or not str(p.line) then
+		return { ok = false }
+	end
+	return S.QuestService.claimSide(player, p.line)
+end
 handlers.ClaimCollection = function(player, p)
 	if type(p) ~= "table" or not str(p.id) then
 		return { ok = false }
