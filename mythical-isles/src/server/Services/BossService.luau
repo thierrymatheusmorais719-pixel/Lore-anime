@@ -292,6 +292,7 @@ local function startAttack(b, participants, now: number)
 	S.CombatService.setAction(b.model, atk.anim == "slam" and "Slam" or atk.anim == "sweep" and "Sweep" or atk.anim == "roar" and "Roar"
 		or atk.anim == "breath" and "Breath" or atk.anim == "dive" and "Dive" or "Cast")
 	b.model:SetAttribute("AttackLabel", atk.label)
+	b.model:SetAttribute("AttackPower", atk.shape == "power" or atk.shape == "summon") -- (cliente) encenação de poder
 	b.model:SetAttribute("WindupEnd", serverNow() + atk.telegraph)
 	local speed = phase.speedMult or 1
 	b.busyUntil = now + atk.telegraph + 0.4

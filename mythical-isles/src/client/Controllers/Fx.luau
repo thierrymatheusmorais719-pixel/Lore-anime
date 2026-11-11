@@ -1496,6 +1496,7 @@ onAbilityFxRef = onAbilityFx
 -------------------------------------------------------------------------------
 
 local energy: { [Model]: any } = {}
+local bossStaging: (Model, any, Instance, number) -> ()
 
 -- Cor da energia de uma peça (as malhas novas guardam a cor no atributo; a cor da MeshPart é branca).
 local function energyColor(p: BasePart): Color3
@@ -1558,6 +1559,54 @@ local function retargetEnergy(server: Model, visual: Model)
 	setupEnergy(visual, server, true)
 end
 
+-- Pés e tamanho do boss (para o círculo de runas e o pilar de luz).
+local function bossFootprint(model: Model): (Vector3, number)
+	local cf, size = model:GetBoundingBox()
+	local radius = math.clamp(math.max(size.X, size.Z) * 0.55, 6, 22)
+	return cf.Position - Vector3.new(0, size.Y / 2, 0), radius
+end
+
+-- Preparação de um ataque de boss (mesma linguagem dos poderes dos pets): círculo de runas girando sob o
+-- boss durante toda a preparação, energia convergindo para o núcleo no último segundo e, se for um PODER
+-- (escudo, espelho, invocação...), o cut-in de anime com o nome. No golpe: pilar de luz e pulso na tela.
+-- Só perto da câmera (e sem cut-in/pulso no modo de efeitos reduzidos).
+bossStaging = function(model: Model, st, src: Instance, left: number)
+	local cam = workspace.CurrentCamera
+	local core = st.parts[1]
+	if not cam or not core or not model.Parent then
+		return
+	end
+	local feet, radius = bossFootprint(model)
+	-- distância até o boss do servidor (o visual novo fica no mesmo lugar; o pivô do servidor é sempre confiável)
+	local anchor = src:IsA("Model") and (src :: Model):GetPivot().Position or core.part.Position
+	local dist = (cam.CFrame.Position - anchor).Magnitude
+	if dist > 220 then
+		return
+	end
+	local color = core.color
+	local isPower = src:GetAttribute("AttackPower") == true
+	castCircle(feet + Vector3.new(0, 1.7, 0), radius, color, left + 0.35)
+	local gt = math.min(left, 1.1)
+	task.delay(math.max(0, left - gt), function()
+		if core.part.Parent then
+			gather(core.part.Position, color, radius * 0.8, gt)
+		end
+	end)
+	if isPower and not lowVfx() and dist < 140 then
+		cutIn(tostring(src:GetAttribute("AttackLabel") or "Poder"), src.Name, color)
+	end
+	task.delay(left, function()
+		if not model.Parent or src:GetAttribute("Dead") == true then
+			return
+		end
+		local f2 = bossFootprint(model)
+		afterglow(f2 + Vector3.new(0, 1, 0), color, radius * 0.5)
+		if not lowVfx() and (cam.CFrame.Position - f2).Magnitude < 110 then
+			screenPulse(color)
+		end
+	end)
+end
+
 local function updateEnergy()
 	local now = workspace:GetServerTimeNow()
 	local pulse = 0.5 + 0.5 * math.sin(os.clock() * 3)
@@ -1582,6 +1631,13 @@ local function updateEnergy()
 			local pick = st.parts[math.random(1, #st.parts)]
 			local off = Vector3.new(math.random() - 0.5, math.random() - 0.3, math.random() - 0.5) * 12
 			lightning(pick.part.Position, pick.part.Position + off, pick.color, 0.25)
+		end
+		-- ENCENAÇÃO de cada ataque do boss (preparação nova = WindupEnd mudou)
+		if wEnd ~= (st.lastWind or 0) then
+			st.lastWind = wEnd
+			if left > 0 and src:GetAttribute("Dead") ~= true then
+				bossStaging(model, st, src, left)
+			end
 		end
 		local at = src:GetAttribute("ActionAt") or 0
 		if at > st.lastAt then

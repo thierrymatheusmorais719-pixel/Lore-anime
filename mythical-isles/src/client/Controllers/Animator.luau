@@ -200,17 +200,33 @@ local function animate(entry, t: number, dt: number, now: number)
 		flash(model)
 	end
 
-	-- curvas de ação
-	local strike, wind = 0, 0
+	-- curvas de ação em 3 TEMPOS (como os ataques dos pets):
+	--   preparação: enrola rápido e segura, tremendo no fim (a carga "transborda");
+	--   golpe: estalo de 0,12 s que passa do ponto (1,15);
+	--   acomodação: 0,55 s de oscilação amortecida (recua um pouco antes de parar).
+	local strike, wind, tremble, settleT = 0, 0, 0, 1
 	if action and action ~= "Dead" then
 		if now < windupEnd then
 			local total = math.max(0.2, windupEnd - actionAt)
-			wind = math.clamp(since / total, 0, 1)
+			local k = math.clamp(since / total, 0, 1)
+			wind = 1 - (1 - k) ^ 2.2
+			tremble = k > 0.65 and math.sin(now * 55) * 0.05 * (k - 0.65) / 0.35 or 0
 		elseif since < 6 then
 			local after = now - math.max(windupEnd, actionAt)
-			strike = after < 0.45 and math.sin(math.clamp(after / 0.45, 0, 1) * math.pi) or 0
+			if after < 0.12 then
+				strike = (after / 0.12) ^ 0.6 * 1.15
+				wind = 1 - after / 0.12
+				settleT = 0
+			elseif after < 0.67 then
+				local u = (after - 0.12) / 0.55
+				strike = 1.15 * math.exp(-4 * u) * math.cos(u * 9)
+				settleT = u
+			end
 		end
 	end
+	entry.lastStrike = strike
+	local sweep = action == "Sweep" and 1 or 0
+	local breathHold = (action == "Breath" and settleT < 1 and windupEnd > 0 and now >= windupEnd and now - windupEnd < 1.4) and 1 or 0
 	local roar = (action == "Roar" or action == "Intro") and strike + wind or 0
 	local slam = (action == "Slam" or action == "Lunge") and 1 or 0
 	local deathT = dead and math.clamp((now - actionAt) / 0.8, 0, 1) or 0
@@ -236,8 +252,10 @@ local function animate(entry, t: number, dt: number, now: number)
 		local k = j.kind
 		local cf = CFrame.identity
 		if k == "body" then
-			local pitch = -wind * 0.25 + strike * 0.35 - hurt * 0.25 + roar * -0.15
-			cf = CFrame.new(0, breathe + stepBob - deathT * s * 0.25, 0) * CFrame.Angles(pitch, 0, deathT * 1.35 + math.sin(tt * 1.3) * 0.02)
+			local pitch = -wind * 0.25 + strike * 0.35 - hurt * 0.25 + roar * -0.15 + tremble
+			local yaw = sweep * (wind * 0.55 - strike * 0.9) -- varrida: torce para um lado e chicoteia para o outro
+			local lift = slam * (wind * 0.18 - math.max(strike, 0) * 0.28) * s -- pancada: ergue-se e despenca
+			cf = CFrame.new(0, breathe + stepBob - deathT * s * 0.25 + lift, 0) * CFrame.Angles(pitch, yaw, deathT * 1.35 + math.sin(tt * 1.3) * 0.02 + tremble * 0.5)
 		elseif k == "neck" then
 			local look = math.sin(tt * 0.7) * 0.15 * (1 - moving)
 			cf = CFrame.Angles(-strike * 0.45 + wind * 0.3 - roar * 0.5 + hurt * 0.2, look, 0)
@@ -281,7 +299,7 @@ local function animate(entry, t: number, dt: number, now: number)
 			local open = 0.15 * math.sin(tt * 1.5 + j.idx) + roar * 0.5 + wind * 0.3
 			cf = CFrame.Angles(open, 0, 0)
 		elseif k == "jaw" then
-			local open = math.max(strike, wind * 0.6, roar) * 0.45
+			local open = math.max(strike, wind * 0.6, roar, breathHold * 0.9) * 0.45
 			cf = CFrame.Angles(open, 0, 0)
 		elseif k == "root" then
 			cf = CFrame.Angles(math.sin(tt * 1.2 + j.idx) * 0.06 - wind * 0.2 * slam, 0, 0)

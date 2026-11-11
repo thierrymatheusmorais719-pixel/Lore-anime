@@ -2224,6 +2224,47 @@ do
 		Fx.updateEnergy()
 		check("Prism Titan: núcleo, olhos e punhos brilham e carregam durante a preparação", #lights >= 5 and charged > idle + 2,
 			string.format("%d luzes, repouso %.1f, carga %.1f", #lights, idle, charged))
+		-- ENCENAÇÃO de um poder do boss: círculo de runas sob ele, cut-in com o nome do poder, pilar de luz no golpe
+		local function stagingCheck()
+			local b3 = #SIM.errors
+			local cam = workspace.CurrentCamera
+			local oldCam = cam.CFrame
+			local tpos = titan.PrimaryPart and titan.PrimaryPart.Position or titan:GetPivot().Position
+			for _, d in ipairs(workspace:GetDescendants()) do
+				if d:IsA("BasePart") and d:GetAttribute("EnergyFx") and (d.Position - tpos).Magnitude < 60 then
+					tpos = d.Position -- câmera perto do núcleo (onde a encenação mede a distância)
+					break
+				end
+			end
+			cam.CFrame = CFrame.new(tpos + Vector3.new(0, 20, 50), tpos)
+			local pg = SIM.localPlayer.PlayerGui
+			local old = pg:FindFirstChild("SignatureCutIn")
+			if old then
+				old:Destroy()
+			end
+			titan:SetAttribute("AttackLabel", "Espelho Prismático")
+			titan:SetAttribute("AttackPower", true)
+			titan:SetAttribute("ActionAt", workspace:GetServerTimeNow())
+			titan:SetAttribute("WindupEnd", workspace:GetServerTimeNow() + 0.9)
+			local fxFolder = cam:FindFirstChild("LocalFx")
+			local before = fxFolder and #fxFolder:GetChildren() or 0
+			Fx.updateEnergy()
+			frames(6)
+			local cut = pg:FindFirstChild("SignatureCutIn")
+			local band = cut and cut:FindFirstChild("Band")
+			local power = band and band:FindFirstChild("Power")
+			local during = fxFolder and #fxFolder:GetChildren() or 0
+			frames(90)
+			Fx.updateEnergy()
+			check("boss: preparação de poder tem círculo de runas e cut-in com o nome do poder",
+				power ~= nil and power.Text == "ESPELHO PRISMÁTICO" and during >= before + 8 and #SIM.errors == b3,
+				SIM.errors[b3 + 1] or string.format("cut-in %s, peças %d -> %d", tostring(power and power.Text), before, during))
+			titan:SetAttribute("AttackPower", false)
+			cam.CFrame = oldCam
+		end
+		if titan then
+			stagingCheck()
+		end
 	end
 	before = #SIM.errors
 	ok, err = pcall(Fx.hatch, res.results or {}, Color3.new(1, 1, 1))
