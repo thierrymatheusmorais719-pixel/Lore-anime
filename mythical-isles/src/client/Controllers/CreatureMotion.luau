@@ -21,6 +21,8 @@
 local Players = game:GetService("Players")
 
 local CreatureMotion = {}
+-- chamado no instante em que um golpe sai (Fx desenha o arco de corte); (entry, model)
+CreatureMotion.onStrike = nil :: ((any, Model) -> ())?
 
 local celebrateUntil: { [number]: number } = {}
 
@@ -693,9 +695,29 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 	-- estados vindos do modelo do servidor
 	local action = src:GetAttribute("Action")
 	local since = now - (src:GetAttribute("ActionAt") or 0)
-	local attack = 0
-	if (action == "Attack" or action == "Cast") and since < 0.6 then
-		attack = math.sin(math.clamp(since / 0.55, 0, 1) * math.pi)
+	-- ATAQUE EM 3 TEMPOS: preparação (wind: encolhe, recua, arma o golpe), golpe rápido (attack sobe de 0 a 1 em
+	-- 0,12 s) e recuperação com um quique (settle). As poses de cada parte usam wind e attack.
+	local attack, wind, settle = 0, 0, 0
+	if (action == "Attack" or action == "Cast") and since < 0.72 then
+		local W, S2, R = 0.22, 0.12, 0.38
+		if since < W then
+			wind = math.sin(since / W * math.pi / 2)
+		elseif since < W + S2 then
+			local u = (since - W) / S2
+			wind = 1 - u
+			attack = math.sin(u * math.pi / 2)
+		else
+			local u = math.clamp((since - W - S2) / R, 0, 1)
+			attack = (1 - u) ^ 2
+			settle = math.sin(u * math.pi * 2) * (1 - u) * 0.3
+		end
+		-- golpe acabou de sair: avisa (arco de corte no Fx)
+		if since >= W and entry.struckAt ~= src:GetAttribute("ActionAt") then
+			entry.struckAt = src:GetAttribute("ActionAt")
+			if CreatureMotion.onStrike then
+				task.spawn(CreatureMotion.onStrike, entry, model)
+			end
+		end
 	end
 	local cast = action == "Cast" and attack or 0
 	local knocked = src:GetAttribute("Knocked") == true
@@ -759,7 +781,7 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 
 	-- comportamento ocioso / sono / tranco / festa / pose da Assinatura
 	local clock = os.clock()
-	local isIdle = walk < 0.08 and attack == 0 and not knocked and not celebrating and jump == 0
+	local isIdle = walk < 0.08 and attack == 0 and wind == 0 and not knocked and not celebrating and jump == 0
 	local actName, actE, actU, asleep = idleBehaviour(entry, isIdle, dt, clock)
 	entry.sleepW = (entry.sleepW or 0) + ((asleep and 1 or 0) - (entry.sleepW or 0)) * math.min(1, dt * 1.5)
 	setSnore(entry, entry.sleepW > 0.6)
@@ -803,16 +825,25 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 			local an = entry.anatomy
 			if gait == "quad" then
 				if an == "cervid" or an == "caprine" or an == "heavy" or an == "mammoth" or an == "bushgoat" then
-					pitch += attack * 0.45
-					bob += attack * 0.25 * s
+					-- pesados: empinam na preparação e batem com tudo no golpe
+					pitch += wind * 0.5 - attack * 0.22
+					bob += wind * 0.3 * s - attack * 0.08 * s
 				else
-					pitch -= attack * 0.2
-					fwdMove = attack * 0.35 * s
+					-- bote: encolhe e recua, depois salta para a frente esticado
+					pitch += wind * 0.12 - attack * 0.22
+					-- (furões e bichos rentes ao chão quase não têm como se encolher: senão afundam)
+					bob -= wind * 0.1 * s * (an == "mustelid" and 0.15 or 1)
+					fwdMove = attack * 0.45 * s - wind * 0.18 * s
 				end
 			elseif gait == "bird" then
-				pitch -= attack * 0.5
-				fwdMove = attack * 0.5 * s
+				pitch += wind * 0.35 - attack * 0.55
+				fwdMove = attack * 0.55 * s - wind * 0.15 * s
+			elseif gait == "biped" or gait == "bounce" then
+				bob -= wind * 0.12 * s
+				pitch += wind * 0.15 - attack * 0.25
+				fwdMove = attack * 0.25 * s
 			end
+			bob += settle * 0.12 * s
 			pitch += cele * math.sin(tt * 6) * 0.08 - jump * 0.15
 			if gait == "slither" then
 				pitch += x("rise") * 0.55
@@ -822,12 +853,12 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 			local w = k == "neck" and 0.55 or 0.45
 			local nod = math.sin(ph * 2) * 0.05 * walk
 			local pitch = nod - sniff * 0.35 + breathe * 0.015
-			pitch += (attack * (gait == "quad" and -0.35 or -0.6)) + cele * 0.35 + entry.near * 0.08
+			pitch += (attack * (gait == "quad" and -0.35 or -0.6)) + wind * 0.4 + cele * 0.35 + entry.near * 0.08
 			if entry.anatomy == "cervid" or entry.anatomy == "caprine" then
 				pitch -= attack * 0.5 -- cabeçada
 			end
 			if gait == "slither" then
-				pitch += attack * 0.4
+				pitch += attack * 0.4 + wind * 0.5 -- serpente ergue a cabeça antes do bote
 			end
 			local yaw = (idleLook + lookYaw * entry.near) * w
 			if k == "neck" then
@@ -842,7 +873,7 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 			cf = A(pitch * w * 2, yaw, k == "head" and x("headRoll") or 0)
 		elseif k == "jaw" then
 			local pant = (entry.anatomy == "canine" or entry.anatomy == "fox" or entry.anatomy == "wolf" or entry.anatomy == "pup") and run * (0.12 + math.sin(tt * 14) * 0.05) or 0
-			cf = A(math.max(attack * 0.6, pant, cele * 0.35 * math.max(0, math.sin(tt * 3)), x("jaw")), 0, 0)
+			cf = A(math.max(attack * 0.75, pant, cele * 0.35 * math.max(0, math.sin(tt * 3)), x("jaw")), 0, 0)
 		elseif k == "ear" then
 			local twitch = math.max(0, math.sin(tt * 1.7 + j.side * 2.3)) ^ 10 * 0.45
 			local perk = entry.near * 0.12 - attack * 0.35
@@ -875,6 +906,13 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 				else
 					strike = 0.6 * attack
 				end
+			end
+			if j.front and wind > 0 then
+				local cat = entry.anatomy == "feline" or entry.anatomy == "lion" or entry.anatomy == "lynx" or entry.anatomy == "tiger" or entry.anatomy == "griffin"
+				-- preparação: felino arma a pata para trás; os outros firmam as patas da frente
+				strike += (cat and j.side > 0) and -0.7 * wind or 0.25 * wind
+			elseif j.hind and wind > 0 then
+				strike -= 0.2 * wind -- patas de trás dobram para dar o impulso
 			end
 			local idle = (1 - walk) * math.sin(tt * 0.9 + j.side) * 0.015
 			local extra = j.front and x("legF") or x("legB")
@@ -925,19 +963,20 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 			cf = A(-0.8 * lift + jump * 0.6 + x("knee2"), 0, 0)
 		elseif k == "arm" then
 			local swing = -math.sin(ph + (j.side > 0 and math.pi or 0)) * 0.45 * walk
-			local smash = -2.2 * attack + (since > 0.3 and since < 0.6 and 0.6 or 0) * attack
+			-- punhos sobem na preparação e descem com tudo no golpe
+			local smash = -2.6 * wind - 0.9 * attack
 			local raise = -2.6 * cele + -0.6 * cast
 			local idle = math.sin(tt * 1.6 + j.side) * 0.06
 			local own = j.side > 0 and x("armR") or x("armL")
 			local ownZ = j.side > 0 and x("armRz") or 0
 			cf = A(swing + smash + raise + idle + x("arm") + own, 0, j.side * (0.1 + cele * 0.3 + x("armZ") + ownZ))
 		elseif k == "elbow" then
-			cf = A(-0.4 * walk - 0.6 * attack + math.sin(tt * 1.6) * 0.05 + x("elbow"), 0, 0)
+			cf = A(-0.4 * walk - 0.6 * attack - 0.8 * wind + math.sin(tt * 1.6) * 0.05 + x("elbow"), 0, 0)
 		elseif k == "wing" then
 			local second = j.name:sub(1, 5) == "Wing2"
 			local flapRate = entry.flies and (7 + walk * 5) or 2
 			local amp = entry.flies and (0.55 + walk * 0.25) or (0.08 + cele * 0.6)
-			local flap = math.sin(tt * flapRate + (second and 1.2 or 0)) * amp + cele * 0.4 + attack * 0.7
+			local flap = math.sin(tt * flapRate + (second and 1.2 or 0)) * amp + cele * 0.4 + attack * 0.7 + wind * 0.9
 			if not entry.flies then
 				flap += math.max(0, math.sin(tt * 0.35) - 0.92) * 9 -- ajeita as asas de vez em quando
 			end
@@ -946,8 +985,9 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 			local i = k == "tail" and 1 or j.idx
 			local wagRate = 3 + math.max(happy, x("wag")) * 9
 			local wagAmp = math.max(0, (0.22 + happy * 0.35 + x("wag") * 0.3) * (1 - run * 0.6))
-			local yaw = math.sin(tt * wagRate - i * 0.7) * wagAmp
-			local lift = run * 0.25 - (k == "tail" and 0.05 or 0.08) * math.sin(tt * 1.2 - i * 0.5) - down * 0.4
+			-- ataque: rabo levanta duro na preparação e chicoteia no golpe
+			local yaw = math.sin(tt * wagRate - i * 0.7) * wagAmp + math.sin(since * 30 - i * 0.8) * attack * 0.45
+			local lift = wind * 0.45 + run * 0.25 - (k == "tail" and 0.05 or 0.08) * math.sin(tt * 1.2 - i * 0.5) - down * 0.4
 			if k == "tailmulti" then
 				yaw = math.sin(tt * 2.2 + j.idx * 1.3) * (0.18 + happy * 0.2)
 			end
@@ -959,7 +999,7 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 			local rise = j.idx == 1 and -x("rise") * 0.55 or 0
 			cf = A(math.sin(tt * 1.8 - j.idx * 0.7) * 0.03 + rise, math.sin(ph * 1.4 - j.idx * 0.95) * amp + x("coil") * (j.idx <= 3 and 0.3 or 0), 0)
 		elseif k == "trunk" then
-			cf = A(math.sin(tt * 1.4 - j.idx * 0.6) * 0.18 - attack * 0.5 + cele * -0.4 + x("trunk"), math.sin(tt * 0.9 - j.idx) * 0.15, 0)
+			cf = A(math.sin(tt * 1.4 - j.idx * 0.6) * 0.18 - attack * 0.5 + wind * 0.6 + cele * -0.4 + x("trunk"), math.sin(tt * 0.9 - j.idx) * 0.15, 0)
 		elseif k == "orbit" then
 			cf = A(0, (tt * (j.name == "Orbit2" and -0.9 or 1.3)) % (math.pi * 2), 0)
 		end

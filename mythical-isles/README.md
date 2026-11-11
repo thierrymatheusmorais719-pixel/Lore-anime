@@ -433,6 +433,15 @@ Os **5 bosses** passam pelo mesmo processo (`PetRigs/boss_<id>`, ~18 mil triâng
   (> 180 studs) não são atualizados.
 - Limitadores de frequência e listas de contribuição com chaves fracas (jogador que saiu não fica na memória).
 
+### Ataques em 3 tempos (todos os pets)
+
+- **Preparação (0,22 s):** encolhe e recua, cabeça puxa para trás, rabo levanta duro; felinos armam a pata,
+  pesados empinam, golens/bípedes erguem os punhos, aves e serpentes erguem a cabeça.
+- **Golpe (0,12 s):** sai rápido e esticado (bote, cabeçada, patada, soco descendo), boca abre e o rabo chicoteia.
+- **Recuperação:** volta com um pequeno quique.
+- No instante do golpe, um **arco de corte** brilhante (cor do pelo, clareada) abre na frente da cabeça, com
+  faíscas. `--animcheck`: 1.950 animações sem afundar no chão.
+
 ### Encenação dos poderes (vale para os 192 poderes)
 
 - **Preparação:** círculo de runas girando no chão sob o pet e fagulhas de energia convergindo nele; o golpe sai

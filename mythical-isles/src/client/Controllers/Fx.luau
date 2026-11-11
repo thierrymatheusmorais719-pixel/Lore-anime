@@ -12,6 +12,7 @@ local Rarities = require(Shared.Config.Rarities)
 local Mutations = require(Shared.Config.Mutations)
 local PetMesh = require(Shared.Builders.PetMesh)
 local UIKit = require(script.Parent.UIKit)
+local CreatureMotion = require(script.Parent.CreatureMotion)
 local State = require(script.Parent.State)
 
 local Fx = {}
@@ -1141,6 +1142,46 @@ local function screenPulse(color: Color3)
 end
 Fx._cutIn, Fx._screenPulse = cutIn, screenPulse -- (testes/prévias)
 
+-- ARCO DE CORTE: no instante do golpe de um pet, um arco brilhante abre na frente da cabeça (cor do pelo,
+-- clareada) e some rápido; mais um sopro de faíscas. Só perto da câmera.
+local function slashArc(entry, model: Model)
+	if lowVfx() or not model.Parent then
+		return
+	end
+	local head = model:FindFirstChild("Head") :: BasePart?
+	local root = model.PrimaryPart
+	if not root then
+		return
+	end
+	local cam = workspace.CurrentCamera
+	if cam and (cam.CFrame.Position - root.Position).Magnitude > 90 then
+		return
+	end
+	local s = math.max(0.8, entry.scale or 2)
+	local look = root.CFrame.LookVector
+	local base = (head and head.Position or root.Position) + look * s * 0.45
+	local tint = WHITE
+	local torso = model:FindFirstChild("Torso", true)
+	if torso and torso:IsA("BasePart") then
+		tint = WHITE:Lerp(torso.Color, 0.45)
+	end
+	local frame = CFrame.lookAt(base, base + look)
+	local r = s * 0.55
+	local n = 7
+	for k = 0, n - 1 do
+		local a = -1.1 + 2.2 * k / (n - 1)
+		local pos = frame * Vector3.new(math.sin(a) * r, math.cos(a) * r * 0.55, -math.cos(a) * r * 0.25)
+		local w = 0.12 + 0.14 * math.sin(k / (n - 1) * math.pi)
+		local seg = part({ Size = Vector3.new(w, w, r * 0.42), CFrame = CFrame.lookAt(pos, pos + frame.RightVector * math.cos(a) - frame.UpVector * math.sin(a) * 0.55),
+			Color = tint, Transparency = 0.15 }, 0.22)
+		if seg then
+			tween(seg, 0.2, { Transparency = 1, Size = Vector3.new(0.02, 0.02, r * 0.6), CFrame = seg.CFrame + look * s * 0.25 })
+		end
+	end
+	sparks(base + look * s * 0.3, tint, 5, 9)
+end
+Fx._slashArc = slashArc
+
 local function signatureFx(p)
 	local c = p.color or Color3.new(1, 1, 1)
 	local origin = p.from or p.at
@@ -1757,6 +1798,7 @@ function Fx.hatch(results, eggColor: Color3?)
 end
 
 function Fx.init()
+	CreatureMotion.onStrike = slashArc
 	folder = Instance.new("Folder")
 	folder.Name = "LocalFx"
 	folder.Parent = workspace.CurrentCamera

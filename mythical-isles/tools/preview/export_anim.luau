@@ -118,7 +118,7 @@ for _, sid in ipairs(SPECIES) do
 		for _, a in ipairs(CreatureMotion.actsFor(bp.gait, bp.anatomy, bp.flies == true)) do
 			table.insert(list, a[1])
 		end
-		for _, extra in ipairs({ "sleep", "levelup", "signature" }) do
+		for _, extra in ipairs({ "sleep", "levelup", "signature", "attack" }) do
 			table.insert(list, extra)
 		end
 		print(string.format("ANIM %s gait=%s acts=%s", sid, bp.gait, table.concat(list, ",")))
@@ -144,6 +144,10 @@ for _, sid in ipairs(SPECIES) do
 				model:SetAttribute("Action", "Cast")
 				model:SetAttribute("ActionAt", workspace:GetServerTimeNow())
 				dur = 0.9
+			elseif act == "attack" then
+				model:SetAttribute("Action", "Attack")
+				model:SetAttribute("ActionAt", workspace:GetServerTimeNow())
+				dur = 0.72
 			elseif act == "levelup" then
 				CreatureMotion.forceAct(entry, "levelup")
 			elseif act ~= "rest" then
@@ -153,7 +157,8 @@ for _, sid in ipairs(SPECIES) do
 			-- amostras espalhadas pela duração (no sono: quadros parados)
 			local elapsed = 0
 			for f = 1, FRAMES do
-				local target = act == "sleep" and f * 0.5 or dur * (f - 0.5) / FRAMES
+				local ATT = { 0.03, 0.21, 0.33, 0.5 } -- repouso, preparação, golpe, recuperação
+				local target = act == "sleep" and f * 0.5 or (act == "attack" and ATT[f]) or dur * (f - 0.5) / FRAMES
 				local n = math.max(1, math.floor((target - elapsed) / DT + 0.5))
 				step(n)
 				elapsed += n * DT
