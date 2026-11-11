@@ -137,7 +137,7 @@ handlers.Settings = function(player, p)
 	if not data or type(p) ~= "table" or not str(p.key) then
 		return { ok = false }
 	end
-	if p.key == "announcements" or p.key == "damageNumbers" then
+	if p.key == "announcements" or p.key == "damageNumbers" or p.key == "guide" then
 		data.settings[p.key] = p.value == true
 	elseif p.key == "vfx" and (p.value == "High" or p.value == "Low") then
 		data.settings.vfx = p.value

@@ -28,7 +28,7 @@ function DataSchema.default()
 		shrines = {}, -- [baúId] = os.time() da última abertura (baús-santuário das regiões)
 		-- mineração de cristais (Config/Mining): nível da picareta, total minerado e contratos do dia
 		mining = { pickaxe = 1, mined = 0, veins = 0, contractsDone = 0, contracts = { day = 0, ids = {}, done = {} } },
-		settings = { announcements = true, vfx = "High", damageNumbers = true },
+		settings = { announcements = true, vfx = "High", damageNumbers = true, guide = true },
 	}
 end
 

@@ -959,6 +959,7 @@ local function settingsPanel()
 	end
 	toggle(1, "Anúncios globais de descobertas", "announcements", p.settings.announcements and "ligado" or "desligado", not p.settings.announcements)
 	toggle(2, "Números de dano", "damageNumbers", p.settings.damageNumbers ~= false and "ligado" or "desligado", p.settings.damageNumbers == false)
+	toggle(4, "Guia do objetivo (feixe até a missão)", "guide", p.settings.guide ~= false and "ligado" or "desligado", p.settings.guide == false)
 	toggle(3, "Qualidade de efeitos", "vfx", p.settings.vfx == "Low" and "Baixa" or "Alta", p.settings.vfx == "Low" and "High" or "Low")
 	-- qualidade do modelo dos SEUS pets no modo de peças (sem EditableMesh): só neste aparelho
 	local PetVisuals = require(script.Parent.PetVisuals)

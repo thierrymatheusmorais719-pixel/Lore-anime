@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Worlds = require(Shared.Config.Worlds)
+local State = require(script.Parent.State)
 
 local GuideClient = {}
 
@@ -69,7 +70,8 @@ local function step()
 	local target = lp:GetAttribute("GuideTarget")
 	local char = lp.Character
 	local root = char and char:FindFirstChild("HumanoidRootPart")
-	if typeof(target) ~= "Vector3" or not root or not anchor or not beam or not label or not gui then
+	local off = State.profile and State.profile.settings and State.profile.settings.guide == false
+	if off or typeof(target) ~= "Vector3" or not root or not anchor or not beam or not label or not gui then
 		if gui then
 			gui.Enabled = false
 		end

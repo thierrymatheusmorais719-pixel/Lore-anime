@@ -437,7 +437,7 @@ Os **5 bosses** passam pelo mesmo processo (`PetRigs/boss_<id>`, ~18 mil triâng
 
 Feixe dourado do jogador até o lugar da missão atual, com marcador (nome + distância). O servidor
 (`GuideService`) acha o alvo: estação de ovo, zona do inimigo, arena do boss, portal do próximo mundo, veio do
-cristal pedido ou baú ainda fechado. Se a missão da história não tem lugar no mapa (evoluir, usar habilidade...),
+cristal pedido ou baú ainda fechado. Pode ser desligado em Opções. Se a missão da história não tem lugar no mapa (evoluir, usar habilidade...),
 guia pela Expedição às Terras Baixas. Alvo em outro mundo: o marcador diz para viajar pelo menu Mundos.
 
 ### Inimigos das Terras Baixas
