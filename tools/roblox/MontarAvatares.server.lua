@@ -37,7 +37,11 @@ local AVATARES: { AvatarSpec } = {
 		nome = "GOJO_RIG",
 		outfitId = nil,
 		bundleIds = {},
-		assetIds = {}, -- cole aqui: { 123456, 234567, ... }
+		assetIds = {
+			106961938961583, -- camisa
+			79359096651952, -- calças
+			95916049795794, -- cabelo
+		},
 		posicao = CFrame.new(0, 0, 1.9), -- olha para -Z (para o outro)
 	},
 	{
