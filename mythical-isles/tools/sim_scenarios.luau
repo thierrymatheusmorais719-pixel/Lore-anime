@@ -1299,6 +1299,8 @@ check("perfil é salvo no DataStore ao sair", store.writes > writes0)
 	place(foes[1], Vector3.new(0, 0, 0), true)
 	place(foes[2], Vector3.new(3, 0, 2), true)
 	place(foes[3], Vector3.new(30, 0, 30), true)
+	-- (os outros pets da equipe também batem nos alvos: vida alta para nenhum morrer no meio dos pulsos)
+	foes[1].hp, foes[2].hp = 1e6, 1e6
 	r = SigS.cast(ps, t1[2], foes[1])
 	SIM.run(2.6)
 	expect(r and r.targets[foes[1]] and r.targets[foes[2]] and not r.targets[foes[3]] and r.hits >= 7 and foes[2].slowUntil > os.clock(), "Nuvem de Esporos: " .. tostring(r and r.hits))
@@ -1316,8 +1318,9 @@ check("perfil é salvo no DataStore ao sair", store.writes > writes0)
 	place(foes[1], Vector3.new(0, 0, 0))
 	place(foes[2], Vector3.new(8, 0, 0.5))
 	place(foes[3], Vector3.new(4, 0, 14))
-	t1[4].model:PivotTo(CFrame.new(P + Vector3.new(-8, 0, 0)))
 	SIM.run(0.1)
+	-- (põe o pet no lugar depois de esperar: a formação o moveria nesse intervalo)
+	t1[4].model:PivotTo(CFrame.new(P + Vector3.new(-8, 0, 0)))
 	r = SigS.cast(ps, t1[4], foes[1])
 	expect(r and r.targets[foes[1]] and r.targets[foes[2]] and not r.targets[foes[3]] and foes[2].stunnedUntil > os.clock(), "Galhada Enraizante (linha)")
 	-- lote 2: ricochete, vários alvos, equipe (cura + força), escudo
@@ -1666,6 +1669,15 @@ do
 				{ type = "safezones", x = here.X, z = here.Z, r = 20, safe = {} } } },
 		}
 		local okFx, errFx = true, nil
+		-- só as peças criadas por estes efeitos contam (pets e inimigos continuam lutando no fundo)
+		local fxF, debF = workspace.CurrentCamera:FindFirstChild("LocalFx"), workspace:FindFirstChild("LocalDebris")
+		local mineFx = {}
+		local c1 = fxF.ChildAdded:Connect(function(d)
+			mineFx[d] = true
+		end)
+		local c2 = debF.ChildAdded:Connect(function(d)
+			mineFx[d] = true
+		end)
 		for _, pl in ipairs(payloads) do
 			local ok2, e2 = pcall(Fx.play, pl)
 			if not ok2 then
@@ -1673,16 +1685,21 @@ do
 			end
 			frames(2)
 		end
+		c1:Disconnect()
+		c2:Disconnect()
+		local tracked = 0
+		for _ in pairs(mineFx) do
+			tracked += 1
+		end
 		frames(200)
 		local leftover = 0
-		for _, d in ipairs(workspace.CurrentCamera:FindFirstChild("LocalFx"):GetChildren()) do
-			if d:IsA("BasePart") and d.Transparency < 1 then
+		for d in pairs(mineFx) do
+			if (d.Parent == fxF and d:IsA("BasePart") and d.Transparency < 1) or d.Parent == debF then
 				leftover += 1
 			end
 		end
-		leftover += #workspace:FindFirstChild("LocalDebris"):GetChildren()
-		check("efeitos visuais: todos os tipos rodam e as peças temporárias somem", okFx and #SIM.errors == beforeFx and leftover == 0,
-			errFx or SIM.errors[beforeFx + 1] or ("sobraram " .. leftover .. " peças"))
+		check("efeitos visuais: todos os tipos rodam e as peças temporárias somem", okFx and #SIM.errors == beforeFx and leftover == 0 and tracked > 30,
+			errFx or SIM.errors[beforeFx + 1] or string.format("sobraram %d de %d peças", leftover, tracked))
 	end)()
 	-- regiões no cliente: nome da região na tela + luz/névoa da região (Azure Caverns)
 	do
