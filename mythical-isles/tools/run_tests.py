@@ -13,6 +13,7 @@ Uso:  python3 tools/run_tests.py [caminho/para/luau] [--smoke | --sim]
   --animcheck  roda as animações dos pets (CreatureMotion) nas 192 espécies e verifica pose, chão e sono
   --animexport exporta quadros da animação real dos pets (CreatureMotion) para tools/preview/pets3d.html
   --uiexport   exporta a árvore de GUI do cliente (HUD/painéis) com layout calculado para tools/preview/ui.html
+  --bossatk  exporta quadros de um ataque de boss (preparação, golpe, acomodação) para a prévia
   --bossexport exporta a geometria dos bosses (BossAnatomy) para a prévia (tools/preview)
   --sim    executa o SERVIDOR REAL (src/server) num simulador com relógio virtual
            (tools/sim_runtime.luau) e roda os cenários de tools/sim_scenarios.luau
@@ -75,6 +76,8 @@ def main():
         return run_sim(args[0] if args else "luau", "anim_check.luau")
     if "--animexport" in sys.argv:
         return run_sim(args[0] if args else "luau", os.path.join("preview", "export_anim.luau"))
+    if "--bossatk" in sys.argv:
+        return run_sim(args[0] if args else "luau", os.path.join("preview", "export_bossattack.luau"))
     if "--uiexport" in sys.argv:
         return run_sim(args[0] if args else "luau", os.path.join("preview", "export_ui.luau"))
     luau = args[0] if args else "luau"

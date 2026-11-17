@@ -433,6 +433,20 @@ Os **5 bosses** passam pelo mesmo processo (`PetRigs/boss_<id>`, ~18 mil triâng
   (> 180 studs) não são atualizados.
 - Limitadores de frequência e listas de contribuição com chaves fracas (jogador que saiu não fica na memória).
 
+### Ataques dos bosses e inimigos em 3 tempos, com encenação
+- **Movimento** (`client/Controllers/Animator.luau`, vale para bosses e inimigos comuns):
+  - preparação: enrola rápido, segura e treme no fim;
+  - golpe: estalo de 0,12 s que passa do ponto;
+  - acomodação: 0,55 s de oscilação amortecida (recua um pouco antes de parar).
+  - Varrida torce o corpo para um lado e chicoteia para o outro; pancada sobe na ponta dos pés; sopro segura a boca aberta.
+  - **Pés plantados:** a junta do corpo leva as pernas junto, então o corpo desce o quanto a inclinação levantaria os pés.
+- **Encenação** (`Fx.luau`): círculo de runas sob o boss durante a preparação, energia convergindo para o núcleo no
+  último segundo, cut-in de anime com o nome nos poderes e invocações (atributo `AttackPower` do servidor), pilar de
+  luz e pulso na tela no golpe. Só perto da câmera; no modo de efeitos reduzidos, sem cut-in nem pulso.
+- **Prévia:** `python3 tools/run_tests.py luau --bossatk` roda o jogo no simulador, dispara uma pancada do Elderroot e
+  exporta o boss (modo de peças) em 6 instantes. `docs/preview/boss_ataque_3tempos.jpg` mostra o resultado. Foi essa
+  prévia que mostrou o boss flutuando na preparação e afundando no golpe, já corrigido.
+
 ### Ataques em 3 tempos (todos os pets)
 
 - **Preparação (0,22 s):** encolhe e recua, cabeça puxa para trás, rabo levanta duro; felinos armam a pata,
@@ -974,8 +988,8 @@ travamento) foi exercitada.
   arredondado que antes. Confira o desempenho e o visual com a iluminação do Roblox.
 - **Mineração — o que ainda precisa do Studio:** o ProximityPrompt e o tempo de segurar foram testados no simulador
   (o servidor confere distância e intervalo), não na tela. Os veios dos Mundos 2 a 5 ficam em volta dos campos de
-  recursos e foram posicionados por raycast; confira se algum ficou num lugar estranho. Não há animação de
-  picareta na mão do avatar (o golpe mostra o brilho no veio e os pets atacando).
+  recursos e foram posicionados por raycast; confira se algum ficou num lugar estranho. A picareta aparece na mão
+  do avatar enquanto ele minera.
 - **Pets fofos — o que ainda precisa do Studio:** as proporções foram vistas só nas prévias. Confira no jogo se
   algum pet ficou com a cabeça grande demais para a câmera do inventário/retrato e se alguma pose de animação
   encosta a cabeça maior no corpo (o `--animcheck` não detecta uma parte atravessando outra).
