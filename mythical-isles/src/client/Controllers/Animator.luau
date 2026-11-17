@@ -261,30 +261,56 @@ local function animate(entry, t: number, dt: number, now: number)
 			cf = CFrame.new(0, breathe + stepBob - deathT * s * 0.25 + lift + plant, 0) * CFrame.Angles(pitch, yaw, deathT * 1.35 + math.sin(tt * 1.3) * 0.02 + tremble * 0.5)
 		elseif k == "neck" then
 			local look = math.sin(tt * 0.7) * 0.15 * (1 - moving)
-			cf = CFrame.Angles(-strike * 0.45 + wind * 0.3 - roar * 0.5 + hurt * 0.2, look, 0)
+			local breath = action == "Breath" and 1 or 0 -- sopro: puxa a cabeça para trás e a projeta
+			cf = CFrame.Angles(-strike * (0.45 + breath * 0.25) + wind * (0.3 + breath * 0.25) - roar * 0.5 + hurt * 0.2, look, 0)
 		elseif k == "leg" then
 			local stride = entry.isBoss and 4 or 10
 			local swing = math.sin(tt * stride + j.phase) * 0.55 * moving
 			cf = CFrame.Angles(swing, 0, 0)
 		elseif k == "arm" then
 			local swing = math.sin(tt * 9 + (j.side > 0 and math.pi or 0)) * 0.45 * moving
-			local raise = -wind * 2.2 * (slam > 0 and 1 or 0.6) + strike * (slam > 0 and 1.2 or 0.9)
 			local idle = math.sin(tt * 2 + j.side) * 0.06
-			cf = CFrame.Angles(swing + raise + idle, 0, j.side * (0.1 + roar * 0.6))
+			-- cada golpe com seu gesto de braços (rx: frente/cima; rz: abrir para o lado)
+			local rx, rz
+			if slam > 0 then -- os dois punhos sobem e descem juntos
+				rx, rz = -wind * 2.2 + strike * 1.2, 0.1
+			elseif action == "Cast" then -- canaliza com as mãos para o alto e empurra para a frente
+				rx, rz = -wind * 2.5 - strike * 1.3, 0.1 + wind * 0.35 - strike * 0.25
+			elseif action == "Breath" then -- abre os braços e os joga para trás no sopro
+				rx, rz = -wind * 0.6 + strike * 0.5, 0.1 + wind * 0.8 + strike * 0.4
+			elseif sweep > 0 then -- o braço da frente abre para trás e corta atravessando o corpo
+				if j.side > 0 then
+					rx, rz = -wind * 0.9 - strike * 1.0, 0.1 + wind * 1.2 - strike * 1.6
+				else
+					rx, rz = -wind * 0.3, 0.1 + wind * 0.3
+				end
+			elseif action == "Roar" or action == "Intro" then -- braços abertos e erguidos
+				rx, rz = -wind * 1.2 - roar * 0.2, 0.1 + roar * 0.6
+			else -- golpe comum / investida (inimigos): sobe e bate
+				rx, rz = -wind * 1.3 + strike * 0.9, 0.1
+			end
+			cf = CFrame.Angles(swing + rx + idle, 0, j.side * rz)
 		elseif k == "wing" then
 			local rate = entry.flies and (6 + moving * 5) or (2 + moving * 6)
 			local amp = entry.flies and 0.55 or 0.2 + moving * 0.3
 			local flap = math.sin(tt * rate) * amp + roar * 0.6
+			if action == "Breath" or action == "Cast" then
+				flap += wind * 0.9 - strike * 1.2 -- asas erguidas na carga, batida forte no golpe
+			elseif sweep > 0 or action == "Dive" then
+				flap += wind * 0.4 - strike * 0.5
+			end
 			cf = CFrame.Angles(0, 0, j.side * flap)
 		elseif k == "tail" then
-			cf = CFrame.Angles(math.sin(tt * 2) * 0.08, math.sin(tt * 3.2 + j.idx) * 0.35, 0)
+			local whip = sweep * (wind * 0.7 - strike * 1.1) -- varrida: a cauda chicoteia junto
+			cf = CFrame.Angles(math.sin(tt * 2) * 0.08, math.sin(tt * 3.2 + j.idx) * 0.35 + whip, 0)
 		elseif k == "neckseg" then
 			-- pescoço articulado: cada segmento acompanha parte do movimento da cabeça, com ondulação suave
 			local sway = math.sin(tt * 1.3 - j.idx * 0.6) * 0.05
 			cf = CFrame.Angles(-strike * 0.12 + wind * 0.1 - roar * 0.14 + sway, math.sin(tt * 0.7 - j.idx * 0.3) * 0.06 * (1 - moving), 0)
 		elseif k == "tailseg" then
 			-- onda que percorre a cauda articulada (atrasada e mais suave a cada segmento)
-			cf = CFrame.Angles(math.sin(tt * 2 - j.idx * 0.6) * 0.05, math.sin(tt * 3.2 - j.idx * 0.9) * (0.16 + moving * 0.06), 0)
+			local whip = sweep * (wind * 0.25 - strike * 0.4) -- a varrida percorre a cauda
+			cf = CFrame.Angles(math.sin(tt * 2 - j.idx * 0.6) * 0.05, math.sin(tt * 3.2 - j.idx * 0.9) * (0.16 + moving * 0.06) + whip, 0)
 		elseif k == "lid" then
 			-- piscar: a cada ~3-5 s a pálpebra desce sobre o olho por ~0,15 s (fechada ao ser derrotado)
 			local cyc = (tt * 0.27 + entry.seed) % 1

@@ -1559,11 +1559,21 @@ local function retargetEnergy(server: Model, visual: Model)
 	setupEnergy(visual, server, true)
 end
 
--- Pés e tamanho do boss (para o círculo de runas e o pilar de luz).
-local function bossFootprint(model: Model): (Vector3, number)
+-- Pés e tamanho do boss (para o círculo de runas e o pilar de luz). Se o boss estiver no piso da arena
+-- (atributo ArenaCenter do servidor; o topo do piso fica 1 stud acima do centro), o círculo vai no piso:
+-- a base da caixa pode ficar um pouco abaixo dele (garras, raízes) e enterraria o círculo.
+local function bossFootprint(model: Model, src: Instance?): (Vector3, number)
 	local cf, size = model:GetBoundingBox()
 	local radius = math.clamp(math.max(size.X, size.Z) * 0.55, 6, 22)
-	return cf.Position - Vector3.new(0, size.Y / 2, 0), radius
+	local feet = cf.Position - Vector3.new(0, size.Y / 2, 0)
+	local arena = src and src:GetAttribute("ArenaCenter")
+	if typeof(arena) == "Vector3" then
+		local floorY = arena.Y + 1.0
+		if feet.Y < floorY + 6 then -- no chão (voando alto, fica sob o boss)
+			feet = Vector3.new(feet.X, floorY, feet.Z)
+		end
+	end
+	return feet, radius
 end
 
 -- Preparação de um ataque de boss (mesma linguagem dos poderes dos pets): círculo de runas girando sob o
@@ -1576,7 +1586,7 @@ bossStaging = function(model: Model, st, src: Instance, left: number)
 	if not cam or not core or not model.Parent then
 		return
 	end
-	local feet, radius = bossFootprint(model)
+	local feet, radius = bossFootprint(model, src)
 	-- distância até o boss do servidor (o visual novo fica no mesmo lugar; o pivô do servidor é sempre confiável)
 	local anchor = src:IsA("Model") and (src :: Model):GetPivot().Position or core.part.Position
 	local dist = (cam.CFrame.Position - anchor).Magnitude
@@ -1599,7 +1609,7 @@ bossStaging = function(model: Model, st, src: Instance, left: number)
 		if not model.Parent or src:GetAttribute("Dead") == true then
 			return
 		end
-		local f2 = bossFootprint(model)
+		local f2 = bossFootprint(model, src)
 		afterglow(f2 + Vector3.new(0, 1, 0), color, radius * 0.5)
 		if not lowVfx() and (cam.CFrame.Position - f2).Magnitude < 110 then
 			screenPulse(color)

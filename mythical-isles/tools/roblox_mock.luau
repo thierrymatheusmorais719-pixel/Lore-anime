@@ -583,10 +583,48 @@ function Inst.PivotTo(self, target)
 	end
 	self._pivot = target
 end
+-- Posições como o Roblox as veria: peças presas por Motor6D/Weld/WeldConstraint seguem a junta (Part1 = Part0 · C0 · Transform · C1⁻¹).
+-- O simulador não move peças por juntas, então a caixa usaria posições velhas (ex.: o molde do boss na origem).
+local function solvedCFrames(m)
+	local parts = modelParts(m)
+	local joints, child = {}, {}
+	for _, d in ipairs(m:GetDescendants()) do
+		local cls = d._props.ClassName
+		if (cls == "Motor6D" or cls == "Weld" or cls == "WeldConstraint") and d._props.Part0 and d._props.Part1 then
+			table.insert(joints, d)
+			child[d._props.Part1] = true
+		end
+	end
+	local cfs = {}
+	for _, p in ipairs(parts) do
+		if not child[p] then
+			cfs[p] = p._props.CFrame
+		end
+	end
+	local changed = #joints > 0
+	while changed do
+		changed = false
+		for _, j in ipairs(joints) do
+			local pr = j._props
+			if cfs[pr.Part0] and not cfs[pr.Part1] then
+				if pr.ClassName == "WeldConstraint" then
+					-- WeldConstraint guarda o deslocamento do momento em que foi ligada (as posições guardadas das duas peças)
+					cfs[pr.Part1] = cfs[pr.Part0] * (pr.Part0._props.CFrame:Inverse() * pr.Part1._props.CFrame)
+				else
+					local tr = (pr.ClassName == "Motor6D" and pr.Transform) or cf(0, 0, 0)
+					cfs[pr.Part1] = cfs[pr.Part0] * (pr.C0 or cf(0, 0, 0)) * tr * (pr.C1 or cf(0, 0, 0)):Inverse()
+				end
+				changed = true
+			end
+		end
+	end
+	return parts, cfs
+end
 function Inst.GetBoundingBox(self)
 	local mn, mx = v3(math.huge, math.huge, math.huge), v3(-math.huge, -math.huge, -math.huge)
-	for _, p in ipairs(modelParts(self)) do
-		local c, s = p._props.CFrame.p, p._props.Size
+	local parts, cfs = solvedCFrames(self)
+	for _, p in ipairs(parts) do
+		local c, s = (cfs[p] or p._props.CFrame).p, p._props.Size
 		mn = v3(math.min(mn.X, c.X - s.X / 2), math.min(mn.Y, c.Y - s.Y / 2), math.min(mn.Z, c.Z - s.Z / 2))
 		mx = v3(math.max(mx.X, c.X + s.X / 2), math.max(mx.Y, c.Y + s.Y / 2), math.max(mx.Z, c.Z + s.Z / 2))
 	end

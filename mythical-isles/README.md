@@ -443,9 +443,19 @@ Os **5 bosses** passam pelo mesmo processo (`PetRigs/boss_<id>`, ~18 mil triâng
 - **Encenação** (`Fx.luau`): círculo de runas sob o boss durante a preparação, energia convergindo para o núcleo no
   último segundo, cut-in de anime com o nome nos poderes e invocações (atributo `AttackPower` do servidor), pilar de
   luz e pulso na tela no golpe. Só perto da câmera; no modo de efeitos reduzidos, sem cut-in nem pulso.
-- **Prévia:** `python3 tools/run_tests.py luau --bossatk` roda o jogo no simulador, dispara uma pancada do Elderroot e
-  exporta o boss (modo de peças) em 6 instantes. `docs/preview/boss_ataque_3tempos.jpg` mostra o resultado. Foi essa
-  prévia que mostrou o boss flutuando na preparação e afundando no golpe, já corrigido.
+- **Gesto próprio por golpe:** pancada (os dois punhos sobem e descem), magia (mãos para o alto e empurra para a frente),
+  sopro (abre os braços, puxa a cabeça e a projeta; asas erguidas e batida forte), varrida (o braço da frente corta
+  atravessando o corpo e a cauda chicoteia junto), rugido (braços abertos e erguidos). Golpes comuns de inimigos
+  continuam com o gesto "sobe e bate".
+- **Círculo de runas no piso:** fica no topo do piso da arena (atributo `ArenaCenter`), não na base da caixa do boss,
+  que pode ficar um pouco abaixo dele (garras, raízes) e enterrava o círculo.
+- **Prévia:** `python3 tools/run_tests.py luau --bossatk` roda o jogo no simulador e, para os 5 bosses e 4 golpes cada,
+  exporta o boss (modo de peças) e os efeitos em 7 instantes. `docs/preview/bosses_golpes.jpg` e
+  `docs/preview/boss_ataque_3tempos.jpg` mostram o resultado. Foi essa prévia que mostrou o boss flutuando na preparação
+  e afundando no golpe, e golpes diferentes com o mesmo gesto, já corrigidos.
+- **Simulador mais fiel:** o `GetBoundingBox` do simulador agora segue as juntas (`Motor6D`, `Weld`, `WeldConstraint`),
+  como no Roblox. Antes ele usava as posições guardadas das peças e media o Tempest Wyrm com 185 studs de altura; com
+  isso o balanço de voo e o círculo de runas apareciam errados só no simulador.
 
 ### Ataques em 3 tempos (todos os pets)
 

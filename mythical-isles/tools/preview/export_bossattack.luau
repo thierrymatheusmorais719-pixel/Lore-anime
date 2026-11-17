@@ -1,7 +1,10 @@
--- Exporta quadros de um ATAQUE de boss (o jogo real no simulador: servidor, cliente, BossVisuals, Animator e Fx)
--- para a prévia em three.js. Dispara a pancada do Elderroot direto nos atributos do boss e grava o visual
--- anatômico (modo de peças) em instantes da preparação, do golpe e da acomodação, mais as peças de efeito.
--- Uso: python3 tools/run_tests.py luau --bossatk > saida.txt  (linhas "SCENE atk_<n> [...]" e "CAM ...")
+-- Exporta quadros de ATAQUES de bosses (o jogo real no simulador: servidor, cliente, BossVisuals, Animator e Fx)
+-- para a prévia em three.js. Para cada boss e cada tipo de golpe (pancada, varrida, magia, rugido, sopro,
+-- mergulho), dispara o ataque direto nos atributos do boss e grava o visual anatômico (modo de peças) em
+-- instantes da preparação, do golpe e da acomodação, mais as peças de efeito (círculo de runas etc.).
+-- Uso: python3 tools/run_tests.py luau --bossatk > saida.txt
+--   linhas "SCENE <boss>_<golpe>_<n> [...]" e "BOSSINFO <boss> x y z lookX lookZ altura chão"
+-- Variável BOSSATK_ONLY (texto no topo do arquivo, opcional) limita a um boss.
 local Worlds = require(__proxy("Shared/Config/Worlds"))
 for _, id in ipairs(Worlds.Order) do
 	local w = Worlds.Info[id]
@@ -12,22 +15,6 @@ SIM.run(0.5)
 local BossService = require(__proxy("Server/Services/BossService"))
 local p = SIM.addPlayer("Jogador", 1)
 SIM.run(1)
-local boss
-for _, b in ipairs(BossService.list()) do
-	if b.id == "elderroot" then
-		boss = b
-	end
-end
-assert(boss, "sem Elderroot")
--- jogador fora da arena (o boss fica dormindo) mas perto o bastante para o visual novo
-local bpos = boss.model.PrimaryPart.Position
-local toCenter = (bpos - boss.arena.center) * Vector3.new(1, 0, 1)
-local standDir = Vector3.new(0, 0, 1)
-if toCenter.Magnitude > 1 then
-	standDir = toCenter.Unit
-end
-SIM.teleport(p, boss.arena.center + Vector3.new(0, 4, 0) - standDir * (boss.arena.radius + 12))
-
 -- cliente
 local Players = game:GetService("Players")
 SIM.localPlayer = p
@@ -40,7 +27,7 @@ uis.TouchEnabled = false
 uis.KeyboardEnabled = true
 SIM.registerService("UserInputService", uis)
 local cam = Instance.new("Camera")
-cam.CFrame = CFrame.new(bpos + Vector3.new(30, 18, 40), bpos)
+cam.CFrame = CFrame.new(0, 50, 0)
 cam.ViewportSize = Vector2.new(1280, 720)
 cam.FieldOfView = 70
 workspace.CurrentCamera = cam
@@ -67,18 +54,7 @@ end
 -- modo de peças (o que aparece quando o Roblox não libera o EditableMesh)
 require(__proxy("Shared/Builders/PetMesh")).available = false
 __modules["Client/Main"](__proxy("Client/Main"))
-local BossVisuals = require(__proxy("Client/Controllers/BossVisuals"))
-local e
-for _ = 1, 80 do
-	frames(15)
-	e = BossVisuals.entries[boss.model]
-	if e and e.vis and e.vis.Parent == boss.model then
-		break
-	end
-end
-assert(e and e.vis, "o visual do boss não apareceu")
-local vis = e.vis
-
+local vis -- visual do boss sendo exportado
 local function num(x)
 	return string.format("%.3f", x)
 end
@@ -154,29 +130,82 @@ local function dump(name)
 	print("SCENE " .. name .. " [" .. table.concat(out, ",") .. "]")
 end
 
-local root = boss.model.PrimaryPart.Position
-print(string.format("BOSS %s %s %s", num(root.X), num(root.Y), num(root.Z)))
-local look = boss.model.PrimaryPart.CFrame.LookVector
-print(string.format("LOOK %s %s %s", num(look.X), num(look.Y), num(look.Z)))
-local ground = boss.arena.center.Y
-print(string.format("GROUND %s", num(ground)))
-frames(30)
-dump("atk_0_repouso")
--- pancada: 1,0 s de preparação
+
+local BossVisuals = require(__proxy("Client/Controllers/BossVisuals"))
+local Bosses = require(__proxy("Shared/Config/Bosses"))
+
+local PLAN = {
+	{ "elderroot", { "Slam", "Sweep", "Cast", "Roar" } },
+	{ "prism_titan", { "Slam", "Breath", "Cast", "Roar" } },
+	{ "tempest_wyrm", { "Breath", "Sweep", "Dive", "Roar" } },
+	{ "wilderbloom", { "Sweep", "Slam", "Cast", "Roar" } },
+	{ "void_sovereign", { "Slam", "Sweep", "Cast", "Roar" } },
+}
 local WIND = 1.0
-local t0 = workspace:GetServerTimeNow()
-boss.model:SetAttribute("Action", "Slam")
-boss.model:SetAttribute("ActionAt", t0)
-boss.model:SetAttribute("AttackLabel", "Pancada de Raízes")
-boss.model:SetAttribute("AttackPower", false)
-boss.model:SetAttribute("WindupEnd", t0 + WIND)
-local shots = { { 0.35, "atk_1_preparacao" }, { 0.92, "atk_2_carga" }, { WIND + 0.07, "atk_3_golpe" }, { WIND + 0.12, "atk_4_passa_do_ponto" },
-	{ WIND + 0.3, "atk_5_recuo" }, { WIND + 0.75, "atk_6_assenta" } }
-for _, s in ipairs(shots) do
-	while workspace:GetServerTimeNow() - t0 < s[1] do
-		frames(1)
+local SHOTS = { { -1, "0" }, { 0.45, "1" }, { 0.93, "2" }, { WIND + 0.07, "3" }, { WIND + 0.13, "4" }, { WIND + 0.32, "5" }, { WIND + 0.8, "6" } }
+
+for _, plan in ipairs(PLAN) do
+	local id = plan[1]
+	if BOSSATK_ONLY and BOSSATK_ONLY ~= id then
+		continue
 	end
-	dump(s[2])
+	local boss
+	for _, b in ipairs(BossService.list()) do
+		if b.id == id then
+			boss = b
+		end
+	end
+	if not boss then
+		print("INFO sem boss " .. id)
+		continue
+	end
+	local bpos = boss.model.PrimaryPart.Position
+	local toCenter = (bpos - boss.arena.center) * Vector3.new(1, 0, 1)
+	local standDir = toCenter.Magnitude > 1 and toCenter.Unit or Vector3.new(0, 0, 1)
+	SIM.teleport(p, boss.arena.center + Vector3.new(0, 4, 0) - standDir * (boss.arena.radius + 12))
+	cam.CFrame = CFrame.new(bpos + Vector3.new(30, 18, 40), bpos)
+	local e
+	for _ = 1, 120 do
+		frames(15)
+		e = BossVisuals.entries[boss.model]
+		if e and e.vis and e.vis.Parent == boss.model then
+			break
+		end
+	end
+	if not (e and e.vis) then
+		print("INFO visual não apareceu: " .. id)
+		continue
+	end
+	vis = e.vis
+	frames(20)
+	local root = boss.model.PrimaryPart
+	local look = root.CFrame.LookVector
+	local _, size = vis:GetBoundingBox()
+	print(string.format("BOSSINFO %s %s %s %s %s %s %s %s", id, num(root.Position.X), num(root.Position.Y), num(root.Position.Z), num(look.X), num(look.Z),
+		num(boss.cfg.size or size.Y), num(boss.arena.center.Y)))
+	for _, action in ipairs(plan[2]) do
+		local t0 = workspace:GetServerTimeNow()
+		for _, shot in ipairs(SHOTS) do
+			if shot[1] < 0 then
+				dump(string.format("%s_%s_%s", id, action, shot[2]))
+				boss.model:SetAttribute("Action", action)
+				boss.model:SetAttribute("AttackLabel", action)
+				boss.model:SetAttribute("AttackPower", false)
+				t0 = workspace:GetServerTimeNow()
+				boss.model:SetAttribute("ActionAt", t0)
+				boss.model:SetAttribute("WindupEnd", t0 + WIND)
+			else
+				while workspace:GetServerTimeNow() - t0 < shot[1] do
+					frames(1)
+				end
+				dump(string.format("%s_%s_%s", id, action, shot[2]))
+			end
+		end
+		-- volta ao repouso antes do próximo golpe
+		boss.model:SetAttribute("Action", nil)
+		frames(120)
+	end
+	local _ = Bosses
 end
 print("INFO erros " .. #SIM.errors)
 for _, er in ipairs(SIM.errors) do

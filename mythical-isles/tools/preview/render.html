@@ -123,6 +123,9 @@ if (ground === 'island_old') {
 } else if (ground !== 'terrain') {
   const floor = new THREE.Mesh(new THREE.CircleGeometry(400, 64), new THREE.MeshStandardMaterial({ color: q.get('floor') || '#8fd16a', roughness: .95 }));
   floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
+  if (q.get('floorY')) { // piso de arena em outra altura, centrado no que a câmera olha
+    const L = v3(q.get('look') || '0,0,0'); floor.position.set(L[0], Number(q.get('floorY')), L[2]);
+  }
 }
 const TCOL = { Grass: '#60a84a', Rock: '#6e645a', Sand: '#d2c396', Water: '#28c8cd', Slate: '#5a5a64', LeafyGrass: '#3a6246', Ground: '#7a6246', Basalt: '#2e2c3c', Cobblestone: '#807e92' };
 // Terrain voxelizado (aproxima o Terrain suave do Roblox): grade de 4 studs, preenchimentos aplicados
