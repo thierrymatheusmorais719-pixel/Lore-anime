@@ -192,6 +192,40 @@ for _, pnd in ipairs(pending) do
 	vis = pnd.e.model
 	dump(string.format("ea_%s_%s", pnd.e.id, pnd.tag))
 end
+-- OCIOSOS: no pico de cada comportamento (olhar, sacudir, farejar, rosnar, cauda) grava "ei_<inimigo>_<tipo>"
+do
+	local Animator = require(__proxy("Client/Controllers/Animator"))
+	for _, e in ipairs(list) do
+		e.model:SetAttribute("Action", nil)
+		e.model:SetAttribute("WindupEnd", 0)
+		e.model:SetAttribute("ActionAt", 0)
+	end
+	local want = { hollow_stag = true, briar_beast = true, prism_golem = true }
+	local got = {}
+	for _ = 1, 60 * 60 do
+		frames(1)
+		for _, e in ipairs(list) do
+			if want[e.id] then
+				local entry = Animator._tracked[e.model]
+				local ia = entry and entry.idleAct
+				if ia and ia.dur > 0 and entry.idleKind then
+					-- (o relógio do Animator é outro: mede desde quando este comportamento apareceu)
+					local key = e.id .. "_" .. entry.idleKind
+					e.since = e.since or {}
+					if e.lastIa ~= ia then
+						e.lastIa = ia
+						e.since[key] = os.clock()
+					end
+					if not got[key] and os.clock() - (e.since[key] or math.huge) >= ia.dur * 0.5 then
+						got[key] = true
+						vis = e.model
+						dump("ei_" .. key)
+					end
+				end
+			end
+		end
+	end
+end
 print("INFO erros " .. #SIM.errors)
 for _, er in ipairs(SIM.errors) do
 	print("INFO " .. er)

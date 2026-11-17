@@ -496,7 +496,8 @@ Antes, parados, eles só respiravam e mexiam a cabeça. Agora, de tempos em temp
 por vez, com entrada e saída suaves), cada um **olha ao redor**, **sacode o corpo**, **fareja o chão**, **rosna** de boca
 aberta tremendo ou **bate a cauda**, usando as juntas que já tem (`Animator`). Nada disso roda em ataque, movimento, dano
 ou queda. Teste no simulador: 5 inimigos parados por 40 s passam por 3+ comportamentos cada, os 5 tipos aparecem e
-ninguém afunda no chão.
+ninguém afunda no chão. `docs/preview/inimigos_ociosos.jpg` (pico de cada comportamento; quem não tem mandíbula, como o
+Hollow Stag, quase não mostra o rosnado).
 
 ### Troca de fase dos bosses e queda dos inimigos
 - **Troca de fase** (`Fx.bossPhase`, mensagem `Phase` do servidor): durante os 2,5 s de invulnerabilidade, um escudo de
