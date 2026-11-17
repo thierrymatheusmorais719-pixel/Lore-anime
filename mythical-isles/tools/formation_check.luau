@@ -163,3 +163,41 @@ for ti, species in ipairs(TEAMS) do
 	end
 end
 print("INFO erros " .. #SIM.errors)
+
+-- INIMIGOS: patrulhando nas zonas do Verdant Haven por 60 s, a menor folga entre dois inimigos vizinhos (informativo:
+-- o simulador não tem colisão; no Roblox a raiz dos inimigos que andam colide, o que evita sobreposições fundas)
+do
+	SIM.teleport(p, Vector3.new(0, 500, 0) + Worlds.Info.verdant.center) -- longe (sem perseguição)
+	local function rad(e)
+		local _, size = e.model:GetBoundingBox()
+		return math.max(size.X, size.Z) / 2
+	end
+	local worst, who = math.huge, ""
+	local pairsBad = {}
+	for k = 1, 120 do
+		SIM.run(0.5)
+		local list = {}
+		for _, e in ipairs(S.EnemyService.activeList()) do
+			if e.alive and e.world == "verdant" and e.model and e.model.Parent then
+				table.insert(list, e)
+			end
+		end
+		for i = 1, #list do
+			for j = i + 1, #list do
+				local a, b = list[i], list[j]
+				local gap = ((a.root.Position - b.root.Position) * Vector3.new(1, 0, 1)).Magnitude - rad(a) - rad(b)
+				if gap < worst then
+					worst, who = gap, a.id .. " × " .. b.id
+				end
+				if gap < -0.5 then
+					pairsBad[a.id .. "×" .. b.id] = true
+				end
+			end
+		end
+	end
+	local nb = 0
+	for _ in pairs(pairsBad) do
+		nb += 1
+	end
+	print(string.format("FORM inimigos patrulhando (60 s): menor folga %+.2f (%s); %d pares chegaram a se sobrepor", worst, who, nb))
+end

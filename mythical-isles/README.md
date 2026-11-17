@@ -503,6 +503,10 @@ behemoth) e −4,1 até numa equipe de pets pequenos atacando.
 - Medido: seguindo +0,8 stud de folga nas 3 equipes; atacando, em estado estável, +0,7 a +1,2. Na chegada (pets
   trocando de lugar por meio segundo) ainda há sobreposições de até −2,6 stud.
 
+Também mede os **inimigos** patrulhando (informativo: o simulador não tem colisão; no Roblox a raiz deles colide) e,
+em `--petground`, a altura dos **pets** em repouso: nenhuma das 164 espécies que andam flutua (pior +0,02 stud); a que
+mais afunda entra 0,21 stud no chão (behemoth; slimes 0,15, assentados).
+
 **Festinha de subir de nível:** a primeira subida de nível de cada pet não fazia a festa (o controle só era anotado
 depois da primeira mudança). O teste antigo passava por acaso, porque aquele pet já tinha subido de nível antes.
 

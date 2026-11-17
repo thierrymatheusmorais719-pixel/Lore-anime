@@ -77,6 +77,8 @@ def main():
         return run_sim(args[0] if args else "luau", "anim_check.luau")
     if "--animexport" in sys.argv:
         return run_sim(args[0] if args else "luau", os.path.join("preview", "export_anim.luau"))
+    if "--petground" in sys.argv:
+        return run_sim(args[0] if args else "luau", "pet_ground_check.luau")
     if "--formation" in sys.argv:
         return run_sim(args[0] if args else "luau", "formation_check.luau")
     if "--pacing" in sys.argv:
