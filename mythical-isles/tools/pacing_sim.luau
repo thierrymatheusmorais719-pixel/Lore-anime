@@ -233,11 +233,22 @@ local function fight(bossId: string)
 				table.insert(marks, d)
 			end
 		end
-		if #marks == 0 then
+		-- invocações do boss (brotos) que perseguem: o bot foge delas como foge dos avisos (raio de 8 studs)
+		local chasers = {}
+		for _, m in ipairs(boss.summons or {}) do
+			if m.alive and m.model and m.model.PrimaryPart then
+				table.insert(chasers, m.model.PrimaryPart.Position)
+			end
+		end
+		if #marks == 0 and #chasers == 0 then
 			return
 		end
 		local function danger(pos)
 			local worst = math.huge
+			for _, cpos in ipairs(chasers) do
+				local dd = ((cpos - pos) * Vector3.new(1, 0, 1)).Magnitude - 8
+				worst = math.min(worst, math.max(0, dd))
+			end
 			for _, m in ipairs(marks) do
 				local rel = m.CFrame:Inverse() * pos
 				-- distância até a "pegada" do aviso (caixa/cilindro achatado no chão)
