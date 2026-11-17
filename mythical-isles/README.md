@@ -915,6 +915,12 @@ dupla. O dano contra **jogadores** é separado (`pdmg`), porque os jogadores nã
 números ficam em `shared/Config/*`. Ajuste-os depois de jogar no Studio: essa calibragem precisa de
 partidas reais.
 
+**Ritmo de um jogador novo** (`python3 tools/run_tests.py luau --pacing`, servidor real no simulador): um bot nasce com
+150 moedas, choca o primeiro Ovo do Bosque e alterna minerar o recurso mais perto e atacar o inimigo mais perto,
+chocando ovos até ter 4 pets. Resultado (20 min simulados): ~600 moedas/min e ~40 essência/min depois dos primeiros
+minutos; equipe completa no 6º minuto; nível médio 8,8 aos 20 min; dinheiro do portal do Mundo 2 (2.500) aos 5,6 min.
+É otimista: o bot se teleporta até o alvo, um jogador real anda. Serve para comparar mudanças de balanceamento.
+
 ## 6. Testes: o que foi validado e como
 
 Ferramentas usadas: CLI oficial do Luau (`luau`, `luau-analyze`, `luau-compile`) 0.650, Rojo 7.4.4 e o
