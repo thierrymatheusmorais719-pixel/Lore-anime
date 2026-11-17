@@ -70,7 +70,8 @@ local function legPhase(name: string): number
 end
 
 -- APOIO no chão: pontos da pose de repouso (cantos das peças) relativos ao pivô da junta Body, no referencial da
--- raiz. Ao inclinar o corpo de θ em volta do eixo X do pivô, cada ponto vai para y·cos θ − z·sen θ; o Animator
+-- raiz (y, z, x). Ao inclinar o corpo (giro lateral r em Z, depois θ em X, como CFrame.Angles(θ, 0, r)), cada ponto
+-- vai para (x·sen r + y·cos r)·cos θ − z·sen θ; o Animator
 -- compara o ponto mais baixo inclinado com o de repouso e desloca o corpo pela diferença (pés, barra da túnica e
 -- ponta da cauda ficam acima do chão). As posições vêm das juntas (C0/C1, Weld, WeldConstraint) a partir da raiz,
 -- não das peças, para valer também antes do motor posicionar o modelo.
@@ -115,7 +116,7 @@ local function groundSupport(model: Model, root: BasePart): ({ number }?, number
 				for _, sy in ipairs({ -1, 1 }) do
 					for _, sz in ipairs({ -1, 1 }) do
 						local q = cf * Vector3.new(sx * h.X, sy * h.Y, sz * h.Z)
-						table.insert(all, { q.Y - pv.Y, q.Z - pv.Z })
+						table.insert(all, { q.Y - pv.Y, q.Z - pv.Z, q.X - pv.X })
 					end
 				end
 			end
@@ -126,12 +127,13 @@ local function groundSupport(model: Model, root: BasePart): ({ number }?, number
 	end
 	-- os mais baixos e os mais afastados do pivô decidem; fica com uma amostra (custo por quadro)
 	table.sort(all, function(x, y)
-		return x[1] - math.abs(x[2]) * 0.6 < y[1] - math.abs(y[2]) * 0.6
+		return x[1] - math.max(math.abs(x[2]), math.abs(x[3])) * 0.6 < y[1] - math.max(math.abs(y[2]), math.abs(y[3])) * 0.6
 	end)
 	local pts, low = {}, math.huge
 	for i = 1, math.min(#all, MAX_SUPPORT) do
 		table.insert(pts, all[i][1])
 		table.insert(pts, all[i][2])
+		table.insert(pts, all[i][3])
 		low = math.min(low, all[i][1])
 	end
 	return pts, low
@@ -336,14 +338,18 @@ local function animate(entry, t: number, dt: number, now: number)
 			local yaw = sweep * (wind * 0.55 - strike * 0.9) -- varrida: torce para um lado e chicoteia para o outro
 			-- pancada: sobe na ponta dos pés ao carregar (pouco: a junta do corpo leva as pernas junto)
 			local lift = slam * wind * math.min(0.03 * s, 0.25)
-			-- pés plantados: o ponto mais baixo depois de inclinar (pontos de groundSupport) volta para a altura de repouso
+			-- pés plantados: o ponto mais baixo depois de inclinar (pontos de groundSupport) volta para a altura de repouso.
+			-- Na queda (derrota) o corpo tomba de lado e DEITA no chão (antes afundava ¼ da altura no piso).
+			local roll = deathT * 1.35 + math.sin(tt * 1.3) * 0.02 + tremble * 0.5
 			local plant = 0
 			local pts = entry.supportPts
-			if pts and deathT <= 0 then
+			if pts then
 				local c, sn = math.cos(pitch), math.sin(pitch)
+				local cr, sr = math.cos(roll), math.sin(roll)
 				local lowNew = math.huge
-				for i = 1, #pts, 2 do
-					local y = pts[i] * c - pts[i + 1] * sn
+				for i = 1, #pts, 3 do
+					local y1 = pts[i + 2] * sr + pts[i] * cr
+					local y = y1 * c - pts[i + 1] * sn
 					if y < lowNew then
 						lowNew = y
 					end
@@ -352,8 +358,8 @@ local function animate(entry, t: number, dt: number, now: number)
 			end
 			-- giro (yaw) por último, em volta da vertical: girar antes de inclinar levava pernas laterais para a frente
 			-- e a inclinação as enfiava no chão
-			cf = CFrame.new(0, breathe + stepBob - deathT * s * 0.25 + lift + plant, 0) * CFrame.Angles(0, yaw, 0)
-				* CFrame.Angles(pitch, 0, deathT * 1.35 + math.sin(tt * 1.3) * 0.02 + tremble * 0.5)
+			local sinkNoPts = pts and 0 or deathT * s * 0.25 -- (sem pontos de apoio: o jeito antigo)
+			cf = CFrame.new(0, breathe + stepBob - sinkNoPts + lift + plant, 0) * CFrame.Angles(0, yaw, 0) * CFrame.Angles(pitch, 0, roll)
 		elseif k == "neck" then
 			local look = math.sin(tt * 0.7) * 0.15 * (1 - moving)
 			local breath = action == "Breath" and 1 or 0 -- sopro: puxa a cabeça para trás e a projeta

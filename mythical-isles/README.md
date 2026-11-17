@@ -449,6 +449,8 @@ Os **5 bosses** passam pelo mesmo processo (`PetRigs/boss_<id>`, ~18 mil triâng
     fixa deixava bosses afundando até 5 studs no piso (cauda do Tempest Wyrm, raízes da Wilderbloom, barra da túnica
     do Void Sovereign) e outros flutuando. Medido com `--bossatk` em 5 bosses × 4 golpes × 7 instantes: tudo entre
     −0,3 e +0,6 stud do piso, menos a ponta da cauda do Wyrm no balanço (até −1,3).
+  - **Queda:** ao ser derrotado o corpo tomba de lado e deita no chão (o cálculo do ponto mais baixo considera também o
+    giro lateral). Antes ele afundava um quarto da altura no piso: 0,6 a 3,4 studs nos inimigos (teste no simulador).
   - **Giro por último:** o giro da varrida é aplicado depois da inclinação (em volta da vertical); antes, girar primeiro
     levava pernas laterais para a frente e a inclinação as enfiava no chão.
   - **Respiração e voo:** quem anda respira sem levantar o corpo mais que 0,12 stud (antes ±0,6 num boss grande, com as

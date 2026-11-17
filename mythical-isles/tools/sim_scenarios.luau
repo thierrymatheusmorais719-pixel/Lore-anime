@@ -2414,9 +2414,35 @@ do
 				if math.abs(e.worst) > 0.6 then
 					table.insert(badW, string.format("%s %+.2f", e.id, e.worst))
 				end
-				e.m:Destroy()
 			end
 			check("inimigos: pés no chão andando (tolerância 0,6 stud)", #badW == 0 and #SIM.errors == b7, SIM.errors[b7 + 1] or table.concat(badW, ", "))
+			-- QUEDA: ao morrer o corpo tomba e deita no chão (não afunda no piso nem fica no ar)
+			local b8 = #SIM.errors
+			local tDead = workspace:GetServerTimeNow()
+			for _, e in ipairs(list) do
+				e.m:SetAttribute("Action", "Dead")
+				e.m:SetAttribute("ActionAt", tDead)
+				e.m:SetAttribute("Dead", true)
+				e.worst = 0
+			end
+			for _ = 1, 50 do -- 0,83 s: o tombo leva 0,8 s e o sumiço começa em 0,9 s
+				frames(1)
+				for _, e in ipairs(list) do
+					local cf, size = e.m:GetBoundingBox()
+					local bottom = cf.Position.Y - size.Y / 2
+					if math.abs(bottom) > math.abs(e.worst) then
+						e.worst = bottom
+					end
+				end
+			end
+			local badD = {}
+			for _, e in ipairs(list) do
+				if math.abs(e.worst) > 0.6 then
+					table.insert(badD, string.format("%s %+.2f", e.id, e.worst))
+				end
+				e.m:Destroy()
+			end
+			check("inimigos: ao cair derrotados, deitam no chão (tolerância 0,6 stud)", #badD == 0 and #SIM.errors == b8, SIM.errors[b8 + 1] or table.concat(badD, ", "))
 			cam.CFrame = oldCam
 		end)()
 	end
