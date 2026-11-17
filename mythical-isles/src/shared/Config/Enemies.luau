@@ -112,7 +112,9 @@ Enemies.Info = {
 
 	-- Invocações / evento (não aparecem nos spawns normais) --------------------
 	wilderbloom_sprout = {
-		name = "Bloomling Sprout", world = "wilds", level = 34, hp = 3000, atk = 110, def = 50, pdmg = 16, speed = 16, mover = "ground",
+		-- velocidade 13 (< 16 do jogador): dá para fugir dos brotos. Com 16 eles grudavam no jogador e, na simulação
+		-- --pacing, causavam 1468 de dano numa luta de 600 s (mais que todos os golpes do boss juntos).
+		name = "Bloomling Sprout", world = "wilds", level = 34, hp = 2400, atk = 110, def = 50, pdmg = 16, speed = 13, mover = "ground",
 		detect = 80, senseRadius = 80, leash = 90, maxChase = 60, count = 0, respawn = 0, xp = 60, summon = true,
 		attack = { kind = "melee", range = 6, cooldown = 1.6, windup = 0.45, mult = 1 },
 		model = "thornling", tint = Color3.fromRGB(200, 120, 220),

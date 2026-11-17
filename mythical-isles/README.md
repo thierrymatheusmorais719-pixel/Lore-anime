@@ -984,6 +984,23 @@ mundos novos não entram na equipe do bot: um Raro do Mundo 3 no nível 1 tem fo
 Mundo 1 evoluído no nível 26. Isso segue a regra do projeto de que "pet antigo evoluído continua competitivo" (há teste
 para isso); o multiplicador por mundo não foi mexido. Os tempos variam bastante entre execuções (equipes sorteadas).
 
+**Mundos 3 e 4 com a renda nova dos recursos** (nuvem 360, cogumelo 1450, fragmento 5700 moedas):
+
+| | Mundo 3 (30 min) | Mundo 4 (30 min) |
+|---|---|---|
+| Portal seguinte | 60 mil aos 30,1 min (antes ~80 min) | 250 mil **não alcançado** (o bot gasta em ovos; 57 cogumelos em 30 min) |
+| Equipe | DPS 492, 4 pets evoluídos (nível 28) | DPS 515 (nível 30) |
+| Boss sozinho | Tempest Wyrm 158 s, 0,8× a vida | The Wilderbloom **não derrotada em 600 s**, 11,6× a vida, 118 nocautes de pets |
+
+Dano no jogador por fonte na luta da Wilderbloom: brotos invocados 1468, Cruz de Espinhos 328, Leque de Pétalas 207,
+Laço de Vinhas 199. Os brotos corriam a 16 studs/s, a mesma velocidade do jogador, então não dava para fugir deles;
+passaram a 13 studs/s, 2400 de vida (era 3000) e no máximo 4 vivos (eram 6). Essa luta ainda **não foi simulada de
+novo** com a mudança. O bot só mira o boss (um jogador mirando os brotos se sairia melhor); o Mundo 4 segue como o
+ponto mais difícil do ritmo e o portal do Mundo 5 (250 mil) é o próximo ajuste a avaliar.
+
+O bot de desvio passou a ir para o ponto seguro **mais perto** (antes ia para o mais longe da arena e atravessava as
+faixas do leque no caminho: a Refração Tripla causou 301 de dano na luta do Prism Titan medida acima).
+
 Sem desviar (`DODGE_BOT = false`), o Elderroot causaria 5,3× a vida: o boss é acessível para quem lê os avisos e
 pune quem fica parado. A mineração rende ~0,1 moeda por ponto de vida do recurso em todos os mundos; no Mundo 2 cada
 cristal tem 7× mais vida, então o bot quebra menos recursos e compensa lutando.
