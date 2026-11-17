@@ -69,6 +69,74 @@ local function legPhase(name: string): number
 	return LEG_PHASE[name:sub(4)] or 0
 end
 
+-- APOIO no chão: pontos da pose de repouso (cantos das peças) relativos ao pivô da junta Body, no referencial da
+-- raiz. Ao inclinar o corpo de θ em volta do eixo X do pivô, cada ponto vai para y·cos θ − z·sen θ; o Animator
+-- compara o ponto mais baixo inclinado com o de repouso e desloca o corpo pela diferença (pés, barra da túnica e
+-- ponta da cauda ficam acima do chão). As posições vêm das juntas (C0/C1, Weld, WeldConstraint) a partir da raiz,
+-- não das peças, para valer também antes do motor posicionar o modelo.
+local MAX_SUPPORT = 320
+local function groundSupport(model: Model, root: BasePart): ({ number }?, number?)
+	local rel: { [BasePart]: CFrame } = { [root] = CFrame.identity }
+	local joints = {}
+	for _, d in ipairs(model:GetDescendants()) do
+		if (d:IsA("Motor6D") or d:IsA("Weld") or d:IsA("WeldConstraint")) and d.Part0 and d.Part1 then
+			table.insert(joints, d)
+		end
+	end
+	local bodyPivot: Vector3? = nil
+	local changed = true
+	while changed do
+		changed = false
+		for _, j in ipairs(joints) do
+			local p0, p1 = j.Part0 :: BasePart, j.Part1 :: BasePart
+			if rel[p0] and not rel[p1] then
+				if j:IsA("WeldConstraint") then
+					rel[p1] = rel[p0] * (p0.CFrame:ToObjectSpace(p1.CFrame))
+				else
+					local jj = j :: Motor6D
+					rel[p1] = rel[p0] * jj.C0 * jj.C1:Inverse()
+					if jj.Name == "Body" then
+						bodyPivot = (rel[p0] * jj.C0).Position
+					end
+				end
+				changed = true
+			end
+		end
+	end
+	if not bodyPivot then
+		return nil, nil
+	end
+	local pv = bodyPivot :: Vector3
+	local all = {}
+	for part, cf in pairs(rel) do
+		if part ~= root and part.Transparency < 0.95 then
+			local h = part.Size / 2
+			for _, sx in ipairs({ -1, 1 }) do
+				for _, sy in ipairs({ -1, 1 }) do
+					for _, sz in ipairs({ -1, 1 }) do
+						local q = cf * Vector3.new(sx * h.X, sy * h.Y, sz * h.Z)
+						table.insert(all, { q.Y - pv.Y, q.Z - pv.Z })
+					end
+				end
+			end
+		end
+	end
+	if #all == 0 then
+		return nil, nil
+	end
+	-- os mais baixos e os mais afastados do pivô decidem; fica com uma amostra (custo por quadro)
+	table.sort(all, function(x, y)
+		return x[1] - math.abs(x[2]) * 0.6 < y[1] - math.abs(y[2]) * 0.6
+	end)
+	local pts, low = {}, math.huge
+	for i = 1, math.min(#all, MAX_SUPPORT) do
+		table.insert(pts, all[i][1])
+		table.insert(pts, all[i][2])
+		low = math.min(low, all[i][1])
+	end
+	return pts, low
+end
+
 -- source: modelo de onde vêm os atributos (Action, WindupEnd, Dead...). O visual novo dos bosses
 -- (BossVisuals) é animado aqui com os atributos do boss do servidor.
 local function track(model: Model, source: Model?)
@@ -111,6 +179,7 @@ local function track(model: Model, source: Model?)
 		scale = math.max(size.Y, 2), isBoss = src:GetAttribute("BossId") ~= nil, prism = nil, faded = false,
 		flies = src:GetAttribute("Flies") == true or src:GetAttribute("Rig") == "floater" or src:GetAttribute("BossId") == "tempest_wyrm",
 	}
+	entry.supportPts, entry.supportLow = groundSupport(model, root)
 	if model:GetAttribute("PrismaticCycle") then
 		entry.prism = {}
 		for _, d in ipairs(model:GetDescendants()) do
@@ -250,7 +319,10 @@ local function animate(entry, t: number, dt: number, now: number)
 		end
 	end
 
-	local bobAmp = (entry.flies and 0.25 or 0.06) * s * 0.3
+	-- quem anda não pode subir o corpo inteiro (as pernas vão junto e saem do chão): respiração bem curta
+	-- voando de verdade: criaturas voadoras e, nos bosses, só na fase aérea (o Tempest Wyrm começa pousado)
+	local flying = entry.flies and (not entry.isBoss or src:GetAttribute("Airborne") == true)
+	local bobAmp = flying and 0.25 * s * 0.3 or math.min(0.06 * s * 0.3, 0.12)
 	local breathe = math.sin(tt * (entry.isBoss and 1.4 or 2.6)) * bobAmp
 	local stepBob = math.abs(math.sin(tt * 9)) * 0.12 * moving * s * 0.2
 
@@ -258,13 +330,30 @@ local function animate(entry, t: number, dt: number, now: number)
 		local k = j.kind
 		local cf = CFrame.identity
 		if k == "body" then
-			local pitch = -wind * 0.25 + strike * 0.35 - hurt * 0.25 + roar * -0.15 + tremble
+			-- θ > 0 inclina o corpo para TRÁS (o modelo olha para −Z): na preparação recua/enrola, no golpe projeta-se
+			-- para a frente; dano e rugido jogam para trás
+			local pitch = wind * 0.25 - strike * 0.35 + hurt * 0.25 + roar * 0.15 + tremble
 			local yaw = sweep * (wind * 0.55 - strike * 0.9) -- varrida: torce para um lado e chicoteia para o outro
 			-- pancada: sobe na ponta dos pés ao carregar (pouco: a junta do corpo leva as pernas junto)
-			local lift = slam * wind * 0.03 * s
-			-- pés plantados: inclinar o corpo em volta do quadril levanta os pés; desce o mesmo tanto
-			local plant = -(s * 0.45) * (1 - math.cos(math.min(math.abs(pitch), 0.6)))
-			cf = CFrame.new(0, breathe + stepBob - deathT * s * 0.25 + lift + plant, 0) * CFrame.Angles(pitch, yaw, deathT * 1.35 + math.sin(tt * 1.3) * 0.02 + tremble * 0.5)
+			local lift = slam * wind * math.min(0.03 * s, 0.25)
+			-- pés plantados: o ponto mais baixo depois de inclinar (pontos de groundSupport) volta para a altura de repouso
+			local plant = 0
+			local pts = entry.supportPts
+			if pts and deathT <= 0 then
+				local c, sn = math.cos(pitch), math.sin(pitch)
+				local lowNew = math.huge
+				for i = 1, #pts, 2 do
+					local y = pts[i] * c - pts[i + 1] * sn
+					if y < lowNew then
+						lowNew = y
+					end
+				end
+				plant = entry.supportLow - lowNew
+			end
+			-- giro (yaw) por último, em volta da vertical: girar antes de inclinar levava pernas laterais para a frente
+			-- e a inclinação as enfiava no chão
+			cf = CFrame.new(0, breathe + stepBob - deathT * s * 0.25 + lift + plant, 0) * CFrame.Angles(0, yaw, 0)
+				* CFrame.Angles(pitch, 0, deathT * 1.35 + math.sin(tt * 1.3) * 0.02 + tremble * 0.5)
 		elseif k == "neck" then
 			local look = math.sin(tt * 0.7) * 0.15 * (1 - moving)
 			local breath = action == "Breath" and 1 or 0 -- sopro: puxa a cabeça para trás e a projeta
@@ -297,8 +386,8 @@ local function animate(entry, t: number, dt: number, now: number)
 			end
 			cf = CFrame.Angles(swing + rx + idle, 0, j.side * rz)
 		elseif k == "wing" then
-			local rate = entry.flies and (6 + moving * 5) or (2 + moving * 6)
-			local amp = entry.flies and 0.55 or 0.2 + moving * 0.3
+			local rate = flying and (6 + moving * 5) or (2 + moving * 6)
+			local amp = flying and 0.55 or 0.2 + moving * 0.3
 			local flap = math.sin(tt * rate) * amp + roar * 0.6
 			if action == "Breath" or action == "Cast" then
 				flap += wind * 0.9 - strike * 1.2 -- asas erguidas na carga, batida forte no golpe

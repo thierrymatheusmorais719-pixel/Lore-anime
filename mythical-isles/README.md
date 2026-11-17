@@ -439,7 +439,21 @@ Os **5 bosses** passam pelo mesmo processo (`PetRigs/boss_<id>`, ~18 mil triâng
   - golpe: estalo de 0,12 s que passa do ponto;
   - acomodação: 0,55 s de oscilação amortecida (recua um pouco antes de parar).
   - Varrida torce o corpo para um lado e chicoteia para o outro; pancada sobe na ponta dos pés; sopro segura a boca aberta.
-  - **Pés plantados:** a junta do corpo leva as pernas junto, então o corpo desce o quanto a inclinação levantaria os pés.
+  - **Sentido da inclinação corrigido:** o modelo olha para −Z, então inclinar com ângulo positivo em X joga o corpo
+    para TRÁS. O código antigo usava o contrário: na preparação o boss se debruçava para a frente e no golpe empinava
+    para trás (e o "levar dano" se inclinava para a frente). Agora recua na preparação, projeta-se no golpe e recua ao
+    levar dano (medido na prévia: a cabeça vai para trás na preparação e para a frente no golpe).
+  - **Pés plantados com a geometria real** (`groundSupport`): ao montar o rastreio, o Animator guarda até 320 pontos da
+    pose de repouso (cantos das peças, calculados pelas juntas a partir da raiz) relativos ao pivô do corpo; a cada
+    quadro calcula o ponto mais baixo depois da inclinação e desloca o corpo pela diferença. Antes, uma estimativa
+    fixa deixava bosses afundando até 5 studs no piso (cauda do Tempest Wyrm, raízes da Wilderbloom, barra da túnica
+    do Void Sovereign) e outros flutuando. Medido com `--bossatk` em 5 bosses × 4 golpes × 7 instantes: tudo entre
+    −0,3 e +0,6 stud do piso, menos a ponta da cauda do Wyrm no balanço (até −1,3).
+  - **Giro por último:** o giro da varrida é aplicado depois da inclinação (em volta da vertical); antes, girar primeiro
+    levava pernas laterais para a frente e a inclinação as enfiava no chão.
+  - **Respiração e voo:** quem anda respira sem levantar o corpo mais que 0,12 stud (antes ±0,6 num boss grande, com as
+    pernas saindo do chão); o balanço de voo do Tempest Wyrm só vale na fase aérea (antes ele balançava ±2,8 studs
+    pousado).
 - **Encenação** (`Fx.luau`): círculo de runas sob o boss durante a preparação, energia convergindo para o núcleo no
   último segundo, cut-in de anime com o nome nos poderes e invocações (atributo `AttackPower` do servidor), pilar de
   luz e pulso na tela no golpe. Só perto da câmera; no modo de efeitos reduzidos, sem cut-in nem pulso.

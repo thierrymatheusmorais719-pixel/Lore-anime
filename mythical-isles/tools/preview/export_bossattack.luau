@@ -70,7 +70,18 @@ local function partJson(d, cf)
 	end
 	local col = d.Color or Color3.new(0.6, 0.6, 0.6)
 	local r = cf.r
-	return string.format('{"s":"%s","z":[%s,%s,%s],"p":[%s,%s,%s],"r":[%s],"c":[%d,%d,%d],"m":"%s","t":%s,"l":0}', shape,
+	-- "n": nome da peça e da junta que a move (para achar quem atravessa o chão)
+	local jn = ""
+	for _, j in ipairs(d:GetChildren()) do
+		if j.ClassName == "Motor6D" or j.ClassName == "Weld" then
+			jn = j.Name
+		end
+	end
+	local wc = d:FindFirstChildOfClass("WeldConstraint")
+	if jn == "" and wc and wc.Part0 then
+		jn = wc.Part0.Name
+	end
+	return string.format('{"n":"%s/%s","s":"%s","z":[%s,%s,%s],"p":[%s,%s,%s],"r":[%s],"c":[%d,%d,%d],"m":"%s","t":%s,"l":0}', d.Name, jn, shape,
 		num(d.Size.X), num(d.Size.Y), num(d.Size.Z), num(cf.p.X), num(cf.p.Y), num(cf.p.Z),
 		table.concat({ num(r[1]), num(r[2]), num(r[3]), num(r[4]), num(r[5]), num(r[6]), num(r[7]), num(r[8]), num(r[9]) }, ","),
 		math.floor(col.R * 255 + 0.5), math.floor(col.G * 255 + 0.5), math.floor(col.B * 255 + 0.5),
@@ -124,7 +135,7 @@ local function dump(name)
 	local fx = cam:FindFirstChild("LocalFx")
 	for _, d in ipairs(fx and fx:GetDescendants() or {}) do
 		if d:IsA("BasePart") and (d.Transparency or 0) < 0.98 then
-			table.insert(out, partJson(d, d.CFrame))
+			table.insert(out, (partJson(d, d.CFrame):gsub("}$", ',"fx":1}'))) -- peça de efeito (não é o corpo)
 		end
 	end
 	print("SCENE " .. name .. " [" .. table.concat(out, ",") .. "]")
