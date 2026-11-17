@@ -738,9 +738,13 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 		end
 	end
 	-- subiu de nível (o servidor marca LevelUpAt): festinha
+	-- (no primeiro quadro só anota o valor atual; antes, sem nenhum LevelUpAt anterior, a anotação nunca acontecia e a
+	-- PRIMEIRA subida de nível de cada pet não fazia festa)
 	local lvAt = src:GetAttribute("LevelUpAt") or 0
-	if lvAt ~= (entry.lastLevelUp or 0) then
-		if entry.lastLevelUp ~= nil and now - lvAt < 2 then
+	if entry.lastLevelUp == nil then
+		entry.lastLevelUp = lvAt
+	elseif lvAt ~= entry.lastLevelUp then
+		if now - lvAt < 2 then
 			entry.partyAt = os.clock()
 		end
 		entry.lastLevelUp = lvAt

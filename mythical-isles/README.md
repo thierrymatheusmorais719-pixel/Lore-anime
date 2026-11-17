@@ -491,6 +491,21 @@ primeiros segmentos; no golpe se projeta para a frente com a cabeça descendo (a
 compensação do "erguer"). `docs/preview/serpente_bote.jpg`. Os outros pets conferidos (raposa, gato, coelho, coruja,
 macaco, lobo, cervo, mamute, dragãozinho, besouro, leão) já recuavam na preparação e avançavam no golpe.
 
+### Formação dos pets pelo tamanho
+`python3 tools/run_tests.py luau --formation` (servidor real) põe equipes de tamanhos bem diferentes para seguir o dono,
+atacar e minerar, e mede a folga entre os pets (distância menos a soma dos "raios" de cada um). Antes, as posições eram
+fixas e os pets entravam uns nos outros em todas as situações: até −4,4 stud seguindo, −9,2 atacando (mamute ×
+behemoth) e −4,1 até numa equipe de pets pequenos atacando.
+- **Seguindo:** fileiras de 2 atrás do dono, afastadas pelo tamanho real de cada pet (`followOffsets`).
+- **Atacando/minerando:** leque em volta do alvo/recurso; o ângulo entre vizinhos é o necessário para caberem lado a lado
+  (`arcPositions`), centrado no lado onde o grupo já está (ninguém contorna o alvo correndo).
+- **Separação:** destinos e posições atuais de dois pets perto demais se afastam (trânsito e alvos vizinhos).
+- Medido: seguindo +0,8 stud de folga nas 3 equipes; atacando, em estado estável, +0,7 a +1,2. Na chegada (pets
+  trocando de lugar por meio segundo) ainda há sobreposições de até −2,6 stud.
+
+**Festinha de subir de nível:** a primeira subida de nível de cada pet não fazia a festa (o controle só era anotado
+depois da primeira mudança). O teste antigo passava por acaso, porque aquele pet já tinha subido de nível antes.
+
 ### Inimigos e bosses vivos quando parados
 Antes, parados, eles só respiravam e mexiam a cabeça. Agora, de tempos em tempos (a cada 4–10 s, um comportamento
 por vez, com entrada e saída suaves), cada um **olha ao redor**, **sacode o corpo**, **fareja o chão**, **rosna** de boca

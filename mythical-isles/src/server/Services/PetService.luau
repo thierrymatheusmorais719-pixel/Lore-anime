@@ -209,6 +209,11 @@ function PetService.spawnTeam(player: Player)
 				abilityReadyAt = prev and prev.abilityReadyAt or 0, hasteUntil = 0, mode = "follow",
 				goal = nil, lastCombatAt = prev and prev.lastCombatAt or 0,
 			}
+			-- "raio" do pet no chão (metade do maior lado da caixa): a formação usa para um não entrar no outro
+			do
+				local ext = model:GetExtentsSize()
+				state.radius = math.max(ext.X, ext.Z) / 2
+			end
 			model.Name = "Pet_" .. uid
 			model:SetAttribute("Owner", player.UserId)
 			model:SetAttribute("Uid", uid)
@@ -267,6 +272,61 @@ end
 
 local FORMATION = { Vector3.new(-4, 0, 5), Vector3.new(4, 0, 5), Vector3.new(-7, 0, 9), Vector3.new(7, 0, 9) }
 
+-- FORMAÇÃO pelo tamanho de cada pet (antes as posições eram fixas e pets grandes entravam uns nos outros: até
+-- 9,6 studs de sobreposição com mamute + behemoth, medido em tools/formation_check.luau).
+local GAP = 0.8 -- folga entre dois pets
+local OWNER_R = 1.5
+
+-- Seguindo: fileiras de 2 atrás do dono (+Z no referencial do dono = atrás), afastadas pelo tamanho.
+local function followOffsets(list): { [any]: Vector3 }
+	local out = {}
+	local z, prevMax = OWNER_R + GAP, 0
+	for i = 1, #list, 2 do
+		local a, b = list[i], list[i + 1]
+		local ra, rb = a.radius or 2, b and (b.radius or 2) or 0
+		local rmax = math.max(ra, rb)
+		z += prevMax + rmax + (i > 1 and GAP or 0)
+		if b then
+			out[a] = Vector3.new(-(ra + GAP / 2), 0, z)
+			out[b] = Vector3.new(rb + GAP / 2, 0, z)
+		else
+			out[a] = Vector3.new(0, 0, z)
+		end
+		prevMax = rmax
+	end
+	return out
+end
+
+-- Em volta de um ponto (alvo ou recurso): cada pet na sua distância R (do centro), lado a lado em leque centrado em
+-- `dir`; o ângulo entre vizinhos garante que caibam: corda = rA + rB + folga, no menor dos dois raios.
+local function arcPositions(group, center: Vector3, dir: Vector3, radiusOf): { [any]: Vector3 }
+	local out = {}
+	local n = #group
+	if n == 0 then
+		return out
+	end
+	local R = {}
+	for i, st in ipairs(group) do
+		R[i] = radiusOf(st)
+	end
+	local steps, total = {}, 0
+	for i = 2, n do
+		local rr = math.max(math.min(R[i - 1], R[i]), 0.5)
+		local chord = (group[i - 1].radius or 2) + (group[i].radius or 2) + GAP
+		local step = 2 * math.asin(math.min(1, chord / (2 * rr)))
+		steps[i] = step
+		total += step
+	end
+	local a = math.atan2(dir.Z, dir.X) - total / 2
+	for i, st in ipairs(group) do
+		if i > 1 then
+			a += steps[i]
+		end
+		out[st] = center + Vector3.new(math.cos(a), 0, math.sin(a)) * R[i]
+	end
+	return out
+end
+
 local function updateMovement(dt: number)
 	local excludes = { workspace:FindFirstChild("Pets"), workspace:FindFirstChild("Enemies"), workspace:FindFirstChild("Bosses"), workspace:FindFirstChild("Telegraphs"), workspace:FindFirstChild("Fx"), workspace:FindFirstChild("Treasures") }
 	for _, p in ipairs(Players:GetPlayers()) do
@@ -279,6 +339,101 @@ local function updateMovement(dt: number)
 	for player, list in pairs(teams) do
 		local oroot = ownerRoot(player)
 		if oroot then
+			-- posições da formação pelo tamanho (seguindo / em volta de cada alvo / de cada recurso)
+			local follow = {}
+			local byTarget, byNode, order = {}, {}, {}
+			for _, st in ipairs(list) do
+				if st.model and st.model.Parent then
+					local knocked0 = now < st.knockedUntil
+					if (not knocked0) and st.target and st.target.alive and st.target.root then
+						local key = st.target
+						if not byTarget[key] then
+							byTarget[key] = {}
+							table.insert(order, { kind = "t", key = key })
+						end
+						table.insert(byTarget[key], st)
+					elseif st.mineTarget and st.mineTarget.Parent then
+						local key = st.mineTarget
+						if not byNode[key] then
+							byNode[key] = {}
+							table.insert(order, { kind = "n", key = key })
+						end
+						table.insert(byNode[key], st)
+					else
+						table.insert(follow, st)
+					end
+				end
+			end
+			local spot = {}
+			for st, off in pairs(followOffsets(follow)) do
+				spot[st] = (oroot.CFrame * CFrame.new(off)).Position
+			end
+			-- lado do leque: onde o grupo já está (média das posições; ninguém contorna o alvo correndo); sem lado
+			-- definido, o lado do dono
+			local function groupSide(group, c: Vector3): Vector3
+				local sum = Vector3.zero
+				for _, s2 in ipairs(group) do
+					local v = (s2.root.Position - c) * Vector3.new(1, 0, 1)
+					if v.Magnitude > 0.1 then
+						sum += v.Unit
+					end
+				end
+				if sum.Magnitude > 0.2 then
+					return sum.Unit
+				end
+				local o = (oroot.Position - c) * Vector3.new(1, 0, 1)
+				return o.Magnitude > 0.1 and o.Unit or Vector3.new(1, 0, 0)
+			end
+			for _, g in ipairs(order) do
+				if g.kind == "t" then
+					local tgt = g.key
+					local tp = tgt.root.Position
+					local dir = groupSide(byTarget[tgt], tp)
+					for st, pos in pairs(arcPositions(byTarget[tgt], tp, dir, function(s2)
+						return math.max(s2.stats.range * 0.75, 3) + (tgt.radius or 2) + (s2.radius or 2) * 0.5
+					end)) do
+						spot[st] = pos
+					end
+				else
+					local node = g.key
+					local np = node:GetPivot().Position
+					local ext = node:GetExtentsSize()
+					local nodeR = math.max(ext.X, ext.Z) / 2
+					local dir = groupSide(byNode[node], np)
+					for st, pos in pairs(arcPositions(byNode[node], np, dir, function(s2)
+						return nodeR + (s2.radius or 2) + GAP
+					end)) do
+						spot[st] = pos
+					end
+				end
+			end
+			-- separação: destinos (e posições atuais) de dois pets mais perto que a soma dos raios se afastam; cobre o
+			-- trânsito (um passando pelo outro) e grupos em alvos vizinhos
+			local alive = {}
+			for _, st in ipairs(list) do
+				if spot[st] and st.root then
+					table.insert(alive, st)
+				end
+			end
+			for _ = 1, 3 do
+				for i = 1, #alive do
+					for j = i + 1, #alive do
+						local a, b = alive[i], alive[j]
+						local need = (a.radius or 2) + (b.radius or 2) + GAP
+						-- usa o mais perto entre os destinos e as posições atuais
+						local d1 = (spot[b] - spot[a]) * Vector3.new(1, 0, 1)
+						local d2 = (b.root.Position - a.root.Position) * Vector3.new(1, 0, 1)
+						local delta = d1.Magnitude < d2.Magnitude and d1 or d2
+						local dist = delta.Magnitude
+						if dist < need then
+							local dirv = dist > 0.05 and delta.Unit or Vector3.new(1, 0, 0)
+							local push = (need - dist) / 2
+							spot[a] -= dirv * push
+							spot[b] += dirv * push
+						end
+					end
+				end
+			end
 			for _, st in ipairs(list) do
 				if st.model and st.model.Parent and st.align then
 					local desired: Vector3
@@ -286,24 +441,14 @@ local function updateMovement(dt: number)
 					local knocked = now < st.knockedUntil
 					local tgtPos = (not knocked) and st.target and st.target.alive and st.target.root and st.target.root.Position
 					if tgtPos then
-						local stop = math.max(st.stats.range * 0.75, 3) + (st.target.radius or 2)
-						local from = st.root.Position
-						local dir = (from - tgtPos) * Vector3.new(1, 0, 1)
-						if dir.Magnitude < 0.1 then
-							dir = Vector3.new(1, 0, 0)
-						end
-						-- espalha os pets ao redor do alvo para não empilharem
-						local spread = CFrame.Angles(0, (st.slot - 2.5) * 0.5, 0):VectorToWorldSpace(dir.Unit)
-						desired = tgtPos + spread * stop
+						desired = spot[st] or tgtPos
 						face = tgtPos
 					elseif st.mineTarget and st.mineTarget.Parent then
 						local rp = st.mineTarget:GetPivot().Position
-						local a = st.slot / 4 * math.pi * 2
-						desired = rp + Vector3.new(math.cos(a), 0, math.sin(a)) * 5
+						desired = spot[st] or rp
 						face = rp
 					else
-						local off = FORMATION[st.slot] or Vector3.new(0, 0, 8)
-						desired = (oroot.CFrame * CFrame.new(off)).Position
+						desired = spot[st] or (oroot.CFrame * CFrame.new(FORMATION[st.slot] or Vector3.new(0, 0, 8))).Position
 					end
 					-- coleira: nunca longe demais do dono
 					local toOwner = (desired - oroot.Position) * Vector3.new(1, 0, 1)
