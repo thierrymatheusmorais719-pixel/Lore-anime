@@ -2385,10 +2385,38 @@ do
 				if math.abs(e.worst) > 0.6 then
 					table.insert(bad, string.format("%s %+.2f", e.id, e.worst))
 				end
-				e.m:Destroy()
 			end
 			check(string.format("inimigos: pés no chão durante o ataque (%d que andam, tolerância 0,6 stud)", #list), #bad == 0 and #SIM.errors == b6,
 				SIM.errors[b6 + 1] or table.concat(bad, ", "))
+			-- andando na velocidade da config (a raiz anda; o Animator mexe as pernas pela velocidade)
+			local b7 = #SIM.errors
+			for _, e in ipairs(list) do
+				e.m:SetAttribute("Action", nil)
+				e.m:SetAttribute("WindupEnd", 0)
+				e.worst = 0
+			end
+			frames(30)
+			for _ = 1, 90 do
+				for _, e in ipairs(list) do
+					e.m:PivotTo(e.m:GetPivot() * CFrame.new(0, 0, -(e.cfg.speed or 10) / 60))
+				end
+				frames(1)
+				for _, e in ipairs(list) do
+					local cf, size = e.m:GetBoundingBox()
+					local bottom = cf.Position.Y - size.Y / 2
+					if math.abs(bottom) > math.abs(e.worst) then
+						e.worst = bottom
+					end
+				end
+			end
+			local badW = {}
+			for _, e in ipairs(list) do
+				if math.abs(e.worst) > 0.6 then
+					table.insert(badW, string.format("%s %+.2f", e.id, e.worst))
+				end
+				e.m:Destroy()
+			end
+			check("inimigos: pés no chão andando (tolerância 0,6 stud)", #badW == 0 and #SIM.errors == b7, SIM.errors[b7 + 1] or table.concat(badW, ", "))
 			cam.CFrame = oldCam
 		end)()
 	end
@@ -2750,6 +2778,19 @@ do
 		local here = lp.Character.PrimaryPart.Position
 		local petModel = workspace.Pets:FindFirstChildWhichIsA("Model", true)
 		local missing, okSig, errSig = {}, true, nil
+		-- só as peças criadas pelos efeitos testados contam (o combate dos pets continua rodando no fundo)
+		local fxFolder = workspace.CurrentCamera:FindFirstChild("LocalFx")
+		local before = {}
+		for _, d in ipairs(fxFolder:GetChildren()) do
+			before[d] = true
+		end
+		local mine = {}
+		fxFolder.ChildAdded:Connect(function(d)
+			if not before[d] then
+				mine[d] = true
+			end
+		end)
+		local recording = true
 		for key, def in pairs(Signatures.Info) do
 			if not Fx.signatureStyles[def.vfx] then
 				table.insert(missing, key .. "=" .. def.vfx)
@@ -2763,15 +2804,27 @@ do
 			end
 			frames(3)
 		end
+		recording = false
+		local sigParts = {}
+		for d in pairs(mine) do
+			sigParts[d] = true
+		end
+		local _ = recording
+		local tracked = 0
+		for _ in pairs(sigParts) do
+			tracked += 1
+		end
 		frames(720)
 		local leftover = 0
-		for _, d in ipairs(workspace.CurrentCamera:FindFirstChild("LocalFx"):GetChildren()) do
-			if d:IsA("BasePart") and d.Transparency < 1 then
+		for d in pairs(sigParts) do
+			if d.Parent == fxFolder and d:IsA("BasePart") and d.Transparency < 1 then
 				leftover += 1
 			end
 		end
 		check("ataques Assinatura: todos os estilos de efeito existem, rodam no cliente e as peças somem",
-			#missing == 0 and okSig and #SIM.errors == beforeSig and leftover == 0, errSig or SIM.errors[beforeSig + 1] or (#missing > 0 and table.concat(missing, ",")) or ("sobraram " .. leftover))
+			#missing == 0 and okSig and #SIM.errors == beforeSig and leftover == 0 and tracked > 50, errSig or SIM.errors[beforeSig + 1]
+				or (#missing > 0 and table.concat(missing, ",")) or string.format("sobraram %d de %d peças dos efeitos", leftover, tracked))
+		print(string.format("  (peças criadas pelos efeitos Assinatura: %d)", tracked))
 	end)()
 	-- CINEMÁTICAS dos bosses: entrada e vitória tomam a câmera, mostram o nome e devolvem a câmera no fim
 	;(function()
