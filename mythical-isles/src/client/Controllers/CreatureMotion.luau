@@ -842,11 +842,14 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 				bob -= wind * 0.12 * s
 				pitch += wind * 0.15 - attack * 0.25
 				fwdMove = attack * 0.25 * s
+			elseif gait == "slither" then
+				-- bote: na preparação ergue a frente e encolhe para trás; no golpe se projeta para a frente
+				fwdMove = attack * 0.6 * s - wind * 0.2 * s
 			end
 			bob += settle * 0.12 * s
 			pitch += cele * math.sin(tt * 6) * 0.08 - jump * 0.15
 			if gait == "slither" then
-				pitch += x("rise") * 0.55
+				pitch += (x("rise") + wind * 0.7 + attack * 0.15) * 0.55
 			end
 			cf = CFrame.new(0, bob - down * 0.35 * s + x("bodyY") * s, -fwdMove) * A(pitch + x("bodyPitch"), x("bodyYaw"), roll + down * 1.25 + x("bodyRoll"))
 		elseif k == "neck" or k == "head" then
@@ -858,7 +861,9 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 				pitch -= attack * 0.5 -- cabeçada
 			end
 			if gait == "slither" then
-				pitch += attack * 0.4 + wind * 0.5 -- serpente ergue a cabeça antes do bote
+				-- serpente: cabeça erguida na preparação e projetada para baixo/frente no bote (antes os dois termos
+				-- quase se anulavam e o bote mal aparecia)
+				pitch += wind * 0.2 - attack * 0.25
 			end
 			local yaw = (idleLook + lookYaw * entry.near) * w
 			if k == "neck" then
@@ -996,8 +1001,10 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 			local amp = 0.16 + walk * 0.32
 			-- erguer (rise): os primeiros segmentos levantam a frente da serpente; coil: balança de lado
 			-- o corpo (frente) inclina para cima e o 1º segmento compensa: a cauda fica no chão
-			local rise = j.idx == 1 and -x("rise") * 0.55 or 0
-			cf = A(math.sin(tt * 1.8 - j.idx * 0.7) * 0.03 + rise, math.sin(ph * 1.4 - j.idx * 0.95) * amp + x("coil") * (j.idx <= 3 and 0.3 or 0), 0)
+			local rise = j.idx == 1 and -(x("rise") + wind * 0.7 + attack * 0.15) * 0.55 or 0
+			-- preparação do bote: os primeiros segmentos fazem um "S" (enrolam para dar o impulso)
+			local sCurve = (j.idx <= 3) and wind * 0.35 * (j.idx % 2 == 0 and -1 or 1) or 0
+			cf = A(math.sin(tt * 1.8 - j.idx * 0.7) * 0.03 + rise, math.sin(ph * 1.4 - j.idx * 0.95) * amp + x("coil") * (j.idx <= 3 and 0.3 or 0) + sCurve, 0)
 		elseif k == "trunk" then
 			cf = A(math.sin(tt * 1.4 - j.idx * 0.6) * 0.18 - attack * 0.5 + wind * 0.6 + cele * -0.4 + x("trunk"), math.sin(tt * 0.9 - j.idx) * 0.15, 0)
 		elseif k == "orbit" then

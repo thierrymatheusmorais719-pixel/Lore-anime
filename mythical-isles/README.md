@@ -471,6 +471,14 @@ Os **5 bosses** passam pelo mesmo processo (`PetRigs/boss_<id>`, ~18 mil triâng
   como no Roblox. Antes ele usava as posições guardadas das peças e media o Tempest Wyrm com 185 studs de altura; com
   isso o balanço de voo e o círculo de runas apareciam errados só no simulador.
 
+### Bote das serpentes
+Medindo os ataques dos pets na prévia (`--animexport`), as serpentes tinham o ataque mais fraco de todos (o maior
+deslocamento de uma peça no golpe era 0,56 stud): o corpo não reagia ao ataque e, na cabeça, o termo do golpe quase
+anulava o outro. Agora, na preparação a serpente ergue a frente como uma naja, encolhe para trás e faz um "S" nos
+primeiros segmentos; no golpe se projeta para a frente com a cabeça descendo (a cauda continua no chão pela mesma
+compensação do "erguer"). `docs/preview/serpente_bote.jpg`. Os outros pets conferidos (raposa, gato, coelho, coruja,
+macaco, lobo, cervo, mamute, dragãozinho, besouro, leão) já recuavam na preparação e avançavam no golpe.
+
 ### Troca de fase dos bosses e queda dos inimigos
 - **Troca de fase** (`Fx.bossPhase`, mensagem `Phase` do servidor): durante os 2,5 s de invulnerabilidade, um escudo de
   campo de força pulsa em volta do boss (o jogador vê que não adianta bater), três ondas de choque partem do chão, o
