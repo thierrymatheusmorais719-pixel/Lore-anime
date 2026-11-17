@@ -133,6 +133,129 @@ for minute = 1, 20 do
 end
 print(string.format("PACE tempo minerando %.0f s, lutando %.0f s; Mundo 2 (%d moedas) aos %s", mineT, fightT, Worlds.Info.crystal.unlockCost,
 	unlockAt and string.format("%.1f min", unlockAt / 60) or "não alcançado em 20 min"))
+-- LUTA CONTRA O ELDERROOT com a equipe que o bot formou (sozinho). O bot fica dentro da arena, mira o boss, ataca
+-- e usa as habilidades dos pets quando prontas. Conta o dano que o JOGADOR levaria (vida restaurada a cada
+-- passo, para não precisar de respawn) e os nocautes de pets.
+do
+	local BossService = require(__proxy("Server/Services/BossService"))
+	local boss
+	for _, b in ipairs(BossService.list()) do
+		if b.id == "elderroot" then
+			boss = b
+		end
+	end
+	local hum = p.Character:FindFirstChildOfClass("Humanoid")
+	local taken, knocks = 0, 0
+	local wasKnocked = {}
+	local function track()
+		if hum.Health < hum.MaxHealth then
+			taken += hum.MaxHealth - hum.Health
+			hum.Health = hum.MaxHealth
+		end
+		for _, st in ipairs(S.PetService.team(p)) do
+			local k = os.clock() < (st.knockedUntil or 0)
+			if k and not wasKnocked[st] then
+				knocks += 1
+			end
+			wasKnocked[st] = k
+		end
+	end
+	local spot = boss.arena.center + (boss.model.PrimaryPart.Position - boss.arena.center) * Vector3.new(1, 0, 1) * 0.3 + Vector3.new(14, 4, 0)
+	SIM.teleport(p, spot)
+	local t0 = SIM.now
+	local maxT = 600
+	-- desvio: com aviso de ataque (pasta Telegraphs) por perto, vai para o ponto da arena mais longe dos avisos
+	local DODGE = DODGE_BOT ~= false
+	local spotNow = boss.arena.center + Vector3.new(16, 4, 10)
+	local dodges = 0
+	local goalSpot, reactAt = spotNow, 0
+	local function dodge()
+		local tele = workspace:FindFirstChild("Telegraphs")
+		local marks = {}
+		for _, d in ipairs(tele and tele:GetDescendants() or {}) do
+			if d:IsA("BasePart") then
+				table.insert(marks, d)
+			end
+		end
+		if #marks == 0 then
+			return
+		end
+		local function danger(pos)
+			local worst = math.huge
+			for _, m in ipairs(marks) do
+				local rel = m.CFrame:Inverse() * pos
+				-- distância até a "pegada" do aviso (caixa/cilindro achatado no chão)
+				local hx, hz = m.Size.X / 2, m.Size.Z / 2
+				if m:IsA("Part") and m.Shape == Enum.PartType.Cylinder then
+					hx, hz = m.Size.Y / 2, m.Size.Z / 2
+				end
+				local dx, dz = math.max(0, math.abs(rel.X) - hx), math.max(0, math.abs(rel.Z) - hz)
+				worst = math.min(worst, math.sqrt(dx * dx + dz * dz))
+			end
+			return worst
+		end
+		if danger(goalSpot) > 3 then
+			return
+		end
+		local best, bestD = goalSpot, danger(goalSpot)
+		for k = 0, 15 do
+			for _, r in ipairs({ 14, 24, 34 }) do
+				local a = k / 16 * math.pi * 2
+				local c = boss.arena.center + Vector3.new(math.cos(a) * r, 4, math.sin(a) * r)
+				local dd = danger(c)
+				if dd > bestD then
+					best, bestD = c, dd
+				end
+			end
+		end
+		if best ~= goalSpot then
+			goalSpot = best
+			reactAt = SIM.now + 0.4 -- reação humana
+			dodges += 1
+		end
+	end
+	-- anda até o ponto escolhido a 16 studs/s (velocidade padrão do personagem), depois da reação
+	local function walk(dt)
+		if SIM.now < reactAt then
+			return
+		end
+		local delta = (goalSpot - spotNow) * Vector3.new(1, 0, 1)
+		local step = 16 * dt
+		if delta.Magnitude <= step then
+			spotNow = Vector3.new(goalSpot.X, spotNow.Y, goalSpot.Z)
+		else
+			spotNow += delta.Unit * step
+		end
+	end
+	while SIM.now - t0 < maxT and boss.state ~= "Defeated" do
+		if DODGE then
+			dodge()
+		end
+		SIM.teleport(p, spotNow)
+		Action.OnServerEvent:Fire(p, "Target", boss.model)
+		Action.OnServerEvent:Fire(p, "Attack", boss.model)
+		for i = 1, 4 do
+			Action.OnServerEvent:Fire(p, "Ability", i)
+		end
+		for i = 1, 10 do
+			SIM.run(0.1)
+			track()
+			if DODGE then
+				if i % 2 == 0 then
+					dodge()
+				end
+				walk(0.1)
+				SIM.teleport(p, spotNow)
+			end
+		end
+		if math.floor(SIM.now - t0) % 30 == 0 then
+			print(string.format("BOSS t=%3.0fs vida %d/%d fase %d estado %s", SIM.now - t0, boss.entity.hp, boss.entity.maxHp, boss.phase, boss.state))
+		end
+	end
+	local maxHp = hum.MaxHealth
+	print(string.format("BOSS Elderroot sozinho (%s): %s em %.0f s; jogador levaria %.0f de dano (%.1f× a vida de %d); %d nocautes de pets; %d desvios",
+		DODGE and "desviando dos avisos com 0,4 s de reação e 16 studs/s" or "parado", boss.state == "Defeated" and "derrotado" or "NÃO derrotado", SIM.now - t0, taken, taken / maxHp, maxHp, knocks, dodges))
+end
 print("INFO erros " .. #SIM.errors)
 for _, e in ipairs(SIM.errors) do
 	print("INFO " .. e)

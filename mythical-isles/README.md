@@ -921,6 +921,16 @@ chocando ovos até ter 4 pets. Resultado (20 min simulados): ~600 moedas/min e ~
 minutos; equipe completa no 6º minuto; nível médio 8,8 aos 20 min; dinheiro do portal do Mundo 2 (2.500) aos 5,6 min.
 É otimista: o bot se teleporta até o alvo, um jogador real anda. Serve para comparar mudanças de balanceamento.
 
+Na mesma simulação, depois dos 20 min, o bot enfrenta o **Elderroot sozinho** com essa equipe (nível médio 8,8),
+mirando, atacando e usando as habilidades dos pets:
+- **desviando** dos avisos de ataque com 0,4 s de reação e 16 studs/s (a velocidade do personagem): vence em ~2 min
+  (126 s), leva 20 de dano (0,2× a vida) e 1 nocaute de pet;
+- **parado** (sem desviar, `DODGE_BOT = false`): levaria 526 de dano, 5,3× a vida.
+
+Ou seja: o primeiro boss é acessível para quem lê os avisos e pune quem fica parado. A meta do projeto era
+~2 min de boss em dupla; sozinho já fica nisso, então em dupla será mais rápido (a vida do boss escala 1,6× por
+jogador extra).
+
 ## 6. Testes: o que foi validado e como
 
 Ferramentas usadas: CLI oficial do Luau (`luau`, `luau-analyze`, `luau-compile`) 0.650, Rojo 7.4.4 e o
