@@ -3,12 +3,15 @@
 local Exploration = {}
 
 -- Recursos que os pets quebram para gerar moedas (loop base do simulador).
+-- Moedas por ponto de vida: 0,1 nos Mundos 1 e 2, subindo nos seguintes (0,15 / 0,16 / 0,19). Com 0,1 em todos, a renda
+-- por minuto no Mundo 3 ficava igual à do Mundo 1 (~760/min na simulação --pacing) enquanto os portais quadruplicam
+-- (15 mil → 60 mil → 250 mil): juntar o portal do Mundo 4 levaria ~80 min mesmo para o bot otimista.
 Exploration.Resources = {
 	bloom_bush = { label = "Arbusto Florido", hp = 60, coins = 6, count = 34, respawn = 12 },
 	crystal_cluster = { label = "Aglomerado de Cristal", hp = 420, coins = 40, count = 34, respawn = 12 },
-	cloud_puff = { label = "Nuvem Sólida", hp = 2400, coins = 210, count = 30, respawn = 12 },
-	glow_mushroom = { label = "Cogumelo Brilhante", hp = 9000, coins = 900, count = 32, respawn = 12 },
-	star_shard = { label = "Fragmento Estelar", hp = 30000, coins = 3600, count = 30, respawn = 12 },
+	cloud_puff = { label = "Nuvem Sólida", hp = 2400, coins = 360, count = 30, respawn = 12 },
+	glow_mushroom = { label = "Cogumelo Brilhante", hp = 9000, coins = 1450, count = 32, respawn = 12 },
+	star_shard = { label = "Fragmento Estelar", hp = 30000, coins = 5700, count = 30, respawn = 12 },
 }
 -- Dano de mineração: soma do ataque dos pets da equipe * este fator, a cada `MineInterval`.
 Exploration.MineFactor = 1.0

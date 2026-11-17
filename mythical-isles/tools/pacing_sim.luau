@@ -187,6 +187,21 @@ local function fight(bossId: string)
 	end
 	local hum = p.Character:FindFirstChildOfClass("Humanoid")
 	local taken, knocks = 0, 0
+	-- de onde veio cada dano no jogador (rótulo do ataque do boss no momento, ou o inimigo)
+	local CombatService = require(__proxy("Server/Services/CombatService"))
+	local bySource = {}
+	local origHit = CombatService.hitPlayer
+	CombatService.hitPlayer = function(pl, amount, attacker)
+		local before = hum.Health
+		local r = origHit(pl, amount, attacker)
+		local lost = before - hum.Health
+		if pl == p and lost > 0 then
+			local key = (attacker == boss.entity or attacker == boss) and ("boss: " .. tostring(boss.model:GetAttribute("AttackLabel")))
+				or (type(attacker) == "table" and attacker.id and ("inimigo " .. tostring(attacker.id))) or tostring(attacker)
+			bySource[key] = (bySource[key] or 0) + lost
+		end
+		return r
+	end
 	local wasKnocked = {}
 	local function track()
 		if hum.Health < hum.MaxHealth then
@@ -293,6 +308,17 @@ local function fight(bossId: string)
 			print(string.format("BOSS t=%3.0fs vida %d/%d fase %d estado %s", SIM.now - t0, boss.entity.hp, boss.entity.maxHp, boss.phase, boss.state))
 		end
 	end
+	CombatService.hitPlayer = origHit
+	local srcs = {}
+	for k, v in pairs(bySource) do
+		table.insert(srcs, { k, v })
+	end
+	table.sort(srcs, function(a, b)
+		return a[2] > b[2]
+	end)
+	for i = 1, math.min(5, #srcs) do
+		print(string.format("BOSS   dano no jogador de %-34s %.0f", srcs[i][1], srcs[i][2]))
+	end
 	local maxHp = hum.MaxHealth
 	print(string.format("BOSS %s sozinho (%s): %s em %.0f s; jogador levaria %.0f de dano (%.1f× a vida de %d); %d nocautes de pets; %d desvios",
 		boss.cfg.name, DODGE and "desviando dos avisos com 0,4 s de reação e 16 studs/s" or "parado", boss.state == "Defeated" and "derrotado" or "NÃO derrotado", SIM.now - t0, taken, taken / maxHp, maxHp, knocks, dodges))
@@ -307,13 +333,13 @@ print(string.format("PACE portal do Mundo 2: %s / viagem: %s; moedas restantes %
 farm("crystal", "crystal_egg", 20, "sky")
 fight("prism_titan")
 -- MUNDOS 3 a 5 (cada um: portal, 20 min, boss)
-for _, step in ipairs({ { "sky", "sky_egg", "wilds", "tempest_wyrm" }, { "wilds", "wilds_egg", "astral", "wilderbloom" }, { "astral", "astral_egg", nil, "void_sovereign" } }) do
+for _, step in ipairs({ { "sky", "sky_egg", "wilds", "tempest_wyrm", 30 }, { "wilds", "wilds_egg", "astral", "wilderbloom", 30 }, { "astral", "astral_egg", nil, "void_sovereign", 20 } }) do
 	local u2 = req("UnlockWorld", { world = step[1] })
 	local t2 = req("Teleport", { world = step[1] })
 	SIM.run(1.5)
 	print(string.format("PACE portal de %s: %s / viagem: %s; moedas restantes %d", step[1], tostring(u2.ok or u2.msg), tostring(t2.ok or t2.msg), d.coins))
 	if u2.ok or p:GetAttribute("World") == step[1] then
-		farm(step[1], step[2], 20, step[3])
+		farm(step[1], step[2], step[5] or 20, step[3])
 		fight(step[4])
 	end
 end
