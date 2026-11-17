@@ -457,6 +457,23 @@ Os **5 bosses** passam pelo mesmo processo (`PetRigs/boss_<id>`, ~18 mil triâng
   como no Roblox. Antes ele usava as posições guardadas das peças e media o Tempest Wyrm com 185 studs de altura; com
   isso o balanço de voo e o círculo de runas apareciam errados só no simulador.
 
+### Inimigos: pés no chão, peças corrigidas e prévia dos ataques
+- **Prévia** (`python3 tools/run_tests.py luau --enemyatk`): monta os 19 inimigos com o construtor do jogo, dispara o
+  ataque de cada um e exporta 7 instantes. `docs/preview/inimigos_golpes.jpg` mostra o resultado.
+- **Flutuavam:** a altura do corpo informada à mão por cada construtor era maior que a real. 16 inimigos que andam
+  flutuavam de 0,25 a 1,6 studs (Rift Keeper e Crystal Devourer 1,6; Ancient Bloom Beast 1,3; Hollow Stag e Tempest
+  Guardian 1,05; Prism Golem 0,95). Agora `EnemyModels.build` mede o ponto mais baixo da geometria
+  (`EnemyModels.lowestBelowRoot`) e usa essa altura. Quem flutua (`mover = "hover"`) continua com a altura da config.
+- **Cilindros errados:** no Roblox a altura do cilindro é `Size.X` e o diâmetro é o menor de `Size.Y/Size.Z`. Sete
+  peças estavam erradas: pernas do Hollow Stag e do Ancient Bloom Beast e tronco da árvore do casco deitados; chifres
+  do Hollow Stag, cajado do Rift Keeper e cauda do Briar Beast virando discos minúsculos; raízes do peito do
+  Wildroot Guardian deitadas. A prévia em three.js agora desenha cilindros como o Roblox (antes esticava e escondia o
+  erro).
+- **Testes novos:** `--smoke` falha se um inimigo que anda não tiver os pés no chão (±0,1 stud) ou se algum modelo
+  tiver um cilindro com dimensão ignorada; `--cylaudit` procura o mesmo nos mundos inteiros (9.017 cilindros, 0
+  suspeitos).
+- **Pés plantados** (Animator) agora valem para todos, não só para os bosses.
+
 ### Ataques em 3 tempos (todos os pets)
 
 - **Preparação (0,22 s):** encolhe e recua, cabeça puxa para trás, rabo levanta duro; felinos armam a pata,

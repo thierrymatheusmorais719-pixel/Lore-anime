@@ -53,6 +53,13 @@ local function verify(label, model, budget)
 			fail(label .. ": nome de peça repetido " .. p.Name)
 		end
 		names[p.Name] = true
+		-- cilindro do Roblox: altura = X, diâmetro = menor de Y/Z; Y e Z muito diferentes = dimensão ignorada
+		if p:IsA("Part") and p.Shape == Enum.PartType.Cylinder then
+			local hi, lo = math.max(p.Size.Y, p.Size.Z), math.min(p.Size.Y, p.Size.Z)
+			if lo > 0 and hi > lo * 1.5 and hi - lo > 0.3 then
+				fail(string.format("%s: cilindro %s com tamanho (%.2f, %.2f, %.2f): o Roblox ignora o maior de Y/Z", label, p.Name, p.Size.X, p.Size.Y, p.Size.Z))
+			end
+		end
 		if p ~= model.PrimaryPart and held[p] ~= 1 then
 			fail(string.format("%s: peça %s presa por %d juntas", label, p.Name, held[p] or 0))
 		end
@@ -114,6 +121,11 @@ for id, cfg in pairs(Enemies.Info) do
 		verify("inimigo " .. id, model, 120)
 		assert(type(h) == "number" and h > 0 and type(r) == "number" and r > 0, "altura/raio")
 		assert(model.PrimaryPart.Name == "HumanoidRootPart", "root precisa se chamar HumanoidRootPart")
+		-- pés no chão: quem anda nasce com a raiz a `h` do chão; o ponto mais baixo do modelo tem que ficar nele
+		if cfg.mover ~= "hover" then
+			local low = EnemyModels.lowestBelowRoot(model)
+			assert(math.abs(low - h) <= 0.1, string.format("flutua/afunda: ponto mais baixo a %.2f da raiz, altura informada %.2f", low, h))
+		end
 		stats.enemies += 1
 	end)
 	if not ok then

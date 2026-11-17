@@ -257,7 +257,7 @@ local function animate(entry, t: number, dt: number, now: number)
 			-- pancada: sobe na ponta dos pés ao carregar (pouco: a junta do corpo leva as pernas junto)
 			local lift = slam * wind * 0.03 * s
 			-- pés plantados: inclinar o corpo em volta do quadril levanta os pés; desce o mesmo tanto
-			local plant = entry.isBoss and -(s * 0.45) * (1 - math.cos(math.min(math.abs(pitch), 0.6))) or 0
+			local plant = -(s * 0.45) * (1 - math.cos(math.min(math.abs(pitch), 0.6)))
 			cf = CFrame.new(0, breathe + stepBob - deathT * s * 0.25 + lift + plant, 0) * CFrame.Angles(pitch, yaw, deathT * 1.35 + math.sin(tt * 1.3) * 0.02 + tremble * 0.5)
 		elseif k == "neck" then
 			local look = math.sin(tt * 0.7) * 0.15 * (1 - moving)

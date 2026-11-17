@@ -1,6 +1,8 @@
 -- Modelos procedurais dos inimigos (originais). Cada construtor devolve:
 --   model, centerHeight (altura do centro do root acima do chão), radius (raio aproximado)
 -- Juntas seguem a convenção do Animator: Body, Neck, Jaw, Leg*, Arm*, Wing*, Tail*, Seg*, Orbit*.
+-- CILINDROS: no Roblox a altura é Size.X e o diâmetro é o menor de Size.Y/Size.Z. Para um cilindro em pé, use
+-- size = V(altura, d, d) e gire com ANG(0, 0, rad(90)) (tools/audit_cylinders.luau procura tamanhos errados).
 
 local ModelKit = require(script.Parent.ModelKit)
 local CreatureBuilder = require(script.Parent.CreatureBuilder)
@@ -63,7 +65,7 @@ function EnemyModels.wildroot_guardian()
 	local body = add(rig, { name = "Torso", joint = "Body", at = CF(0, 1.2, 0), shape = "block", size = V(3.4, 3.6, 2.4), color = bark, material = "Wood", role = "Body" })
 	add(rig, { name = "Chest", parent = body, at = CF(0, 0.2, -1.0), shape = "ball", size = Vector3.one * 1.0, color = glow, material = "Neon", role = "Glow" })
 	for i = -1, 1 do
-		add(rig, { name = "RootStrand", parent = body, at = CF(i * 1.0, 0, -1.22) * ANG(0, 0, rad(i * 8)), shape = "cyl", size = V(3.4, 0.35, 0.35), color = rgb(80, 56, 38), material = "Wood", role = "Detail" })
+		add(rig, { name = "RootStrand", parent = body, at = CF(i * 1.0, 0, -1.22) * ANG(0, 0, rad(90 + i * 8)), shape = "cyl", size = V(3.4, 0.35, 0.35), color = rgb(80, 56, 38), material = "Wood", role = "Detail" })
 	end
 	local head = add(rig, { name = "Head", parent = body, joint = "Neck", at = CF(0, 2.4, -0.2), shape = "block", size = V(1.8, 1.4, 1.6), color = bark, material = "Wood", role = "Body" })
 	ModelKit.eyes(rig, head, 0.42, 0.1, -0.82, 0.35, glow, true)
@@ -100,7 +102,7 @@ function EnemyModels.briar_beast()
 		add(rig, { name = "Leg", parent = l, at = CF(0, -0.8, 0), shape = "ellipsoid", size = V(1.0, 1.9, 1.1), color = rgb(60, 78, 44), role = "Body" })
 	end
 	local tail = helper(rig, "Tail", body, "Tail", CF(0, 0.8, 3.0))
-	add(rig, { name = "TailVine", parent = tail, at = CF(0, 0.2, 1.0) * ANG(rad(30), 0, 0), shape = "cyl", size = V(0.3, 0.3, 2.2), color = hide, role = "Body" })
+	add(rig, { name = "TailVine", parent = tail, at = CF(0, 0.2, 1.0) * ANG(rad(30), 0, 0) * ANG(0, rad(90), 0), shape = "cyl", size = V(2.2, 0.3, 0.3), color = hide, role = "Body" })
 	add(rig, { name = "TailThorn", parent = tail, at = CF(0, 0.7, 1.9), shape = "wedge", size = V(0.3, 0.9, 0.5), color = thorn, role = "Accent" })
 	return rig.model, 2.6, 3.0
 end
@@ -295,7 +297,7 @@ function EnemyModels.hollow_stag()
 	ModelKit.eyes(rig, skull, 0.38, 0.15, -0.55, 0.26, glow, true)
 	for _, side in ipairs({ -1, 1 }) do
 		local base = CF(side * 0.4, 0.5, 0.2)
-		add(rig, { name = "Antler", parent = skull, at = base * ANG(0, 0, side * rad(-30)) * CF(0, 1.1, 0), shape = "cyl", size = V(0.25, 2.4, 0.25), color = wood, material = "Wood", role = "Accent" })
+		add(rig, { name = "Antler", parent = skull, at = base * ANG(0, 0, side * rad(-30)) * CF(0, 1.1, 0) * ANG(0, 0, rad(90)), shape = "cyl", size = V(2.4, 0.25, 0.25), color = wood, material = "Wood", role = "Accent" })
 		for k = 1, 3 do
 			add(rig, { name = "Tine", parent = skull, at = base * CF(side * (0.5 + k * 0.4), 0.8 + k * 0.6, 0) * ANG(0, 0, side * rad(-70 + k * 15)) * ANG(0, 0, rad(90)), shape = "cyl", size = V(1.0, 0.18, 0.18), color = wood, material = "Wood", role = "Accent" })
 		end
@@ -303,7 +305,7 @@ function EnemyModels.hollow_stag()
 	end
 	for _, leg in ipairs({ { "LegFL", -1, -1 }, { "LegFR", 1, -1 }, { "LegBL", -1, 1 }, { "LegBR", 1, 1 } }) do
 		local l = helper(rig, leg[1], body, leg[1], CF(leg[2] * 0.85, -1.0, leg[3] * 1.6))
-		add(rig, { name = "Leg", parent = l, at = CF(0, -1.0, 0), shape = "cyl", size = V(2.2, 0.45, 0.45), color = wood, material = "Wood", role = "Body" })
+		add(rig, { name = "Leg", parent = l, at = CF(0, -1.0, 0) * ANG(0, 0, rad(90)), shape = "cyl", size = V(2.2, 0.45, 0.45), color = wood, material = "Wood", role = "Body" })
 		ModelKit.add(rig, { name = "Hoof", parent = l, at = CF(0, -2.1, 0), shape = "block", size = V(0.5, 0.3, 0.6), color = rgb(50, 40, 30), role = "Detail" })
 	end
 	return rig.model, 3.3, 2.6
@@ -315,7 +317,7 @@ function EnemyModels.ancient_bloom_beast()
 	local shell, skin, leaf, bloom = rgb(96, 84, 64), rgb(110, 130, 90), rgb(90, 150, 80), rgb(255, 160, 210)
 	local body = add(rig, { name = "Torso", joint = "Body", at = CF(0, 1.0, 0), shape = "ellipsoid", size = V(6.4, 3.6, 7.4), color = shell, material = "Slate", role = "Body" })
 	add(rig, { name = "Rim", parent = body, at = CF(0, -0.9, 0), shape = "ellipsoid", size = V(7.0, 1.2, 8.0), color = rgb(80, 70, 54), material = "Slate", role = "Belly" })
-	add(rig, { name = "Trunk", parent = body, at = CF(0, 2.6, 0.4), shape = "cyl", size = V(3.0, 0.9, 0.9), color = rgb(100, 72, 50), material = "Wood", role = "Detail" })
+	add(rig, { name = "Trunk", parent = body, at = CF(0, 2.6, 0.4) * ANG(0, 0, rad(90)), shape = "cyl", size = V(3.0, 0.9, 0.9), color = rgb(100, 72, 50), material = "Wood", role = "Detail" })
 	for i, p in ipairs({ { 0, 4.4, 0.4, 3.6 }, { -1.4, 3.8, 0.8, 2.4 }, { 1.4, 3.9, -0.2, 2.6 } }) do
 		add(rig, { name = "Canopy", parent = body, at = CF(p[1], p[2], p[3]), shape = "ball", size = Vector3.one * p[4], color = leaf, material = "Grass", role = "Accent" })
 		for k = 1, 3 do
@@ -328,7 +330,7 @@ function EnemyModels.ancient_bloom_beast()
 	ModelKit.eyes(rig, head, 0.6, 0.35, -0.95, 0.35, rgb(255, 230, 120), true)
 	for _, leg in ipairs({ { "LegFL", -1, -1 }, { "LegFR", 1, -1 }, { "LegBL", -1, 1 }, { "LegBR", 1, 1 } }) do
 		local l = helper(rig, leg[1], body, leg[1], CF(leg[2] * 2.6, -1.0, leg[3] * 2.6))
-		add(rig, { name = "Leg", parent = l, at = CF(0, -0.9, 0), shape = "cyl", size = V(2.0, 1.6, 1.6), color = skin, role = "Body" })
+		add(rig, { name = "Leg", parent = l, at = CF(0, -0.9, 0) * ANG(0, 0, rad(90)), shape = "cyl", size = V(2.0, 1.6, 1.6), color = skin, role = "Body" })
 	end
 	return rig.model, 3.0, 4.0
 end
@@ -373,7 +375,7 @@ function EnemyModels.rift_keeper()
 		add(rig, { name = "Hand", parent = arm, at = CF(side * 0.2, -2.4, 0), shape = "ball", size = Vector3.one * 0.6, color = glow, material = "Neon", role = "Glow" })
 	end
 	local staffArm = rig.parts.ArmR
-	add(rig, { name = "Staff", parent = staffArm.Name, at = CF(0.3, -1.6, -0.4), shape = "cyl", size = V(0.25, 5.0, 0.25) * V(1, 1, 1), color = gold, material = "Metal", role = "Accent" })
+	add(rig, { name = "Staff", parent = staffArm.Name, at = CF(0.3, -1.6, -0.4) * ANG(0, 0, rad(90)), shape = "cyl", size = V(5.0, 0.25, 0.25), color = gold, material = "Metal", role = "Accent" })
 	local portal = add(rig, { name = "Orbit", parent = body, joint = "Orbit", at = CF(0, 1.2, 1.5), shape = "block", size = Vector3.one * 0.2, transparency = 1, role = "Detail" })
 	add(rig, { name = "PortalCore", parent = portal, at = CF() * ANG(0, 0, rad(90)), shape = "cyl", size = V(0.1, 3.0, 3.0), color = void, material = "Neon", transparency = 0.2, role = "Glow" })
 	ModelKit.ring(rig, portal, nil, ANG(rad(90), 0, 0), 1.7, 12, V(0.35, 0.35, 0.35), glow, "Neon", "Glow")
@@ -407,10 +409,45 @@ function EnemyModels.wilderbloom_sprout(tint: Color3?)
 	return EnemyModels.thornling(tint or rgb(200, 120, 220))
 end
 
+-- Quanto o ponto mais baixo do modelo (em repouso) fica abaixo do centro da raiz. As peças já estão no lugar
+-- (ModelKit põe cada uma em relação à raiz), então dá para medir a geometria real: cantos de blocos e cunhas,
+-- raio das bolas. Peças invisíveis (ajudantes de junta) não contam.
+function EnemyModels.lowestBelowRoot(model: Model): number
+	local root = model.PrimaryPart :: BasePart
+	local low = math.huge
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("BasePart") and d ~= root and d.Transparency < 1 then
+			local c = root.CFrame:ToObjectSpace(d.CFrame)
+			local h = d.Size / 2
+			if d:IsA("Part") and d.Shape == Enum.PartType.Ball then
+				low = math.min(low, c.Position.Y - math.min(d.Size.X, d.Size.Y, d.Size.Z) / 2)
+			else
+				for _, sx in ipairs({ -1, 1 }) do
+					for _, sy in ipairs({ -1, 1 }) do
+						for _, sz in ipairs({ -1, 1 }) do
+							low = math.min(low, (c * Vector3.new(sx * h.X, sy * h.Y, sz * h.Z)).Y)
+						end
+					end
+				end
+			end
+		end
+	end
+	return low == math.huge and 0 or -low
+end
+
 function EnemyModels.build(id: string, cfg)
 	local builder = EnemyModels[cfg and cfg.model or id] or EnemyModels[id]
 	assert(builder, "sem modelo para " .. id)
 	local model, centerHeight, radius = builder(cfg and cfg.tint)
+	-- pés no chão: a altura informada à mão pelo construtor podia deixar o inimigo flutuando (~1 stud no Prism
+	-- Golem, Rift Keeper, Tempest Guardian...) ou afundado (Ancient Bloom Beast). Para quem anda, vale a medida
+	-- real; quem flutua (mover = "hover") continua com a altura do construtor (a altura do voo vem da config).
+	if not (cfg and cfg.mover == "hover") then
+		local measured = EnemyModels.lowestBelowRoot(model)
+		if measured > 0.2 and math.abs(measured - centerHeight) > 0.1 then
+			centerHeight = measured
+		end
+	end
 	-- variante recolorida de um modelo existente (ex.: Sentinela das Ruínas = guardião em tom de pedra)
 	if cfg and cfg.recolor and cfg.tint then
 		for _, d in ipairs(model:GetDescendants()) do
