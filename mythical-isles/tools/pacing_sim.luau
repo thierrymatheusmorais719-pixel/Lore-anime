@@ -42,20 +42,17 @@ local function act(name, arg)
 	Action.OnServerEvent:Fire(p, name, arg)
 	SIM.run(1 / 30)
 end
-local center = Worlds.Info.verdant.center
-local station = S.WorldService.Layout.verdant.eggStations.verdant_egg
-local eggCost = Eggs.Info.verdant_egg.cost
-local function hatch()
-	SIM.teleport(p, station:GetPivot().Position + Vector3.new(0, 3, 6))
-	SIM.run(0.4)
-	local r = req("Hatch", { egg = "verdant_egg", count = 1 })
-	if r.ok then
-		req("AutoTeam")
+local function teamLevel()
+	local n, sum = 0, 0
+	for _, uid in ipairs(d.team) do
+		local pet = d.pets[uid]
+		if pet then
+			n += 1
+			sum += pet.level
+		end
 	end
-	return r.ok
+	return n > 0 and sum / n or 0
 end
-print(string.format("PACE início: %d moedas, ovo %d", d.coins, eggCost))
-hatch()
 local function nearest(list, pos)
 	local best, bd = nil, math.huge
 	for _, m in ipairs(list) do
@@ -66,81 +63,94 @@ local function nearest(list, pos)
 	end
 	return best
 end
-local unlockAt = nil
-local mineT, fightT = 0, 0
-for minute = 1, 20 do
-	local tEnd = SIM.now + 60
-	while SIM.now < tEnd do
-		local here = p.Character and p.Character.PrimaryPart and p.Character.PrimaryPart.Position or center
-		-- recurso vivo mais perto, dentro do planalto do Verdant Haven
-		local res = {}
-		for _, r in ipairs(workspace:FindFirstChild("Resources"):GetChildren()) do
-			if (r:GetAttribute("Health") or 0) > 0 and ((r:GetPivot().Position - center) * Vector3.new(1, 0, 1)).Magnitude < Worlds.Info.verdant.radius then
-				table.insert(res, r)
-			end
+
+-- FASE de um mundo: minera e luta por `minutes`, chocando o ovo de moedas do mundo quando sobra dinheiro
+-- (guarda o preço do próximo portal depois de 3 pets novos do mundo). Devolve o minuto em que juntou o portal.
+local function farm(worldId: string, eggId: string, minutes: number, nextWorld: string?)
+	local W = Worlds.Info[worldId]
+	local center = W.center
+	local station = S.WorldService.Layout[worldId].eggStations[eggId]
+	local eggCost = Eggs.Info[eggId].cost
+	local nextCost = nextWorld and Worlds.Info[nextWorld].unlockCost or math.huge
+	local hatchedHere = 0
+	local function hatch()
+		SIM.teleport(p, station:GetPivot().Position + Vector3.new(0, 3, 6))
+		SIM.run(0.4)
+		local r = req("Hatch", { egg = eggId, count = 1 })
+		if r.ok then
+			hatchedHere += 1
+			req("AutoTeam")
 		end
-		local foes = {}
-		for _, e in ipairs(S.EnemyService.activeList()) do
-			if e.alive and e.world == "verdant" and e.model and e.model.Parent then
-				table.insert(foes, e.model)
-			end
-		end
-		local r = nearest(res, here)
-		local f = nearest(foes, here)
-		-- alterna: minera (o grosso das moedas) e luta (essência, XP)
-		if r and (not f or (SIM.now % 40) < 26) then
-			SIM.teleport(p, r:GetPivot().Position + Vector3.new(5, 3, 0))
-			act("Mine", r)
-			local t0 = SIM.now
-			while (r:GetAttribute("Health") or 0) > 0 and r.Parent and SIM.now - t0 < 12 do
-				act("Mine", r)
-				SIM.run(0.5)
-			end
-			mineT += SIM.now - t0
-		elseif f then
-			SIM.teleport(p, f:GetPivot().Position + Vector3.new(10, 3, 0))
-			act("Target", f)
-			local t0 = SIM.now
-			while f.Parent and not f:GetAttribute("Dead") and SIM.now - t0 < 15 do
-				act("Attack", f)
-				SIM.run(0.6)
-			end
-			fightT += SIM.now - t0
-		else
-			SIM.run(1)
-		end
-		-- mais ovos quando sobra (guarda o custo do portal do Mundo 2 depois de 3 pets)
-		local reserve = (#d.team >= 3) and Worlds.Info.crystal.unlockCost or 0
-		if d.coins >= eggCost + reserve and #d.team < 4 then
-			hatch()
-		end
-		if not unlockAt and d.coins >= Worlds.Info.crystal.unlockCost then
-			unlockAt = SIM.now
-		end
+		return r.ok
 	end
-	print(string.format("PACE min %2d: %6d moedas, %4d essência, %d pets na equipe, nível médio %.1f, %d inimigos, %d recursos",
-		minute, d.coins, d.essence, #d.team, (function()
-			local n, s = 0, 0
-			for _, uid in ipairs(d.team) do
-				local pet = d.pets[uid]
-				if pet then
-					n += 1
-					s += pet.level
+	local t0 = SIM.now
+	local unlockAt = nil
+	local mineT, fightT, kills0, res0 = 0, 0, d.stats.kills or 0, d.stats.resources or 0
+	for minute = 1, minutes do
+		local tEnd = SIM.now + 60
+		while SIM.now < tEnd do
+			local here = p.Character and p.Character.PrimaryPart and p.Character.PrimaryPart.Position or center
+			local res = {}
+			for _, r in ipairs(workspace:FindFirstChild("Resources"):GetChildren()) do
+				if (r:GetAttribute("Health") or 0) > 0 and ((r:GetPivot().Position - center) * Vector3.new(1, 0, 1)).Magnitude < W.radius then
+					table.insert(res, r)
 				end
 			end
-			return n > 0 and s / n or 0
-		end)(), d.stats.kills or 0, d.stats.resources or 0))
+			local foes = {}
+			for _, e in ipairs(S.EnemyService.activeList()) do
+				if e.alive and e.world == worldId and e.model and e.model.Parent then
+					table.insert(foes, e.model)
+				end
+			end
+			local r = nearest(res, here)
+			local f = nearest(foes, here)
+			if r and (not f or (SIM.now % 40) < 26) then
+				SIM.teleport(p, r:GetPivot().Position + Vector3.new(5, 3, 0))
+				local tm = SIM.now
+				while (r:GetAttribute("Health") or 0) > 0 and r.Parent and SIM.now - tm < 12 do
+					act("Mine", r)
+					SIM.run(0.5)
+				end
+				mineT += SIM.now - tm
+			elseif f then
+				SIM.teleport(p, f:GetPivot().Position + Vector3.new(10, 3, 0))
+				act("Target", f)
+				local tf = SIM.now
+				while f.Parent and not f:GetAttribute("Dead") and SIM.now - tf < 15 do
+					act("Attack", f)
+					SIM.run(0.6)
+				end
+				fightT += SIM.now - tf
+			else
+				SIM.run(1)
+			end
+			local reserve = (hatchedHere >= 3) and nextCost or 0
+			if d.coins >= eggCost + reserve and hatchedHere < 6 then
+				hatch()
+			end
+			if not unlockAt and d.coins >= nextCost then
+				unlockAt = SIM.now - t0
+			end
+		end
+		if minute % 5 == 0 or minute == 1 then
+			print(string.format("PACE %s min %2d: %7d moedas, %5d essência, %d pets, nível médio %.1f, %d inimigos, %d recursos", worldId,
+				minute, d.coins, d.essence, #d.team, teamLevel(), (d.stats.kills or 0) - kills0, (d.stats.resources or 0) - res0))
+		end
+	end
+	print(string.format("PACE %s: minerando %.0f s, lutando %.0f s; portal seguinte (%s moedas) aos %s", worldId, mineT, fightT,
+		tostring(nextCost), unlockAt and string.format("%.1f min", unlockAt / 60) or "não alcançado"))
 end
-print(string.format("PACE tempo minerando %.0f s, lutando %.0f s; Mundo 2 (%d moedas) aos %s", mineT, fightT, Worlds.Info.crystal.unlockCost,
-	unlockAt and string.format("%.1f min", unlockAt / 60) or "não alcançado em 20 min"))
--- LUTA CONTRA O ELDERROOT com a equipe que o bot formou (sozinho). O bot fica dentro da arena, mira o boss, ataca
+
+print(string.format("PACE início: %d moedas", d.coins))
+farm("verdant", "verdant_egg", 20, "crystal")
+-- LUTA CONTRA UM BOSS com a equipe que o bot formou (sozinho). O bot fica dentro da arena, mira o boss, ataca
 -- e usa as habilidades dos pets quando prontas. Conta o dano que o JOGADOR levaria (vida restaurada a cada
 -- passo, para não precisar de respawn) e os nocautes de pets.
-do
+local function fight(bossId: string)
 	local BossService = require(__proxy("Server/Services/BossService"))
 	local boss
 	for _, b in ipairs(BossService.list()) do
-		if b.id == "elderroot" then
+		if b.id == bossId then
 			boss = b
 		end
 	end
@@ -248,14 +258,23 @@ do
 				SIM.teleport(p, spotNow)
 			end
 		end
-		if math.floor(SIM.now - t0) % 30 == 0 then
+		if math.floor(SIM.now - t0) % 60 == 0 then
 			print(string.format("BOSS t=%3.0fs vida %d/%d fase %d estado %s", SIM.now - t0, boss.entity.hp, boss.entity.maxHp, boss.phase, boss.state))
 		end
 	end
 	local maxHp = hum.MaxHealth
-	print(string.format("BOSS Elderroot sozinho (%s): %s em %.0f s; jogador levaria %.0f de dano (%.1f× a vida de %d); %d nocautes de pets; %d desvios",
-		DODGE and "desviando dos avisos com 0,4 s de reação e 16 studs/s" or "parado", boss.state == "Defeated" and "derrotado" or "NÃO derrotado", SIM.now - t0, taken, taken / maxHp, maxHp, knocks, dodges))
+	print(string.format("BOSS %s sozinho (%s): %s em %.0f s; jogador levaria %.0f de dano (%.1f× a vida de %d); %d nocautes de pets; %d desvios",
+		boss.cfg.name, DODGE and "desviando dos avisos com 0,4 s de reação e 16 studs/s" or "parado", boss.state == "Defeated" and "derrotado" or "NÃO derrotado", SIM.now - t0, taken, taken / maxHp, maxHp, knocks, dodges))
 end
+
+fight("elderroot")
+-- MUNDO 2: abre o portal, viaja e joga mais 20 min; depois o Prism Titan
+local un = req("UnlockWorld", { world = "crystal" })
+local tp = req("Teleport", { world = "crystal" })
+SIM.run(1.5)
+print(string.format("PACE portal do Mundo 2: %s / viagem: %s; moedas restantes %d", tostring(un.ok or un.msg), tostring(tp.ok or tp.msg), d.coins))
+farm("crystal", "crystal_egg", 20, "sky")
+fight("prism_titan")
 print("INFO erros " .. #SIM.errors)
 for _, e in ipairs(SIM.errors) do
 	print("INFO " .. e)

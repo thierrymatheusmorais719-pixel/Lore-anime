@@ -916,20 +916,21 @@ números ficam em `shared/Config/*`. Ajuste-os depois de jogar no Studio: essa c
 partidas reais.
 
 **Ritmo de um jogador novo** (`python3 tools/run_tests.py luau --pacing`, servidor real no simulador): um bot nasce com
-150 moedas, choca o primeiro Ovo do Bosque e alterna minerar o recurso mais perto e atacar o inimigo mais perto,
-chocando ovos até ter 4 pets. Resultado (20 min simulados): ~600 moedas/min e ~40 essência/min depois dos primeiros
-minutos; equipe completa no 6º minuto; nível médio 8,8 aos 20 min; dinheiro do portal do Mundo 2 (2.500) aos 5,6 min.
-É otimista: o bot se teleporta até o alvo, um jogador real anda. Serve para comparar mudanças de balanceamento.
+150 moedas, choca ovos do mundo (até 6 por mundo, guardando o preço do próximo portal) e alterna minerar o recurso
+mais perto e atacar o inimigo mais perto; depois enfrenta o boss do mundo sozinho, mirando, atacando, usando as
+habilidades dos pets e desviando dos avisos com 0,4 s de reação e 16 studs/s (a velocidade do personagem).
+O bot se teleporta até o alvo na fase de coleta (um jogador real anda), então os tempos são otimistas.
 
-Na mesma simulação, depois dos 20 min, o bot enfrenta o **Elderroot sozinho** com essa equipe (nível médio 8,8),
-mirando, atacando e usando as habilidades dos pets:
-- **desviando** dos avisos de ataque com 0,4 s de reação e 16 studs/s (a velocidade do personagem): vence em ~2 min
-  (126 s), leva 20 de dano (0,2× a vida) e 1 nocaute de pet;
-- **parado** (sem desviar, `DODGE_BOT = false`): levaria 526 de dano, 5,3× a vida.
+| | Mundo 1 (Verdant Haven, 20 min) | Mundo 2 (Crystal Hollow, +20 min) |
+|---|---|---|
+| Moedas ganhas | ~16.000 | ~20.500 |
+| Dinheiro do próximo portal | aos 4,0 min (2.500) | aos 2,7 min (15.000, com a sobra do Mundo 1) |
+| Nível médio da equipe no fim | 10,8 | 17,8 |
+| Boss sozinho, desviando | Elderroot em 63 s; 0,9× a vida em dano | Prism Titan em 106 s; 1,6× a vida; 5 nocautes de pets |
 
-Ou seja: o primeiro boss é acessível para quem lê os avisos e pune quem fica parado. A meta do projeto era
-~2 min de boss em dupla; sozinho já fica nisso, então em dupla será mais rápido (a vida do boss escala 1,6× por
-jogador extra).
+Sem desviar (`DODGE_BOT = false`), o Elderroot causaria 5,3× a vida: o boss é acessível para quem lê os avisos e
+pune quem fica parado. A mineração rende ~0,1 moeda por ponto de vida do recurso em todos os mundos; no Mundo 2 cada
+cristal tem 7× mais vida, então o bot quebra menos recursos e compensa lutando.
 
 ## 6. Testes: o que foi validado e como
 
