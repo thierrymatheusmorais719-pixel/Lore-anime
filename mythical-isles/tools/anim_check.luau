@@ -80,7 +80,7 @@ for _, sid in ipairs(ids) do
 	species += 1
 	local lo, hi = Facets.heightRange(bp)
 	local height = math.max(hi - lo, 1)
-	local list = { "sleep", "levelup", "signature", "attack" }
+	local list = { "sleep", "levelup", "signature", "attack", "walk", "run" }
 	for _, a in ipairs(CreatureMotion.actsFor(bp.gait, bp.anatomy, bp.flies == true)) do
 		table.insert(list, a[1])
 	end
@@ -89,9 +89,13 @@ for _, sid in ipairs(ids) do
 		local entry = { model = model, root = root, joints = {}, lastPos = root.Position, speed = 0, seed = 0, scale = height, faded = false }
 		local ok, err = pcall(function()
 			CreatureMotion.prepare(entry)
+			local moveSpeed = 0 -- (andar/correr) a raiz anda para a frente, como o pet seguindo o dono
 			local function step(n)
 				for _ = 1, n do
 					SIM.run(DT)
+					if moveSpeed > 0 then
+						root.CFrame = root.CFrame * CFrame.new(0, 0, -moveSpeed * DT)
+					end
 					CreatureMotion.animate(entry, os.clock(), DT, workspace:GetServerTimeNow(), nil)
 				end
 			end
@@ -115,6 +119,9 @@ for _, sid in ipairs(ids) do
 				model:SetAttribute("Action", "Attack")
 				model:SetAttribute("ActionAt", workspace:GetServerTimeNow())
 				dur = 0.72
+			elseif act == "walk" or act == "run" then
+				moveSpeed = act == "walk" and 8 or 22
+				dur = 1.6
 			else
 				CreatureMotion.forceAct(entry, act)
 				dur = (entry.act and entry.act.dur or 2) * 0.5

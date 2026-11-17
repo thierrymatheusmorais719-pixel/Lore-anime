@@ -472,11 +472,13 @@ Os **5 bosses** passam pelo mesmo processo (`PetRigs/boss_<id>`, ~18 mil triâng
   isso o balanço de voo e o círculo de runas apareciam errados só no simulador.
 
 ### Pets não afundam no chão durante o ataque
-O `--animcheck` agora também roda o ATAQUE das 192 espécies (2.142 animações verificadas) e confere que o pet não
-afunda no chão e que o golpe é visível. Na primeira passada, dezenas de espécies afundavam patas ou cabeça no chão
+O `--animcheck` agora também roda o ATAQUE, o ANDAR e o CORRER das 192 espécies (2.526 animações verificadas) e confere
+que o pet não afunda no chão e que o golpe é visível. Correndo, 146 espécies enfiavam as patas no chão (até 0,71 stud:
+cervos, raposas, felinos, répteis, lobos...); andando, 5. Na primeira passada, dezenas de espécies afundavam patas ou cabeça no chão
 durante o bote, a empinada ou a cabeçada (até 0,46 stud: cervos, mamutes, behemoth, grifo, dragõezinhos, furões).
-A correção de chão do CreatureMotion, que já valia para sentar/deitar/coçar, passou a valer também na preparação, no
-golpe e na acomodação (e reage mais rápido, porque o golpe dura 0,12 s). Também deixou de olhar só o último quadro para
+A correção de chão do CreatureMotion, que já valia para sentar/deitar/coçar, passou a valer também no ataque
+(preparação, golpe, acomodação) e em movimento, reagindo mais rápido nesses casos (o golpe dura 0,12 s). Ela só
+levanta o corpo o necessário para nada passar do chão; nunca deixa o pet acima da altura de repouso. Também deixou de olhar só o último quadro para
 dizer se uma pose mudou (asas de besouro passando pela posição de repouso pareciam paradas).
 
 ### Bote das serpentes
