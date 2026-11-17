@@ -83,9 +83,17 @@ local function farm(worldId: string, eggId: string, minutes: number, nextWorld: 
 		end
 		return r.ok
 	end
+	do
+		local dps = 0
+		for _, st in ipairs(S.PetService.team(p)) do
+			dps += (st.stats.atk or 0) * (st.stats.aspd or 1)
+		end
+		print(string.format("PACE %s início: DPS somado da equipe %.0f", worldId, dps))
+	end
 	local t0 = SIM.now
 	local unlockAt = nil
 	local mineT, fightT, kills0, res0 = 0, 0, d.stats.kills or 0, d.stats.resources or 0
+	local evolved = 0
 	for minute = 1, minutes do
 		local tEnd = SIM.now + 60
 		while SIM.now < tEnd do
@@ -124,6 +132,17 @@ local function farm(worldId: string, eggId: string, minutes: number, nextWorld: 
 			else
 				SIM.run(1)
 			end
+			-- evolui quem chegou no nível máximo do estágio (como um jogador faria)
+			local PetStatsL = require(__proxy("Shared/Logic/PetStats"))
+			for _, uid in ipairs(d.team) do
+				local pet = d.pets[uid]
+				if pet and (pet.tier or 1) < 3 and (pet.level or 1) >= PetStatsL.levelCap(pet) then
+					local ev = req("Evolve", { uid = uid })
+					if ev.ok then
+						evolved += 1
+					end
+				end
+			end
 			local reserve = (hatchedHere >= 3) and nextCost or 0
 			if d.coins >= eggCost + reserve and hatchedHere < 6 then
 				hatch()
@@ -136,6 +155,18 @@ local function farm(worldId: string, eggId: string, minutes: number, nextWorld: 
 			print(string.format("PACE %s min %2d: %7d moedas, %5d essência, %d pets, nível médio %.1f, %d inimigos, %d recursos", worldId,
 				minute, d.coins, d.essence, #d.team, teamLevel(), (d.stats.kills or 0) - kills0, (d.stats.resources or 0) - res0))
 		end
+	end
+	-- força da equipe no fim do mundo: dano por segundo somado (atk × velocidade) e quem está nela
+	do
+		local Pets = require(__proxy("Shared/Config/Pets"))
+		local dps, who = 0, {}
+		for _, st in ipairs(S.PetService.team(p)) do
+			dps += (st.stats.atk or 0) * (st.stats.aspd or 1)
+			local sp = Pets.Species[st.species]
+			table.insert(who, string.format("%s %s nv%d e%d", st.species, sp and sp.rarity or "?", st.pet.level, st.pet.tier or 1))
+		end
+		print(string.format("PACE %s equipe: DPS somado %.0f — %s; evoluções %d; pó de evolução %d", worldId, dps, table.concat(who, ", "),
+			evolved, (d.items and d.items.evolution_dust) or 0))
 	end
 	print(string.format("PACE %s: minerando %.0f s, lutando %.0f s; portal seguinte (%s moedas) aos %s", worldId, mineT, fightT,
 		tostring(nextCost), unlockAt and string.format("%.1f min", unlockAt / 60) or "não alcançado"))
@@ -275,6 +306,17 @@ SIM.run(1.5)
 print(string.format("PACE portal do Mundo 2: %s / viagem: %s; moedas restantes %d", tostring(un.ok or un.msg), tostring(tp.ok or tp.msg), d.coins))
 farm("crystal", "crystal_egg", 20, "sky")
 fight("prism_titan")
+-- MUNDOS 3 a 5 (cada um: portal, 20 min, boss)
+for _, step in ipairs({ { "sky", "sky_egg", "wilds", "tempest_wyrm" }, { "wilds", "wilds_egg", "astral", "wilderbloom" }, { "astral", "astral_egg", nil, "void_sovereign" } }) do
+	local u2 = req("UnlockWorld", { world = step[1] })
+	local t2 = req("Teleport", { world = step[1] })
+	SIM.run(1.5)
+	print(string.format("PACE portal de %s: %s / viagem: %s; moedas restantes %d", step[1], tostring(u2.ok or u2.msg), tostring(t2.ok or t2.msg), d.coins))
+	if u2.ok or p:GetAttribute("World") == step[1] then
+		farm(step[1], step[2], 20, step[3])
+		fight(step[4])
+	end
+end
 print("INFO erros " .. #SIM.errors)
 for _, e in ipairs(SIM.errors) do
 	print("INFO " .. e)

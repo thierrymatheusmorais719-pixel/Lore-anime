@@ -964,12 +964,23 @@ mais perto e atacar o inimigo mais perto; depois enfrenta o boss do mundo sozinh
 habilidades dos pets e desviando dos avisos com 0,4 s de reação e 16 studs/s (a velocidade do personagem).
 O bot se teleporta até o alvo na fase de coleta (um jogador real anda), então os tempos são otimistas.
 
-| | Mundo 1 (Verdant Haven, 20 min) | Mundo 2 (Crystal Hollow, +20 min) |
-|---|---|---|
-| Moedas ganhas | ~16.000 | ~20.500 |
-| Dinheiro do próximo portal | aos 4,0 min (2.500) | aos 2,7 min (15.000, com a sobra do Mundo 1) |
-| Nível médio da equipe no fim | 10,8 | 17,8 |
-| Boss sozinho, desviando | Elderroot em 63 s; 0,9× a vida em dano | Prism Titan em 106 s; 1,6× a vida; 5 nocautes de pets |
+A simulação segue pelos 5 mundos (20 min cada, depois o boss), evoluindo os pets quando chegam ao nível máximo do
+estágio. Ela mostrou que **nenhum pet chegava ao nível 25 (o mínimo para evoluir) em 60 min**: a curva de XP
+(40 × nível^1,45, 41 mil XP até o 25) não combinava com os inimigos do Mundo 3, calculados para equipe já evoluída. A
+curva passou a 30 × nível^1,25 (17,8 mil XP até o 25; começo 2× mais rápido). Resultado com a curva nova:
+
+| | Mundo 1 (20 min) | Mundo 2 (+20 min) | Mundo 3 (+20 min) |
+|---|---|---|---|
+| Nível médio no fim | 14,5 | 21,8 | 25,8 (os 4 pets evoluíram) |
+| Dano por segundo somado da equipe | 237 | 293 | 470 (antes 303, sem evoluir) |
+| Inimigos derrotados | 258 | 113 | 17 |
+| Moedas no fim | ~16 mil | ~38 mil | ~57 mil (portal do Mundo 4: 60 mil, quase) |
+| Boss sozinho, desviando | Elderroot 292 s, 1,8× a vida | Prism Titan 280 s, 4,4× | Tempest Wyrm 158 s (antes 254 s), 1,1×; 13 nocautes de pets (antes 30) |
+
+O Mundo 3 continua lento para matar (~30 s por inimigo, dentro da meta de 8–40 s do projeto). Os pets chocados nos
+mundos novos não entram na equipe do bot: um Raro do Mundo 3 no nível 1 tem força 2,2 contra 4,6 de um Raro do
+Mundo 1 evoluído no nível 26. Isso segue a regra do projeto de que "pet antigo evoluído continua competitivo" (há teste
+para isso); o multiplicador por mundo não foi mexido. Os tempos variam bastante entre execuções (equipes sorteadas).
 
 Sem desviar (`DODGE_BOT = false`), o Elderroot causaria 5,3× a vida: o boss é acessível para quem lê os avisos e
 pune quem fica parado. A mineração rende ~0,1 moeda por ponto de vida do recurso em todos os mundos; no Mundo 2 cada

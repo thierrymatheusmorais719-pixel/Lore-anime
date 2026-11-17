@@ -31,8 +31,11 @@ Combat.EvolutionWorldCostScale = 0.75
 
 Combat.LevelStatGrowth = 0.06 -- +6% por nível
 
+-- XP para o próximo nível. Era 40 × nível^1,45 (41 mil XP até o nível 25): na simulação de ritmo (--pacing) nenhum
+-- pet chegava ao nível 25 (o mínimo para evoluir) em 60 min de jogo, mas os inimigos do Mundo 3 contam com equipe já
+-- evoluída. Com 30 × nível^1,25 o nível 25 custa 17,8 mil XP (≈ fim do Mundo 2) e o começo fica 2× mais rápido.
 function Combat.xpToNext(level: number): number
-	return math.floor(40 * level ^ 1.45)
+	return math.floor(30 * level ^ 1.25)
 end
 
 -- Fórmula de dano: dano = ataque * mult * K / (K + defesaEfetiva) * variação, crítico * CritMult
