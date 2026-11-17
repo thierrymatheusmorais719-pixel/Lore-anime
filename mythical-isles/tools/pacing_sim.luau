@@ -253,16 +253,36 @@ local function fight(bossId: string)
 		if danger(goalSpot) > 3 then
 			return
 		end
+		-- como um jogador: o ponto SEGURO (fora dos avisos com 3 studs de folga) mais PERTO de onde está; só sem
+		-- nenhum seguro vai para o mais longe dos avisos. (Antes ia sempre para o ponto mais longe da arena e
+		-- atravessava as faixas do leque/cruz no caminho.)
 		local best, bestD = goalSpot, danger(goalSpot)
+		local bestSafe, bestTravel = nil, math.huge
+		local cands = {}
 		for k = 0, 15 do
+			local a = k / 16 * math.pi * 2
 			for _, r in ipairs({ 14, 24, 34 }) do
-				local a = k / 16 * math.pi * 2
-				local c = boss.arena.center + Vector3.new(math.cos(a) * r, 4, math.sin(a) * r)
-				local dd = danger(c)
-				if dd > bestD then
-					best, bestD = c, dd
+				table.insert(cands, boss.arena.center + Vector3.new(math.cos(a) * r, 4, math.sin(a) * r))
+			end
+			for _, r in ipairs({ 6, 11, 16 }) do
+				local c = spotNow + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
+				if ((c - boss.arena.center) * Vector3.new(1, 0, 1)).Magnitude < boss.arena.radius - 2 then
+					table.insert(cands, c)
 				end
 			end
+		end
+		for _, c in ipairs(cands) do
+			local dd = danger(c)
+			if dd > bestD then
+				best, bestD = c, dd
+			end
+			local travel = ((c - spotNow) * Vector3.new(1, 0, 1)).Magnitude
+			if dd > 3 and travel < bestTravel then
+				bestSafe, bestTravel = c, travel
+			end
+		end
+		if bestSafe then
+			best = bestSafe
 		end
 		if best ~= goalSpot then
 			goalSpot = best
