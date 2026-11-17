@@ -2338,6 +2338,59 @@ do
 			cam.CFrame = oldCam
 		end
 		deathCheck()
+		-- PÉS NO CHÃO durante o ataque: cada inimigo que anda, com o ataque dele (preparação, golpe, acomodação),
+		-- não pode afundar nem flutuar mais que 0,6 stud (caixa resolvida pelas juntas, como no Roblox)
+		;(function()
+			local b6 = #SIM.errors
+			local cam = workspace.CurrentCamera
+			local oldCam = cam.CFrame
+			local Enemies = require(__proxy("Shared/Config/Enemies"))
+			local EnemyModels = require(__proxy("Shared/Builders/EnemyModels"))
+			local base = Vector3.new(-3000, 0, 300)
+			cam.CFrame = CFrame.new(base + Vector3.new(0, 30, 0), base)
+			local list = {}
+			local k = 0
+			for id, cfg in pairs(Enemies.Info) do
+				if cfg.mover ~= "hover" then
+					k += 1
+					local m, h = EnemyModels.build(id, cfg)
+					local a = k * 0.4
+					m:PivotTo(CFrame.new(base + Vector3.new(math.cos(a) * 50, h, math.sin(a) * 50)))
+					m.PrimaryPart.Anchored = true
+					m.Parent = workspace:FindFirstChild("Enemies")
+					table.insert(list, { id = id, m = m, cfg = cfg, worst = 0 })
+				end
+			end
+			frames(10)
+			local t0 = workspace:GetServerTimeNow()
+			for _, e in ipairs(list) do
+				local atk = e.cfg.attack or { kind = "melee", windup = 0.45 }
+				local act = atk.kind == "slam" and "Slam" or atk.kind == "lunge" and "Lunge" or atk.kind == "projectile" and "Cast" or "Attack"
+				e.m:SetAttribute("Action", act)
+				e.m:SetAttribute("ActionAt", t0)
+				e.m:SetAttribute("WindupEnd", t0 + math.max(atk.windup or 0.45, 0.3))
+			end
+			for _ = 1, 110 do
+				frames(1)
+				for _, e in ipairs(list) do
+					local cf, size = e.m:GetBoundingBox()
+					local bottom = cf.Position.Y - size.Y / 2
+					if math.abs(bottom) > math.abs(e.worst) then
+						e.worst = bottom
+					end
+				end
+			end
+			local bad = {}
+			for _, e in ipairs(list) do
+				if math.abs(e.worst) > 0.6 then
+					table.insert(bad, string.format("%s %+.2f", e.id, e.worst))
+				end
+				e.m:Destroy()
+			end
+			check(string.format("inimigos: pés no chão durante o ataque (%d que andam, tolerância 0,6 stud)", #list), #bad == 0 and #SIM.errors == b6,
+				SIM.errors[b6 + 1] or table.concat(bad, ", "))
+			cam.CFrame = oldCam
+		end)()
 	end
 	before = #SIM.errors
 	ok, err = pcall(Fx.hatch, res.results or {}, Color3.new(1, 1, 1))

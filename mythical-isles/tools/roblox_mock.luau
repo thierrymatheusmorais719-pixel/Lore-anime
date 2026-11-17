@@ -624,9 +624,15 @@ function Inst.GetBoundingBox(self)
 	local mn, mx = v3(math.huge, math.huge, math.huge), v3(-math.huge, -math.huge, -math.huge)
 	local parts, cfs = solvedCFrames(self)
 	for _, p in ipairs(parts) do
-		local c, s = (cfs[p] or p._props.CFrame).p, p._props.Size
-		mn = v3(math.min(mn.X, c.X - s.X / 2), math.min(mn.Y, c.Y - s.Y / 2), math.min(mn.Z, c.Z - s.Z / 2))
-		mx = v3(math.max(mx.X, c.X + s.X / 2), math.max(mx.Y, c.Y + s.Y / 2), math.max(mx.Z, c.Z + s.Z / 2))
+		-- caixa da peça girada (como o Roblox): meia-extensão em cada eixo do mundo pelos cantos
+		local pcf = cfs[p] or p._props.CFrame
+		local c, s, r = pcf.p, p._props.Size, pcf.r
+		local hx, hy, hz = s.X / 2, s.Y / 2, s.Z / 2
+		local ex = math.abs(r[1]) * hx + math.abs(r[2]) * hy + math.abs(r[3]) * hz
+		local ey = math.abs(r[4]) * hx + math.abs(r[5]) * hy + math.abs(r[6]) * hz
+		local ez = math.abs(r[7]) * hx + math.abs(r[8]) * hy + math.abs(r[9]) * hz
+		mn = v3(math.min(mn.X, c.X - ex), math.min(mn.Y, c.Y - ey), math.min(mn.Z, c.Z - ez))
+		mx = v3(math.max(mx.X, c.X + ex), math.max(mx.Y, c.Y + ey), math.max(mx.Z, c.Z + ez))
 	end
 	if mn.X == math.huge then
 		return cf(0, 0, 0), v3(0, 0, 0)
