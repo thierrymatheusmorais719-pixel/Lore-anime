@@ -90,7 +90,7 @@ Bosses.Info = {
 			{ at = 0.3, label = "Olho do Furacão", interval = 2.2, attacks = { "gale_breath", "cyclone_ring", "dive_line", "lightning_marks", "static_charge" }, speedMult = 1.2 },
 		},
 		attacks = {
-			gale_breath = { label = "Sopro de Vendaval", shape = "cone", angle = 55, length = 50, telegraph = 1.3, pdmg = 24, petMult = 1.3, anim = "breath" },
+			gale_breath = { label = "Sopro de Vendaval", shape = "cone", angle = 55, length = 50, telegraph = 1.45, pdmg = 24, petMult = 1.3, anim = "breath" },
 			tail_sweep = { label = "Varrida de Cauda", shape = "slam", radius = 18, telegraph = 1.3, pdmg = 22, petMult = 1.3, anim = "sweep" },
 			lightning_marks = { label = "Marcas de Relâmpago", shape = "target_circles", radius = 8, max = 6, telegraph = 1.4, pdmg = 20, petMult = 1.2, anim = "cast",
 				effect = { chain = { n = 2, range = 16, mult = 0.7 } } }, -- o raio pula para pets próximos
@@ -115,11 +115,11 @@ Bosses.Info = {
 			{ at = 0.3, label = "Floração Final", interval = 2.2, attacks = { "pollen_storm", "thorn_cross", "spore_marks", "summon_sprouts", "rebloom" } },
 		},
 		attacks = {
-			petal_cone = { label = "Leque de Pétalas", shape = "cone", angle = 70, length = 46, telegraph = 1.3, pdmg = 24, petMult = 1.3, anim = "sweep" },
+			petal_cone = { label = "Leque de Pétalas", shape = "cone", angle = 70, length = 46, telegraph = 1.55, pdmg = 24, petMult = 1.3, anim = "sweep" },
 			spore_marks = { label = "Esporos Explosivos", shape = "target_circles", radius = 9, max = 6, telegraph = 1.5, pdmg = 22, petMult = 1.2, anim = "cast",
 				linger = { duration = 5, tick = 0.5, pdmg = 6, petMult = 0.35, slow = 0.3, label = "Veneno", color = Color3.fromRGB(170, 90, 220) } }, -- poça de veneno
 			thorn_cross = { label = "Cruz de Espinhos", shape = "cross", width = 10, length = 70, telegraph = 1.5, pdmg = 26, petMult = 1.3, anim = "slam" },
-			pollen_storm = { label = "Tempestade de Pólen", shape = "safezones", count = 3, radius = 11, telegraph = 2.4, pdmg = 34, petMult = 1.5, anim = "roar" },
+			pollen_storm = { label = "Tempestade de Pólen", shape = "safezones", count = 4, radius = 13, telegraph = 3.4, pdmg = 34, petMult = 1.5, anim = "roar" },
 			summon_sprouts = { label = "Invocar Brotos", shape = "summon", enemy = "wilderbloom_sprout", count = 3, maxAlive = 6, telegraph = 1.0, pdmg = 0, petMult = 0, anim = "roar" },
 			-- próprios: vinhas que puxam e prendem; florescer que cura mais com brotos vivos
 			vine_snare = { label = "Laço de Vinhas", shape = "cone", angle = 50, length = 40, telegraph = 1.3, pdmg = 16, petMult = 1.0, anim = "sweep", effect = { root = 1.6 } },
@@ -146,7 +146,7 @@ Bosses.Info = {
 			void_cross = { label = "Cruz do Vazio", shape = "cross", width = 11, length = 80, telegraph = 1.5, pdmg = 28, petMult = 1.4, anim = "cast" },
 			event_ring = { label = "Horizonte de Eventos", shape = "ring", inner = 16, outer = 46, telegraph = 1.6, pdmg = 30, petMult = 1.4, anim = "roar" },
 			meteor_field = { label = "Campo de Meteoros", shape = "random_circles", count = 12, radius = 9, telegraph = 1.8, pdmg = 28, petMult = 1.4, anim = "roar" },
-			void_collapse = { label = "Colapso Total", shape = "safezones", count = 3, radius = 10, telegraph = 2.6, pdmg = 45, petMult = 1.6, anim = "roar" },
+			void_collapse = { label = "Colapso Total", shape = "safezones", count = 4, radius = 12, telegraph = 3.6, pdmg = 45, petMult = 1.6, anim = "roar" },
 			-- próprios: buraco negro que fica no chão e prende quem entra; fome do vazio que rouba vida
 			black_hole = { label = "Buraco Negro", shape = "target_circles", radius = 10, max = 2, telegraph = 1.6, pdmg = 20, petMult = 1.1, anim = "cast",
 				linger = { duration = 5, tick = 0.5, pdmg = 9, petMult = 0.5, slow = 0.6, label = "Singularidade", color = Color3.fromRGB(90, 40, 170) } },

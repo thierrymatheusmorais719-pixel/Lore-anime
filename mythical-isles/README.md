@@ -491,6 +491,20 @@ primeiros segmentos; no golpe se projeta para a frente com a cabeça descendo (a
 compensação do "erguer"). `docs/preview/serpente_bote.jpg`. Os outros pets conferidos (raposa, gato, coelho, coruja,
 macaco, lobo, cervo, mamute, dragãozinho, besouro, leão) já recuavam na preparação e avançavam no golpe.
 
+### Todo ataque de boss dá para desviar
+`python3 tools/run_tests.py luau --dodge` calcula, para os 32 ataques com área dos 5 bosses, se um jogador no PIOR lugar
+da área consegue sair a tempo: (tempo do aviso − 0,4 s de reação) × 16 studs/s contra a distância até a borda
+(círculo no jogador: o raio; linha/cruz/leque: meia largura; anel: meia espessura; cone: o melhor entre sair pelo lado
+ou para trás; zonas seguras: a maior distância até a zona segura mais perto, no pior sorteio). A checagem falha se
+algum for impossível. Quatro eram:
+
+| Ataque | Antes | Agora |
+|---|---|---|
+| Colapso Total (Void Sovereign, zonas seguras) | 3 zonas de raio 10, aviso 2,6 s: faltavam 25 studs | 4 zonas de raio 12, aviso 3,6 s |
+| Tempestade de Pólen (Wilderbloom, zonas seguras) | 3 zonas de raio 11, aviso 2,4 s: faltavam 22 studs | 4 zonas de raio 13, aviso 3,4 s |
+| Leque de Pétalas (Wilderbloom, cone) | aviso 1,3 s: faltavam 2,2 studs | 1,55 s |
+| Sopro de Vendaval (Tempest Wyrm, cone) | aviso 1,3 s: faltava 1,3 stud | 1,45 s |
+
 ### Formação dos pets pelo tamanho
 `python3 tools/run_tests.py luau --formation` (servidor real) põe equipes de tamanhos bem diferentes para seguir o dono,
 atacar e minerar, e mede a folga entre os pets (distância menos a soma dos "raios" de cada um). Antes, as posições eram
