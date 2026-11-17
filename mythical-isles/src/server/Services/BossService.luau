@@ -228,6 +228,9 @@ local function resolveAttack(b, atk, shapes)
 			local pos = b.arena.center + Vector3.new(math.cos(a), 0, math.sin(a)) * b.arena.radius * 0.55
 			local minion = S.EnemyService.spawnSummon(atk.enemy, pos, b.world, e)
 			table.insert(b.summons, minion)
+			-- invocação murcha sozinha depois de `lifetime` s (sem isso, com a equipe fraca os brotos se acumulavam
+			-- e perseguiam o jogador pela luta inteira); conferido no tickBoss
+			minion.wiltAt = atk.lifetime and os.clock() + atk.lifetime or nil
 		end
 		return
 	end
@@ -327,6 +330,13 @@ local function tickBoss(b, now: number)
 	end
 	local e = b.entity
 	local participants = BossService.participants(b)
+	for i = #b.summons, 1, -1 do
+		local m = b.summons[i]
+		if m.wiltAt and now >= m.wiltAt then
+			table.remove(b.summons, i)
+			S.EnemyService.despawn(m)
+		end
+	end
 
 	if b.state == "Dormant" then
 		if #participants > 0 then

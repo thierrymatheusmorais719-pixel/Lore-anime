@@ -1306,13 +1306,19 @@ check("perfil é salvo no DataStore ao sair", store.writes > writes0)
 	expect(r and r.targets[foes[1]] and r.targets[foes[2]] and not r.targets[foes[3]] and r.hits >= 7 and foes[2].slowUntil > os.clock(), "Nuvem de Esporos: " .. tostring(r and r.hits))
 	-- cone: o pet olha para foes[1]; foes[3] fica atrás do pet
 	gather()
-	place(foes[1], Vector3.new(0, 0, 0))
-	place(foes[2], Vector3.new(2, 0, -2))
-	t1[3].model:PivotTo(CFrame.new(P + Vector3.new(-8, 0, 0)))
+	-- (os inimigos ficam parados: em 0,1 s o da frente podia andar para fora do cone; o atordoamento conferido
+	-- abaixo é o do golpe, então zera antes do lançamento)
+	place(foes[1], Vector3.new(0, 0, 0), true)
+	place(foes[2], Vector3.new(2, 0, -2), true)
 	place(foes[3], Vector3.new(-16, 0, 0))
 	SIM.run(0.1)
+	-- (o pet é posto logo antes do lançamento: em 0,1 s a formação podia tirá-lo do lugar e virar o cone)
+	t1[3].model:PivotTo(CFrame.lookAt(P + Vector3.new(-8, 0, 0), P))
+	foes[2].stunnedUntil = 0
 	r = SigS.cast(ps, t1[3], foes[1])
-	expect(r and r.targets[foes[1]] and r.targets[foes[2]] and not r.targets[foes[3]] and foes[2].stunnedUntil > os.clock(), "Pisão Rachado (cone)")
+	expect(r and r.targets[foes[1]] and r.targets[foes[2]] and not r.targets[foes[3]] and foes[2].stunnedUntil > os.clock(),
+		string.format("Pisão Rachado (cone) r=%s t1=%s t2=%s t3=%s vivos %s/%s", tostring(r ~= nil), tostring(r and r.targets[foes[1]]), tostring(r and r.targets[foes[2]]),
+			tostring(r and r.targets[foes[3]]), tostring(foes[1].alive), tostring(foes[2].alive)))
 	-- linha: foes[1] e foes[2] na linha; foes[3] fora
 	gather()
 	place(foes[1], Vector3.new(0, 0, 0))
@@ -3280,6 +3286,18 @@ SIM.run(3)
 	local want = b.entity.maxHp * (0.03 + 0.015 * alive)
 	check("Wilderbloom — Florescer cura mais com brotos vivos", alive >= 1 and math.abs((b.entity.hp - hpB) - want) < want * 0.01,
 		string.format("%d brotos, curou %.0f (esperado %.0f)", alive, b.entity.hp - hpB, want))
+	do -- os brotos murcham sozinhos depois do tempo de vida (não se acumulam a luta inteira)
+		local first = table.clone(b.summons)
+		local life = require(__proxy("Shared/Config/Bosses")).Info.wilderbloom.attacks.summon_sprouts.lifetime
+		SIM.run(life + 0.5)
+		local still = 0
+		for _, x in ipairs(first) do
+			if x.alive then
+				still += 1
+			end
+		end
+		check("Wilderbloom — brotos murcham depois de " .. tostring(life) .. " s", #first >= 1 and still == 0, string.format("%d de %d ainda vivos", still, #first))
+	end
 
 	-- VOID SOVEREIGN: Fendas drenam energia/Fúria, Buraco Negro fica e prende, Fome do Vazio rouba vida
 	b = startFight("astral")

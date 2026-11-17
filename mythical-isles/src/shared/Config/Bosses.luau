@@ -120,7 +120,7 @@ Bosses.Info = {
 				linger = { duration = 5, tick = 0.5, pdmg = 6, petMult = 0.35, slow = 0.3, label = "Veneno", color = Color3.fromRGB(170, 90, 220) } }, -- poça de veneno
 			thorn_cross = { label = "Cruz de Espinhos", shape = "cross", width = 10, length = 70, telegraph = 1.5, pdmg = 26, petMult = 1.3, anim = "slam" },
 			pollen_storm = { label = "Tempestade de Pólen", shape = "safezones", count = 4, radius = 13, telegraph = 3.4, pdmg = 34, petMult = 1.5, anim = "roar" },
-			summon_sprouts = { label = "Invocar Brotos", shape = "summon", enemy = "wilderbloom_sprout", count = 3, maxAlive = 4, telegraph = 1.0, pdmg = 0, petMult = 0, anim = "roar" },
+			summon_sprouts = { label = "Invocar Brotos", shape = "summon", enemy = "wilderbloom_sprout", count = 3, maxAlive = 4, lifetime = 20, telegraph = 1.0, pdmg = 0, petMult = 0, anim = "roar" },
 			-- próprios: vinhas que puxam e prendem; florescer que cura mais com brotos vivos
 			vine_snare = { label = "Laço de Vinhas", shape = "cone", angle = 50, length = 40, telegraph = 1.3, pdmg = 16, petMult = 1.0, anim = "sweep", effect = { root = 1.6 } },
 			rebloom = { label = "Florescer", shape = "power", power = "bloom", base = 0.03, perSummon = 0.015, cooldown = 16, telegraph = 1.2, anim = "roar",
