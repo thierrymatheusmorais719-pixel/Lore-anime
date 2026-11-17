@@ -411,7 +411,7 @@ local function animate(entry, t: number, dt: number, now: number)
 		elseif k == "tailseg" then
 			-- onda que percorre a cauda articulada (atrasada e mais suave a cada segmento)
 			local whip = sweep * (wind * 0.25 - strike * 0.4) -- a varrida percorre a cauda
-			cf = CFrame.Angles(math.sin(tt * 2 - j.idx * 0.6) * 0.05, math.sin(tt * 3.2 - j.idx * 0.9) * (0.16 + moving * 0.06) + whip, 0)
+			cf = CFrame.Angles(-(0.5 + 0.5 * math.sin(tt * 2 - j.idx * 0.6)) * 0.05, math.sin(tt * 3.2 - j.idx * 0.9) * (0.16 + moving * 0.06) + whip, 0)
 		elseif k == "lid" then
 			-- piscar: a cada ~3-5 s a pálpebra desce sobre o olho por ~0,15 s (fechada ao ser derrotado)
 			local cyc = (tt * 0.27 + entry.seed) % 1
@@ -419,7 +419,9 @@ local function animate(entry, t: number, dt: number, now: number)
 			j.motor.Transform = CFrame.new(0, -j.drop * blink, -j.push * blink) -- já no referencial do olho
 			continue
 		elseif k == "seg" then
-			cf = CFrame.Angles(math.sin(tt * 2.5 - j.idx * 0.7) * 0.05, math.sin(tt * 3 - j.idx * 0.8) * (0.22 + moving * 0.15), 0)
+			-- a onda vertical só ERGUE (θ ≤ 0 levanta a ponta de uma cauda que aponta para +Z): somada em 8 segmentos,
+			-- a onda para baixo enfiava a ponta da cauda no chão
+			cf = CFrame.Angles(-(0.5 + 0.5 * math.sin(tt * 2.5 - j.idx * 0.7)) * 0.05, math.sin(tt * 3 - j.idx * 0.8) * (0.22 + moving * 0.15), 0)
 		elseif k == "ear" then
 			local twitch = math.max(0, math.sin(tt * 1.7 + j.side * 2)) ^ 8 * 0.4
 			cf = CFrame.Angles(-twitch, 0, j.side * twitch * 0.5)
