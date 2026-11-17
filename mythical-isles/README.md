@@ -496,7 +496,9 @@ macaco, lobo, cervo, mamute, dragãozinho, besouro, leão) já recuavam na prepa
 da área consegue sair a tempo: (tempo do aviso − 0,4 s de reação) × 16 studs/s contra a distância até a borda
 (círculo no jogador: o raio; linha/cruz/leque: meia largura; anel: meia espessura; cone: o melhor entre sair pelo lado
 ou para trás; zonas seguras: a maior distância até a zona segura mais perto, no pior sorteio). A checagem falha se
-algum for impossível. Quatro eram:
+algum for impossível. Também cobre os 13 ataques com área dos inimigos comuns (pancada com o jogador encostado,
+investida, projétil): todos desviáveis, o mais apertado é a pancada do Rift Keeper (+0,2 stud). Nos bosses, quatro
+eram impossíveis:
 
 | Ataque | Antes | Agora |
 |---|---|---|

@@ -53,6 +53,26 @@ for bid, b in pairs(Bosses.Info) do
 		end
 	end
 end
+-- INIMIGOS: pancada (círculo no inimigo; o jogador encostado nele em luta), investida (faixa mirada no jogador,
+-- largura max(5, raio × 1,6)) e projétil (círculo de 4,5 no jogador; aviso = preparação + tempo de voo mínimo 0,2 s)
+local Enemies = require(__proxy("Shared/Config/Enemies"))
+local EnemyModels = require(__proxy("Shared/Builders/EnemyModels"))
+for eid, cfg in pairs(Enemies.Info) do
+	local atk = cfg.attack
+	if atk and (atk.kind == "slam" or atk.kind == "lunge" or atk.kind == "projectile") then
+		local _, _, radius = EnemyModels.build(eid, cfg)
+		local esc, how, tele
+		if atk.kind == "slam" then
+			esc, how, tele = math.max(0, atk.radius - (radius + 1)), "raio − encostado", atk.windup
+		elseif atk.kind == "lunge" then
+			esc, how, tele = math.max(5, radius * 1.6) / 2, "meia largura da investida", atk.windup
+		else
+			esc, how, tele = 4.5, "círculo no jogador", atk.windup + 0.2
+		end
+		local can = math.max(0, (tele - REACT) * SPEED)
+		table.insert(rows, { "(inimigo) " .. eid, atk.kind, tele, esc, can, can - esc, how })
+	end
+end
 table.sort(rows, function(x, y)
 	return x[6] < y[6]
 end)
@@ -63,7 +83,7 @@ for _, r in ipairs(rows) do
 	end
 	print(string.format("DODGE %-15s %-24s aviso %.1f s  precisa %5.1f  alcança %5.1f  folga %+6.1f  (%s)", r[1], r[2], r[3], r[4], r[5], r[6], r[7]))
 end
-print(string.format("DODGE %d ataques com área; %d impossíveis de desviar do pior lugar (reação %.1f s, %d studs/s)", #rows, bad, REACT, SPEED))
+print(string.format("DODGE %d ataques com área (bosses e inimigos); %d impossíveis de desviar do pior lugar (reação %.1f s, %d studs/s)", #rows, bad, REACT, SPEED))
 if bad > 0 then
 	error("há ataques de boss impossíveis de desviar")
 end
