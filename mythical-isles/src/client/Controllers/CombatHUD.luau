@@ -69,6 +69,12 @@ local function buildSlot(parent, i)
 	local label = UIKit.label({ Position = UDim2.fromOffset(38, 3), Size = UDim2.new(1, -42, 0, 22), Text = "", TextSize = 14, Font = T.title, TextWrapped = false,
 		TextTruncate = Enum.TextTruncate.AtEnd, TextStrokeTransparency = 0.2, ZIndex = 3, Parent = button })
 	local sub = UIKit.label({ Position = UDim2.fromOffset(38, 24), Size = UDim2.new(1, -42, 0, 16), Text = "", TextSize = 11, TextColor3 = Color3.fromRGB(240, 240, 255), ZIndex = 3, Parent = button })
+	-- nomes longos ("Escudo Temporário") encolhem para caber em vez de serem cortados com "…"
+	label.TextScaled = true
+	local fit = Instance.new("UITextSizeConstraint")
+	fit.MaxTextSize = 14
+	fit.MinTextSize = 10
+	fit.Parent = label
 	local cd = new("Frame", { Name = "Cooldown", AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.fromScale(1, 0), BackgroundColor3 = Color3.new(0, 0, 0),
 		BackgroundTransparency = 0.35, BorderSizePixel = 0, ZIndex = 5, Parent = button })
 	UIKit.corner(cd, 10)

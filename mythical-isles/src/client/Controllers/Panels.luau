@@ -675,7 +675,8 @@ local function questsPanel()
 		local status = i < idx and "✔" or i == idx and string.format("%d/%d", p.quests.storyProgress, q.goal.count) or "🔒"
 		if i <= idx + 1 then
 			local row = UIKit.frame({ LayoutOrder = i, Size = UDim2.new(1, -8, 0, 42), BackgroundColor3 = i == idx and T.purple or T.bg2, Parent = list })
-			UIKit.label({ Position = UDim2.fromOffset(8, 0), Size = UDim2.new(1, -150, 1, 0), TextSize = 12, Text = string.format("<b>%s</b> — %s\n<font color=\"#AAB0CD\">%s</font>", q.label, q.desc, rewardText(q.reward)), Parent = row })
+			UIKit.label({ Position = UDim2.fromOffset(8, 0), Size = UDim2.new(1, -150, 1, 0), TextSize = 12, Text = string.format("<b>%s</b> — %s\n<font color=\"%s\">%s</font>", q.label, q.desc,
+				i == idx and "#F2E6FF" or "#AAB0CD", rewardText(q.reward)), Parent = row }) -- na linha roxa (missão atual) a recompensa clara
 			local canClaim = i == idx and p.quests.storyProgress >= q.goal.count
 			UIKit.button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -4, 0.5, 0), Size = UDim2.fromOffset(130, 28), Text = canClaim and "Resgatar" or status, TextSize = 12,
 				BackgroundColor3 = canClaim and T.green or T.gray, Parent = row }, function()

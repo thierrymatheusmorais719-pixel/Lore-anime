@@ -41,10 +41,13 @@ local pg = Instance.new("PlayerGui")
 pg.Name = "PlayerGui"
 pg.Parent = lp
 local uis = Instance.new("UserInputService")
-uis.TouchEnabled = false
-uis.KeyboardEnabled = true
+uis.TouchEnabled = UI_MOBILE == true
+uis.KeyboardEnabled = UI_MOBILE ~= true
 SIM.registerService("UserInputService", uis)
 local VW, VH = 1600, 900
+if UI_MOBILE then
+	VW, VH = 844, 390 -- celular deitado
+end
 local cam = Instance.new("Camera")
 cam.CFrame = CFrame.new(0, 50, 0)
 cam.ViewportSize = Vector2.new(VW, VH)
@@ -216,6 +219,10 @@ local function emit(obj, r)
 				obj.TextScaled and "true" or "false", fnt, col(obj.TextColor3 or Color3.new(0, 0, 0)), num(obj.TextTransparency or 0), col(obj.TextStrokeColor3 or Color3.new(0, 0, 0)),
 				num(obj.TextStrokeTransparency == nil and 1 or obj.TextStrokeTransparency), xa, ya, obj.RichText and "true" or "false", obj.TextWrapped and "true" or "false"))
 			local _ = textStroke
+			local cons = child(obj, "UITextSizeConstraint")
+			if cons and obj.TextScaled then
+				table.insert(parts, string.format('"tmin":%s,"tmax":%s', num((cons.MinTextSize or 1) * scaleK), num((cons.MaxTextSize or 100) * scaleK)))
+			end
 		end
 	end
 	if cls == "ViewportFrame" and obj:GetAttribute("Species") then

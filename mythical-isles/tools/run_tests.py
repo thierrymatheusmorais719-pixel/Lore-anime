@@ -84,7 +84,9 @@ def main():
     if "--bossatk" in sys.argv:
         return run_sim(args[0] if args else "luau", os.path.join("preview", "export_bossattack.luau"))
     if "--uiexport" in sys.argv:
-        return run_sim(args[0] if args else "luau", os.path.join("preview", "export_ui.luau"))
+        # --mobile: tela de celular deitado (844x390, toque, sem teclado)
+        prelude = "UI_MOBILE = true\n" if "--mobile" in sys.argv else ""
+        return run_sim(args[0] if args else "luau", os.path.join("preview", "export_ui.luau"), prelude)
     luau = args[0] if args else "luau"
     here = os.path.dirname(os.path.abspath(__file__))
     petexport = "--petexport" in sys.argv
@@ -125,7 +127,7 @@ def main():
     proc = subprocess.run([luau, bundle])
     sys.exit(proc.returncode)
 
-def run_sim(luau, script="sim_scenarios.luau"):
+def run_sim(luau, script="sim_scenarios.luau", prelude=""):
     here = os.path.dirname(os.path.abspath(__file__))
     src = os.path.join(here, "..", "src")
     parts = [open(os.path.join(here, "roblox_mock.luau"), encoding="utf-8").read(),
@@ -151,7 +153,7 @@ def run_sim(luau, script="sim_scenarios.luau"):
         if f.endswith(".luau"):
             add("Client/Controllers/" + f[:-5], os.path.join(src, "client", "Controllers", f))
     parts.append("local task, os, typeof, warn = SIM.task, SIM.os, SIM.typeof, SIM.warn\n")
-    parts.append(open(os.path.join(here, script), encoding="utf-8").read())
+    parts.append(prelude + open(os.path.join(here, script), encoding="utf-8").read())
     with tempfile.NamedTemporaryFile("w", suffix=".luau", delete=False, encoding="utf-8") as f:
         f.write("\n".join(parts))
     sys.exit(subprocess.run([luau, f.name]).returncode)

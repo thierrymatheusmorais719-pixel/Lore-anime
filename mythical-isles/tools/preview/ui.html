@@ -79,13 +79,15 @@ function richToHtml(s, rich) {
 }
 
 function fitText(box, inner, item) {
-  let lo = 4, hi = Math.min(100, item.h * 1.4);
+  // UITextSizeConstraint (tmin/tmax, já na escala da tela) limita o tamanho escolhido
+  let lo = item.tmin || 4, hi = Math.min(item.tmax || 100, 100, item.h * 1.4);
+  if (hi < lo) hi = lo;
   for (let i = 0; i < 14; i++) {
     const mid = (lo + hi) / 2;
     box.style.fontSize = mid + 'px';
     if (inner.scrollWidth <= item.w + 0.5 && inner.scrollHeight <= item.h + 0.5) lo = mid; else hi = mid;
   }
-  box.style.fontSize = lo + 'px';
+  box.style.fontSize = Math.max(lo, item.tmin || 0) + 'px';
 }
 
 async function main() {

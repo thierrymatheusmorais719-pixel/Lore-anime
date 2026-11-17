@@ -1027,6 +1027,11 @@ travamento) foi exercitada.
   (o servidor confere distância e intervalo), não na tela. Os veios dos Mundos 2 a 5 ficam em volta dos campos de
   recursos e foram posicionados por raycast; confira se algum ficou num lugar estranho. A picareta aparece na mão
   do avatar enquanto ele minera.
+- **Interface no celular — o que ainda precisa do Studio:** `python3 tools/run_tests.py luau --uiexport --mobile` exporta
+  a interface numa tela de 844×390 (toque, sem teclado). Tudo cabe, mas a interface inteira é reduzida (escala ≈ 0,62)
+  e os textos de 11–12 viram ≈ 7 pontos: descrições de missões e detalhes dos pets ficam pequenos. Tentei deixar textos
+  pequenos crescerem quando cabem (`TextScaled` com limites), mas a prévia mostrou rótulos quebrando e se sobrepondo,
+  e desfiz. Confira no emulador de dispositivos do Studio antes de mexer na escala.
 - **Pets fofos — o que ainda precisa do Studio:** as proporções foram vistas só nas prévias. Confira no jogo se
   algum pet ficou com a cabeça grande demais para a câmera do inventário/retrato e se alguma pose de animação
   encosta a cabeça maior no corpo (o `--animcheck` não detecta uma parte atravessando outra).
