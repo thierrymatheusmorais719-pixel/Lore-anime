@@ -994,8 +994,10 @@ para isso); o multiplicador por mundo não foi mexido. Os tempos variam bastante
 
 Dano no jogador por fonte na luta da Wilderbloom: brotos invocados 1468, Cruz de Espinhos 328, Leque de Pétalas 207,
 Laço de Vinhas 199. Os brotos corriam a 16 studs/s, a mesma velocidade do jogador, então não dava para fugir deles;
-passaram a 13 studs/s, 2400 de vida (era 3000) e no máximo 4 vivos (eram 6). Essa luta ainda **não foi simulada de
-novo** com a mudança. O bot só mira o boss (um jogador mirando os brotos se sairia melhor); o Mundo 4 segue como o
+passaram a 13 studs/s, 2400 de vida (era 3000) e no máximo 4 vivos (eram 6). Uma luta rápida depois da mudança (equipe
+montada à mão, 3 pets com nível forçado para 30, não comparável à corrida acima) **não confirmou melhora**: os brotos
+ainda causaram a maior parte do dano, porque o bot só foge dos avisos e não dos brotos que o perseguem. A mudança
+deixa a fuga possível para um jogador, mas o efeito dela não foi medido. O bot só mira o boss (um jogador mirando os brotos se sairia melhor); o Mundo 4 segue como o
 ponto mais difícil do ritmo e o portal do Mundo 5 (250 mil) é o próximo ajuste a avaliar.
 
 O bot de desvio passou a ir para o ponto seguro **mais perto** (antes ia para o mais longe da arena e atravessava as
