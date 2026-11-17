@@ -14,8 +14,63 @@ for bid, b in pairs(Bosses.Info) do
 			esc, how = a.radius, "raio"
 		elseif sh == "slam" then
 			esc, how = math.max(0, a.radius - 4), "raio − colado no boss"
-		elseif sh == "line" or sh == "cross" or sh == "fan" then
+		elseif sh == "line" then
 			esc, how = a.width / 2, "meia largura"
+		elseif sh == "cross" or sh == "fan" then
+			-- várias faixas saindo do boss (o jogador na do meio): busca numérica do ponto livre mais perto, com
+			-- todas as faixas juntas (perto do boss elas se sobrepõem e o vão entre elas não existe)
+			local rects = {}
+			if sh == "cross" then
+				local half = a.length / 2
+				table.insert(rects, { ox = -half, oz = 0, dx = 1, dz = 0 })
+				table.insert(rects, { ox = 0, oz = -half, dx = 0, dz = 1 })
+			else
+				local n, spread = a.count or 3, math.rad(a.spread or 30)
+				for i = 1, n do
+					local ang = (i - (n + 1) / 2) * spread
+					table.insert(rects, { ox = 0, oz = 0, dx = math.cos(ang), dz = math.sin(ang) })
+				end
+			end
+			local PLAYER_R = 1
+			local function inside(x, z)
+				for _, r in ipairs(rects) do
+					local px, pz = x - r.ox, z - r.oz
+					local along = px * r.dx + pz * r.dz
+					local side = math.abs(-px * r.dz + pz * r.dx)
+					if along >= -PLAYER_R and along <= a.length + PLAYER_R and side <= a.width / 2 + PLAYER_R then
+						return true
+					end
+				end
+				return false
+			end
+			local worst = 0
+			-- jogador ao longo da faixa do meio (fan) ou no cruzamento/braço (cross), entre 6 studs do boss e o fim
+			local samples = {}
+			for d = 6, a.length - 2, 2 do
+				if sh == "fan" then
+					table.insert(samples, { d, 0 })
+				else
+					table.insert(samples, { d - a.length / 2, 0 })
+				end
+			end
+			for _, sp in ipairs(samples) do
+				local best = math.huge
+				for rr = 0.5, 40, 0.5 do
+					for k = 0, 47 do
+						local ang = k / 48 * math.pi * 2
+						local x, z = sp[1] + math.cos(ang) * rr, sp[2] + math.sin(ang) * rr
+						if not inside(x, z) then
+							best = rr
+							break
+						end
+					end
+					if best < math.huge then
+						break
+					end
+				end
+				worst = math.max(worst, best)
+			end
+			esc, how = worst, sh == "fan" and "sair do leque inteiro (busca numérica)" or "sair da cruz (busca numérica)"
 		elseif sh == "ring" then
 			esc, how = (a.outer - a.inner) / 2, "meia espessura do anel"
 		elseif sh == "cone" then

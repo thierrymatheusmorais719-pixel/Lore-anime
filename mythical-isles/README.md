@@ -494,7 +494,9 @@ macaco, lobo, cervo, mamute, dragãozinho, besouro, leão) já recuavam na prepa
 ### Todo ataque de boss dá para desviar
 `python3 tools/run_tests.py luau --dodge` calcula, para os 32 ataques com área dos 5 bosses, se um jogador no PIOR lugar
 da área consegue sair a tempo: (tempo do aviso − 0,4 s de reação) × 16 studs/s contra a distância até a borda
-(círculo no jogador: o raio; linha/cruz/leque: meia largura; anel: meia espessura; cone: o melhor entre sair pelo lado
+(círculo no jogador: o raio; linha: meia largura; cruz e leque: busca numérica do ponto livre mais perto com
+todas as faixas juntas, porque perto do boss as faixas do leque se sobrepõem e o vão entre elas some — antes contava
+só meia largura; com isso a Refração Tripla do Prism Titan precisa de 10 studs e alcança 16; anel: meia espessura; cone: o melhor entre sair pelo lado
 ou para trás; zonas seguras: a maior distância até a zona segura mais perto, no pior sorteio). A checagem falha se
 algum for impossível. Também cobre os 13 ataques com área dos inimigos comuns (pancada com o jogador encostado,
 investida, projétil): todos desviáveis, o mais apertado é a pancada do Rift Keeper (+0,2 stud). Nos bosses, quatro
