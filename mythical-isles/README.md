@@ -471,6 +471,14 @@ Os **5 bosses** passam pelo mesmo processo (`PetRigs/boss_<id>`, ~18 mil triâng
   como no Roblox. Antes ele usava as posições guardadas das peças e media o Tempest Wyrm com 185 studs de altura; com
   isso o balanço de voo e o círculo de runas apareciam errados só no simulador.
 
+### Pets não afundam no chão durante o ataque
+O `--animcheck` agora também roda o ATAQUE das 192 espécies (2.142 animações verificadas) e confere que o pet não
+afunda no chão e que o golpe é visível. Na primeira passada, dezenas de espécies afundavam patas ou cabeça no chão
+durante o bote, a empinada ou a cabeçada (até 0,46 stud: cervos, mamutes, behemoth, grifo, dragõezinhos, furões).
+A correção de chão do CreatureMotion, que já valia para sentar/deitar/coçar, passou a valer também na preparação, no
+golpe e na acomodação (e reage mais rápido, porque o golpe dura 0,12 s). Também deixou de olhar só o último quadro para
+dizer se uma pose mudou (asas de besouro passando pela posição de repouso pareciam paradas).
+
 ### Bote das serpentes
 Medindo os ataques dos pets na prévia (`--animexport`), as serpentes tinham o ataque mais fraco de todos (o maior
 deslocamento de uma peça no golpe era 0,56 stud): o corpo não reagia ao ataque e, na cabeça, o termo do golpe quase

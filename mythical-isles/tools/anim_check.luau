@@ -1,6 +1,7 @@
 -- VERIFICA AS ANIMAÇÕES DE TODOS OS PETS (as 192 espécies), rodando o CreatureMotion REAL no esqueleto de
 -- cada uma (o mesmo do PetMesh, modo de peças):
---   * cada comportamento ocioso da espécie (jeito de andar + anatomia) muda a pose;
+--   * cada comportamento ocioso da espécie (jeito de andar + anatomia) muda a pose (em algum quadro);
+--   * ATAQUE: não afunda no chão e o golpe é visível (maior giro de junta ou avanço do corpo ≥ 0,25);
 --   * nenhuma junta recebe valor inválido (NaN/infinito);
 --   * nenhuma pose afunda o corpo no chão (ponto mais baixo das partes de apoio ≥ o de repouso − 6% da altura);
 --   * dormir: a barriga encosta no chão (quem dorme); subir de nível e a Assinatura mexem a pose.
@@ -63,6 +64,7 @@ end
 table.sort(ids)
 local species, acts, fails = 0, 0, 0
 local perAct = {}
+local attackStrength = {}
 local function bad(cf: CFrame): boolean
 	for _, v in ipairs({ cf.Position, cf.LookVector, cf.UpVector }) do
 		for _, c in ipairs({ v.X, v.Y, v.Z }) do
@@ -78,7 +80,7 @@ for _, sid in ipairs(ids) do
 	species += 1
 	local lo, hi = Facets.heightRange(bp)
 	local height = math.max(hi - lo, 1)
-	local list = { "sleep", "levelup", "signature" }
+	local list = { "sleep", "levelup", "signature", "attack" }
 	for _, a in ipairs(CreatureMotion.actsFor(bp.gait, bp.anatomy, bp.flies == true)) do
 		table.insert(list, a[1])
 	end
@@ -109,29 +111,45 @@ for _, sid in ipairs(ids) do
 			elseif act == "levelup" then
 				CreatureMotion.forceAct(entry, "levelup")
 				dur = 0.4
+			elseif act == "attack" then
+				model:SetAttribute("Action", "Attack")
+				model:SetAttribute("ActionAt", workspace:GetServerTimeNow())
+				dur = 0.72
 			else
 				CreatureMotion.forceAct(entry, act)
 				dur = (entry.act and entry.act.dur or 2) * 0.5
 			end
 			local worst = math.huge
 			local changed, nan = 0, false
+			local movedAny = {}
+			local strength = 0 -- (ataque) maior giro de uma junta (rad) ou avanço do corpo (em alturas × 3)
 			local n = math.max(1, math.floor(dur / DT))
 			for i = 1, n do
 				step(1)
-				for _, m in pairs(motors) do
+				for name, m in pairs(motors) do
 					if bad(m.Transform) then
 						nan = true
+					end
+					-- mudou em ALGUM quadro (olhar só o último pegava asas/caudas passando pela posição de repouso)
+					local r0 = rest[name]
+					if (m.Transform.Position - r0.Position).Magnitude > 0.01 or (m.Transform.LookVector - r0.LookVector).Magnitude > 0.06
+						or (m.Transform.UpVector - r0.UpVector).Magnitude > 0.06 then
+						movedAny[name] = true
+					end
+					if act == "attack" then
+						local r = rest[name]
+						local look = (m.Transform.LookVector - r.LookVector).Magnitude
+						local up = (m.Transform.UpVector - r.UpVector).Magnitude
+						local move = (m.Transform.Position - r.Position).Magnitude / height * 3
+						strength = math.max(strength, look, up, move)
 					end
 				end
 				if i >= n * 0.4 then
 					worst = math.min(worst, CreatureMotion.lowestPoint(entry))
 				end
 			end
-			for name, m in pairs(motors) do
-				local r = rest[name]
-				if (m.Transform.Position - r.Position).Magnitude > 0.01 or (m.Transform.LookVector - r.LookVector).Magnitude > 0.06 or (m.Transform.UpVector - r.UpVector).Magnitude > 0.06 then
-					changed += 1
-				end
+			for _ in pairs(movedAny) do
+				changed += 1
 			end
 			local canSleep = not entry.flies and entry.gait ~= "float" and entry.gait ~= "bounce"
 			local problems = {}
@@ -140,7 +158,12 @@ for _, sid in ipairs(ids) do
 			end
 			-- (slimes têm uma junta só: o corpo inteiro é a animação)
 			local need = math.min(2, #entry.mjoints)
-			if changed < need and not (act == "sleep" and not canSleep) then
+			-- (no ataque o golpe já terminou no último quadro: vale a força medida durante ele)
+			if act == "attack" then
+				if strength < 0.25 then
+					table.insert(problems, string.format("golpe quase invisível (força %.2f)", strength))
+				end
+			elseif changed < need and not (act == "sleep" and not canSleep) then
 				table.insert(problems, "pose quase não muda (" .. changed .. " juntas)")
 			end
 			local sink = entry.restLow - worst
@@ -155,6 +178,9 @@ for _, sid in ipairs(ids) do
 				if not entry.snore then
 					table.insert(problems, "sem Zzz")
 				end
+			end
+			if act == "attack" then
+				attackStrength[sid] = { strength, bp.gait, bp.anatomy }
 			end
 			if #problems > 0 then
 				error(table.concat(problems, "; "), 0)
@@ -174,6 +200,18 @@ for k, v in pairs(perAct) do
 end
 table.sort(names)
 print("comportamentos verificados: " .. table.concat(names, ", "))
+do
+	local weak = {}
+	for sid, v in pairs(attackStrength) do
+		table.insert(weak, { sid, v[1], v[2], v[3] })
+	end
+	table.sort(weak, function(a, b)
+		return a[2] < b[2]
+	end)
+	for i = 1, math.min(5, #weak) do -- os 5 golpes mais fracos (informativo)
+		print(string.format("ATAQUE %-22s força %.2f (%s/%s)", weak[i][1], weak[i][2], weak[i][3], weak[i][4]))
+	end
+end
 print(string.format("Animações: %d espécies, %d animações verificadas, %d falhas", species, acts, fails))
 if fails > 0 then
 	error("ANIMAÇÕES FALHARAM")

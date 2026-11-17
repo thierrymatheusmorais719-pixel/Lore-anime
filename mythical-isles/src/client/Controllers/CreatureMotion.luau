@@ -1017,7 +1017,9 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 	end
 	-- poses de comportamento (sentar, deitar, coçar...) não podem afundar no chão: levanta o corpo o que for
 	-- preciso para o ponto mais baixo voltar à altura de repouso (só enquanto há pose extra)
-	local extraOn = (actE > 0) or entry.sleepW > 0.01 or hurt > 0 or party > 0 or sig > 0
+	-- (o ataque também: bote, empinada e cabeçada inclinam o corpo e enfiavam patas/cabeça no chão)
+	local striking = attack > 0 or wind > 0 or settle > 0
+	local extraOn = (actE > 0) or entry.sleepW > 0.01 or hurt > 0 or party > 0 or sig > 0 or striking
 	local lift = 0
 	if extraOn and entry.bodyMotor and entry.restLow and entry.restLow < math.huge then
 		if entry.sleepW > 0.5 then
@@ -1027,7 +1029,8 @@ function CreatureMotion.animate(entry, t: number, dt: number, now: number, flash
 			lift = math.max(0, entry.restLow - CreatureMotion.lowestPoint(entry))
 		end
 	end
-	entry.groundLift = (entry.groundLift or 0) + (lift - (entry.groundLift or 0)) * math.min(1, dt * 12)
+	-- no golpe (0,12 s) a correção precisa ser rápida para não ficar para trás
+	entry.groundLift = (entry.groundLift or 0) + (lift - (entry.groundLift or 0)) * math.min(1, dt * (striking and 40 or 12))
 	if math.abs(entry.groundLift) > 0.002 and entry.bodyMotor then
 		entry.bodyMotor.Transform = CFrame.new(0, entry.groundLift, 0) * entry.bodyMotor.Transform
 	end
