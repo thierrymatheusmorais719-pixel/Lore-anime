@@ -397,7 +397,8 @@ local function tickBoss(b, now: number)
 			S.CombatService.setAction(b.model, "Roar")
 			setState(b, "Transition")
 			for _, p in ipairs(participants) do
-				S.Push:FireClient(p, "Phase", { boss = b.cfg.name, phase = idx, label = ph.label, color = b.cfg.color })
+				S.Push:FireClient(p, "Phase", { boss = b.cfg.name, bossId = b.id, phase = idx, label = ph.label, color = b.cfg.color,
+					time = Rules.phaseTransitionTime })
 			end
 			return
 		end

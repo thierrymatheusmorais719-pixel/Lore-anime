@@ -14,6 +14,7 @@ local PetMesh = require(Shared.Builders.PetMesh)
 local UIKit = require(script.Parent.UIKit)
 local CreatureMotion = require(script.Parent.CreatureMotion)
 local State = require(script.Parent.State)
+local Animator = require(script.Parent.Animator)
 
 local Fx = {}
 
@@ -1863,8 +1864,143 @@ function Fx.hatch(results, eggColor: Color3?)
 	end)
 end
 
+-------------------------------------------------------------------------------
+-- QUEDA de inimigo: em vez de só tombar e sumir, o corpo "estoura" em energia na cor dele: clarão, aro no chão,
+-- faíscas, lascas e um espírito (orbe) que sobe e se apaga. Só perto da câmera; leve no modo reduzido.
+-------------------------------------------------------------------------------
+local function dominantColors(model: Model): (Color3, Color3)
+	local best, bestVol, glow = nil, 0, nil
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("BasePart") and d.Transparency < 0.9 then
+			if d.Material == Enum.Material.Neon then
+				glow = glow or d.Color
+			else
+				local v = d.Size.X * d.Size.Y * d.Size.Z
+				if v > bestVol then
+					best, bestVol = d.Color, v
+				end
+			end
+		end
+	end
+	local body = best or Color3.fromRGB(150, 150, 150)
+	return body, glow or WHITE:Lerp(body, 0.45)
+end
+
+function Fx.enemyDown(model: Model)
+	local cam = workspace.CurrentCamera
+	if not cam or not model.Parent then
+		return
+	end
+	local cf, size = model:GetBoundingBox()
+	local center = cf.Position
+	if (cam.CFrame.Position - center).Magnitude > 150 then
+		return
+	end
+	local feet = center - Vector3.new(0, size.Y / 2, 0)
+	local r = math.clamp(math.max(size.X, size.Z) * 0.6, 2, 8)
+	local body, glow = dominantColors(model)
+	flash(center, glow, 12 + r * 3, 3, 0.35)
+	shockRing(feet, r * 1.6, glow, 0.45)
+	sparks(center, glow, scaled(14), 16)
+	embers(center, glow, scaled(10), r)
+	if lowVfx() then
+		return
+	end
+	debris(feet, body, 5, 16)
+	-- espírito: orbe que sai do corpo, sobe girando e se apaga
+	local orb = part({ Shape = Enum.PartType.Ball, Size = Vector3.one * math.max(0.8, r * 0.35), CFrame = CFrame.new(center), Color = glow, Transparency = 0.15 }, 1.25)
+	if orb then
+		tween(orb, 1.2, { CFrame = CFrame.new(center + Vector3.new(0, 5 + r, 0)), Size = Vector3.one * 0.1, Transparency = 1 }, Enum.EasingStyle.Quad)
+	end
+end
+
+-------------------------------------------------------------------------------
+-- TROCA DE FASE do boss: durante a invulnerabilidade, um escudo de energia pulsa em volta dele (o jogador VÊ que
+-- não adianta bater), três ondas de choque partem do chão, o círculo de runas gira e um cut-in anuncia
+-- "FASE N"; no fim o escudo estoura com pulso na tela. Payload do servidor: { boss, bossId, phase, label, color, time }.
+-------------------------------------------------------------------------------
+function Fx.bossPhase(p)
+	local folderB = workspace:FindFirstChild("Bosses")
+	local model: Model? = nil
+	for _, m in ipairs(folderB and folderB:GetChildren() or {}) do
+		if m:GetAttribute("BossId") == p.bossId then
+			model = m :: Model
+		end
+	end
+	local cam = workspace.CurrentCamera
+	if not model or not cam then
+		return
+	end
+	local m = model :: Model
+	local color = typeof(p.color) == "Color3" and p.color or WHITE
+	local time = tonumber(p.time) or 2.5
+	local cf, size = m:GetBoundingBox()
+	local center = cf.Position
+	if (cam.CFrame.Position - center).Magnitude > 260 then
+		return
+	end
+	local feet = center - Vector3.new(0, size.Y / 2, 0)
+	local arena = m:GetAttribute("ArenaCenter")
+	if typeof(arena) == "Vector3" and feet.Y < arena.Y + 7 then
+		feet = Vector3.new(feet.X, arena.Y + 1, feet.Z)
+	end
+	local radius = math.clamp(math.max(size.X, size.Y, size.Z) * 0.62, 6, 30)
+	castCircle(feet + Vector3.new(0, 1.7, 0), math.clamp(radius * 0.9, 6, 24), color, time + 0.3)
+	for k = 0, 2 do
+		task.delay(k * 0.35, function()
+			shockRing(feet, radius * (1.6 + k * 0.5), color, 0.7)
+		end)
+	end
+	flash(center, color, 40, 6, 0.6)
+	shake(center, 1.2, 0.6)
+	cutIn("Fase " .. tostring(p.phase), tostring(p.boss) .. " — " .. tostring(p.label or ""), color)
+	-- escudo: esfera de campo de força que acompanha o boss e pulsa
+	local shell = part({ Shape = Enum.PartType.Ball, Size = Vector3.one * radius * 2, CFrame = CFrame.new(center), Color = color, Transparency = 0.55,
+		Material = Enum.Material.ForceField }, time + 0.3)
+	if shell then
+		local t0 = os.clock()
+		local conn
+		conn = RunService.RenderStepped:Connect(function()
+			local t = os.clock() - t0
+			if t > time or not shell.Parent or not m.Parent then
+				conn:Disconnect()
+				return
+			end
+			local c2 = m:GetBoundingBox()
+			local pulse = 1 + math.sin(t * 9) * 0.04
+			shell.CFrame = CFrame.new(c2.Position)
+			shell.Size = Vector3.one * radius * 2 * pulse
+		end)
+	end
+	if not lowVfx() then
+		gather(center, color, radius * 1.2, math.min(time, 1.2))
+	end
+	-- fim da transição: o escudo estoura
+	task.delay(time, function()
+		if not m.Parent then
+			return
+		end
+		local c3 = m:GetBoundingBox()
+		flash(c3.Position, color, 50, 8, 0.5)
+		sparks(c3.Position, color, scaled(24), 30)
+		shockRing(feet, radius * 2.4, color, 0.6)
+		shake(c3.Position, 1.6, 0.5)
+		if not lowVfx() and (cam.CFrame.Position - c3.Position).Magnitude < 140 then
+			screenPulse(color)
+		end
+	end)
+end
+
 function Fx.init()
 	CreatureMotion.onStrike = slashArc
+	Animator.onDeath = function(model: Model, isBoss: boolean)
+		if not isBoss then -- a queda dos bosses é a cinemática de vitória
+			Fx.enemyDown(model)
+		end
+	end
+	State.on("Phase", function(p)
+		Fx.bossPhase(p)
+	end)
 	folder = Instance.new("Folder")
 	folder.Name = "LocalFx"
 	folder.Parent = workspace.CurrentCamera

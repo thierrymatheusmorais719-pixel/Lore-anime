@@ -231,6 +231,12 @@ local function animate(entry, t: number, dt: number, now: number)
 	local slam = (action == "Slam" or action == "Lunge") and 1 or 0
 	local deathT = dead and math.clamp((now - actionAt) / 0.8, 0, 1) or 0
 	if dead then
+		if not entry.deathFx then
+			entry.deathFx = true
+			if Animator.onDeath then
+				task.spawn(Animator.onDeath, model, entry.isBoss == true) -- (Fx: queda com energia)
+			end
+		end
 		fadeOut(entry)
 	end
 

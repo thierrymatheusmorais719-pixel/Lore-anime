@@ -457,6 +457,16 @@ Os **5 bosses** passam pelo mesmo processo (`PetRigs/boss_<id>`, ~18 mil triâng
   como no Roblox. Antes ele usava as posições guardadas das peças e media o Tempest Wyrm com 185 studs de altura; com
   isso o balanço de voo e o círculo de runas apareciam errados só no simulador.
 
+### Troca de fase dos bosses e queda dos inimigos
+- **Troca de fase** (`Fx.bossPhase`, mensagem `Phase` do servidor): durante os 2,5 s de invulnerabilidade, um escudo de
+  campo de força pulsa em volta do boss (o jogador vê que não adianta bater), três ondas de choque partem do chão, o
+  círculo de runas gira, a energia converge e um cut-in anuncia "FASE N — nome da fase". No fim o escudo estoura com
+  faíscas, tremor e pulso na tela. `docs/preview/boss_troca_de_fase.jpg`.
+- **Queda dos inimigos** (`Fx.enemyDown`, chamado pelo Animator quando o atributo `Dead` liga): antes, o inimigo só
+  tombava e sumia. Agora o corpo estoura em energia na cor dele (clarão, aro no chão, faíscas, lascas) e um orbe sobe e
+  se apaga. Bosses ficam com a cinemática de vitória. Só perto da câmera; leve no modo de efeitos reduzidos.
+- Testes no simulador: escudo aparece e some no fim, cut-in "FASE 2", orbe e peças na queda.
+
 ### Inimigos: pés no chão, peças corrigidas e prévia dos ataques
 - **Prévia** (`python3 tools/run_tests.py luau --enemyatk`): monta os 19 inimigos com o construtor do jogo, dispara o
   ataque de cada um e exporta 7 instantes. `docs/preview/inimigos_golpes.jpg` mostra o resultado.

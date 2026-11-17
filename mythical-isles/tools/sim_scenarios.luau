@@ -2265,6 +2265,79 @@ do
 		if titan then
 			stagingCheck()
 		end
+		-- TROCA DE FASE: escudo de campo de força em volta do boss pelo tempo da invulnerabilidade + cut-in "FASE 2"
+		local function phaseCheck()
+			local b4 = #SIM.errors
+			local cam = workspace.CurrentCamera
+			local oldCam = cam.CFrame
+			local tpos = titan.PrimaryPart.Position
+			cam.CFrame = CFrame.new(tpos + Vector3.new(0, 25, 60), tpos)
+			local pg = SIM.localPlayer.PlayerGui
+			local old = pg:FindFirstChild("SignatureCutIn")
+			if old then
+				old:Destroy()
+			end
+			frames(70) -- (o cut-in tem 1,1 s de intervalo entre um e outro)
+			local State = require(__proxy("Client/Controllers/State"))
+			State.emit("Phase", { boss = "Prism Titan", bossId = "prism_titan", phase = 2, label = "Refração", color = Color3.fromRGB(170, 140, 255), time = 2.5 })
+			frames(6)
+			local shell = false
+			for _, d in ipairs(cam:FindFirstChild("LocalFx"):GetChildren()) do
+				if d:IsA("BasePart") and d.Material == Enum.Material.ForceField then
+					shell = true
+				end
+			end
+			local cut = pg:FindFirstChild("SignatureCutIn")
+			local band = cut and cut:FindFirstChild("Band")
+			local power = band and band:FindFirstChild("Power")
+			frames(200)
+			local shellAfter = false
+			for _, d in ipairs(cam:FindFirstChild("LocalFx"):GetChildren()) do
+				if d:IsA("BasePart") and d.Material == Enum.Material.ForceField then
+					shellAfter = true
+				end
+			end
+			check("boss: troca de fase mostra escudo de energia, cut-in 'FASE 2' e o escudo some no fim",
+				shell and power ~= nil and power.Text == "FASE 2" and not shellAfter and #SIM.errors == b4,
+				SIM.errors[b4 + 1] or string.format("escudo %s/%s, cut-in %s", tostring(shell), tostring(shellAfter), tostring(power and power.Text)))
+			cam.CFrame = oldCam
+		end
+		if titan then
+			phaseCheck()
+		end
+		-- QUEDA de inimigo: ao morrer (atributo Dead), estoura em energia (aro, orbe que sobe) antes de sumir
+		local function deathCheck()
+			local b5 = #SIM.errors
+			local cam = workspace.CurrentCamera
+			local oldCam = cam.CFrame
+			local EnemyModels = require(__proxy("Shared/Builders/EnemyModels"))
+			local m = EnemyModels.build("thornling", nil)
+			local spot = Vector3.new(-3000, 2, 0)
+			m:PivotTo(CFrame.new(spot))
+			m.PrimaryPart.Anchored = true
+			m.Parent = workspace:FindFirstChild("Enemies")
+			cam.CFrame = CFrame.new(spot + Vector3.new(0, 8, 20), spot)
+			frames(10)
+			local fx = cam:FindFirstChild("LocalFx")
+			local before = #fx:GetChildren()
+			m:SetAttribute("Action", "Dead")
+			m:SetAttribute("ActionAt", workspace:GetServerTimeNow())
+			m:SetAttribute("Dead", true)
+			frames(4)
+			local orb = false
+			for _, d in ipairs(fx:GetChildren()) do
+				if d:IsA("BasePart") and d.Shape == Enum.PartType.Ball and d.Material == Enum.Material.Neon then
+					orb = true
+				end
+			end
+			local during = #fx:GetChildren()
+			frames(150)
+			check("inimigo: ao morrer estoura em energia (aro, faíscas, orbe que sobe)", orb and during > before + 2 and #SIM.errors == b5,
+				SIM.errors[b5 + 1] or string.format("orbe %s, peças %d -> %d", tostring(orb), before, during))
+			m:Destroy()
+			cam.CFrame = oldCam
+		end
+		deathCheck()
 	end
 	before = #SIM.errors
 	ok, err = pcall(Fx.hatch, res.results or {}, Color3.new(1, 1, 1))

@@ -207,6 +207,43 @@ for _, plan in ipairs(PLAN) do
 	end
 	local _ = Bosses
 end
+-- troca de fase (escudo, ondas, círculo) no Prism Titan: SCENE prism_titan_Phase_<n>
+do
+	local boss
+	for _, b in ipairs(BossService.list()) do
+		if b.id == "prism_titan" then
+			boss = b
+		end
+	end
+	local e = boss and BossVisuals.entries[boss.model]
+	if e and e.vis then
+		vis = e.vis
+		local bpos = boss.model.PrimaryPart.Position
+		local toCenter = (bpos - boss.arena.center) * Vector3.new(1, 0, 1)
+		local standDir = toCenter.Magnitude > 1 and toCenter.Unit or Vector3.new(0, 0, 1)
+		SIM.teleport(p, boss.arena.center + Vector3.new(0, 4, 0) - standDir * (boss.arena.radius + 12))
+		cam.CFrame = CFrame.new(bpos + Vector3.new(30, 18, 40), bpos)
+		for _ = 1, 20 do
+			frames(15)
+			if e.vis.Parent == boss.model then
+				break
+			end
+		end
+		frames(80)
+		local State = require(__proxy("Client/Controllers/State"))
+		boss.model:SetAttribute("Action", "Roar")
+		boss.model:SetAttribute("ActionAt", workspace:GetServerTimeNow())
+		boss.model:SetAttribute("WindupEnd", 0)
+		State.emit("Phase", { boss = "Prism Titan", bossId = "prism_titan", phase = 2, label = "Refração", color = boss.cfg.color, time = 2.5 })
+		local t0 = os.clock()
+		for k, at in ipairs({ 0.1, 0.5, 1.2, 2.0, 2.56 }) do
+			while os.clock() - t0 < at do
+				frames(1)
+			end
+			dump(string.format("prism_titan_Phase_%d", k))
+		end
+	end
+end
 print("INFO erros " .. #SIM.errors)
 for _, er in ipairs(SIM.errors) do
 	print("INFO " .. er)
