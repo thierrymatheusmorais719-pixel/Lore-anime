@@ -999,7 +999,14 @@ novo** com a mudança. O bot só mira o boss (um jogador mirando os brotos se sa
 ponto mais difícil do ritmo e o portal do Mundo 5 (250 mil) é o próximo ajuste a avaliar.
 
 O bot de desvio passou a ir para o ponto seguro **mais perto** (antes ia para o mais longe da arena e atravessava as
-faixas do leque no caminho: a Refração Tripla causou 301 de dano na luta do Prism Titan medida acima).
+faixas do leque no caminho). Mundos 1 e 2 de novo, com o bot novo e a mesma equipe:
+
+| Boss | Bot antigo | Bot novo |
+|---|---|---|
+| Elderroot | 292 s, 1,8× a vida | 268 s, 0,9× a vida |
+| Prism Titan | 280 s, 4,4× a vida (Refração Tripla 301), 14 nocautes de pets | 327 s, 0,5× a vida (Refração Tripla 44), 5 nocautes |
+
+Ou seja, o dano alto do Prism Titan vinha do bot, não do ataque.
 
 Sem desviar (`DODGE_BOT = false`), o Elderroot causaria 5,3× a vida: o boss é acessível para quem lê os avisos e
 pune quem fica parado. A mineração rende ~0,1 moeda por ponto de vida do recurso em todos os mundos; no Mundo 2 cada
