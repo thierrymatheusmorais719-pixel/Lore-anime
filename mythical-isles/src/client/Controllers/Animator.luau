@@ -321,6 +321,29 @@ local function animate(entry, t: number, dt: number, now: number)
 		end
 	end
 
+	-- COMPORTAMENTOS OCIOSOS (inimigos e bosses parados): de tempos em tempos olha ao redor, sacode o corpo,
+	-- fareja o chão, rosna de boca aberta ou bate a cauda. Peso iw sobe e desce suave; nada roda em ação/movimento.
+	local busy = dead or moving > 0.1 or hurt > 0 or (action ~= nil and action ~= "Dead" and (now < windupEnd or since < 1.6))
+	local iw, ik, iu = 0, nil, 0
+	if busy then
+		entry.idleAct = { kind = "none", t0 = t, dur = 0, gap = 2.5 }
+	else
+		local ia = entry.idleAct
+		if not ia or t > ia.t0 + ia.dur + ia.gap then
+			entry.idleN = (entry.idleN or 0) + 1
+			local kinds = { "look", "shake", "sniff", "growl", "tail" }
+			local kind = kinds[(math.floor(entry.seed * 7) + entry.idleN) % #kinds + 1]
+			local dur = ({ look = 2.4, shake = 1.0, sniff = 1.8, growl = 1.4, tail = 1.6 })[kind]
+			ia = { kind = kind, t0 = t, dur = dur, gap = 4 + (entry.seed * 3 + entry.idleN * 1.7) % 6 }
+			entry.idleAct = ia
+		end
+		local u = (t - ia.t0) / math.max(ia.dur, 0.01)
+		if ia.dur > 0 and u >= 0 and u <= 1 then
+			iw, ik, iu = math.sin(u * math.pi), ia.kind, u
+		end
+	end
+	entry.idleKind = ik -- (testes)
+
 	-- quem anda não pode subir o corpo inteiro (as pernas vão junto e saem do chão): respiração bem curta
 	-- voando de verdade: criaturas voadoras e, nos bosses, só na fase aérea (o Tempest Wyrm começa pousado)
 	local flying = entry.flies and (not entry.isBoss or src:GetAttribute("Airborne") == true)
@@ -341,6 +364,10 @@ local function animate(entry, t: number, dt: number, now: number)
 			-- pés plantados: o ponto mais baixo depois de inclinar (pontos de groundSupport) volta para a altura de repouso.
 			-- Na queda (derrota) o corpo tomba de lado e DEITA no chão (antes afundava ¼ da altura no piso).
 			local roll = deathT * 1.35 + math.sin(tt * 1.3) * 0.02 + tremble * 0.5
+				+ (ik == "shake" and math.sin(tt * 28) * 0.08 * iw or 0) -- sacode
+			if ik == "sniff" then
+				pitch -= 0.08 * iw -- inclina para farejar
+			end
 			local plant = 0
 			local pts = entry.supportPts
 			if pts then
@@ -363,7 +390,15 @@ local function animate(entry, t: number, dt: number, now: number)
 		elseif k == "neck" then
 			local look = math.sin(tt * 0.7) * 0.15 * (1 - moving)
 			local breath = action == "Breath" and 1 or 0 -- sopro: puxa a cabeça para trás e a projeta
-			cf = CFrame.Angles(-strike * (0.45 + breath * 0.25) + wind * (0.3 + breath * 0.25) - roar * 0.5 + hurt * 0.2, look, 0)
+			local ipitch, iyaw = 0, 0
+			if ik == "look" then
+				iyaw = math.sin(iu * math.pi * 2) * 0.6 * iw -- olha para um lado e para o outro
+			elseif ik == "sniff" then
+				ipitch = -(0.3 + math.sin(tt * 14) * 0.06) * iw -- abaixa a cabeça e fareja
+			elseif ik == "growl" then
+				ipitch = -0.12 * iw
+			end
+			cf = CFrame.Angles(-strike * (0.45 + breath * 0.25) + wind * (0.3 + breath * 0.25) - roar * 0.5 + hurt * 0.2 + ipitch, look + iyaw, 0)
 		elseif k == "leg" then
 			local stride = entry.isBoss and 4 or 10
 			local swing = math.sin(tt * stride + j.phase) * 0.55 * moving
@@ -403,7 +438,8 @@ local function animate(entry, t: number, dt: number, now: number)
 			cf = CFrame.Angles(0, 0, j.side * flap)
 		elseif k == "tail" then
 			local whip = sweep * (wind * 0.7 - strike * 1.1) -- varrida: a cauda chicoteia junto
-			cf = CFrame.Angles(math.sin(tt * 2) * 0.08, math.sin(tt * 3.2 + j.idx) * 0.35 + whip, 0)
+			local wag = ik == "tail" and math.sin(tt * 12) * 0.5 * iw or 0 -- bate a cauda
+			cf = CFrame.Angles(math.sin(tt * 2) * 0.08, math.sin(tt * 3.2 + j.idx) * 0.35 + whip + wag, 0)
 		elseif k == "neckseg" then
 			-- pescoço articulado: cada segmento acompanha parte do movimento da cabeça, com ondulação suave
 			local sway = math.sin(tt * 1.3 - j.idx * 0.6) * 0.05
@@ -431,7 +467,8 @@ local function animate(entry, t: number, dt: number, now: number)
 			local open = 0.15 * math.sin(tt * 1.5 + j.idx) + roar * 0.5 + wind * 0.3
 			cf = CFrame.Angles(open, 0, 0)
 		elseif k == "jaw" then
-			local open = math.max(strike, wind * 0.6, roar, breathHold * 0.9) * 0.45
+			local growl = ik == "growl" and (0.7 + math.sin(tt * 30) * 0.12) * iw or 0 -- rosnado: boca aberta tremendo
+			local open = math.max(strike, wind * 0.6, roar, breathHold * 0.9, growl) * 0.45
 			cf = CFrame.Angles(open, 0, 0)
 		elseif k == "root" then
 			cf = CFrame.Angles(math.sin(tt * 1.2 + j.idx) * 0.06 - wind * 0.2 * slam, 0, 0)

@@ -2443,6 +2443,62 @@ do
 				e.m:Destroy()
 			end
 			check("inimigos: ao cair derrotados, deitam no chão (tolerância 0,6 stud)", #badD == 0 and #SIM.errors == b8, SIM.errors[b8 + 1] or table.concat(badD, ", "))
+		end)()
+		-- OCIOSOS: inimigos parados olham ao redor, sacodem, farejam, rosnam, batem a cauda (sem afundar)
+		;(function()
+			local b9 = #SIM.errors
+			local cam = workspace.CurrentCamera
+			local oldCam = cam.CFrame
+			local Enemies = require(__proxy("Shared/Config/Enemies"))
+			local EnemyModels = require(__proxy("Shared/Builders/EnemyModels"))
+			local Animator = require(__proxy("Client/Controllers/Animator"))
+			local base = Vector3.new(-3000, 0, 600)
+			cam.CFrame = CFrame.new(base + Vector3.new(0, 30, 0), base)
+			local list = {}
+			local k = 0
+			for _, id in ipairs({ "thornling", "briar_beast", "prism_golem", "hollow_stag", "cloud_stalker" }) do
+				k += 1
+				local cfg = Enemies.Info[id]
+				local m, h = EnemyModels.build(id, cfg)
+				m:PivotTo(CFrame.new(base + Vector3.new(k * 12 - 36, h, 0)))
+				m.PrimaryPart.Anchored = true
+				m.Parent = workspace:FindFirstChild("Enemies")
+				table.insert(list, { id = id, m = m, worst = 0, kinds = {} })
+			end
+			for _ = 1, 40 * 60 / 2 do
+				frames(2)
+				for _, e in ipairs(list) do
+					local entry = Animator._tracked[e.m]
+					if entry and entry.idleKind then
+						e.kinds[entry.idleKind] = true
+					end
+					local cf, size = e.m:GetBoundingBox()
+					local bottom = cf.Position.Y - size.Y / 2
+					if math.abs(bottom) > math.abs(e.worst) then
+						e.worst = bottom
+					end
+				end
+			end
+			local bad = {}
+			local seenAll = {}
+			for _, e in ipairs(list) do
+				local n = 0
+				for kind in pairs(e.kinds) do
+					n += 1
+					seenAll[kind] = true
+				end
+				if n < 3 or math.abs(e.worst) > 0.6 then
+					table.insert(bad, string.format("%s: %d comportamentos, chão %+.2f", e.id, n, e.worst))
+				end
+				e.m:Destroy()
+			end
+			local total = 0
+			for _ in pairs(seenAll) do
+				total += 1
+			end
+			check("inimigos ociosos: 3+ comportamentos em 40 s cada (5 tipos no total) sem afundar", #bad == 0 and total == 5 and #SIM.errors == b9,
+				SIM.errors[b9 + 1] or (#bad > 0 and table.concat(bad, "; ")) or (total .. " tipos"))
+			cam.CFrame = oldCam
 			cam.CFrame = oldCam
 		end)()
 	end

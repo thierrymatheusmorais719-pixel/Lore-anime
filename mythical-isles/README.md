@@ -491,6 +491,13 @@ primeiros segmentos; no golpe se projeta para a frente com a cabeça descendo (a
 compensação do "erguer"). `docs/preview/serpente_bote.jpg`. Os outros pets conferidos (raposa, gato, coelho, coruja,
 macaco, lobo, cervo, mamute, dragãozinho, besouro, leão) já recuavam na preparação e avançavam no golpe.
 
+### Inimigos e bosses vivos quando parados
+Antes, parados, eles só respiravam e mexiam a cabeça. Agora, de tempos em tempos (a cada 4–10 s, um comportamento
+por vez, com entrada e saída suaves), cada um **olha ao redor**, **sacode o corpo**, **fareja o chão**, **rosna** de boca
+aberta tremendo ou **bate a cauda**, usando as juntas que já tem (`Animator`). Nada disso roda em ataque, movimento, dano
+ou queda. Teste no simulador: 5 inimigos parados por 40 s passam por 3+ comportamentos cada, os 5 tipos aparecem e
+ninguém afunda no chão.
+
 ### Troca de fase dos bosses e queda dos inimigos
 - **Troca de fase** (`Fx.bossPhase`, mensagem `Phase` do servidor): durante os 2,5 s de invulnerabilidade, um escudo de
   campo de força pulsa em volta do boss (o jogador vê que não adianta bater), três ondas de choque partem do chão, o
